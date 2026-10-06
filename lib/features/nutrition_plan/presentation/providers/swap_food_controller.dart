@@ -6,7 +6,6 @@ import '../../data/food_repository.dart';
 import '../../data/template_foods_repository.dart';
 import '../providers/activity_detail_controller.dart';
 import '../../../../shared/services/app_external_deps.dart';
-import '../../../../shared/services/logging_service.dart';
 import '../../../../shared/services/report/report.dart';
 import '../../../../shared/database/database_provider.dart';
 import '../../../../shared/services/food_management/user_food_crud_service.dart';
@@ -127,7 +126,11 @@ class SwapFoodState {
 FoodRepository foodRepository(Ref ref) {
   final database = ref.read(appDatabaseProvider);
   final deps = ref.read(appExternalDepsProvider);
-  return FoodRepository(deps.supabaseClient, database, logger: deps.logger);
+  return FoodRepository(
+    deps.supabaseClient,
+    database,
+    report: ref.read(reportProvider),
+  );
 }
 
 /// Controller for swap food functionality - takes swap parameters.
@@ -140,11 +143,8 @@ FoodRepository foodRepository(Ref ref) {
 /// - Refreshing food data after imports
 @riverpod
 class SwapFoodController extends _$SwapFoodController {
-  /// Cached logger instance - avoids accessing ref after disposal
+  /// Cached report instance - avoids accessing ref after disposal.
   /// Note: Using `late` (not `late final`) because build() can be called multiple times
-  late AppLogger _logger;
-
-  /// Cached for the same reason as [_logger]: reads after disposal throw.
   late Report _report;
 
   /// Helper to check if provider is still mounted before state updates
@@ -161,8 +161,7 @@ class SwapFoodController extends _$SwapFoodController {
 
   @override
   FutureOr<SwapFoodState> build(SwapFoodParams params) async {
-    // Cache logger immediately in build() to avoid UnmountedRefException
-    _logger = ref.read(appExternalDepsProvider).logger;
+    // Cache report immediately in build() to avoid UnmountedRefException
     _report = ref.read(reportProvider);
 
     // Auto-initialize with foods based on original food's product type
@@ -186,10 +185,13 @@ class SwapFoodController extends _$SwapFoodController {
             .read(syncCoordinatorProvider.notifier)
             .ensureSynced('user_foods', userId, repository: userFoodsRepo);
       } catch (e) {
-        _logger.warning(
-          'User foods sync failed, continuing with cached data',
-          context: 'SwapFoodController',
-          data: {'error': e.toString()},
+        _report.degraded(
+          LoggedFault(
+            'User foods sync failed, continuing with cached data',
+            context: 'SwapFoodController',
+          ),
+          area: 'SwapFoodController',
+          extra: {'error': e.toString()},
         );
       }
 
@@ -238,10 +240,10 @@ class SwapFoodController extends _$SwapFoodController {
         allUserFoods: userFoods,
       );
     } catch (e) {
-      _logger.error(
-        'Error loading foods for swapping',
-        context: 'SwapFoodController',
-        error: e,
+      _report.fault(
+        e,
+        area: 'SwapFoodController',
+        message: 'Error loading foods for swapping',
       );
 
       // Return empty state on error
@@ -325,14 +327,20 @@ class SwapFoodController extends _$SwapFoodController {
         }
       }
 
-      _logger.warning('Product type not found for food ID: $foodId');
+      _report.degraded(
+        LoggedFault(
+          'Product type not found for food ID: $foodId',
+          context: 'nutrition_plan',
+        ),
+        area: 'nutrition_plan',
+      );
       return null;
     } catch (e) {
-      _logger.error(
-        'Error getting product type ID',
-        context: 'SwapFoodController',
-        data: {'foodId': foodId},
-        error: e,
+      _report.fault(
+        e,
+        area: 'SwapFoodController',
+        extra: {'foodId': foodId},
+        message: 'Error getting product type ID',
       );
       return null;
     }
@@ -421,9 +429,9 @@ class SwapFoodController extends _$SwapFoodController {
     String category, {
     double? customAmount,
   }) async {
-    _logger.info(
+    _report.info(
       'Waiting for ActivityDetailController to initialize',
-      context: 'SwapFoodController',
+      area: 'SwapFoodController',
       data: {
         'activityId': params.activityId,
         'isCoachView': params.isCoachView,
@@ -448,17 +456,20 @@ class SwapFoodController extends _$SwapFoodController {
     }
 
     if (controllerState.nutritionPlan == null) {
-      _logger.error(
-        'Cannot swap food: nutrition plan not loaded after waiting',
-        context: 'SwapFoodController',
-        data: {'activityId': params.activityId},
+      _report.fault(
+        LoggedFault(
+          'Cannot swap food: nutrition plan not loaded after waiting',
+          context: 'SwapFoodController',
+        ),
+        area: 'SwapFoodController',
+        extra: {'activityId': params.activityId},
       );
       throw Exception('Nutrition plan not available. Please try again.');
     }
 
-    _logger.info(
+    _report.info(
       'ActivityDetailController ready, performing swap',
-      context: 'SwapFoodController',
+      area: 'SwapFoodController',
       data: {
         'activityId': params.activityId,
         'oldFoodId': oldFoodId,
@@ -482,9 +493,9 @@ class SwapFoodController extends _$SwapFoodController {
     String category, {
     double? customAmount,
   }) async {
-    _logger.info(
+    _report.info(
       'Waiting for ActivityDetailController to initialize',
-      context: 'SwapFoodController',
+      area: 'SwapFoodController',
       data: {
         'activityId': params.activityId,
         'isCoachView': params.isCoachView,
@@ -509,17 +520,20 @@ class SwapFoodController extends _$SwapFoodController {
     }
 
     if (controllerState.nutritionPlan == null) {
-      _logger.error(
-        'Cannot add food: nutrition plan not loaded after waiting',
-        context: 'SwapFoodController',
-        data: {'activityId': params.activityId},
+      _report.fault(
+        LoggedFault(
+          'Cannot add food: nutrition plan not loaded after waiting',
+          context: 'SwapFoodController',
+        ),
+        area: 'SwapFoodController',
+        extra: {'activityId': params.activityId},
       );
       throw Exception('Nutrition plan not available. Please try again.');
     }
 
-    _logger.info(
+    _report.info(
       'ActivityDetailController ready, performing add',
-      context: 'SwapFoodController',
+      area: 'SwapFoodController',
       data: {
         'activityId': params.activityId,
         'foodName': food.name,

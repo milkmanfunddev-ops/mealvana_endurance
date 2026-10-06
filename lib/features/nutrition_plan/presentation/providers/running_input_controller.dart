@@ -15,7 +15,6 @@ import 'macro_targets_controller.dart';
 import '../../../weather/domain/location.dart' as weather_domain;
 import '../../../weather/domain/weather_forecast.dart';
 import '../../../weather/application/weather_service.dart';
-import '../../../../core/utils/debug_logger.dart';
 import '../../../../shared/services/location_service.dart';
 import '../../../../shared/services/report/report.dart';
 import '../../../../shared/widgets/kyle_design/inputs/duration_pace_toggle.dart';
@@ -202,6 +201,11 @@ class RunningFormState {
 /// FOA COMPLIANT: Contains form state management and business logic coordination
 @Riverpod(keepAlive: true)
 class RunningInputController extends _$RunningInputController {
+  /// Reads after disposal throw; a disposed notifier reports through the
+  /// global instance (the one `reportProvider` built).
+  Report get _report =>
+      ref.mounted ? ref.read(reportProvider) : SentryReport.global;
+
   WeatherService get _weatherService => ref.read(weatherServiceProvider);
 
   @override
@@ -278,8 +282,9 @@ class RunningInputController extends _$RunningInputController {
           zoneSuggestedPace: zone2Pace,
           estimatedDuration: _estimateDuration(paceMinutes: zone2Pace),
         );
-        DebugLogger.info(
+        _report.info(
           '🏃 RUNNING CONTROLLER: Applied zone-based pace: ${zone2Pace.toStringAsFixed(1)} min/mi',
+          area: 'nutrition_plan',
         );
       }
     } catch (e, stackTrace) {
@@ -309,8 +314,9 @@ class RunningInputController extends _$RunningInputController {
           paceUnit: userProfile.preferredPaceUnit,
           unitSystem: userProfile.unitSystem,
         );
-        DebugLogger.info(
+        _report.info(
           '🏃 RUNNING CONTROLLER: Loaded user preferences - gut training: ${userProfile.gutTraining.name}, sweat rate: ${userProfile.sweatRate.name}, unitSystem: ${userProfile.unitSystem.name}',
+          area: 'nutrition_plan',
         );
       }
     } catch (e, stackTrace) {
@@ -803,9 +809,13 @@ class RunningInputController extends _$RunningInputController {
   }) async {
     final currentState = state;
 
-    DebugLogger.info('🏃 RUNNING CONTROLLER: generateMacros called');
-    DebugLogger.info(
+    _report.info(
+      '🏃 RUNNING CONTROLLER: generateMacros called',
+      area: 'nutrition_plan',
+    );
+    _report.info(
       '📍 RUNNING CONTROLLER: Current state - distance: ${currentState.distance}, pace: ${currentState.paceMinutes}',
+      area: 'nutrition_plan',
     );
 
     // Convert pace to M:SS format
@@ -813,8 +823,9 @@ class RunningInputController extends _$RunningInputController {
       currentState.paceMinutes,
     );
 
-    DebugLogger.info(
+    _report.info(
       '⏩ RUNNING CONTROLLER: Delegating to distancePageGutEntryController.generateRunningMacros...',
+      area: 'nutrition_plan',
     );
 
     // Delegate to the main controller
@@ -845,8 +856,9 @@ class RunningInputController extends _$RunningInputController {
               forUserId, // NEW: Pass through forUserId for coach-created activities
         );
 
-    DebugLogger.info(
+    _report.info(
       '✅ RUNNING CONTROLLER: generateRunningMacros completed successfully',
+      area: 'nutrition_plan',
     );
   }
 }

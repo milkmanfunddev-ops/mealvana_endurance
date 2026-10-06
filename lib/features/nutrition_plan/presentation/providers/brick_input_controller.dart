@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../../activities/domain/brick_metadata.dart';
-import '../../../../core/utils/debug_logger.dart';
+import 'package:mealvana_endurance/shared/services/report/report.dart';
 import '../../domain/fueling_window_limits.dart';
 import '../../domain/intensity_distribution.dart';
 import '../../../../shared/widgets/kyle_design/inputs/duration_pace_toggle.dart';
@@ -338,6 +338,11 @@ class BrickFormState {
 /// delegated to services.
 @Riverpod(keepAlive: true)
 class BrickInputController extends _$BrickInputController {
+  /// Reads after disposal throw; a disposed notifier reports through the
+  /// global instance (the one `reportProvider` built).
+  Report get _report =>
+      ref.mounted ? ref.read(reportProvider) : SentryReport.global;
+
   @override
   BrickFormState build() {
     final now = DateTime.now();
@@ -374,8 +379,9 @@ class BrickInputController extends _$BrickInputController {
         preActivityMinutes: _recommendedPreActivityMinutes(),
       );
     }
-    DebugLogger.info(
+    _report.info(
       '🧱 BRICK CONTROLLER: Updated date/time - $date ${time.hour}:${time.minute}',
+      area: 'nutrition_plan',
     );
   }
 
@@ -383,9 +389,13 @@ class BrickInputController extends _$BrickInputController {
   /// added more than once. Enforces the maximum leg count.
   void addLeg(String sport) {
     if (!state.canAddLeg) {
-      DebugLogger.warning(
-        '🧱 BRICK CONTROLLER: Cannot add $sport - maximum '
-        '${BrickFormState.maxLegs} legs allowed',
+      _report.degraded(
+        LoggedFault(
+          '🧱 BRICK CONTROLLER: Cannot add $sport - maximum '
+          '${BrickFormState.maxLegs} legs allowed',
+          context: 'nutrition_plan',
+        ),
+        area: 'nutrition_plan',
       );
       return;
     }
@@ -394,22 +404,32 @@ class BrickInputController extends _$BrickInputController {
       _createDefaultSegmentInput(sport, state.legs.length + 1),
     ]);
     _commitLegs(newLegs);
-    DebugLogger.info('🧱 BRICK CONTROLLER: Added leg: $sport');
+    _report.info(
+      '🧱 BRICK CONTROLLER: Added leg: $sport',
+      area: 'nutrition_plan',
+    );
   }
 
   /// Remove the leg at [index]. Enforces the minimum leg count.
   void removeLegAt(int index) {
     if (index < 0 || index >= state.legs.length) return;
     if (!state.canRemoveLeg) {
-      DebugLogger.warning(
-        '🧱 BRICK CONTROLLER: Cannot remove leg - minimum '
-        '${BrickFormState.minLegs} legs required',
+      _report.degraded(
+        LoggedFault(
+          '🧱 BRICK CONTROLLER: Cannot remove leg - minimum '
+          '${BrickFormState.minLegs} legs required',
+          context: 'nutrition_plan',
+        ),
+        area: 'nutrition_plan',
       );
       return;
     }
     final newLegs = List<BrickSegmentInput>.from(state.legs)..removeAt(index);
     _commitLegs(_renumber(newLegs));
-    DebugLogger.info('🧱 BRICK CONTROLLER: Removed leg at $index');
+    _report.info(
+      '🧱 BRICK CONTROLLER: Removed leg at $index',
+      area: 'nutrition_plan',
+    );
   }
 
   /// Reorder legs (drag to reorder)
@@ -429,16 +449,21 @@ class BrickInputController extends _$BrickInputController {
         : _buildBrickTitle(renumbered);
 
     state = state.copyWith(legs: renumbered, activityTitle: updatedTitle);
-    DebugLogger.info(
+    _report.info(
       '🧱 BRICK CONTROLLER: Reordered legs - new order: ${state.segmentOrder}',
+      area: 'nutrition_plan',
     );
   }
 
   /// Update the leg at [index]. The leg's sport and order are preserved.
   void updateSegmentInput(int index, BrickSegmentInput input) {
     if (index < 0 || index >= state.legs.length) {
-      DebugLogger.warning(
-        '🧱 BRICK CONTROLLER: Cannot update leg $index - out of range',
+      _report.degraded(
+        LoggedFault(
+          '🧱 BRICK CONTROLLER: Cannot update leg $index - out of range',
+          context: 'nutrition_plan',
+        ),
+        area: 'nutrition_plan',
       );
       return;
     }
@@ -448,7 +473,10 @@ class BrickInputController extends _$BrickInputController {
 
     if (state.preActivityMinutesManuallySet) {
       state = state.copyWith(legs: newLegs);
-      DebugLogger.info('🧱 BRICK CONTROLLER: Updated leg $index input');
+      _report.info(
+        '🧱 BRICK CONTROLLER: Updated leg $index input',
+        area: 'nutrition_plan',
+      );
       return;
     }
 
@@ -456,7 +484,10 @@ class BrickInputController extends _$BrickInputController {
       legs: newLegs,
       preActivityMinutes: _recommendedPreActivityMinutes(legs: newLegs),
     );
-    DebugLogger.info('🧱 BRICK CONTROLLER: Updated leg $index input');
+    _report.info(
+      '🧱 BRICK CONTROLLER: Updated leg $index input',
+      area: 'nutrition_plan',
+    );
   }
 
   /// Reset the create-flow form state to its derived defaults for a NEW
@@ -551,8 +582,12 @@ class BrickInputController extends _$BrickInputController {
   /// Update intensity distribution for the leg at [index]
   void updateSegmentIntensity(int index, IntensityDistribution intensity) {
     if (index < 0 || index >= state.legs.length) {
-      DebugLogger.warning(
-        '🧱 BRICK CONTROLLER: Cannot update intensity - no leg at $index',
+      _report.degraded(
+        LoggedFault(
+          '🧱 BRICK CONTROLLER: Cannot update intensity - no leg at $index',
+          context: 'nutrition_plan',
+        ),
+        area: 'nutrition_plan',
       );
       return;
     }
@@ -560,8 +595,9 @@ class BrickInputController extends _$BrickInputController {
       index,
       state.legs[index].copyWith(intensityDistribution: intensity),
     );
-    DebugLogger.info(
+    _report.info(
       '🧱 BRICK CONTROLLER: Updated leg $index intensity distribution - $intensity',
+      area: 'nutrition_plan',
     );
   }
 
@@ -592,9 +628,10 @@ class BrickInputController extends _$BrickInputController {
     double? bikeMiles,
     double? runMiles,
   }) {
-    DebugLogger.info(
+    _report.info(
       '🧱 BRICK CONTROLLER: Initializing from event subtype '
       '(swim=${swimMeters}m, bike=${bikeMiles}mi, run=${runMiles}mi)',
+      area: 'nutrition_plan',
     );
 
     final defaultIntensity = IntensityDistribution.defaultDistribution();
@@ -679,8 +716,12 @@ class BrickInputController extends _$BrickInputController {
 
     // Must have at least 2 legs for a brick
     if (legs.length < BrickFormState.minLegs) {
-      DebugLogger.warning(
-        '🧱 BRICK CONTROLLER: Not enough legs from event subtype, keeping defaults',
+      _report.degraded(
+        LoggedFault(
+          '🧱 BRICK CONTROLLER: Not enough legs from event subtype, keeping defaults',
+          context: 'nutrition_plan',
+        ),
+        area: 'nutrition_plan',
       );
       return;
     }
@@ -695,9 +736,10 @@ class BrickInputController extends _$BrickInputController {
       selectedTime: state.selectedTime,
     );
 
-    DebugLogger.info(
+    _report.info(
       '🧱 BRICK CONTROLLER: Initialized from event subtype with '
       '${legs.length} legs in order: ${state.segmentOrder}',
+      area: 'nutrition_plan',
     );
   }
 
@@ -710,8 +752,9 @@ class BrickInputController extends _$BrickInputController {
     BrickMetadata metadata,
     DateTime activityDate,
   ) {
-    DebugLogger.info(
+    _report.info(
       '🧱 BRICK CONTROLLER: Initializing from existing brick metadata',
+      area: 'nutrition_plan',
     );
 
     final defaultIntensity = IntensityDistribution.defaultDistribution();
@@ -774,9 +817,10 @@ class BrickInputController extends _$BrickInputController {
       ),
     );
 
-    DebugLogger.info(
+    _report.info(
       '🧱 BRICK CONTROLLER: Loaded ${legs.length} legs in order: '
       '${state.segmentOrder}',
+      area: 'nutrition_plan',
     );
   }
 

@@ -8,7 +8,7 @@ import '../../../shared/data/syncable_repository.dart';
 import '../../../shared/database/app_database.dart';
 import '../../../shared/database/database_provider.dart';
 import '../../../shared/services/app_external_deps.dart';
-import '../../../shared/services/logging_service.dart';
+import '../../../shared/services/report/report.dart';
 import '../../../shared/services/sync/sync_dependency_graph.dart';
 
 /// Repository for nutrition templates (read-only reference data).
@@ -17,12 +17,12 @@ import '../../../shared/services/sync/sync_dependency_graph.dart';
 /// scaled to hit macro targets. They are synced from Supabase and
 /// cached locally in Drift.
 class TemplatesRepository with SyncableRepository {
-  TemplatesRepository(this._supabase, this._database, {AppLogger? logger})
-    : _logger = logger ?? const NoopAppLogger();
+  TemplatesRepository(this._supabase, this._database, {required Report report})
+    : _report = report;
 
   final SupabaseClient _supabase;
   final AppDatabase _database;
-  final AppLogger _logger;
+  final Report _report;
 
   // ========================================================================
   // SyncableRepository Implementation
@@ -41,9 +41,9 @@ class TemplatesRepository with SyncableRepository {
       _database.templatesTable,
     )..where((t) => t.isActive.equals(true))).get();
     if (localCount.isEmpty) {
-      _logger.debug(
+      _report.debug(
         'Forcing sync - no local templates found',
-        context: 'TEMPLATES_REPO',
+        area: 'TEMPLATES_REPO',
       );
       return true;
     }
@@ -53,10 +53,7 @@ class TemplatesRepository with SyncableRepository {
   @override
   Future<SyncResult> syncFromRemote(String userId) async {
     try {
-      _logger.info(
-        'Syncing templates from Supabase',
-        context: 'TEMPLATES_REPO',
-      );
+      _report.info('Syncing templates from Supabase', area: 'TEMPLATES_REPO');
 
       final response = await _supabase
           .from('templates')
@@ -67,19 +64,19 @@ class TemplatesRepository with SyncableRepository {
       await _syncToLocalDatabase(response as List<dynamic>);
       await setLastSyncTime(DateTime.now());
 
-      _logger.info(
+      _report.info(
         'Templates synced successfully',
-        context: 'TEMPLATES_REPO',
+        area: 'TEMPLATES_REPO',
         data: {'count': response.length},
       );
 
       return SyncResult.successful(response.length);
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to sync templates from remote',
-        context: 'TEMPLATES_REPO',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'TEMPLATES_REPO',
+        message: 'Failed to sync templates from remote',
       );
       return SyncResult.failed(e.toString());
     }
@@ -214,7 +211,10 @@ class TemplatesRepository with SyncableRepository {
 /// Riverpod provider for TemplatesRepository
 final templatesRepositoryProvider = Provider<TemplatesRepository>((ref) {
   final database = ref.watch(appDatabaseProvider);
-  final logger = ref.watch(appLoggerProvider);
   final supabase = ref.watch(appExternalDepsProvider).supabaseClient;
-  return TemplatesRepository(supabase, database, logger: logger);
+  return TemplatesRepository(
+    supabase,
+    database,
+    report: ref.watch(reportProvider),
+  );
 });

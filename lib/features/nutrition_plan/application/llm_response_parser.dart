@@ -6,8 +6,7 @@ import '../domain/transition_identity.dart';
 import 'food_data_transformation_service.dart';
 import '../../activities/domain/brick_metadata.dart';
 import '../../../shared/domain/activity_type.dart';
-import '../../../shared/services/logging_service.dart';
-import '../../../shared/services/app_external_deps.dart';
+import '../../../shared/services/report/report.dart';
 
 /// Service for parsing LLM edge function responses into NutritionPlan objects
 class LLMResponseParser {
@@ -16,7 +15,7 @@ class LLMResponseParser {
 
   FoodDataTransformationService get _transformationService =>
       ref.read(foodDataTransformationServiceProvider);
-  AppLogger get _logger => ref.read(appExternalDepsProvider).logger;
+  Report get _report => ref.read(reportProvider);
 
   /// Convert LLM response format to our NutritionPlan domain model
   /// Made public to allow reuse for algorithmic fallback responses
@@ -175,10 +174,13 @@ class LLMResponseParser {
         );
 
     // CRITICAL VALIDATION: Log the discrepancy between macro targets and food item totals
-    _logger.error(
-      'LLM Response Validation: Food Items vs Macro Targets Comparison',
-      context: 'LLMResponseParser',
-      data: {
+    _report.fault(
+      LoggedFault(
+        'LLM Response Validation: Food Items vs Macro Targets Comparison',
+        context: 'LLMResponseParser',
+      ),
+      area: 'LLMResponseParser',
+      extra: {
         'macro_targets': {
           'total_sodium_mg': totalTargetSodium,
           'total_fluids_ml': totalTargetFluids,
@@ -314,15 +316,16 @@ class LLMResponseParser {
       createdAt: DateTime.now(),
     );
 
-    _logger.nutritionPlan(
+    _report.info(
       'Nutrition plan creation completed',
-      planId: plan.id,
+      area: 'nutrition_plan',
       data: {
         'totalFoodItems':
             beforeItems.length + duringItems.length + afterItems.length,
         'beforeItems': beforeItems.length,
         'duringItems': duringItems.length,
         'afterItems': afterItems.length,
+        'plan_id': plan.id,
       },
     );
 

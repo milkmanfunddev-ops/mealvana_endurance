@@ -11,8 +11,10 @@ import 'package:mealvana_endurance/features/nutrition_plan/presentation/provider
 import 'package:mealvana_endurance/features/nutrition_plan/presentation/providers/activity_detail_state.dart';
 import 'package:mealvana_endurance/features/nutrition_plan/presentation/providers/swap_food_controller.dart';
 import 'package:mealvana_endurance/shared/services/app_external_deps.dart';
-import 'package:mealvana_endurance/shared/services/logging_service.dart';
+import 'package:mealvana_endurance/shared/services/report/report.dart';
 import 'package:mocktail/mocktail.dart';
+
+import '../../../../helpers/fakes/recording_report.dart';
 
 // Regression tests for two fuel-log flaws surfaced by the ADD FOOD fix
 // (bug 3a3e3fdb wrote added foods to fuelLogData, making these visible):
@@ -29,8 +31,6 @@ import 'package:mocktail/mocktail.dart';
 //    discriminating on subPhaseType + isAdded.
 
 class MockAppExternalDeps extends Mock implements AppExternalDeps {}
-
-class MockAppLogger extends Mock implements AppLogger {}
 
 class MockAuthService extends Mock implements AuthService {}
 
@@ -75,15 +75,12 @@ Food _gel() {
 
 void main() {
   late MockAppExternalDeps mockDeps;
-  late MockAppLogger mockLogger;
   late MockAuthService mockAuthService;
 
   setUp(() {
     mockDeps = MockAppExternalDeps();
-    mockLogger = MockAppLogger();
     mockAuthService = MockAuthService();
 
-    when(() => mockDeps.logger).thenReturn(mockLogger);
     when(() => mockAuthService.getCurrentUser()).thenAnswer((_) async => null);
     when(
       () => mockAuthService.getFoodPreferences(any()),
@@ -94,6 +91,7 @@ void main() {
     final container = ProviderContainer(
       overrides: [
         appExternalDepsProvider.overrideWithValue(mockDeps),
+        reportProvider.overrideWithValue(RecordingReport()),
         authServiceProvider.overrideWithValue(mockAuthService),
         activityDetailControllerProvider(
           activityId: _activityId,

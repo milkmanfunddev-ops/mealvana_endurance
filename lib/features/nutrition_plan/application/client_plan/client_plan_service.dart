@@ -5,8 +5,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../../../shared/domain/activity_type.dart';
-import '../../../../shared/services/app_external_deps.dart';
-import '../../../../shared/services/logging_service.dart';
 import '../../../../shared/services/report/report.dart';
 import '../../../auth/application/auth_service.dart';
 import '../../../auth/domain/user_preferences.dart';
@@ -52,7 +50,6 @@ class ClientPlanService {
       _ref.read(formulaPinsRepositoryProvider);
   PersonalFormulasRepository get _personalFormulasRepo =>
       _ref.read(personalFormulasRepositoryProvider);
-  AppLogger get _logger => _ref.read(appExternalDepsProvider).logger;
   Report get _report => _ref.read(reportProvider);
   static const String _area = 'nutrition_plan';
 
@@ -75,9 +72,9 @@ class ClientPlanService {
     final uuid = const Uuid();
     final now = DateTime.now();
 
-    _logger.info(
+    _report.info(
       'Client solver: generating plan for ${activityType.displayName}',
-      context: 'CLIENT_PLAN_SERVICE',
+      area: 'CLIENT_PLAN_SERVICE',
     );
 
     // Each phase runs its solver, then the electrolyte<->water pairing
@@ -271,15 +268,18 @@ class ClientPlanService {
         fluidCeilingMl: fluidCeilingMl,
       );
       if (result.conflict != null) {
-        _logger.warning(
-          '$phase phase: electrolyte selected with no water alongside it and '
-          'the pairing could not be enforced (${result.conflict!.name})',
-          context: 'CLIENT_PLAN_SERVICE',
+        _report.degraded(
+          LoggedFault(
+            '$phase phase: electrolyte selected with no water alongside it and '
+            'the pairing could not be enforced (${result.conflict!.name})',
+            context: 'CLIENT_PLAN_SERVICE',
+          ),
+          area: 'CLIENT_PLAN_SERVICE',
         );
       } else if (result.changed) {
-        _logger.info(
+        _report.info(
           '$phase phase: added water alongside a dry electrolyte item',
-          context: 'CLIENT_PLAN_SERVICE',
+          area: 'CLIENT_PLAN_SERVICE',
         );
       }
       return result.items;
@@ -328,9 +328,9 @@ class ClientPlanService {
         hoursBefore: timeBeforeRunHours,
       );
       if (templateResult != null && templateResult.isNotEmpty) {
-        _logger.info(
+        _report.info(
           'Before phase: using template-based selection (${templateResult.length} foods)',
-          context: 'CLIENT_PLAN_SERVICE',
+          area: 'CLIENT_PLAN_SERVICE',
         );
         return templateResult;
       }
@@ -412,9 +412,12 @@ class ClientPlanService {
       );
 
       if (foods.isEmpty) {
-        _logger.warning(
-          'No foods available for during phase (rule solver)',
-          context: 'CLIENT_PLAN_SERVICE',
+        _report.degraded(
+          LoggedFault(
+            'No foods available for during phase (rule solver)',
+            context: 'CLIENT_PLAN_SERVICE',
+          ),
+          area: 'CLIENT_PLAN_SERVICE',
         );
         return [];
       }
@@ -441,9 +444,9 @@ class ClientPlanService {
 
       if (selections.isEmpty) {
         // Rule solver produced nothing — fall back to generic greedy
-        _logger.info(
+        _report.info(
           'During rule solver produced no selections; falling back to greedy',
-          context: 'CLIENT_PLAN_SERVICE',
+          area: 'CLIENT_PLAN_SERVICE',
         );
         return _solvePhase(
           userId: userId,
@@ -453,9 +456,9 @@ class ClientPlanService {
         );
       }
 
-      _logger.info(
+      _report.info(
         'During phase (rule solver): ${selections.length} foods selected',
-        context: 'CLIENT_PLAN_SERVICE',
+        area: 'CLIENT_PLAN_SERVICE',
       );
 
       return selections.map((s) {
@@ -573,10 +576,10 @@ class ClientPlanService {
         ...extras,
       ];
       if (items.isEmpty) return null;
-      _logger.info(
+      _report.info(
         'Client solver: honoring pinned personal formula "${match.name}" '
         'for ${phase.wireValue} (${items.length} foods)',
-        context: 'CLIENT_PLAN_SERVICE',
+        area: 'CLIENT_PLAN_SERVICE',
       );
       return items;
     } catch (e, stackTrace) {
@@ -816,10 +819,13 @@ class ClientPlanService {
           );
           extras.add(f.toFoodItemData(servings));
         } else {
-          _logger.warning(
-            'Pin backfill: ${fluidDeficit.round()}ml fluid short but no '
-            'water source available',
-            context: 'CLIENT_PLAN_SERVICE',
+          _report.degraded(
+            LoggedFault(
+              'Pin backfill: ${fluidDeficit.round()}ml fluid short but no '
+              'water source available',
+              context: 'CLIENT_PLAN_SERVICE',
+            ),
+            area: 'CLIENT_PLAN_SERVICE',
           );
         }
       }
@@ -843,9 +849,12 @@ class ClientPlanService {
       );
 
       if (foods.isEmpty) {
-        _logger.warning(
-          'No foods available for $phase phase',
-          context: 'CLIENT_PLAN_SERVICE',
+        _report.degraded(
+          LoggedFault(
+            'No foods available for $phase phase',
+            context: 'CLIENT_PLAN_SERVICE',
+          ),
+          area: 'CLIENT_PLAN_SERVICE',
         );
         return [];
       }
@@ -858,9 +867,9 @@ class ClientPlanService {
         config: config,
       );
 
-      _logger.info(
+      _report.info(
         '$phase phase: ${selections.length} foods selected',
-        context: 'CLIENT_PLAN_SERVICE',
+        area: 'CLIENT_PLAN_SERVICE',
       );
 
       return selections.map((s) {

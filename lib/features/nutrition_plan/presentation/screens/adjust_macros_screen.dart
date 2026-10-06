@@ -14,7 +14,6 @@ import '../../../../shared/services/report/report.dart';
 import '../providers/macro_targets_controller.dart';
 import '../../../activities/domain/brick_metadata.dart';
 import '../../domain/macro_targets.dart' as domain;
-import '../../../../core/utils/debug_logger.dart';
 import '../../../../shared/domain/activity_type.dart';
 import 'package:mealvana_endurance/features/nutrition_plan/domain/run_parameters.dart';
 import 'package:mealvana_endurance/shared/utils/unit_formatter.dart';
@@ -31,6 +30,11 @@ class AdjustMacrosScreen extends ConsumerStatefulWidget {
 }
 
 class _AdjustMacrosScreenState extends ConsumerState<AdjustMacrosScreen> {
+  /// `ref` throws once the widget is disposed; late async callbacks fall back
+  /// to the global instance (the one `reportProvider` built).
+  Report get _report =>
+      mounted ? ref.read(reportProvider) : SentryReport.global;
+
   @override
   void dispose() {
     // ⚠️ IMPORTANT: Cannot use ref.read() in dispose() - violates Riverpod safety
@@ -113,8 +117,12 @@ class _AdjustMacrosScreenState extends ConsumerState<AdjustMacrosScreen> {
     MacroTargetsState state,
   ) {
     if (state.macroTargets == null) {
-      DebugLogger.error(
-        '❌ ADJUST MACROS: Showing NO DATA state - this should not happen!',
+      _report.fault(
+        LoggedFault(
+          '❌ ADJUST MACROS: Showing NO DATA state - this should not happen!',
+          context: 'nutrition_plan',
+        ),
+        area: 'nutrition_plan',
       );
       return _buildNoDataState(context);
     }
@@ -595,7 +603,6 @@ class _AdjustMacrosScreenState extends ConsumerState<AdjustMacrosScreen> {
   }
 
   Future<void> _handleCreatePlan(BuildContext context, WidgetRef ref) async {
-    final logger = ref.read(appExternalDepsProvider).logger;
     // Before the first await: a catch after unmount cannot touch `ref`.
     final report = ref.read(reportProvider);
     ref
@@ -607,10 +614,10 @@ class _AdjustMacrosScreenState extends ConsumerState<AdjustMacrosScreen> {
         );
 
     final macroStateBefore = ref.read(macroTargetsControllerProvider).value;
-    logger.warning(
-      'Coach create-plan tapped',
-      context: 'ADJUST_MACROS_SCREEN',
-      data: {
+    report.degraded(
+      LoggedFault('Coach create-plan tapped', context: 'ADJUST_MACROS_SCREEN'),
+      area: 'ADJUST_MACROS_SCREEN',
+      extra: {
         'activityId': macroStateBefore?.activityId,
         'eventId': macroStateBefore?.eventId,
         'forUserId': macroStateBefore?.forUserId,
@@ -647,10 +654,13 @@ class _AdjustMacrosScreenState extends ConsumerState<AdjustMacrosScreen> {
 
       if (isCoachView) {
         // Force a fresh route load so we don't surface stale pre-generation state.
-        logger.warning(
-          'Coach create-plan navigating to fresh activity detail route',
-          context: 'ADJUST_MACROS_SCREEN',
-          data: {'activityId': activityId, 'isCoachView': true},
+        report.degraded(
+          LoggedFault(
+            'Coach create-plan navigating to fresh activity detail route',
+            context: 'ADJUST_MACROS_SCREEN',
+          ),
+          area: 'ADJUST_MACROS_SCREEN',
+          extra: {'activityId': activityId, 'isCoachView': true},
         );
         context.go(
           '/plan',
@@ -664,25 +674,35 @@ class _AdjustMacrosScreenState extends ConsumerState<AdjustMacrosScreen> {
         showPlanAfterSuccessfulCreate(context, activityId: activityId);
       }
     } else if (activityId == null) {
-      DebugLogger.error(
-        '🚫 ADJUST_MACROS: Cannot navigate - activityId is null!',
+      report.fault(
+        LoggedFault(
+          '🚫 ADJUST_MACROS: Cannot navigate - activityId is null!',
+          context: 'nutrition_plan',
+        ),
+        area: 'nutrition_plan',
       );
       if (context.mounted) {
         final asyncState = ref.read(macroTargetsControllerProvider);
         final message =
             asyncState.error?.toString().replaceFirst('Exception: ', '') ??
             'Could not save nutrition plan. Please try again.';
-        logger.error(
-          'Create-plan returned null activityId',
-          context: 'ADJUST_MACROS_SCREEN',
-          data: {
+        report.fault(
+          asyncState.error ??
+              const LoggedFault(
+                'Create-plan returned null activityId',
+                context: 'ADJUST_MACROS_SCREEN',
+              ),
+          stackTrace: asyncState.stackTrace,
+          area: 'ADJUST_MACROS_SCREEN',
+          extra: {
             'activityId': macroStateBefore?.activityId,
             'eventId': macroStateBefore?.eventId,
             'forUserId': macroStateBefore?.forUserId,
             'providerError': asyncState.error?.toString(),
           },
-          error: asyncState.error,
-          stackTrace: asyncState.stackTrace,
+          message: asyncState.error == null
+              ? null
+              : 'Create-plan returned null activityId',
         );
         MealvanaSnackbar.showError(context, message);
       }

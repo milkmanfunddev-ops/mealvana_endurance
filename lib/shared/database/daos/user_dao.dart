@@ -9,6 +9,8 @@ import 'package:mealvana_endurance/features/nutrition_plan/domain/nutrition_targ
 import '../../../features/onboarding/domain/dietary_preference.dart';
 import '../../../features/onboarding/domain/allergy.dart';
 import '../../../features/daily_macros/domain/enums.dart';
+import '../../services/report/decode_issue_report.dart';
+import '../../services/report/report.dart';
 
 part 'user_dao.g.dart';
 
@@ -418,8 +420,11 @@ class UserDao extends DatabaseAccessor<AppDatabase> with _$UserDaoMixin {
       // Contact information
       email: dbUser.email,
       // Nutrition target overrides
+      // A Drift DAO has no injection point; the global Report is the one the
+      // provider built.
       nutritionTargetOverrides: NutritionTargetOverrides.fromJsonString(
         dbUser.nutritionTargetOverrides,
+        onIssue: SentryReport.global.decodeIssue('nutrition_plan'),
       ),
       // Daily macro calculation fields
       bodyFatPct: dbUser.bodyFatPct,
