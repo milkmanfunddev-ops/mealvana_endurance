@@ -22,13 +22,10 @@
 //     the error leaves the block, so the caller owns it;
 //   - a `Report` call: `.fault(`, `.degraded(`, `.note(`, `report.`,
 //     `_report.`, `Report.`;
-//   - a legacy alias accepted until ticket 10 retires it: `reportCriticalError`,
-//     `reportDatabaseError`, `reportNetworkError`, `reportEdgeFunctionError`,
-//     `captureMessage`, `_sentry.`, `sentry.`, `Sentry.capture`, `logger.error`,
-//     `logger.warning`, `logger.fatal` (`_logger.` forms included by substring),
-//     `DebugLogger.error`, `DebugLogger.warning`, `AppLogger`.
-// `logger.info` / `logger.debug` / `DebugLogger.info` are not reports: they
-// write a structured log and no event, which is the silent path rule D9 bans.
+//   - a domain decoder's `onIssue(` callback (`DecodeIssue`), which the data
+//     layer binds to `report.decodeIssue(area)`.
+// `info` / `debug` are not reports: they write a structured log and no
+// event, which is the silent path rule D9 bans.
 //
 // Prints. `print(` or `debugPrint(` anywhere inside a catch block is a
 // finding of its own, whether or not the block also reports.
@@ -98,26 +95,10 @@ const List<String> reportCalls = [
   'report.',
   '_report.',
   'Report.',
-];
-
-/// Legacy names that still reach `Report` (via the shims in
-/// `sentry_reporter.dart`, `logging_service.dart`, `debug_logger.dart`).
-/// Ticket 10 deletes the shims and this list together.
-const List<String> legacyAliases = [
-  'reportCriticalError',
-  'reportDatabaseError',
-  'reportNetworkError',
-  'reportEdgeFunctionError',
-  'captureMessage',
-  '_sentry.',
-  'sentry.',
-  'Sentry.capture',
-  'logger.error',
-  'logger.warning',
-  'logger.fatal',
-  'DebugLogger.error',
-  'DebugLogger.warning',
-  'AppLogger',
+  // A pure domain decoder hands its issue to the data layer's `DecodeIssue`
+  // callback (`lib/shared/domain/decode_issue.dart`), which is bound to
+  // `report.decodeIssue(area)`; the call is the report.
+  'onIssue(',
 ];
 
 const List<String> _prints = ['print(', 'debugPrint('];
@@ -133,9 +114,6 @@ bool bodyIsReported(String body) {
     if (body.contains(p)) return true;
   }
   for (final p in reportCalls) {
-    if (body.contains(p)) return true;
-  }
-  for (final p in legacyAliases) {
     if (body.contains(p)) return true;
   }
   return false;

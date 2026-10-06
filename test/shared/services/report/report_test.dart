@@ -13,13 +13,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:logger/logger.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:mealvana_endurance/core/utils/debug_logger.dart';
 import 'package:mealvana_endurance/shared/services/analytics/analytics_tracker.dart';
 import 'package:mealvana_endurance/shared/services/report/report_log.dart';
-import 'package:mealvana_endurance/shared/services/logging_service.dart';
 import 'package:mealvana_endurance/shared/services/report/report.dart';
-import 'package:mealvana_endurance/shared/services/sentry/sentry_reporter.dart';
 
 /// Collects every envelope the SDK would have sent.
 class CapturingTransport implements Transport {
@@ -72,12 +68,12 @@ class ThrowingAnalytics extends NoopAnalyticsTracker {
       throw StateError('mixpanel down');
 }
 
-/// Behaves like `MixpanelAnalyticsTracker`: when the SDK call fails it logs
-/// the failure through the logger alias, which lands back in Report.
+/// Behaves like `MixpanelAnalyticsTracker`: when the SDK call fails it
+/// reports the failure through Report, which lands back in the same service.
 class ReentrantAnalytics extends NoopAnalyticsTracker {
-  ReentrantAnalytics(this.logger);
+  ReentrantAnalytics(this.report);
 
-  final AppLogger logger;
+  final Report report;
   int calls = 0;
 
   @override
@@ -86,7 +82,10 @@ class ReentrantAnalytics extends NoopAnalyticsTracker {
     Map<String, dynamic>? properties,
   }) async {
     calls++;
-    logger.error('Failed to track $eventName', error: StateError('down'));
+    await report.fault(
+      StateError('down'),
+      message: 'Failed to track $eventName',
+    );
   }
 }
 
@@ -241,7 +240,7 @@ void main() {
           console: false,
           consoleLogger: quietConsole(),
         );
-        analytics = ReentrantAnalytics(PrettyAppLogger(report: r));
+        analytics = ReentrantAnalytics(r);
 
         await r.fault(StateError('first'));
         await Future<void>.delayed(Duration.zero);
@@ -457,130 +456,6 @@ void main() {
     expect(report.isEnabled, isTrue);
   });
 
-  group('legacy aliases route through Report', () {
-    late ProviderContainer container;
-
-    setUp(() {
-      container = ProviderContainer(
-        overrides: [
-          analyticsTrackerProvider.overrideWithValue(FakeAnalytics(tracked)),
-        ],
-      );
-      addTearDown(container.dispose);
-    });
-
-    test('the provider graph builds without a cycle and shares one Report', () {
-      final r = container.read(reportProvider);
-      container.read(appLoggerProvider);
-      container.read(sentryReporterProvider);
-      expect(r, isA<SentryReport>());
-      expect(SentryReport.global, same(r));
-    });
-
-    test('logger.error is a Fault, logger.warning is Degraded', () async {
-      final logger = container.read(appLoggerProvider);
-      logger.error('plan save failed', context: 'PLAN', error: StateError('x'));
-      logger.warning('offline', context: 'SYNC');
-      await Future<void>.delayed(Duration.zero);
-
-      final events = transport.events;
-      expect(events, hasLength(2));
-      final fault = events.firstWhere((e) => e.level == SentryLevel.error);
-      expect(fault.tags, containsPair('area', 'plan'));
-      expect(fault.message?.formatted, 'plan save failed');
-      final degraded = events.firstWhere((e) => e.level == SentryLevel.warning);
-      expect(degraded.throwable, isA<LoggedFault>());
-      expect(degraded.throwable.toString(), 'offline');
-      expect(tracked, hasLength(2));
-    });
-
-    test('logger.info and debug are logs, not events', () async {
-      final logger = container.read(appLoggerProvider);
-      logger.info('hello', context: 'X');
-      logger.debug('world');
-      await Future<void>.delayed(Duration.zero);
-      // ignore: invalid_use_of_internal_member
-      await Sentry.currentHub.options.telemetryProcessor.flush();
-      await Future<void>.delayed(Duration.zero);
-      expect(transport.events, isEmpty);
-      expect(await transport.logs(), hasLength(2));
-    });
-
-    test('SentryReporter: network is Degraded, database is a Fault, '
-        'captureMessage keeps its fingerprint', () async {
-      final sentry = container.read(sentryReporterProvider);
-      await sentry.reportNetworkError(
-        Exception('500'),
-        url: 'https://x/fn',
-        statusCode: 500,
-      );
-      await sentry.reportDatabaseError(
-        StateError('bad row'),
-        operation: 'insert',
-        table: 'meals',
-      );
-      await sentry.captureMessage(
-        'sweep stale',
-        level: SentryLevel.warning,
-        fingerprint: const ['raw_retention_sweep_stale'],
-      );
-
-      final events = transport.events;
-      expect(events, hasLength(3));
-      final network = events.firstWhere((e) => e.tags?['area'] == 'network');
-      expect(network.level, SentryLevel.warning);
-      expect(network.tags, containsPair('status_code', '500'));
-      final db = events.firstWhere((e) => e.tags?['area'] == 'database');
-      expect(db.level, SentryLevel.error);
-      expect(db.tags, containsPair('table', 'meals'));
-      final msg = events.firstWhere(
-        (e) => e.throwable.toString() == 'sweep stale',
-      );
-      expect(msg.fingerprint, ['raw_retention_sweep_stale']);
-    });
-
-    test(
-      'SentryReporter user context and breadcrumbs reach the event',
-      () async {
-        final sentry = container.read(sentryReporterProvider);
-        await sentry.setUserContext(deviceId: 'dev-1', appVersion: '1.0');
-        sentry.addBreadcrumb(message: 'opened plan', category: 'nav');
-        await sentry.reportCriticalError(StateError('x'), context: 'PLAN');
-        final event = transport.events.single;
-        expect(event.user?.id, 'dev-1');
-        expect(event.breadcrumbs!.single.message, 'opened plan');
-        expect(event.tags, containsPair('area', 'plan'));
-        await sentry.clearUserContext();
-      },
-    );
-
-    test(
-      'the default global Report reports before any provider builds',
-      () async {
-        SentryReport.global = SentryReport(
-          analytics: () => const NoopAnalyticsTracker(),
-          logStorage: storage,
-          console: false,
-          consoleLogger: quietConsole(),
-        );
-        DebugLogger.error('early', error: StateError('x'));
-        await Future<void>.delayed(Duration.zero);
-        expect(transport.events.single.level, SentryLevel.error);
-      },
-    );
-
-    test('DebugLogger statics go through the global Report', () async {
-      container.read(reportProvider);
-      DebugLogger.error('sync bailed', error: StateError('x'));
-      DebugLogger.warning('skipped step');
-      await Future<void>.delayed(Duration.zero);
-      final events = transport.events;
-      expect(
-        events.map((e) => e.level),
-        containsAll([SentryLevel.error, SentryLevel.warning]),
-      );
-    });
-  });
 }
 
 class _NullOutput extends LogOutput {

@@ -171,8 +171,9 @@ class SentryReport implements Report {
     if (_canMark(error)) _captured[error] = true;
   }
 
-  /// The instance the static legacy loggers (`DebugLogger`) forward to until
-  /// their callers are migrated. Set by [reportProvider]; falls back to a
+  /// The instance code with no injection point reaches for (domain-adjacent
+  /// static helpers, widgets without a `ref`, the bootstrap before the
+  /// provider graph exists). Set by [reportProvider]; falls back to a
   /// Sentry-only instance so nothing is lost before the provider builds.
   static Report global = SentryReport(
     analytics: () => const NoopAnalyticsTracker(),
@@ -644,11 +645,10 @@ class NoopReport implements Report {
 }
 
 /// The app's `Report`. Analytics is looked up lazily so that the analytics
-/// tracker may itself depend on the logger alias without a provider cycle.
+/// tracker may itself report through `Report` without a provider cycle.
 ///
-/// Building it also points [SentryReport.global] at this instance: the static
-/// `DebugLogger` alias has no `ref` and reads the global. That side effect
-/// goes with the alias (ticket 10 of `.scratch/sentry/`).
+/// Building it also points [SentryReport.global] at this instance, so code
+/// with no injection point reports through the same hub and analytics.
 final Provider<Report> reportProvider = Provider<Report>((ref) {
   final report = SentryReport(
     analytics: () => ref.read(analyticsTrackerProvider),
