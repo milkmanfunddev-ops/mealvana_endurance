@@ -171,6 +171,56 @@ MetricKit and forwarding each payload into the Sentry pipeline we already have.
   from the target fails only at the *build* step with "Cannot find X in scope" —
   if you add native files, add them to the target too.
 
+## Debug symbols, mappings and source maps (2026-10-06, sentry ticket 14)
+
+Projects: org `milkman-24`, prod `mealvana-endurance`, dev `mealvana-endurance-dev`.
+The plugin (`sentry_dart_plugin`, `sentry:` block in `pubspec.yaml`) names no
+project on purpose: `SENTRY_PROJECT` comes from the environment, and a run
+without it refuses instead of defaulting to prod. The release name must match
+what `bootstrap.dart` reports at runtime, `mealvana_endurance@<version>+<build>`,
+where `<build>` is the build number the cut actually used (CI resolves it per
+cut; pubspec's own `+N` is not it — that mismatch is why releases such as
+`1.29.0+6` sat in both projects with zero events while real events arrived as
+`1.29.0+148`, unreleased).
+
+Where it runs:
+- **Codemagic, release workflows only** (`prod-ios`, `prod-android`, and the
+  trigger-disabled `main-*`): the `&upload_sentry_symbols` step in
+  `codemagic.yaml`. It fails the build on a missing `SENTRY_AUTH_TOKEN` or a
+  failed upload. The develop auto-cut (`dev-ios`) and the dev lanes do not run
+  it; `test/shared/ci_config_contract_test.dart` enforces both.
+- **Android R8 mapping**: `sentry_dart_plugin` cannot upload `mapping.txt`
+  (its `debug-files upload` has no proguard type). The Sentry Gradle plugin in
+  `android/app/build.gradle.kts` runs in UUID-only mode (no upload, no SDK
+  auto-install, no instrumentation); the Codemagic step reads the UUID from the
+  bundle's `sentry-debug-meta.properties` and runs `sentry-cli upload-proguard
+  --uuid`. Check Project Settings → ProGuard in Sentry after a release cut.
+- **Web source maps**: `scripts/build_web.sh` builds with `--source-maps`,
+  uploads when the Vercel project carries `SENTRY_AUTH_TOKEN` + `SENTRY_PROJECT`
+  (per Vercel environment), then deletes `build/web/*.map` so maps are never
+  served. Without the token it logs and skips.
+- **After a Shorebird patch**: a patch is a new Dart snapshot with new symbols;
+  run the command below from the backport worktree once the patch has shipped.
+
+One-off / local / post-patch upload:
+
+```bash
+# From the tree the build came from, after the build (dSYM in build/ios/archive,
+# Android symbols in build/app/intermediates). Token: ~/.sentryclirc [auth] token,
+# or the Codemagic mealvana_prod group's SENTRY_AUTH_TOKEN.
+export SENTRY_AUTH_TOKEN=<token>
+export SENTRY_PROJECT=mealvana-endurance        # or mealvana-endurance-dev
+export SENTRY_RELEASE=mealvana_endurance@1.29.0+148   # the build's own number
+export SENTRY_DIST=148
+dart run sentry_dart_plugin
+```
+
+Proof run 2026-10-06: `dart run sentry_dart_plugin` from this worktree with
+`SENTRY_PROJECT=mealvana-endurance-dev` created/finalized release
+`mealvana_endurance@1.29.0+6` in the dev project and associated commit
+`8294d09b`; no debug files were present locally (no release build), so the
+first real dSYM/mapping upload is the next `release/*` cut.
+
 ## Runbook / Commands
 - Find Sentry usage in app code:
 ```bash

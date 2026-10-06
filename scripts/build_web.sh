@@ -144,9 +144,13 @@ echo "========================================"
 
 if [ "$BUILD_MODE" = "release" ]; then
   # Note: NOT using --wasm flag because sqlite3/drift packages use dart:ffi which is incompatible with Wasm
-  echo "Running: $FLUTTER build web --release --pwa-strategy=none -t lib/main_web.dart --dart-define-from-file=.dart_defines.json"
+  # --source-maps writes main.dart.js.map next to the bundle so Sentry can
+  # read web stacks as Dart (sentry ticket 14). The map is uploaded below and
+  # then deleted from build/web so it is never served.
+  echo "Running: $FLUTTER build web --release --source-maps --pwa-strategy=none -t lib/main_web.dart --dart-define-from-file=.dart_defines.json"
   $FLUTTER build web \
     --release \
+    --source-maps \
     --pwa-strategy=none \
     -t lib/main_web.dart \
     --dart-define-from-file=.dart_defines.json 2>&1
@@ -156,6 +160,28 @@ if [ "$BUILD_MODE" = "release" ]; then
     echo "ERROR: Flutter build failed with exit code $BUILD_EXIT_CODE"
     exit $BUILD_EXIT_CODE
   fi
+
+  # Source-map upload to Sentry. Runs only when the Vercel project carries a
+  # SENTRY_AUTH_TOKEN; the plugin takes org from pubspec.yaml and the project
+  # from SENTRY_PROJECT (set per Vercel environment: mealvana-endurance for
+  # production, mealvana-endurance-dev for preview). The release name is the
+  # plugin's default, mealvana_endurance@<pubspec version>, which is what the
+  # web SDK reports at runtime (package_info_plus reads version.json).
+  # A set token with a failed upload fails the deploy on purpose: a web
+  # release whose maps did not land is one whose errors cannot be read.
+  if [ -n "${SENTRY_AUTH_TOKEN:-}" ]; then
+    if [ -z "${SENTRY_PROJECT:-}" ]; then
+      echo "ERROR: SENTRY_AUTH_TOKEN is set but SENTRY_PROJECT is not; refusing to guess a project."
+      exit 1
+    fi
+    DART="$(dirname "$FLUTTER")/dart"
+    echo "Uploading web source maps to milkman-24/$SENTRY_PROJECT..."
+    "$DART" run sentry_dart_plugin
+  else
+    echo "SENTRY_AUTH_TOKEN not set; web source maps stay local (not uploaded)."
+  fi
+  rm -f build/web/*.map
+  echo "Removed source maps from build/web (uploaded to Sentry or discarded)."
 else
   $FLUTTER build web \
     --profile \

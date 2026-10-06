@@ -24,6 +24,10 @@ plugins {
     id("org.jetbrains.kotlin.android") version "2.2.20" apply false
     // Google Services plugin for Firebase (required for OneSignal push notifications)
     id("com.google.gms.google-services") version "4.4.2" apply false
+    // Sentry Gradle plugin: stamps an R8 mapping UUID into the bundle so the
+    // mapping.txt that codemagic.yaml's &upload_sentry_symbols uploads can be
+    // matched to events. Upload itself is OFF here (see app/build.gradle.kts).
+    id("io.sentry.android.gradle") version "6.23.0" apply false
 }
 
 include(":app")

@@ -305,8 +305,20 @@ patrol:
   ios:
     bundle_id: com.milkman.mealvanaendurance
 
+# sentry_dart_plugin (`dart run sentry_dart_plugin`). No `project:` on
+# purpose: the plugin takes SENTRY_PROJECT from the environment, and a run
+# without it refuses instead of defaulting to prod. Per flavor:
+#   prod  SENTRY_PROJECT=mealvana-endurance
+#   dev   SENTRY_PROJECT=mealvana-endurance-dev
+# SENTRY_RELEASE must match the SDK's runtime release
+# (mealvana_endurance@<version>+<build>, bootstrap.dart); CI's build number is
+# resolved per cut, so the Codemagic step sets it — see codemagic.yaml
+# &upload_sentry_symbols and docs/technical/sentry-integration.md for the
+# local/Shorebird-patch command. Builds are not obfuscated (no --obfuscate in
+# codemagic.yaml), so no dart_symbol_map_path. Android R8 mapping goes through
+# the Sentry Gradle plugin's UUID + sentry-cli upload-proguard, not this block.
 sentry:
   upload_debug_symbols: true
   upload_source_maps: true
-  project: mealvana-endurance
   org: milkman-24
+  log_level: info

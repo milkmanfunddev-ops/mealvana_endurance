@@ -4,10 +4,36 @@
 
 **Blocked by:** None (can start immediately)
 
-**Status:** ready-for-agent
+**Status:** partially built, 2026-10-06 — config, CI step, test, docs and the dev-project proof run are in; the first real dSYM/mapping/source-map upload needs the next `release/*` cut (nothing to upload locally without a release build, and `flutter build` is not run by agents).
 
-- [ ] Plugin config carries a project per flavor; a dev build's symbols upload to the dev project
-- [ ] Codemagic: symbol upload is referenced only by release workflows; the dev workflow does not run it; a missing token fails the release step
-- [ ] iOS dSYM, Android mapping and web source maps all upload for a release build (verified on the next release cut or by a one-off upload recorded in the ticket)
-- [ ] The Shorebird patch runbook includes the symbol upload step, and one patch upload was run and its Sentry artifact listed
-- [ ] No Codemagic workflow added or re-armed
+- [x] Plugin config carries a project per flavor; a dev build's symbols upload to the dev project
+- [x] Codemagic: symbol upload is referenced only by release workflows; the dev workflow does not run it; a missing token fails the release step
+- [ ] iOS dSYM, Android mapping and web source maps all upload for a release build (verified on the next release cut or by a one-off upload recorded in the ticket) — wiring in place, verification owed to the next `release/*` cut
+- [x] The Shorebird patch runbook includes the symbol upload step, and one patch upload was run and its Sentry artifact listed (proof run: release `mealvana_endurance@1.29.0+6` in `mealvana-endurance-dev`, see below; no debug files were present locally)
+- [x] No Codemagic workflow added or re-armed
+
+## Build notes (2026-10-06)
+
+Sentry projects (org `milkman-24`, from `mcp__sentry__find_projects`): prod `mealvana-endurance`, dev `mealvana-endurance-dev`.
+
+What was wrong before: `pubspec.yaml` hard-coded `project: mealvana-endurance`, so every workflow (including the develop auto-cut `dev-ios`) uploaded to prod; the step swallowed a missing token and any failure with `exit 0` / `|| echo`; and the plugin's default release name used pubspec's build number, while CI builds carry a resolved `--build-number`. Evidence in Sentry: `mealvana_endurance@1.29.0+6` exists finalized in both projects with 0 prod events, while real prod events arrive under `1.29.0+147`/`+148` (unreleased).
+
+Changed:
+- `pubspec.yaml` `sentry:` block: `project:` removed (a run without `SENTRY_PROJECT` now refuses instead of defaulting to prod), `log_level: info` added, `upload_debug_symbols` and `upload_source_maps` kept true. No `dart_symbol_map_path`: nothing in `codemagic.yaml` passes `--obfuscate`/`--split-debug-info`, so there is no Dart obfuscation map to upload.
+- `codemagic.yaml` `&upload_sentry_symbols`: `set -e`; exits 1 with a message when `SENTRY_AUTH_TOKEN` is unset; picks `SENTRY_PROJECT` from `FLUTTER_ENV` (`prod` → `mealvana-endurance`, `dev` → `mealvana-endurance-dev`, anything else fails); sets `SENTRY_ORG`, `SENTRY_RELEASE=mealvana_endurance@<pubspec version>+$BUILD_NUMBER` (falls back to pubspec's build number if no resolver ran) and `SENTRY_DIST`; runs `dart run sentry_dart_plugin` (the plugin exits non-zero on any failed sentry-cli call — checked in its `Log.processExitCode`); then, when `build/app/outputs/mapping/**/mapping.txt` exists, reads the R8 UUID from the bundle's `sentry-debug-meta.properties` and runs the plugin's downloaded `.dart_tool/pub/bin/sentry_dart_plugin/sentry-cli upload-proguard --uuid`.
+- `codemagic.yaml` workflows: `*upload_sentry_symbols` removed from `dev-ios` (the develop auto-cut) and `dev-android`; still referenced by `prod-ios`, `prod-android`, `main-ios`, `main-android`, `prod-ci-ios`, `ios-build-legacy`, `android-build-legacy`. No `triggering:` block touched, no workflow added.
+- Android R8 mapping: `sentry_dart_plugin` cannot upload `mapping.txt` (`sentry-cli debug-files upload` has no proguard type), and a manual `upload-proguard` needs a UUID the app carries. `android/settings.gradle.kts` + `android/app/build.gradle.kts` add the Sentry Gradle plugin 6.23.0 in UUID-only mode: `autoUploadProguardMapping=false`, `uploadNativeSymbols=false`, `includeSourceContext=false`, `includeDependenciesReport=false`, `autoInstallation.enabled=false` (sentry_flutter ships its own sentry-android), `tracingInstrumentation.enabled=false`. Verified by Gradle configuration only: `./gradlew :app:tasks --all` from the worktree exits 0 and registers `generateSentryProguardUuidDevRelease`/`ProdRelease`, `injectSentryDebugMetaPropertiesIntoAssets*` and `uploadSentryProguardMappings*Release` (the latter inert with auto-upload off); no `flutter build` was run.
+- Web: `scripts/build_web.sh` release build passes `--source-maps`; when `SENTRY_AUTH_TOKEN` is set it requires `SENTRY_PROJECT` and runs `dart run sentry_dart_plugin` with the cloned Flutter's `dart`, then deletes `build/web/*.map` so maps are never served. Without the token it logs and skips. The plugin's default release (`mealvana_endurance@<pubspec version>`) is what the web SDK reports (package_info_plus reads `version.json`), so no `SENTRY_RELEASE` needed there.
+- `test/shared/ci_config_contract_test.dart`, new group "symbols upload in release builds only": dev lanes (`dev-ios`, `dev-android`, `dev-ios-patch`) carry neither the step nor `sentry_dart_plugin`; `prod-ios`, `prod-android`, `main-ios`, `main-android` carry the step; the step keys the project off `FLUTTER_ENV` and names both slugs; the step's real script, run under `bash` with no `SENTRY_AUTH_TOKEN`, exits non-zero and mentions the token; `pubspec.yaml` has no `sentry.project`.
+- Docs: `docs/technical/sentry-integration.md` § "Debug symbols, mappings and source maps" (the per-flavor local command, where each upload runs, the proof run); `docs/technical/shorebird-code-push.md` § "Upload the patch's symbols to Sentry" (exact command from the backport worktree, `SENTRY_RELEASE=<the --release-version>`); `.claude/skills/shorebird-patch/SKILL.md` step 6.
+
+Proven:
+- `dart run sentry_dart_plugin` from this worktree with `SENTRY_PROJECT=mealvana-endurance-dev SENTRY_RELEASE=mealvana_endurance@1.29.0+6 SENTRY_DIST=6` and the token from `~/.sentryclirc` (there is no Sentry file under `secrets/`; `grep -ril sentry secrets/` is empty): exit 0; `releases new` + `set-commits --auto` (associated `milkmanfunddev-ops/mealvana_endurance@8294d09b`) + `finalize` on the DEV project. Debug-file and source-map phases found nothing to upload (no release artefacts in this worktree; the main clone's `build/` holds only debug-simulator OneSignal dSYMs, which the plugin's search roots do not cover). Sentry artifact: release `mealvana_endurance@1.29.0+6` in `milkman-24/mealvana-endurance-dev`.
+- Contract test: the five new cases pass. The pre-existing case "a push to develop runs the dev tests as well as the dev build" fails on this branch before and after the change (`pr-validation` is not triggered on `develop`); left as found.
+
+Owed:
+- First real upload: next `release/*` cut. Check in Sentry: Debug Files for the Runner dSYM and Android `.so`; Project Settings → ProGuard for the mapping UUID; Releases for `mealvana_endurance@<version>+<build>` matching the SDK's release.
+- `SENTRY_AUTH_TOKEN` must exist in the Codemagic `mealvana_prod` variable group (and `mealvana_dev` only if a manual `dev-android` upload is ever wanted) — the step now fails without it. Scopes: `project:releases`, `project:write`, `org:read`.
+- Vercel: set `SENTRY_AUTH_TOKEN` and `SENTRY_PROJECT` (`mealvana-endurance` for production, `mealvana-endurance-dev` for preview) on the Vercel project; until then the web build logs "not uploaded" and ships no maps.
+- Codemagic patch workflows (`prod-ios-patch`, `prod-android-patch`, `dev-ios-patch`) have no upload step and `build/` is not an artefact there; local iOS patches use the documented command, Android patch frames stay unreadable until the patch workflow grows the step.
+- The first Android release build with the Gradle plugin is the proof that `sentry-debug-meta.properties` lands where the step's `find build/app -name sentry-debug-meta.properties` looks; if it does not, the step fails loudly with the mapping present and no UUID.

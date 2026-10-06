@@ -8,6 +8,30 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
     // Google Services plugin for Firebase (required for OneSignal push notifications)
     id("com.google.gms.google-services")
+    // Sentry Gradle plugin, UUID-only mode (sentry ticket 14). See `sentry {}` below.
+    id("io.sentry.android.gradle")
+}
+
+// R8 is on for release (buildTypes.release below), so Java/Kotlin frames in
+// native-side crashes are obfuscated. Sentry matches a mapping.txt to an event
+// by a UUID the app carries; this plugin generates that UUID and writes it
+// into the bundle's sentry-debug-meta.properties. Everything else the plugin
+// can do is switched off: no upload from Gradle (that would run on every
+// build, dev cuts included, and needs the auth token at build time — the
+// release-only Codemagic step uploads with `sentry-cli upload-proguard
+// --uuid` instead), no SDK auto-install (sentry_flutter brings its own
+// sentry-android), no bytecode instrumentation.
+sentry {
+    autoUploadProguardMapping.set(false)
+    uploadNativeSymbols.set(false)
+    includeSourceContext.set(false)
+    includeDependenciesReport.set(false)
+    autoInstallation {
+        enabled.set(false)
+    }
+    tracingInstrumentation {
+        enabled.set(false)
+    }
 }
 
 android {
