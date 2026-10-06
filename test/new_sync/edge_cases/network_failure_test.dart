@@ -3,13 +3,13 @@ import 'package:mealvana_endurance/shared/data/syncable_repository.dart';
 import 'package:mealvana_endurance/shared/models/dirty_record_backup.dart';
 import 'package:mealvana_endurance/shared/models/upload_error.dart';
 import 'package:mealvana_endurance/shared/services/dirty_record_backup_service.dart';
-import 'package:mealvana_endurance/shared/services/logging_service.dart';
 import 'package:mealvana_endurance/shared/services/sync/sync_coordinator.dart';
 import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
 import 'package:riverpod/riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:io';
 
+import '../../helpers/fakes/recording_report.dart';
 import '../../helpers/mock_path_provider.dart';
 
 /// Mock repository that simulates network failures
@@ -69,8 +69,7 @@ void main() {
       tempDir = Directory.systemTemp.createTempSync('network_test_').path;
       PathProviderPlatform.instance = MockPathProvider(tempDir);
 
-      final logger = PrettyAppLogger();
-      backupService = DirtyRecordBackupService(logger: logger);
+      backupService = DirtyRecordBackupService(report: RecordingReport());
     });
 
     tearDown(() async {

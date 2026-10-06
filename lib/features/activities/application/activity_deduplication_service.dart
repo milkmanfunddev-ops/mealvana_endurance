@@ -1,6 +1,6 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../../shared/database/app_database.dart';
-import '../../../shared/services/logging_service.dart';
+import '../../../shared/services/report/report.dart';
 
 part 'activity_deduplication_service.g.dart';
 
@@ -17,7 +17,7 @@ class DeduplicationResult {
 
 @riverpod
 ActivityDeduplicationService activityDeduplicationService(Ref ref) {
-  return ActivityDeduplicationService(logger: ref.read(appLoggerProvider));
+  return ActivityDeduplicationService(report: ref.read(reportProvider));
 }
 
 /// Service for detecting and removing duplicate provider-synced activities.
@@ -26,9 +26,11 @@ ActivityDeduplicationService activityDeduplicationService(Ref ref) {
 /// This service is stateless and works with data provided by the repository layer.
 /// It does not access the database or Supabase directly.
 class ActivityDeduplicationService {
-  ActivityDeduplicationService({required AppLogger logger}) : _logger = logger;
+  ActivityDeduplicationService({Report? report}) : _reportOverride = report;
 
-  final AppLogger _logger;
+  final Report? _reportOverride;
+
+  Report get _report => _reportOverride ?? SentryReport.global;
 
   /// Identify duplicate activities from the provided list.
   /// Returns a DeduplicationResult containing keepers and duplicates to remove.
@@ -58,9 +60,9 @@ class ActivityDeduplicationService {
       }
     }
 
-    _logger.debug(
+    _report.debug(
       'Identified duplicate activities',
-      context: 'ACTIVITY_DEDUPLICATION_SERVICE',
+      area: 'activities',
       data: {
         'totalActivities': activities.length,
         'duplicatesFound': duplicates.length,

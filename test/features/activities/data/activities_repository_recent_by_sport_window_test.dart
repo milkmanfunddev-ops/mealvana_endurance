@@ -14,15 +14,13 @@ import 'package:mealvana_endurance/shared/database/app_database.dart'
     as db
     show AppDatabase;
 import 'package:mealvana_endurance/shared/domain/activity_type.dart';
-import 'package:mealvana_endurance/shared/services/logging_service.dart';
-import 'package:mealvana_endurance/shared/services/sentry/sentry_reporter.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-class MockSupabaseClient extends Mock implements SupabaseClient {}
+import '../../../helpers/fakes/recording_report.dart';
 
-class MockSentryReporter extends Mock implements SentryReporter {}
+class MockSupabaseClient extends Mock implements SupabaseClient {}
 
 class MockDedup extends Mock implements ActivityDeduplicationService {}
 
@@ -40,9 +38,8 @@ void main() {
     repository = ActivitiesRepository(
       supabase: MockSupabaseClient(),
       database: database,
-      logger: NoopAppLogger(),
-      sentry: MockSentryReporter(),
       deduplicationService: MockDedup(),
+      report: RecordingReport(),
     );
   });
   tearDown(() => database.close());

@@ -6,7 +6,7 @@ import '../../../calendar/presentation/widgets/calendar_week_view_kyle.dart';
 import '../../../calendar/presentation/widgets/calendar_month_view_kyle.dart';
 import '../../../calendar/domain/calendar_day_indicators.dart';
 import '../../../calendar/presentation/providers/calendar_selected_date_provider.dart';
-import '../../../../shared/services/logging_service.dart';
+import '../../../../shared/services/report/report.dart';
 
 class CalendarSection extends ConsumerWidget {
   const CalendarSection({
@@ -29,8 +29,12 @@ class CalendarSection extends ConsumerWidget {
         CalendarViewToggle(
           selectedMode: calendarMode,
           onModeChanged: (mode) {
-            final logger = ref.read(appLoggerProvider);
-            logger.info('[CalendarSection] Requesting mode change to: $mode');
+            ref
+                .read(reportProvider)
+                .info(
+                  'Requesting calendar mode change to: $mode',
+                  area: 'calendar',
+                );
             // Use microtask to ensure state update doesn't conflict with build
             Future.microtask(() {
               ref.read(calendarViewProvider.notifier).setView(mode);

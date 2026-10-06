@@ -2,7 +2,7 @@ import 'package:drift/drift.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../../shared/database/app_database.dart';
 import '../../../shared/database/database_provider.dart';
-import '../../../shared/services/logging_service.dart';
+import '../../../shared/services/report/report.dart';
 import '../domain/checklist_item.dart' as domain;
 
 part 'checklist_repository.g.dart';
@@ -11,16 +11,16 @@ part 'checklist_repository.g.dart';
 ChecklistRepository checklistRepository(Ref ref) {
   return ChecklistRepository(
     ref.read(appDatabaseProvider),
-    ref.read(appLoggerProvider),
+    ref.read(reportProvider),
   );
 }
 
 /// Repository for race day checklist CRUD operations
 class ChecklistRepository {
   final AppDatabase _database;
-  final AppLogger _logger;
+  final Report _report;
 
-  ChecklistRepository(this._database, this._logger);
+  ChecklistRepository(this._database, this._report);
 
   /// Get all checklist items for an event
   Future<List<domain.ChecklistItem>> getChecklistForEvent(
@@ -34,11 +34,11 @@ class ChecklistRepository {
       final items = await query.get();
       return items.map(_mapToDomain).toList();
     } catch (e, stackTrace) {
-      _logger.error(
-        'Error getting checklist for event: $eventId',
-        context: 'CHECKLIST_REPOSITORY',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'race_checklist',
+        message: 'Error getting checklist for event: $eventId',
       );
       rethrow;
     }
@@ -54,7 +54,11 @@ class ChecklistRepository {
       final items = await query.get();
       return items.isNotEmpty;
     } catch (e) {
-      _logger.error('Error checking if checklist exists', error: e);
+      _report.fault(
+        e,
+        area: 'race_checklist',
+        message: 'Error checking if checklist exists',
+      );
       return false;
     }
   }
@@ -83,16 +87,16 @@ class ChecklistRepository {
         batch.insertAll(_database.raceChecklistItemsTable, entries);
       });
 
-      _logger.info(
+      _report.info(
         'Created ${entries.length} checklist items for event $eventId',
-        context: 'CHECKLIST_REPOSITORY',
+        area: 'race_checklist',
       );
     } catch (e, stackTrace) {
-      _logger.error(
-        'Error creating checklist items',
-        context: 'CHECKLIST_REPOSITORY',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'race_checklist',
+        message: 'Error creating checklist items',
       );
       rethrow;
     }
@@ -111,16 +115,16 @@ class ChecklistRepository {
         ),
       );
 
-      _logger.debug(
+      _report.debug(
         'Toggled item $itemId to ${isChecked ? "checked" : "unchecked"}',
-        context: 'CHECKLIST_REPOSITORY',
+        area: 'race_checklist',
       );
     } catch (e, stackTrace) {
-      _logger.error(
-        'Error toggling checklist item',
-        context: 'CHECKLIST_REPOSITORY',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'race_checklist',
+        message: 'Error toggling checklist item',
       );
       rethrow;
     }
@@ -156,16 +160,16 @@ class ChecklistRepository {
             ),
           );
 
-      _logger.info(
+      _report.info(
         'Added custom item "$itemName" to event $eventId',
-        context: 'CHECKLIST_REPOSITORY',
+        area: 'race_checklist',
       );
     } catch (e, stackTrace) {
-      _logger.error(
-        'Error adding custom checklist item',
-        context: 'CHECKLIST_REPOSITORY',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'race_checklist',
+        message: 'Error adding custom checklist item',
       );
       rethrow;
     }
@@ -178,16 +182,13 @@ class ChecklistRepository {
         _database.raceChecklistItemsTable,
       )..where((tbl) => tbl.id.equals(itemId))).go();
 
-      _logger.info(
-        'Deleted checklist item $itemId',
-        context: 'CHECKLIST_REPOSITORY',
-      );
+      _report.info('Deleted checklist item $itemId', area: 'race_checklist');
     } catch (e, stackTrace) {
-      _logger.error(
-        'Error deleting checklist item',
-        context: 'CHECKLIST_REPOSITORY',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'race_checklist',
+        message: 'Error deleting checklist item',
       );
       rethrow;
     }
@@ -200,16 +201,16 @@ class ChecklistRepository {
         _database.raceChecklistItemsTable,
       )..where((tbl) => tbl.eventId.equals(eventId))).go();
 
-      _logger.info(
+      _report.info(
         'Deleted all checklist items for event $eventId',
-        context: 'CHECKLIST_REPOSITORY',
+        area: 'race_checklist',
       );
     } catch (e, stackTrace) {
-      _logger.error(
-        'Error deleting checklist for event',
-        context: 'CHECKLIST_REPOSITORY',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'race_checklist',
+        message: 'Error deleting checklist for event',
       );
       rethrow;
     }
@@ -224,16 +225,16 @@ class ChecklistRepository {
           ))
           .go();
 
-      _logger.debug(
+      _report.debug(
         'Deleted nutrition items for event $eventId',
-        context: 'CHECKLIST_REPOSITORY',
+        area: 'race_checklist',
       );
     } catch (e, stackTrace) {
-      _logger.error(
-        'Error deleting nutrition items',
-        context: 'CHECKLIST_REPOSITORY',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'race_checklist',
+        message: 'Error deleting nutrition items',
       );
       rethrow;
     }

@@ -6,7 +6,7 @@ import '../../application/gear_template_service.dart';
 import '../../../events/application/events_service.dart';
 import '../../../auth/data/user_repository.dart';
 import '../../../nutrition_plan/data/nutrition_plan_repository.dart';
-import '../../../../shared/services/logging_service.dart';
+import '../../../../shared/services/report/report.dart';
 
 part 'checklist_controller.g.dart';
 
@@ -22,7 +22,7 @@ class ChecklistController extends _$ChecklistController {
   ChecklistRepository get _repository => ref.read(checklistRepositoryProvider);
   GearTemplateService get _gearService => ref.read(gearTemplateServiceProvider);
   EventsService get _eventsService => ref.read(eventsServiceProvider);
-  AppLogger get _logger => ref.read(appLoggerProvider);
+  Report get _report => ref.read(reportProvider);
 
   @override
   Future<List<ChecklistItem>> build(String eventId) async {
@@ -38,9 +38,9 @@ class ChecklistController extends _$ChecklistController {
       final exists = await _repository.checklistExists(eventId);
 
       if (exists) {
-        _logger.debug(
+        _report.debug(
           'Loading existing checklist for event $eventId',
-          context: 'CHECKLIST_CONTROLLER',
+          area: 'race_checklist',
         );
 
         // Always regenerate nutrition items to stay in sync with current plan
@@ -51,9 +51,9 @@ class ChecklistController extends _$ChecklistController {
       }
 
       // Checklist doesn't exist - generate it
-      _logger.info(
+      _report.info(
         'Generating new checklist for event $eventId',
-        context: 'CHECKLIST_CONTROLLER',
+        area: 'race_checklist',
       );
 
       // Get user profile
@@ -77,9 +77,9 @@ class ChecklistController extends _$ChecklistController {
         eventSubtype: event.eventSubtype,
       );
 
-      _logger.info(
+      _report.info(
         'Generated ${gearItems.length} items for ${event.eventType.displayName}',
-        context: 'CHECKLIST_CONTROLLER',
+        area: 'race_checklist',
       );
 
       // Create gear checklist items in database
@@ -103,9 +103,9 @@ class ChecklistController extends _$ChecklistController {
           final nutritionItems = _extractNutritionItems(nutritionPlan);
 
           if (nutritionItems.isNotEmpty) {
-            _logger.info(
+            _report.info(
               'Generated ${nutritionItems.length} nutrition items from plan',
-              context: 'CHECKLIST_CONTROLLER',
+              area: 'race_checklist',
             );
 
             // Create nutrition checklist items
@@ -122,11 +122,11 @@ class ChecklistController extends _$ChecklistController {
       // Return the newly created items (both gear and nutrition)
       return await _repository.getChecklistForEvent(eventId);
     } catch (e, stackTrace) {
-      _logger.error(
-        'Error loading/creating checklist',
-        context: 'CHECKLIST_CONTROLLER',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'race_checklist',
+        message: 'Error loading/creating checklist',
       );
       rethrow;
     }
@@ -140,9 +140,9 @@ class ChecklistController extends _$ChecklistController {
       final userRepo = await ref.read(userRepositoryProvider.future);
       final userProfile = await userRepo.getCurrentUser();
       if (userProfile == null) {
-        _logger.warning(
-          'Cannot sync nutrition items: User not logged in',
-          context: 'CHECKLIST_CONTROLLER',
+        _report.degraded(
+          LoggedFault('Cannot sync nutrition items: User not logged in'),
+          area: 'race_checklist',
         );
         return;
       }
@@ -151,9 +151,9 @@ class ChecklistController extends _$ChecklistController {
       // Get event details
       final event = await _eventsService.getEventById(userId, eventId);
       if (event == null) {
-        _logger.warning(
-          'Cannot sync nutrition items: Event not found',
-          context: 'CHECKLIST_CONTROLLER',
+        _report.degraded(
+          LoggedFault('Cannot sync nutrition items: Event not found'),
+          area: 'race_checklist',
         );
         return;
       }
@@ -174,9 +174,9 @@ class ChecklistController extends _$ChecklistController {
           final nutritionItems = _extractNutritionItems(nutritionPlan);
 
           if (nutritionItems.isNotEmpty) {
-            _logger.info(
+            _report.info(
               'Synced ${nutritionItems.length} nutrition items from plan',
-              context: 'CHECKLIST_CONTROLLER',
+              area: 'race_checklist',
             );
 
             // Create nutrition checklist items
@@ -188,18 +188,18 @@ class ChecklistController extends _$ChecklistController {
             );
           }
         } else {
-          _logger.debug(
+          _report.debug(
             'No nutrition plan found for event $eventId',
-            context: 'CHECKLIST_CONTROLLER',
+            area: 'race_checklist',
           );
         }
       }
     } catch (e, stackTrace) {
-      _logger.error(
-        'Error syncing nutrition items',
-        context: 'CHECKLIST_CONTROLLER',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'race_checklist',
+        message: 'Error syncing nutrition items',
       );
       // Don't rethrow - allow checklist to load with gear items even if nutrition sync fails
     }
@@ -293,10 +293,10 @@ class ChecklistController extends _$ChecklistController {
     try {
       await _repository.toggleItemChecked(itemId, isChecked);
     } catch (e) {
-      _logger.error(
-        'Error toggling item $itemId',
-        context: 'CHECKLIST_CONTROLLER',
-        error: e,
+      _report.fault(
+        e,
+        area: 'race_checklist',
+        message: 'Error toggling item $itemId',
       );
       // Revert on error by refreshing from database
       ref.invalidateSelf();
@@ -324,9 +324,9 @@ class ChecklistController extends _$ChecklistController {
         category: category,
       );
 
-      _logger.info(
+      _report.info(
         'Added custom item "$itemName" to $category category',
-        context: 'CHECKLIST_CONTROLLER',
+        area: 'race_checklist',
       );
 
       // Reload checklist
@@ -344,10 +344,10 @@ class ChecklistController extends _$ChecklistController {
     try {
       await _repository.deleteItem(itemId);
     } catch (e) {
-      _logger.error(
-        'Error deleting item $itemId',
-        context: 'CHECKLIST_CONTROLLER',
-        error: e,
+      _report.fault(
+        e,
+        area: 'race_checklist',
+        message: 'Error deleting item $itemId',
       );
       // Revert on error
       ref.invalidateSelf();

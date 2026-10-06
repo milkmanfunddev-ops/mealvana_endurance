@@ -4,7 +4,7 @@ import '../../domain/activity.dart';
 import '../../domain/brick_exceptions.dart';
 import '../../application/activities_service.dart';
 import '../../data/activities_repository.dart';
-import '../../../../shared/services/logging_service.dart';
+import '../../../../shared/services/report/report.dart';
 import '../../../../shared/services/schema_recovery_service.dart';
 
 part 'brick_actions_controller.g.dart';
@@ -23,7 +23,7 @@ class BrickActionsController extends _$BrickActionsController {
   ActivitiesService get _service => ref.read(activitiesServiceProvider);
   ActivitiesRepository get _repository =>
       ref.read(activitiesRepositoryProvider);
-  AppLogger get _logger => ref.read(appLoggerProvider);
+  Report get _report => ref.read(reportProvider);
   SchemaRecoveryService get _schemaRecovery =>
       ref.read(schemaRecoveryServiceProvider);
 
@@ -56,12 +56,12 @@ class BrickActionsController extends _$BrickActionsController {
     // CRITICAL: Capture references at start to avoid "ref disposed" errors
     // if the provider rebuilds during async operations
     final service = _service;
-    final logger = _logger;
+    final report = _report;
     final schemaRecovery = _schemaRecovery;
 
-    logger.info(
+    report.info(
       'Creating brick from selected activities',
-      context: 'BRICK_ACTIONS_CONTROLLER',
+      area: 'activities',
       data: {
         'activityCount': activities.length,
         'segmentOrder': segmentOrder,
@@ -95,9 +95,9 @@ class BrickActionsController extends _$BrickActionsController {
         context: 'BRICK_ACTIONS_CONTROLLER.createBrickFromSelection',
       );
 
-      logger.info(
+      report.info(
         'Successfully created brick activity',
-        context: 'BRICK_ACTIONS_CONTROLLER',
+        area: 'activities',
         data: {
           'brickId': brickActivity.id,
           'brickType': brickActivity.activityType.name,
@@ -109,12 +109,12 @@ class BrickActionsController extends _$BrickActionsController {
       // Re-throw validation exceptions as-is
       rethrow;
     } catch (e, stackTrace) {
-      logger.error(
-        'Error creating brick from selection',
-        context: 'BRICK_ACTIONS_CONTROLLER',
-        error: e,
+      report.fault(
+        e,
         stackTrace: stackTrace,
-        data: {'activityIds': activities.map((a) => a.id).toList()},
+        area: 'activities',
+        message: 'Error creating brick from selection',
+        extra: {'activityIds': activities.map((a) => a.id).toList()},
       );
 
       // Wrap unknown errors in BrickCreationException
@@ -147,40 +147,40 @@ class BrickActionsController extends _$BrickActionsController {
     // CRITICAL: Capture references at start to avoid "ref disposed" errors
     // if the provider rebuilds during async operations
     final repository = _repository;
-    final logger = _logger;
+    final report = _report;
 
     try {
-      logger.info(
+      report.info(
         'Ungrouping brick activity',
-        context: 'BRICK_ACTIONS_CONTROLLER',
+        area: 'activities',
         data: {'brickId': brickId},
       );
 
       // Call repository to ungroup brick
       await repository.ungroupBrick(brickId);
 
-      logger.info(
+      report.info(
         'Successfully ungrouped brick activity',
-        context: 'BRICK_ACTIONS_CONTROLLER',
+        area: 'activities',
         data: {'brickId': brickId},
       );
     } on StateError catch (e, stackTrace) {
       // Brick not found in database
-      logger.error(
-        'Brick not found when attempting to ungroup',
-        context: 'BRICK_ACTIONS_CONTROLLER',
-        error: e,
+      report.fault(
+        e,
         stackTrace: stackTrace,
-        data: {'brickId': brickId},
+        area: 'activities',
+        message: 'Brick not found when attempting to ungroup',
+        extra: {'brickId': brickId},
       );
       throw BrickUngroupException.brickNotFound(brickId);
     } catch (e, stackTrace) {
-      logger.error(
-        'Error ungrouping brick',
-        context: 'BRICK_ACTIONS_CONTROLLER',
-        error: e,
+      report.fault(
+        e,
         stackTrace: stackTrace,
-        data: {'brickId': brickId},
+        area: 'activities',
+        message: 'Error ungrouping brick',
+        extra: {'brickId': brickId},
       );
 
       // Wrap unknown errors in BrickUngroupException
@@ -215,9 +215,9 @@ class BrickActionsController extends _$BrickActionsController {
     required String brickId,
     required int segmentIndex,
   }) async {
-    _logger.info(
+    _report.info(
       'Removing segment from brick',
-      context: 'BRICK_ACTIONS_CONTROLLER',
+      area: 'activities',
       data: {'brickId': brickId, 'segmentIndex': segmentIndex},
     );
 

@@ -20,17 +20,13 @@ import 'package:mealvana_endurance/shared/database/app_database.dart'
     as db
     show AppDatabase, ActivitiesTableCompanion, Activity;
 import 'package:mealvana_endurance/shared/domain/activity_type.dart';
-import 'package:mealvana_endurance/shared/services/logging_service.dart';
-import 'package:mealvana_endurance/shared/services/sentry/sentry_reporter.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../helpers/fakes/recording_report.dart';
+
 class MockSupabaseClient extends Mock implements SupabaseClient {}
-
-class MockAppLogger extends Mock implements AppLogger {}
-
-class MockSentryReporter extends Mock implements SentryReporter {}
 
 class MockActivityDeduplicationService extends Mock
     implements ActivityDeduplicationService {}
@@ -47,56 +43,11 @@ void main() {
   setUp(() async {
     SharedPreferences.setMockInitialValues({});
     database = db.AppDatabase.forTesting(NativeDatabase.memory());
-    final logger = MockAppLogger();
-    final sentry = MockSentryReporter();
-    when(
-      () => logger.info(
-        any(),
-        context: any(named: 'context'),
-        data: any(named: 'data'),
-      ),
-    ).thenReturn(null);
-    when(
-      () => logger.debug(
-        any(),
-        context: any(named: 'context'),
-        data: any(named: 'data'),
-      ),
-    ).thenReturn(null);
-    when(
-      () => logger.warning(
-        any(),
-        context: any(named: 'context'),
-        error: any(named: 'error'),
-        stackTrace: any(named: 'stackTrace'),
-        data: any(named: 'data'),
-      ),
-    ).thenReturn(null);
-    when(
-      () => logger.error(
-        any(),
-        context: any(named: 'context'),
-        error: any(named: 'error'),
-        stackTrace: any(named: 'stackTrace'),
-        data: any(named: 'data'),
-      ),
-    ).thenReturn(null);
-    when(
-      () => sentry.reportNetworkError(
-        any(),
-        url: any(named: 'url'),
-        method: any(named: 'method'),
-        statusCode: any(named: 'statusCode'),
-        timeout: any(named: 'timeout'),
-        stackTrace: any(named: 'stackTrace'),
-      ),
-    ).thenAnswer((_) async {});
     repository = ActivitiesRepository(
       supabase: MockSupabaseClient(),
       database: database,
-      logger: logger,
-      sentry: sentry,
       deduplicationService: MockActivityDeduplicationService(),
+      report: RecordingReport(),
     );
   });
 
@@ -122,47 +73,50 @@ void main() {
     database.activitiesTable,
   )..where((t) => t.id.equals(id))).getSingleOrNull();
 
-  group('ungroupBrick refuses non-brick targets (the 2026-09-11 data loss)', () {
-    test('throws on a plain planned workout and writes NOTHING', () async {
-      final swim = await seed(ActivityType.swimming, 'Swim', 7);
+  group(
+    'ungroupBrick refuses non-brick targets (the 2026-09-11 data loss)',
+    () {
+      test('throws on a plain planned workout and writes NOTHING', () async {
+        final swim = await seed(ActivityType.swimming, 'Swim', 7);
 
-      await expectLater(
-        repository.ungroupBrick(swim.id),
-        throwsA(isA<StateError>()),
-      );
+        await expectLater(
+          repository.ungroupBrick(swim.id),
+          throwsA(isA<StateError>()),
+        );
 
-      final after = await row(swim.id);
-      expect(after, isNotNull, reason: 'the old code HARD-DELETED the row');
-      expect(after!.status, 'planned');
-      expect(after.deletedAt, isNull);
-    });
+        final after = await row(swim.id);
+        expect(after, isNotNull, reason: 'the old code HARD-DELETED the row');
+        expect(after!.status, 'planned');
+        expect(after.deletedAt, isNull);
+      });
 
-    test('throws on an archived-for-brick LEG (the exact prod scenario: '
-        'undo armed with a leg id)', () async {
-      final swim = await seed(ActivityType.swimming, 'Swim', 7);
-      final run = await seed(ActivityType.running, '12 mi Run', 11);
-      final brick = await repository.createBrickFromActivities(
-        activities: [swim, run],
-        segmentOrder: const ['swimming', 'running'],
-      );
+      test('throws on an archived-for-brick LEG (the exact prod scenario: '
+          'undo armed with a leg id)', () async {
+        final swim = await seed(ActivityType.swimming, 'Swim', 7);
+        final run = await seed(ActivityType.running, '12 mi Run', 11);
+        final brick = await repository.createBrickFromActivities(
+          activities: [swim, run],
+          segmentOrder: const ['swimming', 'running'],
+        );
 
-      // The swim is now archivedForBrick — invisible chrome-side. Pointing
-      // ungroup at IT (not the brick) must refuse, not silently delete.
-      await expectLater(
-        repository.ungroupBrick(swim.id),
-        throwsA(isA<StateError>()),
-      );
+        // The swim is now archivedForBrick — invisible chrome-side. Pointing
+        // ungroup at IT (not the brick) must refuse, not silently delete.
+        await expectLater(
+          repository.ungroupBrick(swim.id),
+          throwsA(isA<StateError>()),
+        );
 
-      final swimRow = await row(swim.id);
-      expect(swimRow, isNotNull, reason: 'leg must survive the bad call');
-      expect(swimRow!.brickId, brick.id, reason: 'still linked to its brick');
+        final swimRow = await row(swim.id);
+        expect(swimRow, isNotNull, reason: 'leg must survive the bad call');
+        expect(swimRow!.brickId, brick.id, reason: 'still linked to its brick');
 
-      // And the REAL ungroup still works afterwards: everything comes back.
-      await repository.ungroupBrick(brick.id);
-      expect((await row(swim.id))!.status, 'planned');
-      expect((await row(run.id))!.status, 'planned');
-    });
-  });
+        // And the REAL ungroup still works afterwards: everything comes back.
+        await repository.ungroupBrick(brick.id);
+        expect((await row(swim.id))!.status, 'planned');
+        expect((await row(run.id))!.status, 'planned');
+      });
+    },
+  );
 
   group('ungroup restores legs and tombstones the brick', () {
     test('all legs return to planned; brick row persists as a tombstone '
@@ -271,38 +225,42 @@ void main() {
       return row(brick.id).then((r) => r!);
     }
 
-    test('gives back one standalone activity per segment; the legs SURVIVE',
-        () async {
-      final brick = await seedFreshBrick();
+    test(
+      'gives back one standalone activity per segment; the legs SURVIVE',
+      () async {
+        final brick = await seedFreshBrick();
 
-      await repository.ungroupBrick(brick.id);
+        await repository.ungroupBrick(brick.id);
 
-      // Brick is tombstoned...
-      final brickAfter = await row(brick.id);
-      expect(brickAfter!.status, 'deleted');
-      expect(brickAfter.deletedAt, isNotNull);
+        // Brick is tombstoned...
+        final brickAfter = await row(brick.id);
+        expect(brickAfter!.status, 'deleted');
+        expect(brickAfter.deletedAt, isNotNull);
 
-      // ...and the two legs now exist as standalone planned activities.
-      final all = await database.select(database.activitiesTable).get();
-      final legs = all
-          .where((a) =>
-              a.activityType != 'brick' &&
-              a.deletedAt == null &&
-              a.status == 'planned')
-          .toList();
-      expect(legs.length, 2, reason: 'both legs must survive the ungroup');
-      final sports = legs.map((l) => l.activityType).toSet();
-      expect(sports, {'swimming', 'running'});
+        // ...and the two legs now exist as standalone planned activities.
+        final all = await database.select(database.activitiesTable).get();
+        final legs = all
+            .where(
+              (a) =>
+                  a.activityType != 'brick' &&
+                  a.deletedAt == null &&
+                  a.status == 'planned',
+            )
+            .toList();
+        expect(legs.length, 2, reason: 'both legs must survive the ungroup');
+        final sports = legs.map((l) => l.activityType).toSet();
+        expect(sports, {'swimming', 'running'});
 
-      final swim = legs.firstWhere((l) => l.activityType == 'swimming');
-      expect(swim.durationMinutes, 30);
-      expect(swim.swimmingPacePer100mSeconds, 120);
-      final run = legs.firstWhere((l) => l.activityType == 'running');
-      expect(run.durationMinutes, 27);
-      expect(run.distanceMiles, closeTo(3.1, 0.001));
-      // Legs are their own rows, not still tied to the brick.
-      expect(swim.brickId, isNull);
-      expect(run.brickId, isNull);
-    });
+        final swim = legs.firstWhere((l) => l.activityType == 'swimming');
+        expect(swim.durationMinutes, 30);
+        expect(swim.swimmingPacePer100mSeconds, 120);
+        final run = legs.firstWhere((l) => l.activityType == 'running');
+        expect(run.durationMinutes, 27);
+        expect(run.distanceMiles, closeTo(3.1, 0.001));
+        // Legs are their own rows, not still tied to the brick.
+        expect(swim.brickId, isNull);
+        expect(run.brickId, isNull);
+      },
+    );
   });
 }
