@@ -104,7 +104,7 @@ abstract final class PerformanceTelemetry {
       payload,
     );
 
-    if (duration >= slowCeiling && _reportedCeilingBreaches.add(operation)) {
+    if (duration > slowCeiling && _reportedCeilingBreaches.add(operation)) {
       unawaited(
         _report.degraded(
           SlowOperation(operation, duration),

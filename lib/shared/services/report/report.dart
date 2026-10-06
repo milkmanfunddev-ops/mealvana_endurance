@@ -150,6 +150,26 @@ class SentryReport implements Report {
   /// instance did not (the nested Fault reached fan-out after the flag reset).
   static const Symbol _fanOutZone = #mealvanaReportFanOut;
 
+  /// Error objects already captured this process, by identity. A repository
+  /// that Faults and rethrows, the controller that catches it, and the
+  /// Riverpod observer all see the same object; only the first capture becomes
+  /// an event, the rest leave a breadcrumb. Primitives (a thrown `String`)
+  /// cannot be Expando keys and are never deduped.
+  static final Expando<bool> _captured = Expando<bool>('report captured');
+
+  static bool _canMark(Object error) =>
+      error is! num && error is! String && error is! bool && error is! Record;
+
+  /// Whether [error] has already been captured by any `SentryReport`.
+  static bool wasReported(Object error) =>
+      _canMark(error) && _captured[error] == true;
+
+  /// Records that [error] has been captured (by this service or a caller
+  /// that reported it another way, such as the Riverpod observer).
+  static void markReported(Object error) {
+    if (_canMark(error)) _captured[error] = true;
+  }
+
   /// The instance the static legacy loggers (`DebugLogger`) forward to until
   /// their callers are migrated. Set by [reportProvider]; falls back to a
   /// Sentry-only instance so nothing is lost before the provider builds.
@@ -242,6 +262,22 @@ class SentryReport implements Report {
     List<String>? fingerprint,
   }) async {
     final String? normalisedArea = _normaliseArea(area);
+    if (wasReported(error)) {
+      _hub.addBreadcrumb(
+        Breadcrumb(
+          message: 'Report: already captured upstream, not re-sent',
+          category: 'report',
+          level: SentryLevel.info,
+          data: {
+            'error_type': error.runtimeType.toString(),
+            if (normalisedArea != null) 'area': normalisedArea,
+            if (message != null) 'message': message,
+          },
+        ),
+      );
+      return;
+    }
+    markReported(error);
     final level = severity == ReportSeverity.fault
         ? SentryLevel.error
         : SentryLevel.warning;

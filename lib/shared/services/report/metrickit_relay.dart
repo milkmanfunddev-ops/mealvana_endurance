@@ -41,7 +41,13 @@ class MetricKitRelay {
     try {
       await _channel.invokeMethod<void>('ready');
     } on MissingPluginException {
-      // Not iOS, or a host without the reporter: nothing will ever arrive.
+      // The bootstrap only starts the relay on iOS, so a missing handler
+      // means the native reporter did not register: no MetricKit data this
+      // launch. Written down (rule D9); `startup` promotes it to a warning.
+      await _r.note(
+        'MetricKit relay: native reporter missing; no MetricKit data',
+        area: 'startup',
+      );
     }
   }
 

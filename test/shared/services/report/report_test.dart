@@ -272,6 +272,21 @@ void main() {
       expect(entry.error, isA<StateError>());
     });
 
+    test('the same error object is captured once; later reports are '
+        'breadcrumbs (repository faults + rethrows, controller faults again)',
+        () async {
+      final error = StateError('one object, many layers');
+      await report.fault(error, area: 'data');
+      await report.fault(error, area: 'presentation');
+      await report.degraded(error, area: 'observer');
+      expect(transport.events, hasLength(1));
+      expect(transport.events.single.tags?['area'], 'data');
+      expect(SentryReport.wasReported(error), isTrue);
+      // A fresh object with the same text is a new event.
+      await report.fault(StateError('one object, many layers'), area: 'x');
+      expect(transport.events, hasLength(2));
+    });
+
     test('a LoggedFault groups on its message', () async {
       await report.fault(const LoggedFault('Plan generation returned null'));
       final event = transport.events.single;

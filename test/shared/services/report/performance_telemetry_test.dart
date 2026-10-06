@@ -2,7 +2,7 @@
 //
 // Drives `PerformanceTelemetry` with the SDK's transport swapped for an
 // in-memory one: a step below the 10 s ceiling is a span and a measurement,
-// never an event; a step at the ceiling is exactly one warning event per step,
+// never an event; a step over the ceiling is exactly one warning event per step,
 // fingerprinted by step name; a step inside a bound transaction lands on it
 // as a child span.
 import 'package:flutter_test/flutter_test.dart';
@@ -100,7 +100,7 @@ void main() {
     test('10 s: exactly one warning event per step, grouped by step', () async {
       PerformanceTelemetry.recordDuration(
         'startup.version_check',
-        const Duration(seconds: 10),
+        const Duration(seconds: 10, milliseconds: 1),
       );
       PerformanceTelemetry.recordDuration(
         'startup.version_check',
@@ -124,7 +124,7 @@ void main() {
       expect(first.fingerprint, ['slow-operation', 'startup.version_check']);
       expect(
         (first.contexts['diagnostic'] as Map?)?['duration_ms'],
-        10000,
+        10001,
       );
       // Every step still produced its span.
       expect(transport.transactions, hasLength(3));
@@ -142,7 +142,7 @@ void main() {
 
       PerformanceTelemetry.recordDuration(
         'startup.a',
-        const Duration(milliseconds: 10000),
+        const Duration(milliseconds: 10001),
       );
       await settle();
       expect(recording.degradeds, hasLength(1));

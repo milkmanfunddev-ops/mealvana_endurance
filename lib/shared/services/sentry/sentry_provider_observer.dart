@@ -195,6 +195,7 @@ final class SentryProviderObserver extends ProviderObserver {
   }
 
   bool _wasReported(Object error) {
+    if (SentryReport.wasReported(error)) return true;
     try {
       return _reportedErrors[error] == true;
     } on ArgumentError {
@@ -202,6 +203,9 @@ final class SentryProviderObserver extends ProviderObserver {
     }
   }
 
+  /// Marks the observer's own view only; `Report` marks the shared registry
+  /// itself when the fault below is captured (marking it here first would
+  /// make that capture look like a duplicate).
   void _markReported(Object error) {
     try {
       _reportedErrors[error] = true;
