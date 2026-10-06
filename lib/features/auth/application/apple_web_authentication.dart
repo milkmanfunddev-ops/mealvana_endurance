@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart' show ProviderException;
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 
 import '../../../shared/services/app_config.dart';
@@ -36,10 +37,12 @@ final appleSignInAvailableProvider = Provider<bool>((ref) {
   final String servicesId;
   try {
     servicesId = ref.watch(appConfigProvider).appleAuthServicesId;
-  } catch (_) {
-    // No AppConfig loaded (widget tests, a harness without an env file):
-    // keep the pre-ticket-17 behaviour and show the button. The catch is the
-    // feature test, not a swallowed failure (allow-list: reasoned).
+  } on ProviderException catch (e) {
+    // Only the "appConfigProvider must be overridden" placeholder (widget
+    // tests, a harness without an env file): keep the pre-ticket-17 behaviour
+    // and show the button. Any other config failure is a real one and
+    // propagates. The catch is the feature test (allow-list: reasoned).
+    if (e.exception is! UnimplementedError) rethrow;
     return true;
   }
   return appleSignInAvailable(

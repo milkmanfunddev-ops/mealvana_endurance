@@ -185,10 +185,12 @@ void main() {
     expect(skip.data?['sessionUserId'], _anonUser);
     expect(skip.data?['path'], 'immediate');
 
-    // The dirty-record pass under the anonymous session defers too.
+    // The dirty-record pass under the anonymous session defers too, and says
+    // so: the rows are still dirty, so this is not "nothing to upload".
     final result = await repository.uploadDirtyRecords(_previousUser);
-    expect(result.success, isTrue);
+    expect(result.success, isFalse);
     expect(result.count, 0);
+    expect(result.error, contains('deferred'));
     expect(server.integrationPosts, hasLength(1));
 
     // The owner signs back in: the dirty row uploads.

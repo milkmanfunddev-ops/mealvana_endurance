@@ -302,15 +302,27 @@ void main() {
         expect(tag(event, 'expected_failure'), 'upstream_unavailable');
       });
 
-      test('a 504 from any Supabase endpoint is gateway_timeout (B5/C1/BM)', () {
+      test('a 504 from PostgREST or GoTrue is gateway_timeout (B5/C1/BM)', () {
         for (final url in [
           'https://wvmvsodrvbkxfydabqed.supabase.co/rest/v1/users',
           'https://wvmvsodrvbkxfydabqed.supabase.co/auth/v1/token',
-          'https://wvmvsodrvbkxfydabqed.supabase.co/functions/v1/search-catalog',
         ]) {
           final event = sdkHttpFailure(url, 504);
-          expect(tag(event, 'expected_failure'), 'gateway_timeout', reason: url);
+          expect(
+            tag(event, 'expected_failure'),
+            'gateway_timeout',
+            reason: url,
+          );
         }
+      });
+
+      test('a 504 from an edge function stays a Fault (our handler ran past '
+          'the platform limit)', () {
+        final event = sdkHttpFailure(
+          'https://wvmvsodrvbkxfydabqed.supabase.co/functions/v1/search-catalog',
+          504,
+        );
+        expect(isDowngraded(event), isFalse);
       });
 
       test('reads the status from the message when no response context', () {

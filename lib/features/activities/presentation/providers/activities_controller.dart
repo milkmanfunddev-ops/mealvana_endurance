@@ -179,8 +179,10 @@ class ActivitiesController extends _$ActivitiesController {
   }) async {
     final service = _service;
     final report = _report;
-    final analytics = ref.read(appExternalDepsProvider).analytics;
     try {
+      // Before the first await, inside the try: analytics must never break
+      // the feature, a failed read included.
+      final analytics = ref.read(appExternalDepsProvider).analytics;
       final priorCount = state.value?.length ?? 0;
       final deviceIdValue = await ref.read(userIdProvider.future);
 
@@ -218,12 +220,12 @@ class ActivitiesController extends _$ActivitiesController {
       // `source: 'synced'`.
       try {
         analytics.trackWorkoutPlanned(
-              sport: activityType.name,
-              source: 'manual',
-              durationMinutes: durationMinutes,
-              activityId: createdActivity.id,
-              isCoachCreated: forUserId != null,
-            );
+          sport: activityType.name,
+          source: 'manual',
+          durationMinutes: durationMinutes,
+          activityId: createdActivity.id,
+          isCoachCreated: forUserId != null,
+        );
       } catch (e, stackTrace) {
         report.fault(
           e,
@@ -269,10 +271,7 @@ class ActivitiesController extends _$ActivitiesController {
     try {
       final deviceIdValue = await ref.read(userIdProvider.future);
 
-      await service.updateActivity(
-        deviceId: deviceIdValue,
-        activity: activity,
-      );
+      await service.updateActivity(deviceId: deviceIdValue, activity: activity);
 
       // Refresh activities list
       if (ref.mounted) ref.invalidateSelf();
@@ -445,10 +444,7 @@ class ActivitiesController extends _$ActivitiesController {
     final report = _report;
     try {
       final deviceIdValue = await ref.read(userIdProvider.future);
-      await service.updateActivity(
-        deviceId: deviceIdValue,
-        activity: activity,
-      );
+      await service.updateActivity(deviceId: deviceIdValue, activity: activity);
     } catch (e) {
       report.fault(e, area: 'activities', message: 'Error restoring activity');
       // Roll back the optimistic restore so the card disappears again.

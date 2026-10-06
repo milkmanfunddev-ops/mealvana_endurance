@@ -157,10 +157,11 @@ class SwapFoodController extends _$SwapFoodController {
   }
 
   Future<SwapFoodState> _loadFoodsForSwapping(SwapFoodParams params) async {
-    // Read before the first await: this auto-dispose provider can be
-    // disposed mid-load.
-    final authService = ref.read(authServiceProvider);
     try {
+      // Read before the first await (this auto-dispose provider can be
+      // disposed mid-load), inside the try so a failed read is handled like
+      // every other load failure.
+      final authService = ref.read(authServiceProvider);
       // Get current user's ID — uses Supabase auth session to find the correct
       // local profile, matching how saveUserFood() stores the user_id.
       final currentUser = await authService.getCurrentUser();

@@ -82,8 +82,9 @@ class TpWritebackService {
     if (isWithinTpEditWindow(workout, now: _clock())) return true;
     await _r.note(
       'TP write-back skipped: workout outside TP edit window',
-      area: _area,
+      area: 'sync', // D9: a skipped write-back step, promoted
       data: {
+        'provider': _area,
         'workoutId': workoutId,
         'workoutDay': workout['WorkoutDay'],
         'op': op,
@@ -111,8 +112,8 @@ class TpWritebackService {
     if (supabase == null) {
       await _r.note(
         'TP write-back refused: no ledger client (TP-5)',
-        area: _area,
-        data: {'blockKind': blockKind},
+        area: 'sync', // D9: a skipped write-back step, promoted
+        data: {'provider': _area, 'blockKind': blockKind},
       );
       return null;
     }
@@ -256,8 +257,8 @@ class TpWritebackService {
     if (accessToken == null) {
       await _r.note(
         'TP write-back skipped: no valid access token',
-        area: _area,
-        data: {'workoutId': workoutIdStr},
+        area: 'sync', // D9: a skipped write-back step, promoted
+        data: {'provider': _area, 'workoutId': workoutIdStr},
       );
       return;
     }
