@@ -11,6 +11,7 @@ import '../models/dirty_record_backup.dart';
 import '../models/upload_error.dart';
 import 'dirty_record_backup_service.dart';
 import 'logging_service.dart';
+import 'report/report.dart';
 import 'sync/sync_dependency_graph.dart';
 
 // Repository imports for uploadDirtyRecords
@@ -47,6 +48,7 @@ VersionCheckService versionCheckService(Ref ref) {
     logger: logger,
     backupService: backupService,
     ref: ref,
+    report: ref.read(reportProvider),
   );
 }
 
@@ -54,8 +56,11 @@ class VersionCheckService {
   final SupabaseClient _supabase;
   final AppDatabase _database;
   final AppLogger _logger;
+  final Report? _report;
   final DirtyRecordBackupService _backupService;
   final Ref _ref;
+
+  Report get _r => _report ?? SentryReport.global;
 
   // SharedPreferences keys for caching
   static const _keyMinAppVersion = 'cached_min_app_version';
@@ -76,9 +81,11 @@ class VersionCheckService {
     required AppLogger logger,
     required DirtyRecordBackupService backupService,
     required Ref ref,
+    Report? report,
   }) : _supabase = supabase,
        _database = database,
        _logger = logger,
+       _report = report,
        _backupService = backupService,
        _ref = ref;
 
@@ -159,8 +166,15 @@ class VersionCheckService {
         minSupportedSchemaVersion: minSupportedSchemaVersion,
         compatibilityWindowEnabled: compatibilityWindowEnabled,
       );
-    } catch (e) {
-      // On failure, try to use cached result
+    } catch (e, stackTrace) {
+      // On failure, use the cached result. Offline is a warning; a parse or
+      // schema error in app_config is a real fault.
+      await _r.fault(
+        e,
+        stackTrace: stackTrace,
+        area: 'startup',
+        message: 'Version check failed; using cached result',
+      );
       return await _getCachedResult();
     }
   }
@@ -216,7 +230,15 @@ class VersionCheckService {
                 ),
               );
             }
-          } catch (e) {
+          } catch (e, stackTrace) {
+            // Recorded in the backup's error list below as well.
+            await _r.degraded(
+              e,
+              stackTrace: stackTrace,
+              area: 'startup',
+              message: 'Dirty record upload threw during schema resync',
+              tags: {'repository': entry.key},
+            );
             uploadErrors.add(
               UploadError(
                 repository: entry.key,
@@ -229,10 +251,12 @@ class VersionCheckService {
 
         // Step 3: If any uploads failed, create backup with error details
         if (uploadErrors.isNotEmpty) {
-          _logger.warning(
-            'Some dirty records failed to upload, creating backup',
-            context: 'VERSION_CHECK_SERVICE',
-            data: {'failedRepositories': uploadErrors.length},
+          await _r.degraded(
+            const LoggedFault(
+              'Some dirty records failed to upload, creating backup',
+            ),
+            area: 'startup',
+            extra: {'failedRepositories': uploadErrors.length},
           );
 
           final packageInfo = await PackageInfo.fromPlatform();
@@ -264,11 +288,11 @@ class VersionCheckService {
       // check is a handful of indexed local SELECTs.
       if (await _hasUnprotectedAnonymousData(userId)) {
         wasDeferredForDataProtection = true;
-        _logger.warning(
+        await _r.note(
           'Deferring schema resync: anonymous user has dirty local rows '
           'that did not reach Supabase — deleting would lose them. '
           'Will retry on next launch.',
-          context: 'VERSION_CHECK_SERVICE',
+          area: 'startup',
           data: {
             'userId': userId ?? 'null',
             'failedUploads': uploadErrors.length,
@@ -309,11 +333,11 @@ class VersionCheckService {
 
       return true;
     } catch (e, stackTrace) {
-      _logger.error(
-        'Schema resync failed',
-        context: 'VERSION_CHECK_SERVICE',
-        error: e,
+      await _r.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'startup',
+        message: 'Schema resync failed',
       );
       return false;
     }
@@ -355,12 +379,13 @@ class VersionCheckService {
         if (rows.isNotEmpty) return true;
       }
       return false;
-    } catch (e) {
+    } catch (e, stackTrace) {
       // If the check itself fails, err toward protecting data.
-      _logger.warning(
-        'Anonymous-data check failed; deferring resync defensively',
-        context: 'VERSION_CHECK_SERVICE',
-        data: {'error': e.toString()},
+      await _r.degraded(
+        e,
+        stackTrace: stackTrace,
+        area: 'startup',
+        message: 'Anonymous-data check failed; deferring resync defensively',
       );
       return true;
     }

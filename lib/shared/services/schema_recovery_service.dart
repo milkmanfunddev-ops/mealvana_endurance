@@ -2,12 +2,12 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../database/app_database.dart' show DatabaseSchemaException;
 import '../database/database_provider.dart';
-import 'logging_service.dart';
+import 'report/report.dart';
 
 /// Provider for the schema recovery service
 final schemaRecoveryServiceProvider = Provider<SchemaRecoveryService>((ref) {
   return SchemaRecoveryService(
-    logger: ref.read(appLoggerProvider),
+    report: ref.read(reportProvider),
     // Store the ref for later use in invalidation
     providerRef: ref,
   );
@@ -51,11 +51,11 @@ class SchemaRecoveryCompleteException implements Exception {
 /// ```
 
 class SchemaRecoveryService {
-  SchemaRecoveryService({required AppLogger logger, required Ref providerRef})
-    : _logger = logger,
+  SchemaRecoveryService({required Report report, required Ref providerRef})
+    : _report = report,
       _providerRef = providerRef;
 
-  final AppLogger _logger;
+  final Report _report;
   final Ref _providerRef;
 
   /// Circuit breaker: only attempt recovery once per app session
@@ -91,6 +91,11 @@ class SchemaRecoveryService {
     try {
       return await operation();
     } on DatabaseSchemaException catch (e, stackTrace) {
+      await _report.note(
+        'DatabaseSchemaException caught; entering schema recovery',
+        area: 'database',
+        data: {'context': context},
+      );
       return _handleSchemaException<T>(
         exception: e,
         stackTrace: stackTrace,
@@ -109,12 +114,13 @@ class SchemaRecoveryService {
   }) async {
     // Circuit breaker: prevent infinite loops
     if (_recoveryAttemptedThisSession) {
-      _logger.error(
-        'Schema error but recovery already attempted this session - not retrying',
-        context: context ?? 'SCHEMA_RECOVERY',
-        error: exception,
+      await _report.fault(
+        exception,
         stackTrace: stackTrace,
-        data: {'circuitBreakerTripped': true},
+        area: 'database',
+        message:
+            'Schema error but recovery already attempted this session - not retrying',
+        extra: {'circuitBreakerTripped': true, 'context': context},
       );
       // Re-throw the original exception
       throw exception;
@@ -123,11 +129,12 @@ class SchemaRecoveryService {
     // Mark that we're attempting recovery
     _recoveryAttemptedThisSession = true;
 
-    _logger.warning(
-      'Schema error detected - initiating automatic recovery',
-      context: context ?? 'SCHEMA_RECOVERY',
-      error: exception,
-      data: {'context': context},
+    await _report.degraded(
+      exception,
+      stackTrace: stackTrace,
+      area: 'database',
+      message: 'Schema error detected - initiating automatic recovery',
+      extra: {'context': context},
     );
 
     // Step 1: Invalidate the database provider using the SERVICE's ref (not caller's)
@@ -137,20 +144,22 @@ class SchemaRecoveryService {
     // Step 2: Trigger creation of new database
     _providerRef.read(appDatabaseProvider);
 
-    _logger.info(
+    _report.info(
       'Database recreated - calling retry callback',
-      context: context ?? 'SCHEMA_RECOVERY',
+      area: 'database',
+      data: {'context': context},
     );
 
     // Step 3: Call the retry callback - caller handles their own provider invalidation
     try {
       return await onRetryNeeded();
     } catch (retryError, retryStackTrace) {
-      _logger.error(
-        'Operation failed even after schema recovery',
-        context: context ?? 'SCHEMA_RECOVERY',
-        error: retryError,
+      await _report.fault(
+        retryError,
         stackTrace: retryStackTrace,
+        area: 'database',
+        message: 'Operation failed even after schema recovery',
+        extra: {'context': context},
       );
       rethrow;
     }

@@ -7,7 +7,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../../../../shared/widgets/adaptive/adaptive.dart';
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../../../shared/services/app_external_deps.dart';
-import '../../../../shared/services/logging_service.dart';
+import '../../../../shared/services/report/report.dart';
 import '../../../../shared/services/sync/sync_coordinator.dart';
 import '../../../content/application/content_service.dart';
 import '../../../daily_macros/application/daily_macro_service.dart';
@@ -439,8 +439,15 @@ class _PostOnboardingAuthScreenState
           context.go('/coach-portal');
           return;
         }
-      } catch (_) {
-        // Fall through to normal /main navigation
+      } catch (e) {
+        // Fall through to normal /main navigation.
+        await ref
+            .read(reportProvider)
+            .note(
+              'Coach check failed after sign-in; routing to /main',
+              area: 'auth',
+              data: {'error': e.toString()},
+            );
       }
     }
 
@@ -456,6 +463,7 @@ class _PostOnboardingAuthScreenState
     bool isAnonymous = true,
   }) async {
     final logger = ref.read(appExternalDepsProvider).logger;
+    final report = ref.read(reportProvider);
     final onboardingController = ref.read(
       onboardingControllerProvider.notifier,
     );
@@ -502,7 +510,7 @@ class _PostOnboardingAuthScreenState
             onboardingController: onboardingController,
             syncCoordinator: syncCoordinator,
             container: container,
-            logger: logger,
+            report: report,
           ),
         );
         return;
@@ -565,15 +573,17 @@ class _PostOnboardingAuthScreenState
             onboardingController: onboardingController,
             syncCoordinator: syncCoordinator,
             container: container,
-            logger: logger,
+            report: report,
           ),
         );
       }
     } else {
       // Show error if save failed
-      logger.error(
-        'saveAllOnboardingData FAILED - NOT navigating to /main',
-        context: 'NAV',
+      await report.degraded(
+        const LoggedFault(
+          'saveAllOnboardingData FAILED - NOT navigating to /main',
+        ),
+        area: 'auth',
       );
       MealvanaSnackbar.showError(
         context,
@@ -602,17 +612,17 @@ class _PostOnboardingAuthScreenState
     required OnboardingController onboardingController,
     required SyncCoordinator syncCoordinator,
     required ProviderContainer container,
-    required AppLogger logger,
+    required Report report,
   }) async {
     try {
       final failedRepos = await onboardingController
           .uploadOnboardingDataToSupabase(userId);
 
       if (failedRepos.isNotEmpty) {
-        logger.error(
-          'Onboarding data upload incomplete',
-          context: 'ONBOARDING_SYNC',
-          data: {'userId': userId, 'failedRepos': failedRepos},
+        await report.degraded(
+          const LoggedFault('Onboarding data upload incomplete'),
+          area: 'auth',
+          extra: {'userId': userId, 'failedRepos': failedRepos},
         );
       }
 
@@ -624,10 +634,10 @@ class _PostOnboardingAuthScreenState
       );
 
       if (!synced) {
-        logger.warning(
+        await report.note(
           'Post-onboarding sync did not complete — onboarding rows remain '
           'marked needs_upload and will retry',
-          context: 'ONBOARDING_SYNC',
+          area: 'auth',
           data: {'userId': userId},
         );
       }
@@ -658,12 +668,12 @@ class _PostOnboardingAuthScreenState
           .invalidateAllForUser(userId);
       container.invalidate(dailyMacrosControllerProvider);
     } catch (e, stackTrace) {
-      logger.error(
-        'Post-onboarding upload failed',
-        context: 'ONBOARDING_SYNC',
-        error: e,
+      await report.fault(
+        e,
         stackTrace: stackTrace,
-        data: {'userId': userId},
+        area: 'auth',
+        message: 'Post-onboarding upload failed',
+        extra: {'userId': userId},
       );
     }
   }

@@ -5,8 +5,7 @@ import '../../features/barcode_scanning/application/catalog_search_service.dart'
 import '../services/food_management/fuel_predicate.dart';
 import '../services/food_management/nutrition_product_search_service.dart';
 import '../services/food_management/shared_food_search_service.dart';
-import '../services/logging_service.dart';
-import '../services/app_external_deps.dart';
+import '../services/report/report.dart';
 import '../utils/search_token_matcher.dart';
 
 part 'food_search_controller.g.dart';
@@ -114,7 +113,7 @@ class FoodSearchState {
 /// (e.g. "swap_food" or "food_preferences").
 @riverpod
 class FoodSearchController extends _$FoodSearchController {
-  late AppLogger _logger;
+  late Report _report;
   Timer? _catalogDebounceTimer;
 
   /// All user foods (unfiltered) for search
@@ -139,7 +138,7 @@ class FoodSearchController extends _$FoodSearchController {
 
   @override
   FoodSearchState build(String key) {
-    _logger = ref.read(appExternalDepsProvider).logger;
+    _report = ref.read(reportProvider);
     ref.onDispose(() {
       _catalogDebounceTimer?.cancel();
     });
@@ -326,10 +325,11 @@ class FoodSearchController extends _$FoodSearchController {
         if (!_isMounted) return;
 
         final isLast = attempt == attempts;
-        _logger.warning(
-          'Open Food Facts search failed (attempt $attempt/$attempts)',
-          context: 'FoodSearchController',
-          data: {'query': query, 'error': e.toString()},
+        await _report.degraded(
+          e,
+          area: 'food_search',
+          message: 'Open Food Facts search failed (attempt $attempt/$attempts)',
+          extra: {'query': query},
         );
 
         if (!isLast) {
@@ -399,10 +399,11 @@ class FoodSearchController extends _$FoodSearchController {
     } catch (e) {
       if (!_isMounted) return;
 
-      _logger.warning(
-        'Catalog search failed',
-        context: 'FoodSearchController',
-        data: {'query': query, 'error': e.toString()},
+      await _report.degraded(
+        e,
+        area: 'food_search',
+        message: 'Catalog search failed',
+        extra: {'query': query},
       );
 
       state = state.copyWith(isSearchingCatalog: false);
@@ -450,10 +451,11 @@ class FoodSearchController extends _$FoodSearchController {
     } catch (e) {
       if (!_isMounted) return;
 
-      _logger.warning(
-        'Nutrition product search failed',
-        context: 'FoodSearchController',
-        data: {'query': query, 'error': e.toString()},
+      await _report.degraded(
+        e,
+        area: 'food_search',
+        message: 'Nutrition product search failed',
+        extra: {'query': query},
       );
 
       state = state.copyWith(isSearchingNutritionProducts: false);

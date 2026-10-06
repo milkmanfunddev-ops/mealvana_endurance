@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../../shared/services/app_config.dart';
+import '../../../../shared/services/report/report.dart';
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../../../shared/widgets/adaptive/adaptive.dart';
 
@@ -85,7 +86,11 @@ class ForceUpgradeScreen extends ConsumerWidget {
             ),
             child: KylePrimaryButton(
               text: 'Update Now',
-              onPressed: () => _openStore(context, isDevFlavor: isDevFlavor),
+              onPressed: () => _openStore(
+                context,
+                isDevFlavor: isDevFlavor,
+                report: ref.read(reportProvider),
+              ),
               isFullWidth: false,
             ),
           ),
@@ -163,6 +168,7 @@ class ForceUpgradeScreen extends ConsumerWidget {
   Future<void> _openStore(
     BuildContext context, {
     required bool isDevFlavor,
+    required Report report,
   }) async {
     final url = storeUrlFor(
       isDevFlavor: isDevFlavor,
@@ -184,7 +190,16 @@ class ForceUpgradeScreen extends ConsumerWidget {
       if (!launched && context.mounted) {
         _showFailure(context);
       }
-    } catch (_) {
+    } catch (e, stackTrace) {
+      // The user is told; this records which store URL would not open on a
+      // screen they cannot leave.
+      await report.degraded(
+        e,
+        stackTrace: stackTrace,
+        area: 'startup',
+        message: 'Store launch threw on the force-upgrade screen',
+        extra: {'url': url},
+      );
       if (context.mounted) _showFailure(context);
     }
   }

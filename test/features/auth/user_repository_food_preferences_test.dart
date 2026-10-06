@@ -16,19 +16,16 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mealvana_endurance/features/auth/data/user_repository.dart';
 import 'package:mealvana_endurance/features/auth/domain/user_preferences.dart';
 import 'package:mealvana_endurance/shared/database/app_database.dart';
-import 'package:mealvana_endurance/shared/services/sentry/sentry_reporter.dart';
 import 'package:mocktail/mocktail.dart';
+import '../../helpers/fakes/recording_report.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class MockSupabaseClient extends Mock implements SupabaseClient {}
 
-class MockSentryReporter extends Mock implements SentryReporter {}
-
 void main() {
   late AppDatabase database;
   late MockSupabaseClient mockSupabase;
-  late MockSentryReporter mockSentry;
   late UserRepository repository;
 
   const testUserId = 'test-user-23';
@@ -37,29 +34,11 @@ void main() {
     SharedPreferences.setMockInitialValues({});
     database = AppDatabase.forTesting(NativeDatabase.memory());
     mockSupabase = MockSupabaseClient();
-    mockSentry = MockSentryReporter();
-
-    when(
-      () => mockSentry.reportNetworkError(
-        any(),
-        url: any(named: 'url'),
-        method: any(named: 'method'),
-        stackTrace: any(named: 'stackTrace'),
-      ),
-    ).thenAnswer((_) async {});
-    when(
-      () => mockSentry.reportDatabaseError(
-        any(),
-        operation: any(named: 'operation'),
-        table: any(named: 'table'),
-        stackTrace: any(named: 'stackTrace'),
-      ),
-    ).thenAnswer((_) async {});
 
     repository = UserRepository(
       database: database,
       supabase: mockSupabase,
-      sentry: mockSentry,
+      report: RecordingReport(),
     );
   });
 

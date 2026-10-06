@@ -2,15 +2,17 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../domain/user_preferences.dart';
 import '../../../shared/services/app_external_deps.dart';
-import '../../../shared/services/logging_service.dart';
+import '../../../shared/services/report/report.dart';
 
 /// Repository for auth operations using Supabase Edge Functions
 /// Replaces direct database access with Edge Function calls
 class AuthRepositoryEdge {
-  AuthRepositoryEdge(this._supabase, this._logger);
+  AuthRepositoryEdge(this._supabase, {Report? report}) : _report = report;
 
   final SupabaseClient _supabase;
-  final AppLogger _logger;
+  final Report? _report;
+
+  Report get _r => _report ?? SentryReport.global;
 
   /// Create a new user via Edge Function
   Future<CreateUserResult> createUser({
@@ -71,14 +73,23 @@ class AuthRepositoryEdge {
           message: 'Edge Function call failed with status ${response.status}',
         );
       }
-    } catch (e) {
-      _logger.error(
-        'Error invoking create-user edge function',
-        context: 'AUTH_EDGE',
-        error: e,
-      );
+    } catch (e, stackTrace) {
+      // 409 Conflict (user already exists) is handled as success below.
+      if (e is FunctionException && e.status == 409) {
+        await _r.note(
+          'create-user returned 409; reusing the existing user',
+          area: 'auth',
+          data: {'device_id': deviceId},
+        );
+      } else {
+        await _r.fault(
+          e,
+          stackTrace: stackTrace,
+          area: 'auth',
+          message: 'Error invoking create-user edge function',
+        );
+      }
 
-      // Handle 409 Conflict (user already exists) as success
       if (e is FunctionException && e.status == 409) {
         // Try to fetch the existing user
         final existingUser = await getUserByDeviceId(deviceId);
@@ -111,12 +122,13 @@ class AuthRepositoryEdge {
         return UserProfile.fromJson(response);
       }
       return null;
-    } catch (e) {
-      _logger.error(
-        'Error fetching user by device ID',
-        context: 'AUTH_EDGE',
-        error: e,
-        data: {'deviceId': deviceId},
+    } catch (e, stackTrace) {
+      await _r.fault(
+        e,
+        stackTrace: stackTrace,
+        area: 'auth',
+        message: 'Error fetching user by device ID',
+        extra: {'deviceId': deviceId},
       );
       return null;
     }
@@ -142,12 +154,13 @@ class AuthRepositoryEdge {
       }
 
       return preferences;
-    } catch (e) {
-      _logger.error(
-        'Error fetching food preferences',
-        context: 'AUTH_EDGE',
-        error: e,
-        data: {'deviceId': deviceId},
+    } catch (e, stackTrace) {
+      await _r.fault(
+        e,
+        stackTrace: stackTrace,
+        area: 'auth',
+        message: 'Error fetching food preferences',
+        extra: {'deviceId': deviceId},
       );
       return {};
     }
@@ -172,12 +185,13 @@ class AuthRepositoryEdge {
           .eq('device_id', user.id);
 
       return true;
-    } catch (e) {
-      _logger.error(
-        'Error updating user',
-        context: 'AUTH_EDGE',
-        error: e,
-        data: {'deviceId': user.id},
+    } catch (e, stackTrace) {
+      await _r.fault(
+        e,
+        stackTrace: stackTrace,
+        area: 'auth',
+        message: 'Error updating user',
+        extra: {'deviceId': user.id},
       );
       return false;
     }
@@ -295,10 +309,10 @@ class AuthRepositoryEdge {
             preferencesCount: data['preferences_count'],
           );
         } else {
-          _logger.warning(
-            'Edge function returned failure',
-            context: 'AUTH_EDGE',
-            data: {'userId': userId, 'message': data['message']},
+          await _r.degraded(
+            const LoggedFault('upsert-user-profile returned failure'),
+            area: 'auth',
+            extra: {'userId': userId, 'message': data['message']},
           );
 
           return UpsertUserProfileResult(
@@ -307,10 +321,10 @@ class AuthRepositoryEdge {
           );
         }
       } else {
-        _logger.error(
-          'Edge function HTTP error',
-          context: 'AUTH_EDGE',
-          data: {'userId': userId, 'status': response.status},
+        await _r.fault(
+          const LoggedFault('upsert-user-profile HTTP error'),
+          area: 'auth',
+          extra: {'userId': userId, 'status': response.status},
         );
 
         return UpsertUserProfileResult(
@@ -318,12 +332,13 @@ class AuthRepositoryEdge {
           message: 'Edge Function call failed with status ${response.status}',
         );
       }
-    } catch (e) {
-      _logger.error(
-        'Error invoking upsert-user-profile edge function',
-        context: 'AUTH_EDGE',
-        error: e,
-        data: {'userId': userId},
+    } catch (e, stackTrace) {
+      await _r.fault(
+        e,
+        stackTrace: stackTrace,
+        area: 'auth',
+        message: 'Error invoking upsert-user-profile edge function',
+        extra: {'userId': userId},
       );
       return UpsertUserProfileResult(
         success: false,
@@ -379,12 +394,13 @@ class AuthRepositoryEdge {
       await _supabase.from('users').delete().eq('device_id', deviceId);
 
       return true;
-    } catch (e) {
-      _logger.error(
-        'Error deleting user',
-        context: 'AUTH_EDGE',
-        error: e,
-        data: {'deviceId': deviceId},
+    } catch (e, stackTrace) {
+      await _r.fault(
+        e,
+        stackTrace: stackTrace,
+        area: 'auth',
+        message: 'Error deleting user',
+        extra: {'deviceId': deviceId},
       );
       return false;
     }
@@ -427,5 +443,8 @@ class UpsertUserProfileResult {
 /// Riverpod provider for AuthRepositoryEdge
 final authRepositoryEdgeProvider = Provider<AuthRepositoryEdge>((ref) {
   final externalDeps = ref.read(appExternalDepsProvider);
-  return AuthRepositoryEdge(externalDeps.supabaseClient, externalDeps.logger);
+  return AuthRepositoryEdge(
+    externalDeps.supabaseClient,
+    report: ref.read(reportProvider),
+  );
 });

@@ -1,6 +1,7 @@
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'report/report.dart';
 import '../utils/platform_io.dart'
     if (dart.library.html) '../utils/platform_web.dart';
 
@@ -63,10 +64,18 @@ class DeviceInfoService {
       }
 
       _isInitialized = true;
-    } catch (e) {
+    } catch (e, stackTrace) {
       _cachedDeviceId = _generateFallbackId();
       _cachedDeviceInfo = {'os_version': 'unknown', 'device_model': 'unknown'};
       _isInitialized = true;
+      // The fallback id is per-launch, so analytics identity splits until
+      // the plugin answers again.
+      await SentryReport.global.degraded(
+        e,
+        stackTrace: stackTrace,
+        area: 'startup',
+        message: 'Device info unavailable; using a per-launch fallback id',
+      );
     }
   }
 

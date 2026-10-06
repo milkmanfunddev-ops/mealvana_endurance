@@ -11,6 +11,7 @@ import '../../features/home_shell/presentation/home_shell_chrome.dart';
 import '../../features/macro_dashboard/presentation/screens/macro_dashboard_screen.dart';
 import '../../theme/kyle_design/app_colors.dart';
 import '../core/guarded_navigation.dart';
+import '../services/report/report.dart';
 import '../utils/responsive_breakpoints.dart';
 import 'kyle_design/navigation/kyle_tab_bar.dart';
 import 'sync_status_indicator.dart';
@@ -80,9 +81,17 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
         await prefs.setTpWritebackEnabled(false);
       }
       await prefs.setTpWritebackNoticeShown(true);
-    } catch (_) {
+    } catch (e, stackTrace) {
       // Never let the notice break the shell; it retries next launch
       // because the notice-shown flag was not set.
+      await ref
+          .read(reportProvider)
+          .degraded(
+            e,
+            stackTrace: stackTrace,
+            area: 'integrations',
+            message: 'TP writeback notice failed; retries next launch',
+          );
     }
   }
 
@@ -111,8 +120,10 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
   bool get _showFoodTab => ref.watch(proUnlockedProvider);
   int get _foodTabIndex => 1;
   int get _coachTabIndex => _showFoodTab ? 2 : 1; // Only on web
-  int get _eventsTabIndex => kIsWeb ? (_showFoodTab ? 3 : 2) : (_showFoodTab ? 2 : 1);
-  int get _learnTabIndex => kIsWeb ? (_showFoodTab ? 4 : 3) : (_showFoodTab ? 3 : 2);
+  int get _eventsTabIndex =>
+      kIsWeb ? (_showFoodTab ? 3 : 2) : (_showFoodTab ? 2 : 1);
+  int get _learnTabIndex =>
+      kIsWeb ? (_showFoodTab ? 4 : 3) : (_showFoodTab ? 3 : 2);
 
   void _onTabSelected(int index) {
     setState(() => _currentIndex = index);
@@ -276,12 +287,7 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
       backgroundColor: isDark ? AppColors.blackberry : AppColors.cream,
       extendBodyBehindAppBar: true,
       appBar: PreferredSize(preferredSize: Size.zero, child: Container()),
-      body: Stack(
-        children: [
-          body,
-          if (_currentIndex != 0) settingsGear,
-        ],
-      ),
+      body: Stack(children: [body, if (_currentIndex != 0) settingsGear]),
     );
   }
 }

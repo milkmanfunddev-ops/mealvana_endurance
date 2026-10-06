@@ -24,6 +24,7 @@
 //  - initializeDeferredServices() -> integration-level / SchedulerBinding
 //  - checkAndHandleDirtyRecordBackup upload/discard flow (needs real dialog)
 
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:drift/drift.dart' show Value;
@@ -49,6 +50,8 @@ import 'package:mealvana_endurance/shared/services/app_external_deps.dart';
 import 'package:mealvana_endurance/shared/services/logging_service.dart';
 import 'package:mealvana_endurance/shared/services/report/report.dart';
 import 'package:mealvana_endurance/shared/services/sentry/sentry_reporter.dart';
+
+import '../../helpers/fakes/recording_report.dart';
 
 // ─── Mock declarations ────────────────────────────────────────────────────────
 
@@ -162,6 +165,7 @@ void main() {
   late MockSupabaseClient mockSupabase;
   late MockGoTrueClient mockAuth;
   late MockSharedPreferences mockPrefs;
+  late RecordingReport report;
   late AppDatabase database;
   late Directory tempDir;
 
@@ -186,6 +190,7 @@ void main() {
     mockSupabase = MockSupabaseClient();
     mockAuth = MockGoTrueClient();
     mockPrefs = MockSharedPreferences();
+    report = RecordingReport();
 
     _stubLogger(mockLogger);
 
@@ -252,6 +257,7 @@ void main() {
     return ProviderContainer(
       overrides: [
         appExternalDepsProvider.overrideWithValue(deps),
+        reportProvider.overrideWithValue(report),
         appDatabaseProvider.overrideWithValue(database),
         if (foodRepo != null)
           foodRepositoryProvider.overrideWithValue(foodRepo),
@@ -318,10 +324,7 @@ void main() {
     // Identity goes through `Report` (ticket 02): the Supabase user id is the
     // Sentry user from the first frame; role and device_id follow in the
     // deferred `report_identity` step.
-    late _RecordingReport report;
-
     ProviderContainer makeReportContainer() {
-      report = _RecordingReport();
       final deps = AppExternalDeps(
         supabaseClient: mockSupabase,
         logger: mockLogger,
@@ -361,16 +364,19 @@ void main() {
       container.dispose();
     });
 
-    test('does not rethrow when identity cannot be read; reports Degraded', () async {
-      when(() => mockAuth.currentUser).thenThrow(Exception('auth not ready'));
+    test(
+      'does not rethrow when identity cannot be read; reports Degraded',
+      () async {
+        when(() => mockAuth.currentUser).thenThrow(Exception('auth not ready'));
 
-      final container = makeReportContainer();
-      final service = container.read(appStartupServiceProvider);
+        final container = makeReportContainer();
+        final service = container.read(appStartupServiceProvider);
 
-      await expectLater(service.setSentryUserContext(), completes);
-      expect(report.degradedAreas, ['startup']);
-      container.dispose();
-    });
+        await expectLater(service.setSentryUserContext(), completes);
+        expect(report.degradeds.map((r) => r.area), ['startup']);
+        container.dispose();
+      },
+    );
   });
 
   // ─── checkUserSession ────────────────────────────────────────────────────────
@@ -476,6 +482,8 @@ void main() {
       final service = container.read(appStartupServiceProvider);
 
       await expectLater(service.checkUserSession(), completes);
+      expect(report.faults.map((r) => r.area), ['startup']);
+      expect(report.faults.single.message, 'Session check failed');
 
       container.dispose();
     });
@@ -529,6 +537,7 @@ void main() {
       final service = container.read(appStartupServiceProvider);
 
       await expectLater(service.fallbackLoadFoods(), completes);
+      expect(report.faults.map((r) => r.area), ['startup']);
 
       container.dispose();
     });
@@ -619,8 +628,14 @@ void main() {
         _UnmountedBuildContext(),
       );
 
-      // Corrupt backup should fail gracefully
+      // Corrupt backup should fail gracefully, and say so.
       expect(result, isFalse);
+      expect(
+        report.calls.where(
+          (c) => c.severity != 'info' && c.severity != 'debug',
+        ),
+        isNotEmpty,
+      );
 
       container.dispose();
     });
@@ -641,7 +656,7 @@ void main() {
         'upload_errors': [],
       };
       final backupFile = File('${tempDir.path}/dirty_records_backup.json');
-      await backupFile.writeAsString(backup.toString().replaceAll("'", '"'));
+      await backupFile.writeAsString(jsonEncode(backup));
 
       final container = makeContainer();
       final service = container.read(appStartupServiceProvider);
@@ -652,6 +667,9 @@ void main() {
       );
 
       expect(result, isFalse);
+      // The silent return is on the tape (rule D9): a startup Note.
+      expect(report.notes.map((n) => n.area), ['startup']);
+      expect(report.notes.single.message, contains('Context not mounted'));
 
       container.dispose();
     });
@@ -728,34 +746,4 @@ void main() {
       expect(knownKeys.contains(unknownKey), isFalse);
     });
   });
-}
-
-/// Records what the startup service tells `Report` about identity.
-class _RecordingReport extends NoopReport {
-  final List<String> userIds = [];
-  final List<String?> degradedAreas = [];
-  int cleared = 0;
-
-  @override
-  Future<void> setUser(String id, {String? role, String? deviceId}) async {
-    userIds.add(id);
-  }
-
-  @override
-  Future<void> clearUser() async {
-    cleared++;
-  }
-
-  @override
-  Future<void> degraded(
-    Object error, {
-    StackTrace? stackTrace,
-    String? area,
-    Map<String, String>? tags,
-    Map<String, dynamic>? extra,
-    String? message,
-    List<String>? fingerprint,
-  }) async {
-    degradedAreas.add(area);
-  }
 }

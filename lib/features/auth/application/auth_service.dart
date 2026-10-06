@@ -12,7 +12,7 @@ import '../../onboarding/domain/allergy.dart';
 import '../../../shared/services/app_external_deps.dart';
 import '../../../shared/services/app_version_service.dart';
 import '../../../shared/services/logging_service.dart';
-import '../../../shared/services/sentry/sentry_reporter.dart';
+import '../../../shared/services/report/report.dart';
 
 /// Application service for managing user authentication and preferences
 /// Follows the Andrea Bizzotto pattern with Ref for dependency injection
@@ -29,7 +29,7 @@ class AuthService {
       ref.read(authRepositoryEdgeProvider);
 
   AppLogger get _logger => ref.read(appExternalDepsProvider).logger;
-  SentryReporter get _sentry => ref.read(appExternalDepsProvider).sentry;
+  Report get _report => ref.read(reportProvider);
   SupabaseClient get _supabase =>
       ref.read(appExternalDepsProvider).supabaseClient;
 
@@ -145,16 +145,11 @@ class AuthService {
       // NOTE: Supabase upload is now handled by background sync (DataSyncService)
       // This allows instant navigation after registration while data syncs in background
 
-      // Update Sentry user context with new user details
-      await _sentry.setUserContext(
-        deviceId: effectiveUserId, // Use effective user ID for Sentry
-        appVersion: appVersion,
-        onboardingCompleted: true,
-        gutTrainingLevel: (gutTraining ?? GutTraining.moderate).name,
-      );
+      // Every following event carries the new user's id.
+      await _report.setUser(effectiveUserId);
 
-      _sentry.addBreadcrumb(
-        message: 'New user created with Supabase Auth',
+      _report.breadcrumb(
+        'New user created with Supabase Auth',
         category: 'user_lifecycle',
         data: {
           'user_id': effectiveUserId,
@@ -168,10 +163,11 @@ class AuthService {
       return userProfile;
     } catch (e, stackTrace) {
       // Critical: User creation failed
-      await _sentry.reportCriticalError(
+      await _report.fault(
         e,
         stackTrace: stackTrace,
-        context: 'user_creation_failure',
+        area: 'auth',
+        message: 'User creation failed',
         tags: {
           'error_type': 'supabase_auth_user_creation_failure',
           'operation': 'create_user',
@@ -205,7 +201,12 @@ class AuthService {
         try {
           await _authRepositoryEdge.updateUser(updatedUser);
         } catch (e) {
-          // Continue anyway since local update succeeded
+          // The local update succeeded; the remote copy catches up on sync.
+          await _report.note(
+            'Remote user update failed after local id repair; continuing',
+            area: 'auth',
+            data: {'user_id': newDeviceId, 'error': e.toString()},
+          );
         }
 
         return updatedUser;
@@ -214,10 +215,11 @@ class AuthService {
       return user;
     } catch (e, stackTrace) {
       // Critical: Can't get current user - this affects the entire app
-      await _sentry.reportCriticalError(
+      await _report.fault(
         e,
         stackTrace: stackTrace,
-        context: 'get_current_user_failure',
+        area: 'auth',
+        message: 'Get current user failed',
         tags: {
           'error_type': 'user_retrieval_critical',
           'operation': 'get_current_user',
@@ -406,8 +408,8 @@ class AuthService {
           data: {'userId': userId, 'foodPreferencesCount': preferences.length},
         );
 
-        _sentry.addBreadcrumb(
-          message: 'Food preferences saved locally',
+        _report.breadcrumb(
+          'Food preferences saved locally',
           category: 'user_lifecycle',
           data: {
             'user_id': userId,
@@ -417,10 +419,11 @@ class AuthService {
       }
     } catch (e, stackTrace) {
       // Critical: Food preferences save failure blocks onboarding completion
-      await _sentry.reportCriticalError(
+      await _report.fault(
         e,
         stackTrace: stackTrace,
-        context: 'food_preferences_save_failure',
+        area: 'auth',
+        message: 'Food preferences save failed',
         tags: {
           'device_id': deviceId,
           'error_type': 'edge_function_failure',
@@ -449,7 +452,13 @@ class AuthService {
     try {
       final userRepo = await _userRepository;
       return await userRepo.getFoodPreferences(userId);
-    } catch (e) {
+    } catch (e, stackTrace) {
+      await _report.fault(
+        e,
+        stackTrace: stackTrace,
+        area: 'auth',
+        message: 'Get food preferences failed; returning null',
+      );
       return null;
     }
   }
@@ -459,7 +468,13 @@ class AuthService {
     try {
       final userRepo = await _userRepository;
       return await userRepo.getFoodPreferenceLevels(userId);
-    } catch (e) {
+    } catch (e, stackTrace) {
+      await _report.fault(
+        e,
+        stackTrace: stackTrace,
+        area: 'auth',
+        message: 'Get food preference levels failed; returning empty',
+      );
       return {};
     }
   }
@@ -488,11 +503,13 @@ class AuthService {
         },
       );
       return removedCount;
-    } catch (e) {
-      _logger.warning(
-        'Failed to remove food preferences by source: $e',
-        context: 'AUTH',
-        data: {'userId': userId, 'source': source},
+    } catch (e, stackTrace) {
+      await _report.degraded(
+        e,
+        stackTrace: stackTrace,
+        area: 'auth',
+        message: 'Failed to remove food preferences by source',
+        extra: {'userId': userId, 'source': source},
       );
       return 0;
     }
@@ -504,7 +521,13 @@ class AuthService {
     try {
       final userRepo = await _userRepository;
       return await userRepo.getFoodPreferenceSources(userId);
-    } catch (e) {
+    } catch (e, stackTrace) {
+      await _report.fault(
+        e,
+        stackTrace: stackTrace,
+        area: 'auth',
+        message: 'Get food preference sources failed; returning empty',
+      );
       return {};
     }
   }
@@ -521,11 +544,12 @@ class AuthService {
       final userRepo = await _userRepository;
       return await userRepo.getLikedFoods(userId);
     } catch (e, stackTrace) {
-      await _sentry.reportDatabaseError(
+      await _report.fault(
         e,
-        operation: 'getLikedFoods',
-        table: 'food_preferences',
         stackTrace: stackTrace,
+        area: 'auth',
+        message: 'getLikedFoods failed',
+        tags: {'table': 'food_preferences', 'operation': 'getLikedFoods'},
       );
       return [];
     }
@@ -537,11 +561,12 @@ class AuthService {
       final userRepo = await _userRepository;
       return await userRepo.getDislikedFoods(userId);
     } catch (e, stackTrace) {
-      await _sentry.reportDatabaseError(
+      await _report.fault(
         e,
-        operation: 'getDislikedFoods',
-        table: 'food_preferences',
         stackTrace: stackTrace,
+        area: 'auth',
+        message: 'getDislikedFoods failed',
+        tags: {'table': 'food_preferences', 'operation': 'getDislikedFoods'},
       );
       return [];
     }
@@ -555,11 +580,15 @@ class AuthService {
       final userRepo = await _userRepository;
       return await userRepo.getWillingToTryFoods(userId);
     } catch (e, stackTrace) {
-      await _sentry.reportDatabaseError(
+      await _report.fault(
         e,
-        operation: 'getWillingToTryFoods',
-        table: 'food_preferences',
         stackTrace: stackTrace,
+        area: 'auth',
+        message: 'getWillingToTryFoods failed',
+        tags: {
+          'table': 'food_preferences',
+          'operation': 'getWillingToTryFoods',
+        },
       );
       return [];
     }
@@ -622,11 +651,13 @@ class AuthService {
         context: 'AUTH',
         data: {'was': profile.appVersion, 'now': running},
       );
-    } catch (e) {
+    } catch (e, stackTrace) {
       // Telemetry about the fleet must never cost anyone a launch.
-      _logger.warning(
-        'app_version reconcile failed (non-fatal): $e',
-        context: 'AUTH',
+      await _report.degraded(
+        e,
+        stackTrace: stackTrace,
+        area: 'auth',
+        message: 'app_version reconcile failed (non-fatal)',
       );
     }
   }
@@ -646,5 +677,8 @@ final currentUserProvider = FutureProvider<UserProfile?>((ref) async {
 /// Provider for AuthRepositoryEdge
 final authRepositoryEdgeProvider = Provider<AuthRepositoryEdge>((ref) {
   final externalDeps = ref.read(appExternalDepsProvider);
-  return AuthRepositoryEdge(externalDeps.supabaseClient, externalDeps.logger);
+  return AuthRepositoryEdge(
+    externalDeps.supabaseClient,
+    report: ref.read(reportProvider),
+  );
 });

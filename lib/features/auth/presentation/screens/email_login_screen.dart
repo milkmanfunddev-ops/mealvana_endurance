@@ -7,6 +7,7 @@ import 'package:mealvana_endurance/shared/widgets/custom_app_bar_back_button.dar
 import '../../../../shared/widgets/adaptive/adaptive.dart';
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../../../shared/services/app_external_deps.dart';
+import '../../../../shared/services/report/report.dart';
 import '../../../content/application/content_service.dart';
 import '../../../coach_mode/application/coach_service.dart';
 import '../providers/post_onboarding_auth_controller.dart';
@@ -75,8 +76,15 @@ class _EmailLoginScreenState extends ConsumerState<EmailLoginScreen> {
               context.go('/coach-portal');
               return;
             }
-          } catch (_) {
-            // Fall through to /main
+          } catch (e) {
+            // Fall through to /main.
+            await ref
+                .read(reportProvider)
+                .note(
+                  'Coach check failed after email login; routing to /main',
+                  area: 'auth',
+                  data: {'error': e.toString()},
+                );
           }
         }
         if (!mounted) return;

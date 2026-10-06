@@ -2,11 +2,10 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:sentry_flutter/sentry_flutter.dart';
 import '../../features/app_startup/application/app_startup_provider.dart';
 import '../services/app_external_deps.dart';
 import '../services/app_config.dart';
-import 'bootstrap/bootstrap.dart' show appNavigatorKey;
+import 'bootstrap/bootstrap.dart' show appNavigatorKey, appNavigatorObservers;
 
 // Import all screens
 import '../../features/app_startup/presentation/screens/force_upgrade_screen.dart';
@@ -121,9 +120,9 @@ class AppRouter {
       refreshListenable: authChangeNotifier,
       // Use Sentry navigator key for screenshot capture in feedback widget
       navigatorKey: appNavigatorKey,
-      // SentryNavigatorObserver records screen transitions as Sentry breadcrumbs
-      // and navigation spans for performance monitoring.
-      observers: [SentryNavigatorObserver()],
+      // Screen transitions become Sentry breadcrumbs and navigation spans;
+      // the observer is built in the bootstrap, which owns the SDK.
+      observers: appNavigatorObservers(),
       // Redirect logic based on app startup state
       redirect: (context, state) {
         final currentPath = state.uri.path;
@@ -478,10 +477,7 @@ class AppRouter {
                 ? tabParam
                 : null;
 
-            return TabsScreen(
-              initialTabIndex: 0,
-              initialTabName: tabName,
-            );
+            return TabsScreen(initialTabIndex: 0, initialTabName: tabName);
           },
         ),
 
@@ -1099,9 +1095,8 @@ class AppRouter {
             GoRoute(
               path: 'cook/:id',
               name: 'food-cooking-mode',
-              builder: (context, state) => CookingModeScreen(
-                mealId: state.pathParameters['id']!,
-              ),
+              builder: (context, state) =>
+                  CookingModeScreen(mealId: state.pathParameters['id']!),
             ),
             GoRoute(
               path: 'swap/:planMealId',
