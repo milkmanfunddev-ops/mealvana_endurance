@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import '../../../../shared/services/app_external_deps.dart';
-import '../../../../shared/services/logging_service.dart';
+import '../../../../shared/services/report/report.dart';
 import '../../application/supabase_auth_service.dart';
 
 part 'password_recovery_controller.g.dart';
@@ -10,7 +9,7 @@ part 'password_recovery_controller.g.dart';
 /// Steps: 1) Send reset code  2) Verify code  3) Set new password
 @riverpod
 class PasswordRecoveryController extends _$PasswordRecoveryController {
-  AppLogger get _logger => ref.read(appExternalDepsProvider).logger;
+  Report get _report => ref.read(reportProvider);
   SupabaseAuthService get _authService => ref.read(supabaseAuthServiceProvider);
 
   @override
@@ -23,20 +22,20 @@ class PasswordRecoveryController extends _$PasswordRecoveryController {
     state = const AsyncLoading();
 
     state = await AsyncValue.guard(() async {
-      _logger.info(
+      _report.info(
         'Sending password reset code',
-        context: 'PASSWORD_RECOVERY',
+        area: 'PASSWORD_RECOVERY',
         data: {'email_length': email.length},
       );
       await _authService.resetPassword(email: email);
-      _logger.info('Password reset code sent', context: 'PASSWORD_RECOVERY');
+      _report.info('Password reset code sent', area: 'PASSWORD_RECOVERY');
     });
 
     if (state.hasError) {
-      _logger.error(
-        'Failed to send reset code',
-        context: 'PASSWORD_RECOVERY',
-        error: state.error,
+      _report.fault(
+        state.error!,
+        area: 'PASSWORD_RECOVERY',
+        message: 'Failed to send reset code',
       );
     }
 
@@ -48,16 +47,16 @@ class PasswordRecoveryController extends _$PasswordRecoveryController {
     state = const AsyncLoading();
 
     state = await AsyncValue.guard(() async {
-      _logger.info('Verifying reset code', context: 'PASSWORD_RECOVERY');
+      _report.info('Verifying reset code', area: 'PASSWORD_RECOVERY');
       await _authService.verifyOtp(email: email, token: token);
-      _logger.info('Reset code verified', context: 'PASSWORD_RECOVERY');
+      _report.info('Reset code verified', area: 'PASSWORD_RECOVERY');
     });
 
     if (state.hasError) {
-      _logger.error(
-        'Reset code verification failed',
-        context: 'PASSWORD_RECOVERY',
-        error: state.error,
+      _report.fault(
+        state.error!,
+        area: 'PASSWORD_RECOVERY',
+        message: 'Reset code verification failed',
       );
     }
 
@@ -69,19 +68,16 @@ class PasswordRecoveryController extends _$PasswordRecoveryController {
     state = const AsyncLoading();
 
     state = await AsyncValue.guard(() async {
-      _logger.info('Setting new password', context: 'PASSWORD_RECOVERY');
+      _report.info('Setting new password', area: 'PASSWORD_RECOVERY');
       await _authService.updatePassword(newPassword: password);
-      _logger.info(
-        'Password updated successfully',
-        context: 'PASSWORD_RECOVERY',
-      );
+      _report.info('Password updated successfully', area: 'PASSWORD_RECOVERY');
     });
 
     if (state.hasError) {
-      _logger.error(
-        'Failed to set new password',
-        context: 'PASSWORD_RECOVERY',
-        error: state.error,
+      _report.fault(
+        state.error!,
+        area: 'PASSWORD_RECOVERY',
+        message: 'Failed to set new password',
       );
     }
 

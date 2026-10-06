@@ -1,6 +1,6 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../../../shared/services/logging_service.dart';
+import '../../../shared/services/report/report.dart';
 import '../domain/active_com_event.dart';
 
 part 'active_com_service.g.dart';
@@ -10,7 +10,7 @@ part 'active_com_service.g.dart';
 ActiveComService activeComService(Ref ref) {
   return ActiveComService(
     supabase: Supabase.instance.client,
-    logger: ref.watch(appLoggerProvider),
+    report: ref.watch(reportProvider),
   );
 }
 
@@ -18,9 +18,9 @@ ActiveComService activeComService(Ref ref) {
 /// Provides autocomplete functionality for event creation
 class ActiveComService {
   final SupabaseClient supabase;
-  final AppLogger logger;
+  final Report report;
 
-  ActiveComService({required this.supabase, required this.logger});
+  ActiveComService({required this.supabase, required this.report});
 
   /// Search for events by keyword
   ///
@@ -33,9 +33,12 @@ class ActiveComService {
   /// ```
   Future<List<ActiveComEvent>> searchEvents(String query) async {
     // Deprecated - this functionality has been removed
-    logger.warning(
-      'searchEvents called but active.com search is deprecated. Use searchPublicEvents instead.',
-      context: 'ACTIVE_COM_SERVICE',
+    report.degraded(
+      LoggedFault(
+        'searchEvents called but active.com search is deprecated. Use searchPublicEvents instead.',
+        context: 'ACTIVE_COM_SERVICE',
+      ),
+      area: 'ACTIVE_COM_SERVICE',
     );
     return [];
   }

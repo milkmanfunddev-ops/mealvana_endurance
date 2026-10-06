@@ -11,7 +11,6 @@ import '../../onboarding/domain/dietary_preference.dart';
 import '../../onboarding/domain/allergy.dart';
 import '../../../shared/services/app_external_deps.dart';
 import '../../../shared/services/app_version_service.dart';
-import '../../../shared/services/logging_service.dart';
 import '../../../shared/services/report/report.dart';
 
 /// Application service for managing user authentication and preferences
@@ -28,7 +27,6 @@ class AuthService {
   AuthRepositoryEdge get _authRepositoryEdge =>
       ref.read(authRepositoryEdgeProvider);
 
-  AppLogger get _logger => ref.read(appExternalDepsProvider).logger;
   Report get _report => ref.read(reportProvider);
   SupabaseClient get _supabase =>
       ref.read(appExternalDepsProvider).supabaseClient;
@@ -62,9 +60,9 @@ class AuthService {
       // Session may not exist if user logged out and is starting fresh
       var authUser = _supabase.auth.currentUser;
       if (authUser == null) {
-        _logger.info(
+        _report.info(
           'No auth session found, creating anonymous session for new user',
-          context: 'AUTH',
+          area: 'AUTH',
         );
         final response = await _supabase.auth.signInAnonymously();
         authUser = response.user;
@@ -82,9 +80,9 @@ class AuthService {
       // This ensures each registration creates a fresh user profile
       final String effectiveUserId = authUser.id;
 
-      _logger.info(
+      _report.info(
         'Creating new user with Supabase auth ID',
-        context: 'AUTH',
+        area: 'AUTH',
         data: {'device_id': deviceId, 'user_id': effectiveUserId},
       );
 
@@ -136,9 +134,9 @@ class AuthService {
       final userRepo = await _userRepository;
       await userRepo.saveUserProfile(userProfile, needsUpload: true);
 
-      _logger.info(
+      _report.info(
         'User profile saved locally and marked for background upload',
-        context: 'AUTH',
+        area: 'AUTH',
         data: {'userId': effectiveUserId},
       );
 
@@ -285,9 +283,9 @@ class AuthService {
     final userRepo = await _userRepository;
     await userRepo.updateUserProfile(updatedProfile, needsUpload: true);
 
-    _logger.info(
+    _report.info(
       'Sport preferences saved locally and marked for background upload',
-      context: 'AUTH',
+      area: 'AUTH',
       data: {'userId': userId},
     );
   }
@@ -314,9 +312,9 @@ class AuthService {
     final userRepo = await _userRepository;
     await userRepo.updateUserProfile(updatedProfile, needsUpload: true);
 
-    _logger.info(
+    _report.info(
       'Dietary preference saved locally and marked for background upload',
-      context: 'AUTH',
+      area: 'AUTH',
       data: {'userId': userId},
     );
   }
@@ -340,9 +338,9 @@ class AuthService {
     final userRepo = await _userRepository;
     await userRepo.updateUserProfile(updatedProfile, needsUpload: true);
 
-    _logger.info(
+    _report.info(
       'Allergies saved locally and marked for background upload',
-      context: 'AUTH',
+      area: 'AUTH',
       data: {'userId': userId},
     );
   }
@@ -380,9 +378,9 @@ class AuthService {
         );
 
     try {
-      _logger.info(
+      _report.info(
         'Saving food preferences via consolidated edge function',
-        context: 'AUTH',
+        area: 'AUTH',
         data: {'userId': userId, 'count': preferences.length},
       );
 
@@ -402,9 +400,9 @@ class AuthService {
         // Mark for background upload - DataSyncService will sync user profile + food preferences
         await userRepo.updateUserProfile(updatedUser, needsUpload: true);
 
-        _logger.info(
+        _report.info(
           'Food preferences saved locally and marked for background upload',
-          context: 'AUTH',
+          area: 'AUTH',
           data: {'userId': userId, 'foodPreferencesCount': preferences.length},
         );
 
@@ -493,9 +491,9 @@ class AuthService {
         userId,
         source,
       );
-      _logger.info(
+      _report.info(
         'Removed $removedCount food preferences with source: $source',
-        context: 'AUTH',
+        area: 'AUTH',
         data: {
           'userId': userId,
           'source': source,
@@ -646,9 +644,9 @@ class AuthService {
         needsUpload: true,
       );
 
-      _logger.info(
+      _report.info(
         'app_version reconciled',
-        context: 'AUTH',
+        area: 'AUTH',
         data: {'was': profile.appVersion, 'now': running},
       );
     } catch (e, stackTrace) {

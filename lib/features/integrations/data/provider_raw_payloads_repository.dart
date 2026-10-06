@@ -1,6 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../../../shared/services/logging_service.dart';
+import '../../../shared/services/report/report.dart';
 
 /// Uploads raw FS/TP provider payloads into `provider_raw_payloads`
 /// (real-payload-corpus@v1; contract: qa lifecycle.md L-7, mirrored at
@@ -19,12 +19,13 @@ import '../../../shared/services/logging_service.dart';
 class ProviderRawPayloadsRepository {
   ProviderRawPayloadsRepository({
     required SupabaseClient supabase,
-    AppLogger? logger,
+    Report? report,
   }) : _supabase = supabase,
-       _logger = logger ?? const NoopAppLogger();
+       _report = report;
 
   final SupabaseClient _supabase;
-  final AppLogger _logger;
+  final Report? _report;
+  Report get _r => _report ?? SentryReport.global;
 
   static const _table = 'provider_raw_payloads';
 
@@ -67,19 +68,21 @@ class ProviderRawPayloadsRepository {
       await _supabase
           .from(_table)
           .upsert(rows, onConflict: _conflictTarget, ignoreDuplicates: true);
-      _logger.info(
+      _r.info(
         'Raw payload capture uploaded',
-        context: 'RAW_PAYLOAD_CAPTURE',
+        area: 'RAW_PAYLOAD_CAPTURE',
         data: {'provider': provider, 'offered': rows.length},
       );
-    } catch (e) {
+    } catch (e, stackTrace) {
       // Never rethrow: capture is a side-channel. The next sync re-offers the
       // same rows. (Deliberately NOT the silent-failure pattern of
       // uploadDirtyRecords — this logs with context every time.)
-      _logger.warning(
-        'Raw payload capture failed (will retry next sync): $e',
-        context: 'RAW_PAYLOAD_CAPTURE',
-        data: {'provider': provider, 'offered': rows.length},
+      _r.degraded(
+        e,
+        stackTrace: stackTrace,
+        area: 'RAW_PAYLOAD_CAPTURE',
+        message: 'Raw payload capture failed (will retry next sync)',
+        extra: {'provider': provider, 'offered': rows.length},
       );
     }
   }

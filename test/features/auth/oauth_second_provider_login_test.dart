@@ -101,8 +101,6 @@ _oauthContainer() {
   final deps = AppExternalDeps(
     analytics: analytics,
     supabaseClient: client,
-    sentry: MockSentryReporter(),
-    logger: MockAppLogger(),
     sharedPreferences: MockSharedPreferences(),
   );
 
@@ -147,8 +145,6 @@ ProviderContainer _controllerContainer() {
   final deps = AppExternalDeps(
     analytics: analytics,
     supabaseClient: client,
-    sentry: MockSentryReporter(),
-    logger: MockAppLogger(),
     sharedPreferences: MockSharedPreferences(),
   );
 
@@ -237,34 +233,40 @@ void main() {
   });
 
   group('PostOnboardingAuthController (real controller)', () {
-    test('signInWithGoogle surfaces the refusal as a typed error state', () async {
-      final container = _controllerContainer();
-      final controller = container.read(
-        postOnboardingAuthControllerProvider.notifier,
-      );
+    test(
+      'signInWithGoogle surfaces the refusal as a typed error state',
+      () async {
+        final container = _controllerContainer();
+        final controller = container.read(
+          postOnboardingAuthControllerProvider.notifier,
+        );
 
-      final success = await controller.signInWithGoogle();
+        final success = await controller.signInWithGoogle();
 
-      expect(success, isFalse);
-      final state = container.read(postOnboardingAuthControllerProvider);
-      expect(state.error, isA<OAuthAccountNotFoundException>());
-      expect(
-        (state.error as OAuthAccountNotFoundException).provider,
-        'google',
-      );
-    });
+        expect(success, isFalse);
+        final state = container.read(postOnboardingAuthControllerProvider);
+        expect(state.error, isA<OAuthAccountNotFoundException>());
+        expect(
+          (state.error as OAuthAccountNotFoundException).provider,
+          'google',
+        );
+      },
+    );
 
-    test('signInWithApple surfaces the refusal as a typed error state', () async {
-      final container = _controllerContainer();
-      final controller = container.read(
-        postOnboardingAuthControllerProvider.notifier,
-      );
+    test(
+      'signInWithApple surfaces the refusal as a typed error state',
+      () async {
+        final container = _controllerContainer();
+        final controller = container.read(
+          postOnboardingAuthControllerProvider.notifier,
+        );
 
-      final success = await controller.signInWithApple();
+        final success = await controller.signInWithApple();
 
-      expect(success, isFalse);
-      final state = container.read(postOnboardingAuthControllerProvider);
-      expect(state.error, isA<OAuthAccountNotFoundException>());
-    });
+        expect(success, isFalse);
+        final state = container.read(postOnboardingAuthControllerProvider);
+        expect(state.error, isA<OAuthAccountNotFoundException>());
+      },
+    );
   });
 }

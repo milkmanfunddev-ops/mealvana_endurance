@@ -15,7 +15,6 @@ import 'package:mealvana_endurance/shared/database/app_database.dart'
     show AppDatabase;
 import 'package:mealvana_endurance/shared/domain/activity_type.dart';
 import 'package:mealvana_endurance/shared/domain/write_consistency.dart';
-import 'package:mealvana_endurance/shared/services/logging_service.dart';
 
 class _MockDb extends Mock implements AppDatabase {}
 
@@ -79,7 +78,6 @@ void main() {
 
     final service = EventsService(
       _MockDb(),
-      NoopAppLogger(),
       repo,
       _MockActivitiesService(),
       _MockCoachRepo(),
@@ -153,13 +151,7 @@ void main() {
           consistency: any(named: 'consistency'),
         ),
       ).thenAnswer((inv) async => inv.namedArguments[#activity] as Activity);
-      service = EventsService(
-        _MockDb(),
-        NoopAppLogger(),
-        repo,
-        activities,
-        _MockCoachRepo(),
-      );
+      service = EventsService(_MockDb(), repo, activities, _MockCoachRepo());
     });
 
     Future<void> moveEventToDec25() => service.updateEvent(
@@ -211,23 +203,25 @@ void main() {
       expect(moved.displayTime, DateTime(2026, 12, 25, 9));
     });
 
-    test('provider-synced activity is left alone (unruled, D-2c analogue)',
-        () async {
-      when(() => activities.getActivityById(any(), any())).thenAnswer(
-        (_) async => linkedActivity(syncedFromProvider: 'training_peaks'),
-      );
+    test(
+      'provider-synced activity is left alone (unruled, D-2c analogue)',
+      () async {
+        when(() => activities.getActivityById(any(), any())).thenAnswer(
+          (_) async => linkedActivity(syncedFromProvider: 'training_peaks'),
+        );
 
-      await moveEventToDec25();
+        await moveEventToDec25();
 
-      verifyNever(
-        () => activities.updateActivity(
-          deviceId: any(named: 'deviceId'),
-          activity: any(named: 'activity'),
-          currentUserId: any(named: 'currentUserId'),
-          consistency: any(named: 'consistency'),
-        ),
-      );
-    });
+        verifyNever(
+          () => activities.updateActivity(
+            deviceId: any(named: 'deviceId'),
+            activity: any(named: 'activity'),
+            currentUserId: any(named: 'currentUserId'),
+            consistency: any(named: 'consistency'),
+          ),
+        );
+      },
+    );
 
     test('an activity that already happened is never rescheduled', () async {
       when(() => activities.getActivityById(any(), any())).thenAnswer(

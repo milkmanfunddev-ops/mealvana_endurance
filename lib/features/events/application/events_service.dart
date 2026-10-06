@@ -3,7 +3,6 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../domain/event.dart' as domain;
 import '../../../shared/database/app_database.dart';
 import '../../../shared/database/database_provider.dart';
-import '../../../shared/services/logging_service.dart';
 import '../../../shared/domain/activity_type.dart';
 import '../../../shared/domain/write_consistency.dart';
 import '../data/events_repository.dart';
@@ -17,7 +16,6 @@ part 'events_service.g.dart';
 EventsService eventsService(Ref ref) {
   return EventsService(
     ref.read(appDatabaseProvider),
-    ref.read(appLoggerProvider),
     ref.read(eventsRepositoryProvider),
     ref.read(activitiesServiceProvider),
     ref.read(coachRepositoryProvider),
@@ -29,7 +27,6 @@ EventsService eventsService(Ref ref) {
 /// Handles all event-related operations including CRUD for race events
 class EventsService {
   final AppDatabase _database;
-  final AppLogger _logger;
   final EventsRepository _eventsRepository;
   final ActivitiesService _activitiesService;
   final CoachRepository _coachRepository;
@@ -37,7 +34,6 @@ class EventsService {
 
   EventsService(
     this._database,
-    this._logger,
     this._eventsRepository,
     this._activitiesService,
     this._coachRepository, {
@@ -240,9 +236,9 @@ class EventsService {
         updatedAt: now,
       );
 
-      _logger.info(
+      _report.info(
         'Resolved write consistency',
-        context: 'EVENTS_SERVICE',
+        area: 'EVENTS_SERVICE',
         data: {
           'entity': 'event',
           'operation': 'create',
@@ -321,9 +317,9 @@ class EventsService {
         eventDate: eventDateFromStartTime(event.startTime) ?? event.eventDate,
       );
 
-      _logger.info(
+      _report.info(
         'Resolved write consistency',
-        context: 'EVENTS_SERVICE',
+        area: 'EVENTS_SERVICE',
         data: {
           'entity': 'event',
           'operation': 'update',
@@ -398,9 +394,9 @@ class EventsService {
       if (activity == null) return;
 
       if (activity.syncedFromProvider != null) {
-        _logger.info(
+        _report.info(
           'Linked activity left in place: provider-synced (unruled)',
-          context: 'EVENTS_SERVICE',
+          area: 'EVENTS_SERVICE',
           data: {
             'eventId': event.id,
             'activityId': activityId,
@@ -410,9 +406,9 @@ class EventsService {
         return;
       }
       if (activity.actualTime != null) {
-        _logger.info(
+        _report.info(
           'Linked activity left in place: already performed',
-          context: 'EVENTS_SERVICE',
+          area: 'EVENTS_SERVICE',
           data: {'eventId': event.id, 'activityId': activityId},
         );
         return;
@@ -488,9 +484,9 @@ class EventsService {
         }
       }
 
-      _logger.info(
+      _report.info(
         'Resolved write consistency',
-        context: 'EVENTS_SERVICE',
+        area: 'EVENTS_SERVICE',
         data: {
           'entity': 'event',
           'operation': 'delete',

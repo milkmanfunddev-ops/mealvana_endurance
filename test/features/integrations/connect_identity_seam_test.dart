@@ -41,6 +41,7 @@ import 'package:mealvana_endurance/features/onboarding/presentation/providers/on
 import 'package:mealvana_endurance/shared/database/app_database.dart';
 import 'package:mealvana_endurance/shared/providers/user_id_provider.dart';
 
+import '../../helpers/fakes/recording_report.dart';
 import '../../helpers/widget_test_harness.dart';
 
 class _MockFinalSurgeOAuth extends Mock implements FinalSurgeOAuthService {}
@@ -96,7 +97,7 @@ void main() {
     repository = IntegrationsRepository(
       database: db,
       supabase: supabase,
-      logger: MockAppLogger(),
+      report: RecordingReport(),
     );
 
     oauth = _MockFinalSurgeOAuth();

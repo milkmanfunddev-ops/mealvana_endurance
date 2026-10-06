@@ -6,7 +6,6 @@ import 'package:uuid/uuid.dart';
 
 import '../../../shared/data/syncable_repository.dart';
 import '../../../shared/database/app_database.dart';
-import '../../../shared/services/logging_service.dart';
 import '../../../shared/services/report/report.dart';
 import '../../../shared/services/sync/sync_dependency_graph.dart';
 import '../domain/integration.dart';
@@ -23,16 +22,13 @@ class IntegrationsRepository with SyncableRepository {
   IntegrationsRepository({
     required AppDatabase database,
     required SupabaseClient supabase,
-    required AppLogger logger,
     Report? report,
   }) : _db = database,
        _supabase = supabase,
-       _logger = logger,
        _report = report;
 
   final AppDatabase _db;
   final SupabaseClient _supabase;
-  final AppLogger _logger;
   final Report? _report;
   Report get _r => _report ?? SentryReport.global;
   static const _uuid = Uuid();
@@ -51,9 +47,9 @@ class IntegrationsRepository with SyncableRepository {
   @override
   Future<SyncResult> syncFromRemote(String userId) async {
     try {
-      _logger.info(
+      _r.info(
         'Syncing integrations from Supabase',
-        context: 'INTEGRATIONS_REPOSITORY',
+        area: 'INTEGRATIONS_REPOSITORY',
         data: {'userId': userId},
       );
 
@@ -88,9 +84,9 @@ class IntegrationsRepository with SyncableRepository {
 
       await setLastSyncTime(DateTime.now());
 
-      _logger.info(
+      _r.info(
         'Integrations sync complete',
-        context: 'INTEGRATIONS_REPOSITORY',
+        area: 'INTEGRATIONS_REPOSITORY',
         data: {
           'userId': userId,
           'remoteCount': remoteRows.length,
@@ -165,17 +161,17 @@ class IntegrationsRepository with SyncableRepository {
       // there yet, leave the rows dirty and defer. They upload on the next
       // sync once the profile lands, which is the offline-first contract.
       if (!await _remoteUserExists(userId)) {
-        _logger.info(
+        _r.info(
           'Deferring integration upload: user row not yet remote',
-          context: 'INTEGRATIONS_REPOSITORY',
+          area: 'INTEGRATIONS_REPOSITORY',
           data: {'userId': userId, 'deferred': dirty.length},
         );
         return UploadResult.nothingToUpload();
       }
 
-      _logger.info(
+      _r.info(
         'Uploading dirty integrations to Supabase',
-        context: 'INTEGRATIONS_REPOSITORY',
+        area: 'INTEGRATIONS_REPOSITORY',
         data: {'userId': userId, 'count': dirty.length},
       );
 
@@ -197,9 +193,9 @@ class IntegrationsRepository with SyncableRepository {
         }
       });
 
-      _logger.info(
+      _r.info(
         'Dirty integrations uploaded',
-        context: 'INTEGRATIONS_REPOSITORY',
+        area: 'INTEGRATIONS_REPOSITORY',
         data: {'userId': userId, 'count': ids.length},
       );
 
