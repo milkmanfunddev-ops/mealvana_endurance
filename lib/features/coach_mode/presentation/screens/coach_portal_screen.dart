@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../shared/utils/responsive_breakpoints.dart';
 import '../../../../theme/kyle_design/app_colors.dart';
 import '../providers/coach_dashboard_controller.dart';
 import '../providers/coach_portal_controller.dart';
@@ -36,22 +37,45 @@ class CoachPortalScreen extends ConsumerWidget {
       }
     });
 
+    final portal = Row(
+      children: [
+        // Left sidebar
+        PortalSidebar(onBackToApp: onBackToApp),
+
+        // Divider
+        const VerticalDivider(width: 1, color: AppColors.blackberryLight),
+
+        // Right panel
+        Expanded(child: _buildRightPanel(portalState)),
+      ],
+    );
+
     return Scaffold(
       backgroundColor: AppColors.blackberryDark,
-      body: Row(
-        children: [
-          // Left sidebar
-          PortalSidebar(onBackToApp: onBackToApp),
-
-          // Divider
-          const VerticalDivider(width: 1, color: AppColors.blackberryLight),
-
-          // Right panel
-          Expanded(child: _buildRightPanel(portalState)),
-        ],
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          if (constraints.maxWidth >= minLayoutWidth) return portal;
+          // Narrower than the split layout (a phone reaching the web portal
+          // by deep link): keep the desktop layout at its minimum width and
+          // let it scroll sideways. Squeezed into a phone, the 280-wide
+          // sidebar left the panel ~121 px and its rows overflowed
+          // (Sentry DEV-5S).
+          return SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: SizedBox(
+              width: minLayoutWidth,
+              height: constraints.maxHeight,
+              child: portal,
+            ),
+          );
+        },
       ),
     );
   }
+
+  /// The narrowest width the split layout is laid out at: the 280 sidebar,
+  /// the divider, and a panel at the medium breakpoint's remainder.
+  static const double minLayoutWidth = Breakpoints.medium;
 
   Widget _buildRightPanel(CoachPortalState portalState) {
     switch (portalState.activeSection) {

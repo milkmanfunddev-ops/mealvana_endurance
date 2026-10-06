@@ -7,6 +7,7 @@ import '../../../../shared/services/app_external_deps.dart';
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../../../shared/widgets/custom_app_bar_back_button.dart';
 import '../../../../shared/services/report/report.dart';
+import '../../../../shared/utils/disposal_safe_video_controller.dart';
 
 /// Full-screen video player using chewie + video_player
 class VideoPlayerScreen extends ConsumerStatefulWidget {
@@ -131,7 +132,9 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
       return;
     }
 
-    final controller = VideoPlayerController.networkUrl(Uri.parse(videoUrl));
+    final controller = DisposalSafeVideoPlayerController.networkUrl(
+      Uri.parse(videoUrl),
+    );
     _videoController = controller;
 
     try {
