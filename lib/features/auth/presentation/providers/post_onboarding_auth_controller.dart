@@ -210,63 +210,105 @@ class PostOnboardingAuthController extends _$PostOnboardingAuthController {
     required String email,
     required String password,
   }) async {
+    // Read before the first await (Riverpod 3: `ref` is unusable once the
+    // provider is disposed mid-flight).
+    final report = _report;
+    final analytics = _analytics;
+    final emailAuthService = _emailAuthService;
     state = const AsyncLoading();
 
-    _report.info(
+    report.info(
       'Post-onboarding auth: Starting email account creation',
       area: 'auth',
     );
 
-    await _analytics.track(
+    await analytics.track(
       'auth_flow_started',
       properties: {'provider': 'email', 'source': 'post_onboarding'},
     );
 
     state = await AsyncValue.guard(() async {
-      await _emailAuthService.linkEmailAccount(
-        email: email,
-        password: password,
-      );
+      await emailAuthService.linkEmailAccount(email: email, password: password);
     });
 
     if (state.hasError) {
-      // Pending verification is a routing signal, not a failure — the caller
-      // inspects state.error and pushes the verify-code screen.
-      if (state.error is EmailVerificationRequiredException) {
-        _report.info(
-          'Post-onboarding auth: email link pending verification',
-          area: 'auth',
-        );
-        return false;
-      }
-
-      _report.fault(
-        state.error!,
-        area: 'auth',
-        message: 'Post-onboarding auth: Email account creation failed',
-      );
-
-      await _analytics.track(
-        'auth_flow_failed',
-        properties: {
-          'provider': 'email',
-          'source': 'post_onboarding',
-          'error': state.error.toString(),
-        },
-      );
-    } else {
-      _report.info(
-        'Post-onboarding auth: Email account created successfully',
-        area: 'auth',
-      );
-
-      await _analytics.track(
-        'auth_flow_completed',
-        properties: {'provider': 'email', 'source': 'post_onboarding'},
+      return _emailCreationFailed(
+        report: report,
+        analytics: analytics,
+        source: 'post_onboarding',
+        verb: 'link',
       );
     }
 
-    return !state.hasError;
+    report.info(
+      'Post-onboarding auth: Email account created successfully',
+      area: 'auth',
+    );
+
+    await analytics.track(
+      'auth_flow_completed',
+      properties: {'provider': 'email', 'source': 'post_onboarding'},
+    );
+
+    return true;
+  }
+
+  /// The failure half of [linkEmailAccount] and [signUpWithEmail].
+  ///
+  /// `state.error` is the underlying exception the service rethrew (an
+  /// `AuthApiException`, a network failure), so the Fault carries the real
+  /// cause and its stack. It used to be a generic
+  /// `Exception('Account creation failed. Please try again.')` that hid the
+  /// cause (MEALVANA-ENDURANCE-CG). The user still sees that sentence: the
+  /// signup screen shows it from the content system for every failure it
+  /// does not route on.
+  Future<bool> _emailCreationFailed({
+    required Report report,
+    required AnalyticsTracker analytics,
+    required String source,
+    required String verb,
+  }) async {
+    final error = state.error!;
+
+    // Routing signals, not failures: the screen inspects state.error and
+    // pushes the verify-code screen or the "sign in instead" dialog.
+    if (error is EmailVerificationRequiredException) {
+      report.info(
+        'Post-onboarding auth: email $verb pending verification',
+        area: 'auth',
+      );
+      return false;
+    }
+    if (error is AccountAlreadyExistsException) {
+      report.info(
+        'Post-onboarding auth: email $verb hit an existing account',
+        area: 'auth',
+      );
+      await analytics.track(
+        'auth_account_already_exists',
+        properties: {'provider': 'email', 'source': source},
+      );
+      return false;
+    }
+
+    report.fault(
+      error,
+      stackTrace: state.stackTrace,
+      area: 'auth',
+      message: verb == 'link'
+          ? 'Post-onboarding auth: Email account creation failed'
+          : 'Post-onboarding auth: Email signup failed',
+    );
+
+    await analytics.track(
+      'auth_flow_failed',
+      properties: {
+        'provider': 'email',
+        'source': source,
+        'error': error.toString(),
+      },
+    );
+    return false;
   }
 
   /// Sign up with email/password (creates NEW user)
@@ -275,59 +317,43 @@ class PostOnboardingAuthController extends _$PostOnboardingAuthController {
     required String email,
     required String password,
   }) async {
+    // Read before the first await (see [linkEmailAccount]).
+    final report = _report;
+    final analytics = _analytics;
+    final emailAuthService = _emailAuthService;
     state = const AsyncLoading();
 
-    _report.info(
+    report.info(
       'Post-onboarding auth: Starting email signup (new user)',
       area: 'auth',
     );
 
-    await _analytics.track(
+    await analytics.track(
       'auth_flow_started',
       properties: {'provider': 'email', 'source': 'post_onboarding_signup'},
     );
 
     state = await AsyncValue.guard(() async {
-      await _emailAuthService.signUpWithEmail(email: email, password: password);
+      await emailAuthService.signUpWithEmail(email: email, password: password);
     });
 
     if (state.hasError) {
-      // Pending verification is a routing signal, not a failure.
-      if (state.error is EmailVerificationRequiredException) {
-        _report.info(
-          'Post-onboarding auth: email signup pending verification',
-          area: 'auth',
-        );
-        return false;
-      }
-
-      _report.fault(
-        state.error!,
-        area: 'auth',
-        message: 'Post-onboarding auth: Email signup failed',
-      );
-
-      await _analytics.track(
-        'auth_flow_failed',
-        properties: {
-          'provider': 'email',
-          'source': 'post_onboarding_signup',
-          'error': state.error.toString(),
-        },
-      );
-    } else {
-      _report.info(
-        'Post-onboarding auth: Email signup successful',
-        area: 'auth',
-      );
-
-      await _analytics.track(
-        'auth_flow_completed',
-        properties: {'provider': 'email', 'source': 'post_onboarding_signup'},
+      return _emailCreationFailed(
+        report: report,
+        analytics: analytics,
+        source: 'post_onboarding_signup',
+        verb: 'signup',
       );
     }
 
-    return !state.hasError;
+    report.info('Post-onboarding auth: Email signup successful', area: 'auth');
+
+    await analytics.track(
+      'auth_flow_completed',
+      properties: {'provider': 'email', 'source': 'post_onboarding_signup'},
+    );
+
+    return true;
   }
 
   /// Sign in with email/password

@@ -23,6 +23,24 @@ enum ExpectedFailure {
   cancelledPurchase('cancelled_purchase'),
   accountNotFound('account_not_found'),
   storeNetwork('store_network'),
+
+  /// Google Play services failed inside the Google Sign-In flow
+  /// (`ApiException` status 8, `INTERNAL_ERROR`). Not a client
+  /// misconfiguration: that is status 10, `DEVELOPER_ERROR`, which stays a
+  /// Fault.
+  playServicesTransient('play_services_transient'),
+
+  /// A control-flow signal, not a failure: the account exists but its email
+  /// address is not verified yet, so the athlete is sent to the code screen.
+  verificationPending('verification_pending'),
+
+  /// The email or provider identity already belongs to an account; the UI
+  /// offers to sign in to it instead.
+  accountExists('account_exists'),
+
+  /// GoTrue refused a resend inside its cooldown (the athlete tapped Resend
+  /// again too soon).
+  rateLimited('rate_limited'),
   debugAssertion('debug_assertion'),
   webDomTeardown('web_dom_teardown'),
 
@@ -62,6 +80,10 @@ expectedFailureNeedles = <MapEntry<String, ExpectedFailure>>[
   // the app is backgrounded mid-request.
   MapEntry('Bad file descriptor', ExpectedFailure.connectionReset),
   MapEntry('Connection reset by peer', ExpectedFailure.connectionReset),
+  // 2026-10-06 (MEALVANA-ENDURANCE-CX, CW): Android's ECONNABORTED. The OS
+  // dropped the socket mid-request (network switch, app backgrounded) during
+  // a token refresh; supabase retries the refresh on the next tick.
+  MapEntry('Software caused connection abort', ExpectedFailure.connectionReset),
   // --- Timeouts ---
   MapEntry('TimeoutException', ExpectedFailure.timeout),
   // 2026-07-11 audit (DEV-4W): `http.ClientException` wraps a plain
@@ -82,6 +104,29 @@ expectedFailureNeedles = <MapEntry<String, ExpectedFailure>>[
   // Supabase `AuthApiException(code: invalid_credentials)`.
   MapEntry('Invalid login credentials', ExpectedFailure.invalidCredentials),
   MapEntry('invalid_credentials', ExpectedFailure.invalidCredentials),
+  // 2026-10-06 (DEV-95, DEV-9P): a mistyped or expired 6-digit code, from the
+  // email-verify and password-reset screens. The screen says so and offers
+  // Resend.
+  MapEntry(
+    'InvalidVerificationCodeException',
+    ExpectedFailure.invalidCredentials,
+  ),
+  MapEntry('otp_expired', ExpectedFailure.invalidCredentials),
+  // --- Control-flow signals from the auth flows (the UI routes on them) ---
+  // 2026-10-06 (DEV-8R, DEV-9N): signup or login before the email code was
+  // entered. The controller logs it as info, but the Riverpod net still
+  // reports the AsyncError it routes on, so the type has to be listed here.
+  MapEntry(
+    'EmailVerificationRequiredException',
+    ExpectedFailure.verificationPending,
+  ),
+  MapEntry('email_not_confirmed', ExpectedFailure.verificationPending),
+  // 2026-10-06 (DEV-8D): the address or provider is already registered; the
+  // signup screen offers "sign in instead".
+  MapEntry('AccountAlreadyExistsException', ExpectedFailure.accountExists),
+  MapEntry('User already registered', ExpectedFailure.accountExists),
+  // 2026-10-06 (DEV-9Q): "you can only request this after N seconds".
+  MapEntry('over_email_send_rate_limit', ExpectedFailure.rateLimited),
   // --- Expired session (refresh token gone; the athlete signs in again) ---
   MapEntry('refresh_token_not_found', ExpectedFailure.expiredSession),
   MapEntry('Invalid Refresh Token', ExpectedFailure.expiredSession),
@@ -106,6 +151,25 @@ expectedFailureNeedles = <MapEntry<String, ExpectedFailure>>[
   MapEntry("reading 'insertBefore'", ExpectedFailure.webDomTeardown),
 ];
 
+/// Expected failures whose message has a part that changes per build, so a
+/// plain needle cannot match it. Checked after [expectedFailureNeedles].
+final List<MapEntry<RegExp, ExpectedFailure>>
+expectedFailurePatterns = <MapEntry<RegExp, ExpectedFailure>>[
+  // 2026-10-06 (MEALVANA-ENDURANCE-CF): google_sign_in on Android reports
+  // `PlatformException(sign_in_failed, <ApiException>: <status>: ...)`.
+  // R8 renames the ApiException class per build (`K3.a` in 1.28.0+146),
+  // so the class is matched loosely and the status code exactly.
+  // Status 7 is NETWORK_ERROR. Status 8 is INTERNAL_ERROR: on CF the same
+  // device signed in with Google 48 s later, so it is transient. Status
+  // 10 (DEVELOPER_ERROR, a SHA-1 / OAuth client mismatch) and 12500 are
+  // real misconfigurations and stay Faults.
+  MapEntry(RegExp(r'sign_in_failed, [\w.$]+: 7: '), ExpectedFailure.offline),
+  MapEntry(
+    RegExp(r'sign_in_failed, [\w.$]+: 8: '),
+    ExpectedFailure.playServicesTransient,
+  ),
+];
+
 /// Patterns that only the test runner produces. These never reach Sentry.
 const List<String> testOnlyNeedles = <String>[
   'TestFailure',
@@ -120,6 +184,9 @@ ExpectedFailure? classifyExpectedFailure(String text) {
   if (text.isEmpty) return null;
   for (final entry in expectedFailureNeedles) {
     if (text.contains(entry.key)) return entry.value;
+  }
+  for (final entry in expectedFailurePatterns) {
+    if (entry.key.hasMatch(text)) return entry.value;
   }
   return null;
 }
