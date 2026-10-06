@@ -1,208 +1,331 @@
-# Sentry Integration Guide (Repo Truth)
+# Error reporting and Sentry
 
-## Current State (Repo Truth)
-- Sentry is initialized at app entrypoints and used through provider-backed dependencies.
-- Feature code accesses reporting through injected external deps (`appExternalDepsProvider`).
-- The current integration pattern is `SentryReporter`-based, not a monolithic legacy service.
+Every error, warning and silent-path note leaves the app through one service, `Report`. Edge
+functions report through one wrapper. Both write to the same two Sentry projects. Nothing else is
+a sink for errors: there is no separate logger, debug logger or Sentry wrapper.
 
-## Source of Truth
-- Reporter interface/implementation: `lib/shared/services/sentry/sentry_reporter.dart`
-- Session-replay cohort sampler: `lib/shared/services/sentry/sentry_replay_sampling.dart`
-- MetricKit → Sentry bridge (native): `ios/Runner/MetricKitReporter.swift`
-- External dependency wiring: `lib/shared/services/app_external_deps.dart`
-- App entrypoints — all four configure Sentry, and the three mobile ones must be
-  kept in sync (replay sampling, `beforeSend` filter, consent gate):
-  - `lib/main.dart`
-  - `lib/main_dev.dart`
-  - `lib/main_prod.dart`
-  - `lib/main_web.dart` (replay disabled outright on web for performance)
+Vocabulary (Report, Fault, Degraded, Note, Expected failure, Silent path) is defined in
+`CONTEXT.md` § Error reporting. Rule D9 in `CLAUDE.md` is the standing rule this implements. The
+design record is `.scratch/sentry/spec.md`.
 
-## Session Replay — why it is sampled to a 10% cohort (2026-07-16)
+## Which call to make
 
-**Do not set `onErrorSampleRate` to a fractional value. It does not mean what it
-looks like it means.**
+| Situation | Call | What Sentry gets |
+|---|---|---|
+| Something broke that should never break (unexpected exception, failed upload, payment mismatch) | `report.fault(error, stackTrace: st, area: 'sync')` | event, level `error`; Mixpanel `error_reported` |
+| An expected but bad condition the app lives with (offline, timeout, expired session, cancelled sign-in) | `report.degraded(error, stackTrace: st, area: ...)` | event, level `warning`; Mixpanel `error_reported` |
+| A silent path took a branch (early return, skipped step, guard bail) | `report.note('Push: no app id, skipping init', area: 'push')` | breadcrumb on the next event; a `warning` event of its own in `startup`, `push`, `payments`, `sync` |
+| Narrative worth reading next to an error | `report.info(message, area: ..., data: {...})` | structured log |
+| Developer narrative | `report.debug(message, ...)` | structured log |
+| A trail marker with no severity meaning | `report.breadcrumb(message, category: ...)` | breadcrumb |
+| The error should leave the block | `rethrow` | nothing here; the caller owns it |
 
-A beta tester reported their phone running hot and draining battery on both the
-dev and prod TestFlight builds. The cause was session replay, armed at
-`onErrorSampleRate = 1.0` for every release install.
+Rules that follow from the table:
 
-### The mechanism
+- Call `fault` when unsure. If the error matches the expected-failure allow-list
+  (`lib/shared/services/report/expected_failures.dart`), `Report` downgrades it to Degraded and
+  tags it `expected_failure:<reason>`. Test-runner failures (`TestFailure` and friends) are
+  dropped. A call site never has to decide what is noise.
+- `info` and `debug` are not reports. A catch block that only calls them is a silent path, and the
+  source guard rejects it.
+- `area` is lower-cased before it is sent. Use it consistently; it becomes the `area` tag and the
+  Mixpanel property.
+- Optional arguments on `fault` and `degraded`: `tags` (searchable), `extra` (sent as the
+  `diagnostic` context), `message` (event message), `fingerprint` (grouping).
+- Mixpanel receives `severity`, `area`, `exception_type` and `sentry_event_id`. No message text.
 
-`onErrorSampleRate` reads like a sampling rate, but the gate deciding whether
-sentry-cocoa's recorder starts is an exact comparison against zero
-(`SentrySessionReplayIntegration.m`; our `sessionSampleRate` is `0`, so
-`_startedAsFullSession` is always false):
+### One error, one event
 
-```objc
-_startedAsFullSession = [self shouldReplayFullSession:_replayOptions.sessionSampleRate];
-if (!_startedAsFullSession && _replayOptions.onErrorSampleRate == 0) {
-    return;   // recorder never starts
+`Report` remembers each error object it has captured, by identity. A repository that Faults and
+rethrows, the controller that catches the same object, and the Riverpod observer all see one
+object; only the first capture becomes an event, and the later ones leave a breadcrumb. So report
+where you have the most context and rethrow freely. Primitives (a thrown `String`) cannot be
+tracked and are never deduped.
+
+### Riverpod failures
+
+`SentryProviderObserver` (`lib/shared/services/sentry/sentry_provider_observer.dart`) is
+installed on the root `ProviderScope`. It turns every provider failure into a Fault, including
+the `AsyncError` that `AsyncValue.guard` writes into a notifier's state. You do not need to report
+a guarded error yourself. The observer:
+
+- unwraps a `ProviderException` and reports the inner error with a `wrapped` tag, unless that
+  object was already reported;
+- dedupes within a session by provider name, exception type and message;
+- records each retry attempt as a `riverpod.retry` breadcrumb and reports only when retries run
+  out.
+
+### Domain decoders
+
+The domain layer may not depend on `Report` (`presentation -> application -> domain <- data`).
+A pure decoder that tolerates a malformed stored value takes a `DecodeIssue` callback
+(`lib/shared/domain/decode_issue.dart`), defaulting to `ignoreDecodeIssue`. The data layer
+supplies the real one:
+
+```dart
+DecodeIssue get _onIssue => _report.decodeIssue('meal_logging');
+```
+
+Each issue becomes a Degraded in that area.
+
+## Getting a `Report`
+
+Inject it. Providers and controllers read `reportProvider`; classes take it in the constructor.
+
+```dart
+@riverpod
+MealLogRepository mealLogRepository(Ref ref) {
+  return MealLogRepository(
+    supabase: Supabase.instance.client,
+    database: ref.read(appDatabaseProvider),
+    report: ref.read(reportProvider),
+  );
 }
-[self runReplayForAvailableWindow];
 ```
 
-Any non-zero value starts the recorder, which then runs **continuously for the
-whole foreground session**, capturing frames into a rolling ~30s buffer via a
-display link. That is inherent to the feature — you cannot have the 30 seconds
-*before* a crash without recording the whole time. The `onErrorSampleRate`
-dice-roll happens later, at error time (`sessionReplayShouldCaptureReplayForError`),
-and only decides whether the already-recorded buffer is uploaded.
+Code that already reads `appExternalDepsProvider` can use its `report` field; it is the same
+instance.
 
-So the trap: `onErrorSampleRate = 0.1` costs **100% of the battery** and discards
-**90% of the replays**. It is strictly worse than either `1.0` or `0.0`.
+`SentryReport.global` is the fallback for code with no injection point: static helpers, widgets
+without a `ref`, and the bootstrap before the provider graph exists. Building `reportProvider`
+points the global at the same instance, so both paths share one hub and one analytics fan-out.
+Prefer injection whenever a `ref` or constructor is available.
 
-Sentry's published iOS overhead is CPU 4% → 13% on an iPhone 14 Pro (a CPU
-figure, not a battery figure; the heat follows from the CPU never idling). It
-pauses on `UIApplicationDidEnterBackgroundNotification`, so this is foreground
-burn only — it is not background activity.
+`NoopReport` has the same interface and emits nothing.
 
-### Measured, not assumed (2026-07-16)
+## Testing with `RecordingReport`
 
-A/B on the iPhone 17 Pro simulator, dev flavor, same build, arm forced via
-`--dart-define` and verified live before each measurement. 20 idle CPU samples
-per arm over ~60s, app untouched:
+`test/helpers/fakes/recording_report.dart` records every call and emits nothing. Override the
+provider or pass it to the constructor, then assert on what was reported:
 
-| Arm | mean | median | p90 | replay frames on-CPU |
+```dart
+final report = RecordingReport();
+final container = ProviderContainer(
+  overrides: [reportProvider.overrideWithValue(report)],
+);
+
+// ... drive the code under test ...
+
+expect(report.faults.single.area, 'sync');
+expect(report.notes, isEmpty);
+```
+
+It exposes `calls`, `faults`, `degradeds`, `notes`, `userIds` and `cleared`. Each recorded call
+carries `severity`, `error`, `message`, `area`, `tags`, `extra` and `data`.
+`PerformanceTelemetry.reportOverride` takes the same fake for timing tests.
+
+The service itself is tested with the SDK transport swapped for an in-memory one, in
+`test/shared/services/report/report_test.dart`.
+
+## The source guard
+
+`test/shared/source_guard/report_source_guard_test.dart` reads every `lib/**.dart` file (generated
+code and `lib/features/_archived/` excluded) and fails on three things:
+
+1. **An unreported catch.** A catch block passes only if its text contains an escape (`rethrow`,
+   `throw`, `Error.throwWithStackTrace(`) or a `Report` call (`.fault(`, `.degraded(`, `.note(`,
+   `report.`, `_report.`, `Report.`). A catch that only logs with `info` or `debug` fails.
+2. **A `print(` or `debugPrint(` inside a catch**, whether or not the block also reports.
+3. **A Sentry SDK import** outside `lib/shared/services/report/` and `lib/shared/core/bootstrap/`.
+
+The exact matching rules are at the top of `test/shared/source_guard/source_guard.dart`.
+
+### Allowing a deliberate silent catch
+
+Some catches are silent on purpose, for example Report's own sinks, which would recurse if they
+reported. Add one line to the `## reasoned` section of `test/shared/source_guard/allow_list.md`:
+
+```
+unreportedCatch lib/path/to/file.dart :: } catch (_) { :: why this catch stays silent
+```
+
+- The signature is the trimmed source line holding the `catch` (or bare `on`) keyword, so line
+  numbers can drift.
+- Identical signatures in one file are counted: three silent catches need three lines.
+- The reason is one line and must justify the silence. Adding one is a review decision.
+- The `## baseline` section only shrinks. Never add to it. The test also fails on an entry that no
+  longer matches a site.
+
+## Identity
+
+`syncReportIdentity` (`lib/shared/services/report/report_identity.dart`) runs from the startup
+flow and again on each sign-in and sign-out. It sets:
+
+- the Sentry user to the Supabase user id;
+- a `role` tag, `athlete` or `coach`, from the coach lookup (left unset if the lookup fails,
+  which is reported as Degraded);
+- a `device_id` tag once device info is ready.
+
+On sign-out it clears all three. No email is ever sent: `sendDefaultPii` is off, and replay masks
+all text and images.
+
+## The dev debug screen
+
+Triple-tap the Profile & Preferences row in Settings to open `DebugScreen`. Its log view reads `ReportLog`, an
+in-memory ring of the last 500 lines that `Report` mirrored. Every `fault`, `degraded`, `note`,
+`info` and `debug` call lands there with its level, area, data and error. Nothing else writes to
+it. You can filter by level, copy to the clipboard, or clear it. It is a dev convenience and does
+not count as a D9 channel.
+
+## Bootstrap
+
+All four entry points call `bootstrap(flavor)` (`lib/shared/core/bootstrap/bootstrap.dart`). It
+runs `SentryFlutter.init(options, appRunner: ...)` and installs no error handler of its own; the
+SDK marks crashes unhandled with the Flutter mechanism.
+
+Per-flavor settings come from one table in `sentry_flavor_settings.dart`:
+
+| Flavor | DSN source | Traces | Replay on error | SDK debug |
 |---|---|---|---|---|
-| replay **off** | **2.71%** | 2.65% | 3.50% | **0** |
-| replay **armed** | **5.16%** | 4.30% | 6.00% | `takeScreenshot` ×7, `newFrame` ×9 |
+| dev | `.env.dev.local` | 1.0 | never | on |
+| prod | `.env.prod.local` | 0.1 | per-install cohort | off |
+| web | `--dart-define` | 1.0 dev, 0.1 prod | never | off |
 
-**~1.9x idle CPU** (+2.45 points mean). Mann-Whitney U, z=4.84, p<0.05;
-P(armed sample > off sample) = 0.948.
+- No fallback DSN. An empty DSN disables Sentry for that run and prints a console line, so dev
+  events can never land in the prod project.
+- Environment comes from `SENTRY_ENVIRONMENT`, falling back to `development` or `production`.
+- Release is `mealvana_endurance@<version>+<build>`, dist is the build number, and every event is
+  tagged `shorebird_patch` (`none` on a base build).
+- Whole-session replay is off everywhere.
+- Structured logs are on. Supabase calls are breadcrumbs and spans (`SentryHttpClient` inside
+  `SentrySupabaseClient`), Drift statements are spans, and outgoing requests carry
+  `sentry-trace`, `baggage` and `traceparent`.
 
-`sample` on the idle armed process caught the mechanism directly:
+`beforeSend` is `filterSentryEvent` (`sentry_event_filter.dart`), the same for every flavor:
 
+1. Drop test-runner failures.
+2. Downgrade expected failures that reached the SDK without passing through `Report` (SDK HTTP
+   errors, uncaught throws) to `warning`, tagged `expected_failure`. SDK-reported failures of
+   `get-weather-forecast` are downgraded as `handled_fallback`, because the caller substitutes a
+   default forecast.
+3. In release builds, drop `debug` and `info` events, except those tagged `metrickit`. Structured
+   logs are not events and pass untouched.
+
+## Telemetry that is not an error
+
+**Slow steps.** `PerformanceTelemetry.measure` and `recordDuration`
+(`lib/shared/services/report/performance_telemetry.dart`) record each step as a `perf.step` span
+with a duration measurement, plus a breadcrumb. A step over 2 s makes the breadcrumb a warning.
+A step over 10 s also sends one Degraded event, once per step per process, fingerprinted by step
+name. A local database reset is always a Degraded event.
+
+**MetricKit (iOS).** `ios/Runner/MetricKitReporter.swift` buffers Apple MetricKit payloads until
+Dart is ready, then hands them to `MetricKitRelay`
+(`lib/shared/services/report/metrickit_relay.dart`):
+
+- A metric payload (daily CPU, energy, launch and hang aggregates) becomes a structured log via
+  `Report.info`, flattened into attributes.
+- A diagnostic payload (CPU exception, hang, disk-write exception, crash, with native stacks)
+  becomes a Degraded warning event tagged `metrickit:diagnostic`. Filter the issue stream by the
+  `metrickit` tag.
+- If the native reporter is missing, the relay leaves a `startup` Note.
+
+MetricKit only delivers on real devices, at most once a day for metrics. It is native code: it
+ships in a real build and cannot be Shorebird-patched. It is not consent-gated; it is stability
+data about our own code. `MetricKitReporter.swift` is wired into
+`Runner.xcodeproj/project.pbxproj` by hand. A native file missing from the target fails only at
+the build step with "Cannot find X in scope".
+
+## Edge functions
+
+`supabase/functions/_shared/sentry.ts` wraps every function:
+
+```ts
+import { initSentry, withSentry } from "../_shared/sentry.ts";
+initSentry();
+serve(withSentry("my-function", async (req) => { ... }));
 ```
-CA::Display::DisplayLink::dispatch_deferred_display_links(...)   (QuartzCore)
-  └─ CA::Display::DisplayLinkItem::dispatch_(...)
-      └─ @objc SentrySessionReplay.newFrame(_:)
-          └─ SentrySessionReplay.takeScreenshot()
-              └─ SentryOnDemandReplay.addFrameAsync(timestamp:image:forScreen:)
-```
 
-A display link driving `takeScreenshot()` on an app doing nothing — exactly the
-maintainer's description in #6885. The off arm shows **zero** such frames,
-confirming `onErrorSampleRate = 0` really does prevent the recorder starting.
+Per request the wrapper runs under its own `withIsolationScope`, tags `edge_function`, `method`
+and `component: edge_function`, captures an exception that escapes the handler (answering 500),
+and flushes before returning.
 
-**Caveats, so nobody over-reads this.** Debug build (release/profile are not
-supported on the iOS simulator), so absolute numbers are not
-release-representative — the Flutter screenshot path is JIT here and likely
-overstates cost, while the native display link and encode are the same. The
-simulator has no real battery, no thermals, and no ProMotion panel, so the
-display-link cost may be *understated* versus a real 120Hz device where it also
-prevents the display idling. Direction and mechanism are solid; the exact
-multiplier on a real phone is not. Confirming that is what MetricKit is for.
+- Same two Sentry projects as the app. Environment is `edge-dev` or `edge-prod` from the
+  `SENTRY_ENVIRONMENT` secret. Traces sample rate is 0. With no `SENTRY_DSN`, every call is a
+  no-op.
+- `_shared/responses.ts` reports for you: `serverError()` captures its error; `errorResponse()`
+  captures when given a cause or a 5xx status, and leaves a breadcrumb for a 4xx with no cause.
+- For other catches use `captureEdgeError`, `captureEdgeMessage` or `edgeBreadcrumb`.
+- `_shared/sentry_coverage.test.ts` fails if any non-frozen function's `index.ts` does not enter
+  through `withSentry` with its folder name, and drives each handler with a fake client to prove
+  one capture per request.
+- In dev, a request with the `x-sentry-probe` header set to the `SENTRY_PROBE_TOKEN` secret makes
+  the wrapper throw, to prove the pipeline end to end.
 
-### What we do instead
+## Sentry projects and alerts
 
-`resolveReplayOnErrorSampleRate` samples in Dart, per install, and returns only
-`1.0` or `0.0`:
+Org `milkman-24`, free (Developer) plan. Prod project `mealvana-endurance`, dev project
+`mealvana-endurance-dev`. The full record of settings, IDs and API calls is
+`.scratch/sentry/issues/13-sentry-projects-configured.md` § Settings changed.
 
-- **Armed install** → identical behaviour to before. The native SDK records and
-  every error ships its 30s video to Sentry. Dart does not touch the video
-  pipeline; it only decides whether to switch the recorder on.
-- **Unarmed install** → recorder never starts, zero idle cost.
+- **Prod alerts:** two email rules, "New issue" and "Regression", filtered to environment
+  `production`, at most once per 24 hours per issue, sent to team `milkman`. Dev events never page.
+- **Dev alerts:** none. Dev gets the weekly report only.
+- **Both projects:** spike protection on; browser-extension and legacy-browser inbound filters on;
+  digests at 30 min minimum, 60 min maximum.
+- **No dev quota cap.** The plan offers no per-project cap. If dev threatens the shared quota,
+  lower dev `sampleRate` in the app.
+- **Cron monitor:** `raw-retention-sweep` on prod, `17 3 * * *` UTC, 30-minute margin.
+- Issue alerts live in the workflow engine (`/organizations/milkman-24/workflows/`); the legacy
+  `/rules/` endpoints return 404.
 
-At `kReplayArmedCohortFraction = 0.1` the cost is ~10% of what it was for ~10% of
-the coverage — a linear trade. Sentry's own knob offers none.
+## Session replay: the per-install cohort
 
-The roll is **persisted per install**, not per session: an armed install stays
-armed, giving complete session histories for a stable subset rather than a
-scatter of half-captured reproductions.
+**Never set `onErrorSampleRate` to a fractional value.**
 
-Unarmed installs still get a still screenshot of the error moment
-(`attachScreenshot = true`, captured on demand at zero idle cost), the stack
-trace, and 100 breadcrumbs.
+A non-zero `onErrorSampleRate` starts sentry-cocoa's recorder, which then runs for the whole
+foreground session to keep a rolling 30 s buffer. The rate is rolled only at error time, to
+decide whether to upload the buffer. So `0.1` costs all of the battery and keeps a tenth of the
+replays. A beta tester's phone ran hot on `1.0` (2026-07-16). An A/B on the simulator measured
+about 1.9x idle CPU with replay armed, with `SentrySessionReplay.takeScreenshot()` driven by a
+display link on an idle app.
 
-### Constraints and levers
+What the app does instead (`lib/shared/core/bootstrap/sentry_replay_sampling.dart`):
 
-- Gated on analytics consent, same as Mixpanel — replay is a rolling recording of
-  the user's screen. Unconsented users are never armed and are never assigned a
-  cohort (so a later grant still rolls fairly). See
-  `lib/shared/services/privacy/analytics_consent.dart`.
-- Disabled outright in debug (avoids 200+ lines of codec logs) and on web.
-- To re-roll the whole fleet into fresh cohorts, bump the `_cohortKey` suffix.
-- **Shorebird-patchable**: this is pure Dart, so the cohort fraction can be
-  changed on an already-shipped binary without a new build.
+- `resolveReplayOnErrorSampleRate` rolls once per install and returns only `1.0` or `0.0`.
+  `kReplayArmedCohortFraction` is 0.1. An armed install records and uploads on error; an unarmed
+  one never starts the recorder.
+- Prod only, release builds only. Off in debug builds and on web.
+- Gated on analytics consent. An unconsented install is never armed and never assigned a cohort.
+- To re-roll the fleet, bump the `_cohortKey` suffix. It is pure Dart, so it can ship in a
+  Shorebird patch.
+- Unarmed installs still attach a screenshot of the error moment, the stack trace and up to 100
+  breadcrumbs.
+- `test/shared/core/bootstrap/sentry_replay_sampling_test.dart` guards the 1.0-or-0.0 rule.
 
-### When to revisit
+Revisit if upstream fixes the idle cost:
+[sentry-cocoa#5263](https://github.com/getsentry/sentry-cocoa/issues/5263) (session replay
+should use run-loop observers) and
+[#6885](https://github.com/getsentry/sentry-cocoa/issues/6885) (closed as its duplicate). If the
+idle cost goes away, return to a flat `1.0`.
 
-The overhead is upstream and unfixed. Revisit this whole file if that changes —
-if the idle cost goes away, the right answer is to return to a flat `1.0`.
+## Debug symbols, mappings and source maps
 
-- [sentry-cocoa#5263](https://github.com/getsentry/sentry-cocoa/issues/5263) —
-  "Session Replay should use runloop observers". **Open** (reopened).
-- [sentry-cocoa#6885](https://github.com/getsentry/sentry-cocoa/issues/6885) —
-  closed as a duplicate of #5263. Maintainer: session replay *"uses a display
-  link ... this leads to high overhead because even when the UI is not changing
-  session replay is recording a frame"*.
-- No `sentry_flutter` release fixes this. Even the latest (9.24.0) pins
-  sentry-cocoa **8.58.3**; Flutter has never moved to the 9.x line where fixes
-  are landing. We pin `sentry_flutter ^9.6.0` → cocoa **8.52.1**. Upgrading
-  within 9.x is worth doing on general principle but does **not** resolve this.
+The plugin (`sentry_dart_plugin`, `sentry:` block in `pubspec.yaml`) names no project on purpose.
+`SENTRY_PROJECT` comes from the environment, and a run without it refuses instead of defaulting
+to prod. The release name must match what the bootstrap reports,
+`mealvana_endurance@<version>+<build>`, where `<build>` is the build number the cut actually used.
+CI resolves it per cut; pubspec's own `+N` is not it. That mismatch is why releases such as
+`1.29.0+6` sat empty while real events arrived as `1.29.0+148`, unreleased.
 
-## Real-device CPU/battery via MetricKit (2026-07-17)
+Where uploads run:
 
-We cannot measure CPU/battery on a tester's phone directly — the simulator
-can't, and Xcode Organizer's battery pane needs App Store scale, not TestFlight.
-`ios/Runner/MetricKitReporter.swift` closes that gap by subscribing to Apple's
-MetricKit and forwarding each payload into the Sentry pipeline we already have.
+- **Codemagic, release workflows only** (`prod-ios`, `prod-android`, and the trigger-disabled
+  `main-*`): the `&upload_sentry_symbols` step in `codemagic.yaml`. It fails the build on a
+  missing `SENTRY_AUTH_TOKEN` or a failed upload. The develop auto-cut (`dev-ios`) and the dev
+  lanes do not run it. `test/shared/ci_config_contract_test.dart` enforces both.
+- **Android R8 mapping:** `sentry_dart_plugin` cannot upload `mapping.txt`. The Sentry Gradle
+  plugin in `android/app/build.gradle.kts` runs in UUID-only mode. The Codemagic step reads the
+  UUID from the bundle's `sentry-debug-meta.properties` and runs
+  `sentry-cli upload-proguard --uuid`. Check Project Settings, ProGuard in Sentry after a release
+  cut.
+- **Web source maps:** `scripts/build_web.sh` builds with `--source-maps`, uploads when the Vercel
+  project carries `SENTRY_AUTH_TOKEN` and `SENTRY_PROJECT`, then deletes `build/web/*.map`. Without
+  the token it logs and skips.
+- **After a Shorebird patch:** a patch is a new Dart snapshot with new symbols. Run the command
+  below from the backport worktree once the patch has shipped.
 
-- **What it is**: a native `MXMetricManagerSubscriber` registered in
-  `AppDelegate.didFinishLaunchingWithOptions`. No Dart, no new backend, no table.
-- **Where the data shows up**: Sentry, as `info` events tagged
-  `metrickit:metric` (daily CPU time / foreground time) and
-  `metrickit:diagnostic` (CPU exceptions, hangs — each with a device call
-  stack). Filter the issue stream by the `metrickit` tag.
-- **Cost**: none worth measuring. MetricKit is passive — iOS already collects
-  this for the system battery screen; we only read it. No polling, no display
-  link. Metric payloads arrive ≤once/24h; diagnostics immediately (iOS 15+).
-- **Constraints**:
-  - Real devices only. The simulator never delivers payloads, so this cannot be
-    smoke-tested locally — verify by watching Sentry for `metrickit`-tagged
-    events ~24h after a TestFlight build lands.
-  - Native, so it ships in a real build and **cannot** be Shorebird-patched
-    (unlike the replay fix).
-  - Not consent-gated, matching the crash/performance-reporting policy: it is
-    stability/perf data about our own code, `sendDefaultPii` stays false.
-- **Adding the file to the Xcode target**: `MetricKitReporter.swift` is wired
-  into `Runner.xcodeproj/project.pbxproj` by hand (four entries mirroring
-  `AppDelegate.swift`). A new native file that compiles locally but is missing
-  from the target fails only at the *build* step with "Cannot find X in scope" —
-  if you add native files, add them to the target too.
-
-## Debug symbols, mappings and source maps (2026-10-06, sentry ticket 14)
-
-Projects: org `milkman-24`, prod `mealvana-endurance`, dev `mealvana-endurance-dev`.
-The plugin (`sentry_dart_plugin`, `sentry:` block in `pubspec.yaml`) names no
-project on purpose: `SENTRY_PROJECT` comes from the environment, and a run
-without it refuses instead of defaulting to prod. The release name must match
-what `bootstrap.dart` reports at runtime, `mealvana_endurance@<version>+<build>`,
-where `<build>` is the build number the cut actually used (CI resolves it per
-cut; pubspec's own `+N` is not it — that mismatch is why releases such as
-`1.29.0+6` sat in both projects with zero events while real events arrived as
-`1.29.0+148`, unreleased).
-
-Where it runs:
-- **Codemagic, release workflows only** (`prod-ios`, `prod-android`, and the
-  trigger-disabled `main-*`): the `&upload_sentry_symbols` step in
-  `codemagic.yaml`. It fails the build on a missing `SENTRY_AUTH_TOKEN` or a
-  failed upload. The develop auto-cut (`dev-ios`) and the dev lanes do not run
-  it; `test/shared/ci_config_contract_test.dart` enforces both.
-- **Android R8 mapping**: `sentry_dart_plugin` cannot upload `mapping.txt`
-  (its `debug-files upload` has no proguard type). The Sentry Gradle plugin in
-  `android/app/build.gradle.kts` runs in UUID-only mode (no upload, no SDK
-  auto-install, no instrumentation); the Codemagic step reads the UUID from the
-  bundle's `sentry-debug-meta.properties` and runs `sentry-cli upload-proguard
-  --uuid`. Check Project Settings → ProGuard in Sentry after a release cut.
-- **Web source maps**: `scripts/build_web.sh` builds with `--source-maps`,
-  uploads when the Vercel project carries `SENTRY_AUTH_TOKEN` + `SENTRY_PROJECT`
-  (per Vercel environment), then deletes `build/web/*.map` so maps are never
-  served. Without the token it logs and skips.
-- **After a Shorebird patch**: a patch is a new Dart snapshot with new symbols;
-  run the command below from the backport worktree once the patch has shipped.
-
-One-off / local / post-patch upload:
+One-off, local or post-patch upload:
 
 ```bash
 # From the tree the build came from, after the build (dSYM in build/ios/archive,
@@ -215,32 +338,8 @@ export SENTRY_DIST=148
 dart run sentry_dart_plugin
 ```
 
-Proof run 2026-10-06: `dart run sentry_dart_plugin` from this worktree with
-`SENTRY_PROJECT=mealvana-endurance-dev` created/finalized release
-`mealvana_endurance@1.29.0+6` in the dev project and associated commit
-`8294d09b`; no debug files were present locally (no release build), so the
-first real dSYM/mapping upload is the next `release/*` cut.
+## Related docs
 
-## Runbook / Commands
-- Find Sentry usage in app code:
-```bash
-rg -n "Sentry|sentry|SentryReporter|appExternalDepsProvider" lib -S
-```
-- Validate web entrypoint Sentry wiring:
-```bash
-rg -n "SentryFlutter\.init|SentryWidget|sentryNavigatorKey" lib/main_web.dart
-```
-
-## Verification Checklist
-- New error reporting calls use injected `SentryReporter` from external deps.
-- App entrypoints initialize Sentry before major app logic.
-- Sensitive data filtering remains in Sentry options/hooks where applicable.
-- `onErrorSampleRate` is only ever `1.0` or `0.0` — never a fractional value.
-  Guarded by `test/shared/services/sentry/sentry_replay_sampling_test.dart`.
-
-## Related Docs
-- `/docs/technical/README.md`
-- `/docs/deployment/README.md`
-
-## Deprecated/Legacy Notes
-- Legacy `SentryService` examples may exist in historical docs; prefer current `SentryReporter` pattern.
+- Console output in debug builds: `docs/technical/logging-service.md`
+- `docs/technical/README.md`
+- `docs/deployment/README.md`
