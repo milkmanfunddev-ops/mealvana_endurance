@@ -6,7 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../shared/database/app_database.dart';
 import '../../../../shared/domain/activity_type.dart';
 import '../../../../shared/services/app_external_deps.dart';
-import '../../../../shared/services/logging_service.dart';
+import '../../../../shared/services/report/decode_issue_report.dart';
 import '../../../../shared/services/report/report.dart';
 import '../../../auth/application/auth_service.dart';
 import '../../../auth/domain/user_preferences.dart';
@@ -39,7 +39,6 @@ class ClientFoodPoolService {
 
   TemplateFoodsRepository get _templateFoodsRepo =>
       _ref.read(templateFoodsRepositoryProvider);
-  AppLogger get _logger => _ref.read(appExternalDepsProvider).logger;
   Report get _report => _ref.read(reportProvider);
   static const String _area = 'nutrition_plan';
 
@@ -77,9 +76,9 @@ class ClientFoodPoolService {
     // 3. Load template foods (Drift first, Supabase fallback)
     var templateFoods = await _templateFoodsRepo.getAllTemplateFoods();
     if (templateFoods.isEmpty) {
-      _logger.info(
+      _report.info(
         'No local template foods, fetching from Supabase',
-        context: 'CLIENT_FOOD_POOL',
+        area: 'CLIENT_FOOD_POOL',
       );
       templateFoods = await _fetchTemplateFoodsFromSupabase();
     }
@@ -133,15 +132,16 @@ class ClientFoodPoolService {
           tf,
           phase: phase,
           preferenceScore: score,
+          onIssue: _report.decodeIssue('nutrition_plan'),
         ),
       );
     }
 
-    _logger.info(
+    _report.info(
       'Food pool for $phase: ${result.length} foods '
       '(${templateFoods.length} curated template foods checked; '
       'user_foods excluded by policy)',
-      context: 'CLIENT_FOOD_POOL',
+      area: 'CLIENT_FOOD_POOL',
     );
 
     return result;

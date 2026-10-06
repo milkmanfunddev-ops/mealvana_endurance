@@ -15,7 +15,6 @@ import '../../../weather/application/weather_service.dart';
 import '../../../../shared/services/location_service.dart';
 import '../../../../shared/services/report/report.dart';
 import '../../../../shared/widgets/kyle_design/inputs/duration_pace_toggle.dart';
-import 'package:mealvana_endurance/core/utils/debug_logger.dart';
 
 part 'swimming_input_controller.g.dart';
 
@@ -168,6 +167,11 @@ class SwimmingFormState {
 /// FOA COMPLIANT: Contains form state management and business logic coordination
 @Riverpod(keepAlive: true)
 class SwimmingInputController extends _$SwimmingInputController {
+  /// Reads after disposal throw; a disposed notifier reports through the
+  /// global instance (the one `reportProvider` built).
+  Report get _report =>
+      ref.mounted ? ref.read(reportProvider) : SentryReport.global;
+
   WeatherService get _weatherService => ref.read(weatherServiceProvider);
 
   @override
@@ -221,8 +225,9 @@ class SwimmingInputController extends _$SwimmingInputController {
 
       if (userProfile != null) {
         state = state.copyWith(unitSystem: userProfile.unitSystem);
-        DebugLogger.info(
+        _report.info(
           '🏊 SWIMMING CONTROLLER: Loaded user preferences - unitSystem: ${userProfile.unitSystem.name}',
+          area: 'nutrition_plan',
         );
       }
     } catch (e, stackTrace) {
@@ -262,8 +267,9 @@ class SwimmingInputController extends _$SwimmingInputController {
           zoneSuggestedPacePer100mSeconds: paceSeconds,
           estimatedDuration: Duration(seconds: estimatedSeconds),
         );
-        DebugLogger.info(
+        _report.info(
           '🏊 SWIMMING CONTROLLER: Applied zone-based pace: ${paceSeconds}s/100m',
+          area: 'nutrition_plan',
         );
       }
     } catch (e, stackTrace) {

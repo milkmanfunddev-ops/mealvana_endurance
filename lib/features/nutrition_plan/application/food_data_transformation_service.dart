@@ -2,8 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 import '../domain/food_item_data.dart';
 import '../data/food_repository.dart';
-import '../../../shared/services/app_external_deps.dart';
-import '../../../shared/services/logging_service.dart';
+import '../../../shared/services/report/report.dart';
 
 /// Service for transforming edge function responses into FoodItemData objects
 /// Handles database lookups and display name generation
@@ -12,7 +11,7 @@ class FoodDataTransformationService {
   final Ref ref;
 
   FoodRepository get _foodRepository => ref.read(foodRepositoryProvider);
-  AppLogger get _logger => ref.read(appExternalDepsProvider).logger;
+  Report get _report => ref.read(reportProvider);
 
   /// Transform edge function item response to FoodItemData
   /// Takes raw response with food_id and quantity, looks up details from database
@@ -26,10 +25,13 @@ class FoodDataTransformationService {
     final foodDetails = await _foodRepository.getFoodById(foodId);
 
     if (foodDetails == null) {
-      _logger.error(
-        'Food not found in local database',
-        context: 'FOOD_TRANSFORMATION',
-        data: {
+      _report.fault(
+        LoggedFault(
+          'Food not found in local database',
+          context: 'FOOD_TRANSFORMATION',
+        ),
+        area: 'FOOD_TRANSFORMATION',
+        extra: {
           'food_id': foodId,
           'quantity': quantity,
           'item_keys': item.keys.toList(),

@@ -8,7 +8,6 @@ import '../../../shared/data/syncable_repository.dart';
 import '../../../shared/database/app_database.dart';
 import '../../../shared/database/database_provider.dart';
 import '../../../shared/services/app_external_deps.dart';
-import '../../../shared/services/logging_service.dart';
 import '../../../shared/services/report/report.dart';
 import '../../../shared/services/sync/sync_dependency_graph.dart';
 
@@ -17,17 +16,11 @@ import '../../../shared/services/sync/sync_dependency_graph.dart';
 /// Template foods are the building blocks for nutrition templates.
 /// They are synced from Supabase and cached locally in Drift.
 class TemplateFoodsRepository with SyncableRepository {
-  TemplateFoodsRepository(
-    this._supabase,
-    this._database, {
-    AppLogger? logger,
-    Report? report,
-  }) : _logger = logger ?? const NoopAppLogger(),
-       _report = report;
+  TemplateFoodsRepository(this._supabase, this._database, {Report? report})
+    : _report = report;
 
   final SupabaseClient _supabase;
   final AppDatabase _database;
-  final AppLogger _logger;
   final Report? _report;
   Report get _r => _report ?? SentryReport.global;
   static const String _area = 'nutrition_plan';
@@ -50,9 +43,9 @@ class TemplateFoodsRepository with SyncableRepository {
       _database.templateFoodsTable,
     )..where((t) => t.isActive.equals(true))).get();
     if (localCount.isEmpty) {
-      _logger.debug(
+      _r.debug(
         'Forcing sync - no local template foods found',
-        context: 'TEMPLATE_FOODS_REPO',
+        area: 'TEMPLATE_FOODS_REPO',
       );
       return true;
     }
@@ -62,9 +55,9 @@ class TemplateFoodsRepository with SyncableRepository {
   @override
   Future<SyncResult> syncFromRemote(String userId) async {
     try {
-      _logger.info(
+      _r.info(
         'Syncing template foods from Supabase',
-        context: 'TEMPLATE_FOODS_REPO',
+        area: 'TEMPLATE_FOODS_REPO',
       );
 
       final response = await _supabase
@@ -76,19 +69,19 @@ class TemplateFoodsRepository with SyncableRepository {
       await _syncToLocalDatabase(response as List<dynamic>);
       await setLastSyncTime(DateTime.now());
 
-      _logger.info(
+      _r.info(
         'Template foods synced successfully',
-        context: 'TEMPLATE_FOODS_REPO',
+        area: 'TEMPLATE_FOODS_REPO',
         data: {'count': response.length},
       );
 
       return SyncResult.successful(response.length);
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to sync template foods from remote',
-        context: 'TEMPLATE_FOODS_REPO',
-        error: e,
+      _r.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'TEMPLATE_FOODS_REPO',
+        message: 'Failed to sync template foods from remote',
       );
       return SyncResult.failed(e.toString());
     }
@@ -302,12 +295,10 @@ final templateFoodsRepositoryProvider = Provider<TemplateFoodsRepository>((
   ref,
 ) {
   final database = ref.watch(appDatabaseProvider);
-  final logger = ref.watch(appLoggerProvider);
   final supabase = ref.watch(appExternalDepsProvider).supabaseClient;
   return TemplateFoodsRepository(
     supabase,
     database,
-    logger: logger,
     report: ref.watch(reportProvider),
   );
 });

@@ -1,7 +1,7 @@
 import 'dart:convert';
 
 import '../../../shared/database/app_database.dart';
-import '../../../shared/services/report/report.dart';
+import '../../../shared/domain/decode_issue.dart';
 import 'food_item_data.dart';
 import 'solver_types.dart';
 
@@ -81,6 +81,7 @@ class SolverFood {
     TemplateFoodEntry e, {
     required String phase,
     required int preferenceScore,
+    DecodeIssue onIssue = ignoreDecodeIssue,
   }) {
     final maxServ = switch (phase) {
       'before' => e.maxServingsBefore,
@@ -116,7 +117,7 @@ class SolverFood {
       // and is kept only for the UserFood path below.
       isIndivisible: e.isIndivisible,
       productType: e.productType,
-      categories: _parseJsonList(e.categories),
+      categories: _parseJsonList(e.categories, onIssue),
     );
   }
 
@@ -125,7 +126,11 @@ class SolverFood {
   /// NOT used by plan generation. Since the 2026-07-29 food-source policy the
   /// client food pool is the curated `template_foods` catalog only — see
   /// `ClientFoodPoolService`. Do not call this from a solver food pool.
-  factory SolverFood.fromUserFood(UserFood f, {required int preferenceScore}) {
+  factory SolverFood.fromUserFood(
+    UserFood f, {
+    required int preferenceScore,
+    DecodeIssue onIssue = ignoreDecodeIssue,
+  }) {
     return SolverFood(
       id: f.id,
       name: f.name,
@@ -149,7 +154,7 @@ class SolverFood {
       isUserFood: true,
       isIndivisible: _isIndivisibleProduct(f.productTypeId),
       productType: f.productTypeId,
-      categories: _parseJsonList(f.categories),
+      categories: _parseJsonList(f.categories, onIssue),
     );
   }
 
@@ -217,19 +222,19 @@ class SolverFood {
   }
 
   /// Parse a JSON array string into a list of strings.
-  static List<String> _parseJsonList(String? jsonStr) {
+  static List<String> _parseJsonList(String? jsonStr, DecodeIssue onIssue) {
     if (jsonStr == null || jsonStr.isEmpty) return [];
     try {
       final decoded = jsonDecode(jsonStr);
       if (decoded is List) {
         return decoded.cast<String>();
       }
-    } catch (e) {
-      // Static parser, no `ref`: the global instance is the provider-built one.
-      SentryReport.global.note(
-        'Solver food JSON list unreadable; treated as empty',
-        area: 'nutrition_plan',
-        data: {'raw': jsonStr, 'error': e.toString()},
+    } catch (e, stackTrace) {
+      // Domain stays pure: the data-layer caller decides where this goes.
+      onIssue(
+        'Solver food JSON list unreadable; treated as empty (raw: $jsonStr)',
+        error: e,
+        stackTrace: stackTrace,
       );
     }
     return [];

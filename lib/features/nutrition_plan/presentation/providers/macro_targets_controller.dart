@@ -28,13 +28,11 @@ import '../../../../shared/domain/write_consistency.dart';
 import '../../../../shared/services/app_external_deps.dart';
 import '../../../../shared/services/analytics/analytics_tracker.dart';
 import '../../../../shared/services/analytics/analytics_events.dart';
-import '../../../../shared/services/logging_service.dart';
 import '../../../../shared/services/report/report.dart';
 import '../../../auth/application/auth_service.dart';
 import '../../../events/presentation/providers/events_controller.dart';
 import '../../../events/application/events_service.dart';
 import '../../../events/data/events_repository.dart';
-import 'package:mealvana_endurance/core/utils/debug_logger.dart';
 import '../../../integrations/presentation/providers/tp_writeback_providers.dart';
 import '../../../coach_mode/presentation/providers/coach_activity_detail_controller.dart';
 
@@ -535,8 +533,12 @@ class MacroTargetsController extends _$MacroTargetsController {
     // state.value can be null if build() hasn't completed yet
     final currentState = state.value;
     if (currentState == null) {
-      DebugLogger.error(
-        '❌ MAIN CONTROLLER: state.value is NULL - state not loaded yet! Waiting for state...',
+      _report.fault(
+        LoggedFault(
+          '❌ MAIN CONTROLLER: state.value is NULL - state not loaded yet! Waiting for state...',
+          context: 'nutrition_plan',
+        ),
+        area: 'nutrition_plan',
       );
       // Wait for the async build to complete
       await future;
@@ -1417,9 +1419,13 @@ class MacroTargetsController extends _$MacroTargetsController {
             eventName: eventName,
           );
 
-          DebugLogger.info('🧱 DEBUG: Creating draft brick activity');
-          DebugLogger.info(
+          _report.info(
+            '🧱 DEBUG: Creating draft brick activity',
+            area: 'nutrition_plan',
+          );
+          _report.info(
             '🧱 DEBUG: segmentOrder=$segmentOrder, totalDurationMinutes=$totalDurationMinutes',
+            area: 'nutrition_plan',
           );
 
           final createdActivity = await activitiesService.createActivity(
@@ -1446,8 +1452,9 @@ class MacroTargetsController extends _$MacroTargetsController {
             final hasSegments =
                 existingActivity.brickMetadata?.segments.isNotEmpty ?? false;
             if (!hasSegments) {
-              DebugLogger.info(
+              _report.info(
                 '🧱 DEBUG: Backfilling brick metadata for activityId=$finalActivityId',
+                area: 'nutrition_plan',
               );
             }
 
@@ -1847,7 +1854,6 @@ class MacroTargetsController extends _$MacroTargetsController {
   /// Create nutrition plan with adjusted values
   /// Returns the activityId of the created/updated activity
   Future<String?> createNutritionPlan() async {
-    final appLogger = ref.read(appExternalDepsProvider).logger;
     final repository = ref.read(macroRepositoryProvider);
     final currentState = state.value;
     MacroTargets? macroTargets;
@@ -1872,10 +1878,13 @@ class MacroTargetsController extends _$MacroTargetsController {
     final resolvedMacroTargets = macroTargets;
 
     if (currentState == null) return null;
-    appLogger.warning(
-      'Create nutrition plan started',
-      context: 'MACRO_TARGETS_CONTROLLER',
-      data: {
+    _report.degraded(
+      LoggedFault(
+        'Create nutrition plan started',
+        context: 'MACRO_TARGETS_CONTROLLER',
+      ),
+      area: 'MACRO_TARGETS_CONTROLLER',
+      extra: {
         'activityId': currentState.activityId,
         'eventId': currentState.eventId,
         'forUserId': currentState.forUserId,
@@ -1884,11 +1893,12 @@ class MacroTargetsController extends _$MacroTargetsController {
 
     // Log what we're reading from cache vs state for debugging same-plan issues
     final stateMacros = currentState.macroTargets;
-    DebugLogger.info(
+    _report.info(
       '📋 [CREATE-PLAN] Cache vs State comparison:\n'
       '  Cache: pre_carbs=${resolvedMacroTargets.preRun.carbsG}, during_carbs=${resolvedMacroTargets.duringRun.carbTotalG}, post_carbs=${resolvedMacroTargets.postRun.carbsG}, distance=${resolvedMacroTargets.metrics.distanceMi}, duration=${resolvedMacroTargets.metrics.durationH}h\n'
       '  State: pre_carbs=${stateMacros?.preRun.carbsG}, during_carbs=${stateMacros?.duringRun.carbTotalG}, post_carbs=${stateMacros?.postRun.carbsG}, distance=${stateMacros?.metrics.distanceMi}, duration=${stateMacros?.metrics.durationH}h\n'
       '  ActivityId: state=${currentState.activityId}',
+      area: 'nutrition_plan',
     );
 
     // Set creating plan state
@@ -1949,7 +1959,7 @@ class MacroTargetsController extends _$MacroTargetsController {
             : macroDurationMinutes;
 
         // Log resolved parameters for debugging same-plan issues
-        DebugLogger.info(
+        _report.info(
           '📋 [CREATE-PLAN] Resolved params: '
           'activityId=${currentStateValue?.activityId}, '
           'hoursBefore=$hoursBefore (draft.timeBeforeMinutes=${draftActivity?.timeBeforeMinutes}), '
@@ -1957,6 +1967,7 @@ class MacroTargetsController extends _$MacroTargetsController {
           'draftDuration=$draftDurationMinutes, macroDuration=$macroDurationMinutes, '
           'resolvedDuration=$resolvedDurationMinutes, '
           'draftDistance=${draftActivity?.distanceMiles}',
+          area: 'nutrition_plan',
         );
 
         // Get dietary preferences and food preferences
@@ -2089,7 +2100,6 @@ class MacroTargetsController extends _$MacroTargetsController {
             await _verifyCoachRemotePlanVisibility(
               activityId: finalActivityId,
               expectedOwnerUserId: activityOwnerUserId,
-              appLogger: appLogger,
             );
           }
 
@@ -2364,7 +2374,6 @@ class MacroTargetsController extends _$MacroTargetsController {
   Future<void> _verifyCoachRemotePlanVisibility({
     required String activityId,
     required String expectedOwnerUserId,
-    required AppLogger appLogger,
   }) async {
     final repository = ref.read(activitiesRepositoryProvider);
     final delays = <Duration>[
@@ -2391,10 +2400,13 @@ class MacroTargetsController extends _$MacroTargetsController {
         final ownerMatches = remoteActivity?.userId == expectedOwnerUserId;
 
         if (remoteActivity != null && ownerMatches && hasPlan) {
-          appLogger.warning(
-            'Coach remote activity plan visibility confirmed',
-            context: 'MACRO_TARGETS_CONTROLLER',
-            data: {
+          _report.degraded(
+            LoggedFault(
+              'Coach remote activity plan visibility confirmed',
+              context: 'MACRO_TARGETS_CONTROLLER',
+            ),
+            area: 'MACRO_TARGETS_CONTROLLER',
+            extra: {
               'activityId': activityId,
               'ownerUserId': remoteActivity.userId,
               'attempt': attempt + 1,
@@ -2404,10 +2416,13 @@ class MacroTargetsController extends _$MacroTargetsController {
           return;
         }
 
-        appLogger.warning(
-          'Coach remote activity plan visibility pending',
-          context: 'MACRO_TARGETS_CONTROLLER',
-          data: {
+        _report.degraded(
+          LoggedFault(
+            'Coach remote activity plan visibility pending',
+            context: 'MACRO_TARGETS_CONTROLLER',
+          ),
+          area: 'MACRO_TARGETS_CONTROLLER',
+          extra: {
             'activityId': activityId,
             'attempt': attempt + 1,
             'hasRemoteActivity': remoteActivity != null,
@@ -2637,6 +2652,7 @@ class MacroTargetsController extends _$MacroTargetsController {
 DraftActivityCleanupService draftActivityCleanupService(Ref ref) {
   final service = DraftActivityCleanupService(
     activitiesService: ref.read(activitiesServiceProvider),
+    report: ref.read(reportProvider),
   );
   ref.onDispose(service.dispose);
   return service;

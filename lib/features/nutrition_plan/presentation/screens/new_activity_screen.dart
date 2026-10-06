@@ -17,7 +17,7 @@ import '../widgets/new_activity/running_tab_content.dart';
 import '../widgets/new_activity/cycling_tab_content.dart';
 import '../widgets/new_activity/swimming_tab_content.dart';
 import '../widgets/new_activity/brick/brick_tab_content.dart';
-import '../../../../core/utils/debug_logger.dart';
+import 'package:mealvana_endurance/shared/services/report/report.dart';
 import '../../../../shared/widgets/app_date_picker.dart';
 import '../../../../../../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../../personal_templates/presentation/providers/personal_templates_controller.dart';
@@ -123,6 +123,11 @@ class NewActivityScreen extends ConsumerStatefulWidget {
 }
 
 class _NewActivityScreenState extends ConsumerState<NewActivityScreen> {
+  /// `ref` throws once the widget is disposed; late async callbacks fall back
+  /// to the global instance (the one `reportProvider` built).
+  Report get _report =>
+      mounted ? ref.read(reportProvider) : SentryReport.global;
+
   @override
   void initState() {
     super.initState();
@@ -186,8 +191,9 @@ class _NewActivityScreenState extends ConsumerState<NewActivityScreen> {
     if (widget.activityType != null) {
       final sportTab = _getSportTabFromActivityType(widget.activityType!);
       if (sportTab != null && sportTab != coordinatorState.selectedTab) {
-        DebugLogger.info(
+        _report.info(
           '🏃 NEW ACTIVITY: Selecting ${widget.activityType} tab',
+          area: 'nutrition_plan',
         );
         coordinator.selectTab(sportTab);
       }
@@ -203,8 +209,9 @@ class _NewActivityScreenState extends ConsumerState<NewActivityScreen> {
     // Initialize date/time from event/activity
     if (widget.initialDate != null && isDefaultDate) {
       final resolvedDateTime = _resolveInitialDateTime(widget.initialDate!);
-      DebugLogger.info(
+      _report.info(
         '🗓️ NEW ACTIVITY: Initializing date/time: $resolvedDateTime',
+        area: 'nutrition_plan',
       );
       coordinator.updateDateTime(
         resolvedDateTime,
@@ -237,8 +244,9 @@ class _NewActivityScreenState extends ConsumerState<NewActivityScreen> {
     }
 
     if (widget.activityId != null || widget.eventId != null) {
-      DebugLogger.info(
+      _report.info(
         '🔗 NEW ACTIVITY: Linked to activityId: ${widget.activityId}, eventId: ${widget.eventId}',
+        area: 'nutrition_plan',
       );
     }
 
@@ -302,23 +310,26 @@ class _NewActivityScreenState extends ConsumerState<NewActivityScreen> {
     final controller = ref.read(runningInputControllerProvider.notifier);
 
     if (widget.initialDistance != null) {
-      DebugLogger.info(
+      _report.info(
         '📏 NEW ACTIVITY: Initializing distance: ${widget.initialDistance} miles',
+        area: 'nutrition_plan',
       );
       controller.updateDistance(widget.initialDistance!);
     }
 
     if (widget.initialPace != null) {
-      DebugLogger.info(
+      _report.info(
         '⏱️ NEW ACTIVITY: Initializing pace: ${widget.initialPace} min/mile',
+        area: 'nutrition_plan',
       );
       controller.updatePace(widget.initialPace!);
     }
 
     if (widget.initialDurationMinutes != null &&
         widget.initialDurationMinutes! > 0) {
-      DebugLogger.info(
+      _report.info(
         '⏱️ NEW ACTIVITY: Initializing running duration: ${widget.initialDurationMinutes} min',
+        area: 'nutrition_plan',
       );
       controller.updateDuration(
         Duration(minutes: widget.initialDurationMinutes!),
@@ -367,29 +378,33 @@ class _NewActivityScreenState extends ConsumerState<NewActivityScreen> {
       controller.updateDurationPaceMode(DurationPaceMode.byPace);
     }
 
-    DebugLogger.info(
+    _report.info(
       '🚴 NEW ACTIVITY PREFILL: duration=${widget.initialDurationMinutes}, '
       'pace=${widget.initialPace}, speed=${widget.cyclingSpeedMph}, '
       'resolvedSpeed=$resolvedSpeed, mode=${hasExplicitDuration ? 'byDuration' : 'byPace'}',
+      area: 'nutrition_plan',
     );
 
     if (resolvedSpeed > 0) {
-      DebugLogger.info(
+      _report.info(
         '🚴 NEW ACTIVITY: Initializing cycling speed: $resolvedSpeed mph',
+        area: 'nutrition_plan',
       );
       controller.updateSpeed(resolvedSpeed);
     }
 
     if (widget.initialDistance != null) {
-      DebugLogger.info(
+      _report.info(
         '📏 NEW ACTIVITY: Initializing cycling distance: ${widget.initialDistance} miles',
+        area: 'nutrition_plan',
       );
       controller.updateDistance(widget.initialDistance!);
     }
 
     if (hasExplicitDuration) {
-      DebugLogger.info(
+      _report.info(
         '⏱️ NEW ACTIVITY: Initializing cycling duration: ${widget.initialDurationMinutes} min',
+        area: 'nutrition_plan',
       );
       controller.updateDuration(
         Duration(minutes: widget.initialDurationMinutes!),
@@ -414,23 +429,26 @@ class _NewActivityScreenState extends ConsumerState<NewActivityScreen> {
     if (widget.initialDistance != null) {
       // Convert miles to meters for swimming
       final distanceMeters = (widget.initialDistance! * 1609.34).round();
-      DebugLogger.info(
+      _report.info(
         '📏 NEW ACTIVITY: Initializing swimming distance: $distanceMeters meters',
+        area: 'nutrition_plan',
       );
       controller.updateDistance(distanceMeters);
     }
 
     if (widget.swimmingPacePer100mSeconds != null) {
-      DebugLogger.info(
+      _report.info(
         '🏊 NEW ACTIVITY: Initializing swimming pace: ${widget.swimmingPacePer100mSeconds} sec/100m',
+        area: 'nutrition_plan',
       );
       controller.updatePace(widget.swimmingPacePer100mSeconds!);
     }
 
     if (widget.initialDurationMinutes != null &&
         widget.initialDurationMinutes! > 0) {
-      DebugLogger.info(
+      _report.info(
         '⏱️ NEW ACTIVITY: Initializing swimming duration: ${widget.initialDurationMinutes} min',
+        area: 'nutrition_plan',
       );
       controller.updateDuration(
         Duration(minutes: widget.initialDurationMinutes!),
@@ -458,8 +476,9 @@ class _NewActivityScreenState extends ConsumerState<NewActivityScreen> {
     final initialTitle = widget.initialTitle;
 
     if (widget.activityId != null) {
-      DebugLogger.info(
+      _report.info(
         '🧱 NEW ACTIVITY: Loading existing brick activity: ${widget.activityId}',
+        area: 'nutrition_plan',
       );
       _loadExistingBrickActivity();
       return;
@@ -472,8 +491,9 @@ class _NewActivityScreenState extends ConsumerState<NewActivityScreen> {
         widget.brickRunDistanceMiles != null;
 
     if (hasEventDistances) {
-      DebugLogger.info(
+      _report.info(
         '🧱 NEW ACTIVITY: Initializing brick from event subtype distances',
+        area: 'nutrition_plan',
       );
       final brickController = ref.read(brickInputControllerProvider.notifier);
       brickController.initializeFromEventSubtype(
@@ -487,8 +507,9 @@ class _NewActivityScreenState extends ConsumerState<NewActivityScreen> {
       return;
     }
 
-    DebugLogger.info(
+    _report.info(
       '🧱 NEW ACTIVITY: No activityId or event distances for brick - starting fresh',
+      area: 'nutrition_plan',
     );
 
     // Event-linked brick flows may not have subtype distances; still seed title
@@ -515,15 +536,23 @@ class _NewActivityScreenState extends ConsumerState<NewActivityScreen> {
       );
 
       if (activity == null) {
-        DebugLogger.warning(
-          '🧱 NEW ACTIVITY: Activity not found: ${widget.activityId}',
+        _report.degraded(
+          LoggedFault(
+            '🧱 NEW ACTIVITY: Activity not found: ${widget.activityId}',
+            context: 'nutrition_plan',
+          ),
+          area: 'nutrition_plan',
         );
         return;
       }
 
       if (activity.brickMetadata == null) {
-        DebugLogger.warning(
-          '🧱 NEW ACTIVITY: Activity has no brick metadata: ${widget.activityId}',
+        _report.degraded(
+          LoggedFault(
+            '🧱 NEW ACTIVITY: Activity has no brick metadata: ${widget.activityId}',
+            context: 'nutrition_plan',
+          ),
+          area: 'nutrition_plan',
         );
         return;
       }
@@ -542,11 +571,16 @@ class _NewActivityScreenState extends ConsumerState<NewActivityScreen> {
         );
       }
 
-      DebugLogger.info(
+      _report.info(
         '🧱 NEW ACTIVITY: Brick form initialized from existing activity',
+        area: 'nutrition_plan',
       );
     } catch (e) {
-      DebugLogger.error('🧱 NEW ACTIVITY: Error loading brick activity: $e');
+      _report.fault(
+        e,
+        message: '🧱 NEW ACTIVITY: Error loading brick activity: $e',
+        area: 'nutrition_plan',
+      );
     }
   }
 
@@ -804,7 +838,11 @@ class _NewActivityScreenState extends ConsumerState<NewActivityScreen> {
         );
       }
     } catch (e) {
-      DebugLogger.error('Error applying template: $e');
+      _report.fault(
+        e,
+        message: 'Error applying template: $e',
+        area: 'nutrition_plan',
+      );
       if (!mounted) return;
       final message = e.toString().replaceFirst('Exception: ', '');
       MealvanaSnackbar.showError(context, message);
@@ -817,9 +855,13 @@ class _NewActivityScreenState extends ConsumerState<NewActivityScreen> {
   /// to the adjust macros screen on success, or shows error snackbar on failure
   Future<void> _handleGeneratePlan(NewActivityCoordinator coordinator) async {
     try {
-      DebugLogger.info('🎯 NEW ACTIVITY: Starting macro generation from UI...');
-      DebugLogger.info(
+      _report.info(
+        '🎯 NEW ACTIVITY: Starting macro generation from UI...',
+        area: 'nutrition_plan',
+      );
+      _report.info(
         '🔗 NEW ACTIVITY: activityId=${widget.activityId}, eventId=${widget.eventId}, forUserId=${widget.forUserId}',
+        area: 'nutrition_plan',
       );
       await coordinator.generateMacros(
         activityId: widget.activityId,
@@ -827,15 +869,25 @@ class _NewActivityScreenState extends ConsumerState<NewActivityScreen> {
         forUserId: widget
             .forUserId, // NEW: Pass through forUserId for coach-created activities
       );
-      DebugLogger.info('✅ NEW ACTIVITY: Coordinator generateMacros completed');
+      _report.info(
+        '✅ NEW ACTIVITY: Coordinator generateMacros completed',
+        area: 'nutrition_plan',
+      );
 
       // Coordinator now waits for state to update - no need for manual checks
       if (!mounted) return;
 
-      DebugLogger.info('🚀 NEW ACTIVITY: Navigating to adjust-macros screen');
+      _report.info(
+        '🚀 NEW ACTIVITY: Navigating to adjust-macros screen',
+        area: 'nutrition_plan',
+      );
       context.pushNamed('adjust-macros');
     } catch (e) {
-      DebugLogger.error('❌ NEW ACTIVITY: Error in macro generation flow: $e');
+      _report.fault(
+        e,
+        message: '❌ NEW ACTIVITY: Error in macro generation flow: $e',
+        area: 'nutrition_plan',
+      );
       if (!mounted) return;
 
       // Strip 'Exception: ' prefix for cleaner user-facing messages

@@ -6,6 +6,8 @@ import 'package:mealvana_endurance/features/activities/domain/activity.dart'
 import 'package:mealvana_endurance/features/nutrition_plan/application/draft_activity_cleanup_service.dart';
 import 'package:mealvana_endurance/shared/domain/activity_type.dart';
 
+import '../../../helpers/fakes/recording_report.dart';
+
 class MockActivitiesService extends Mock implements ActivitiesService {}
 
 void main() {
@@ -32,6 +34,7 @@ void main() {
     mockActivitiesService = MockActivitiesService();
     cleanupService = DraftActivityCleanupService(
       activitiesService: mockActivitiesService,
+      report: RecordingReport(),
     );
   });
 

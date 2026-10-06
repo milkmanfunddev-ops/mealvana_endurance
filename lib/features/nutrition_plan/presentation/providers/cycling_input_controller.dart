@@ -12,7 +12,6 @@ import 'macro_targets_controller.dart';
 import '../../../weather/domain/location.dart' as weather_domain;
 import '../../../weather/domain/weather_forecast.dart';
 import '../../../weather/application/weather_service.dart';
-import 'package:mealvana_endurance/core/utils/debug_logger.dart';
 import '../../../../shared/services/location_service.dart';
 import '../../../../shared/services/report/report.dart';
 import '../../../../shared/widgets/kyle_design/inputs/duration_pace_toggle.dart';
@@ -207,6 +206,11 @@ class CyclingFormState {
 /// FOA COMPLIANT: Contains form state management and business logic coordination
 @Riverpod(keepAlive: true)
 class CyclingInputController extends _$CyclingInputController {
+  /// Reads after disposal throw; a disposed notifier reports through the
+  /// global instance (the one `reportProvider` built).
+  Report get _report =>
+      ref.mounted ? ref.read(reportProvider) : SentryReport.global;
+
   WeatherService get _weatherService => ref.read(weatherServiceProvider);
   Completer<void>? _preferencesLoadedCompleter;
   bool _preferencesLoaded = false;
@@ -295,8 +299,9 @@ class CyclingInputController extends _$CyclingInputController {
           );
           // Recalculate estimated duration with user's default speed
           _estimateDuration();
-          DebugLogger.info(
+          _report.info(
             '🚴 CYCLING CONTROLLER: Loaded user preferences - distance unit: ${userProfile.preferredDistanceUnit.name}, default speed: ${defaultSpeed}mph, unitSystem: ${userProfile.unitSystem.name}',
+            area: 'nutrition_plan',
           );
         } else {
           _defaultSpeedMph = 15.0;
@@ -304,8 +309,9 @@ class CyclingInputController extends _$CyclingInputController {
             distanceUnit: userProfile.preferredDistanceUnit,
             unitSystem: userProfile.unitSystem,
           );
-          DebugLogger.info(
+          _report.info(
             '🚴 CYCLING CONTROLLER: Loaded user preferences - distance unit: ${userProfile.preferredDistanceUnit.name}, unitSystem: ${userProfile.unitSystem.name}',
+            area: 'nutrition_plan',
           );
         }
 
@@ -863,12 +869,14 @@ class CyclingInputController extends _$CyclingInputController {
     String? eventId,
     String? forUserId,
   }) async {
-    DebugLogger.info(
+    _report.info(
       '🚴 CYCLING CONTROLLER: generateMacros called - activityId: $activityId',
+      area: 'nutrition_plan',
     );
     final currentState = state;
-    DebugLogger.info(
+    _report.info(
       '🚴 CYCLING CONTROLLER: Current state - distance: ${currentState.distance}mi, speed: ${currentState.speedMph}mph',
+      area: 'nutrition_plan',
     );
 
     // Extract terrain type (e.g., 'flat' from 'flat_outdoor')
@@ -876,8 +884,9 @@ class CyclingInputController extends _$CyclingInputController {
     final indoorOutdoorType = currentState.terrain.contains('indoor')
         ? 'indoor'
         : 'outdoor';
-    DebugLogger.info(
+    _report.info(
       '🚴 CYCLING CONTROLLER: Extracted terrain: $terrainType, indoorOutdoor: $indoorOutdoorType',
+      area: 'nutrition_plan',
     );
 
     // Convert units if necessary (Backend expects Miles/MPH)
@@ -889,14 +898,16 @@ class CyclingInputController extends _$CyclingInputController {
       distanceMiles = currentState.distance * 0.621371;
       // Assume speed is in kph if distance is km
       speedMph = currentState.speedMph * 0.621371;
-      DebugLogger.info(
+      _report.info(
         '🚴 CYCLING CONTROLLER: Converted from Metric - Distance: ${currentState.distance}km -> ${distanceMiles.toStringAsFixed(2)}mi, Speed: ${currentState.speedMph}kph -> ${speedMph.toStringAsFixed(2)}mph',
+        area: 'nutrition_plan',
       );
     }
 
     // Delegate to the main controller
-    DebugLogger.info(
+    _report.info(
       '🚴 CYCLING CONTROLLER: About to call distancePageGutEntryController.generateCyclingMacros...',
+      area: 'nutrition_plan',
     );
     await ref
         .read(macroTargetsControllerProvider.notifier)
@@ -925,8 +936,9 @@ class CyclingInputController extends _$CyclingInputController {
           forUserId:
               forUserId, // NEW: Pass through forUserId for coach-created activities
         );
-    DebugLogger.info(
+    _report.info(
       '🚴 CYCLING CONTROLLER: distancePageGutEntryController.generateCyclingMacros completed!',
+      area: 'nutrition_plan',
     );
   }
 }

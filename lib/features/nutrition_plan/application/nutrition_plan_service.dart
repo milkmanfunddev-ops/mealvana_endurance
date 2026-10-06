@@ -8,7 +8,7 @@ import 'package:uuid/uuid.dart';
 import '../../../shared/constants/bottle_constants.dart';
 import '../../../shared/domain/activity_type.dart';
 import '../../../shared/services/app_external_deps.dart';
-import '../../../shared/services/logging_service.dart';
+import '../../../shared/services/report/report.dart';
 import '../../auth/application/auth_service.dart';
 import '../data/food_repository.dart';
 import '../data/nutrition_plan_mapper.dart';
@@ -29,7 +29,7 @@ class NutritionPlanService {
   FoodRepository get _foodRepository => ref.read(foodRepositoryProvider);
   ClientPlanService get _clientPlanService =>
       ref.read(clientPlanServiceProvider);
-  AppLogger get _logger => ref.read(appExternalDepsProvider).logger;
+  Report get _report => ref.read(reportProvider);
 
   // Nutrition calculator removed - all logic moved to Edge Functions
 
@@ -212,16 +212,16 @@ class NutritionPlanService {
     String? gutTrainingLevel,
   }) async {
     try {
-      _logger.info(
+      _report.info(
         'Generating plan via V2 template system',
-        context: 'NUTRITION_PLAN_SERVICE',
+        area: 'NUTRITION_PLAN_SERVICE',
       );
-      _logger.info(
+      _report.info(
         '🎯 OVERRIDE DEBUG [2/5]: Sending to V2 edge function: '
         'pre_carbs=${macroTargets.preRun.carbsG}, pre_protein=${macroTargets.preRun.proteinG}, pre_sodium=${macroTargets.preRun.sodiumMg}, pre_fluids=${macroTargets.preRun.fluidsMl}, '
         'during_carbs=${macroTargets.duringRun.carbTotalG}, during_sodium=${macroTargets.duringRun.sodiumTotalMg}, during_fluids=${macroTargets.duringRun.fluidTotalMl}, '
         'post_carbs=${macroTargets.postRun.carbsG}, post_protein=${macroTargets.postRun.proteinG}, post_sodium=${macroTargets.postRun.sodiumMg}, post_fluids=${macroTargets.postRun.fluidsMl}',
-        context: 'NUTRITION_PLAN_SERVICE',
+        area: 'NUTRITION_PLAN_SERVICE',
       );
 
       final supabase = ref.read(appExternalDepsProvider).supabaseClient;
@@ -370,7 +370,7 @@ class NutritionPlanService {
       }
 
       // Log full V3 request payload for debugging same-plan issues
-      _logger.info(
+      _report.info(
         '📤 [V3-REQUEST] Full payload: '
         'activity_type=${requestData['activity_type']}, '
         'hours_before=${requestData['hours_before']}, '
@@ -381,7 +381,7 @@ class NutritionPlanService {
         'pre_run={carbs_g: ${(requestData['macro_targets'] as Map?)?['pre_run']?['carbs_g']}, protein_g: ${(requestData['macro_targets'] as Map?)?['pre_run']?['protein_g']}, water_ml: ${(requestData['macro_targets'] as Map?)?['pre_run']?['water_ml']}, sodium_mg: ${(requestData['macro_targets'] as Map?)?['pre_run']?['sodium_mg']}}, '
         'during_run={carbs_g: ${(requestData['macro_targets'] as Map?)?['during_run']?['carbs_g']}, sodium_mg: ${(requestData['macro_targets'] as Map?)?['during_run']?['sodium_mg']}, water_ml: ${(requestData['macro_targets'] as Map?)?['during_run']?['water_ml']}}, '
         'post_run={carbs_g: ${(requestData['macro_targets'] as Map?)?['post_run']?['carbs_g']}, protein_g: ${(requestData['macro_targets'] as Map?)?['post_run']?['protein_g']}, sodium_mg: ${(requestData['macro_targets'] as Map?)?['post_run']?['sodium_mg']}, water_ml: ${(requestData['macro_targets'] as Map?)?['post_run']?['water_ml']}}',
-        context: 'NUTRITION_PLAN_SERVICE',
+        area: 'NUTRITION_PLAN_SERVICE',
       );
 
       // Retry transient errors (502/503/504) with exponential backoff.
@@ -399,9 +399,12 @@ class NutritionPlanService {
         } on TimeoutException {
           if (attempt < maxRetries) {
             final delayMs = (1 << attempt) * 1000;
-            _logger.warning(
-              'V2 timed out, retrying in ${delayMs}ms (attempt ${attempt + 1}/$maxRetries)',
-              context: 'NUTRITION_PLAN_SERVICE',
+            _report.degraded(
+              LoggedFault(
+                'V2 timed out, retrying in ${delayMs}ms (attempt ${attempt + 1}/$maxRetries)',
+                context: 'NUTRITION_PLAN_SERVICE',
+              ),
+              area: 'NUTRITION_PLAN_SERVICE',
             );
             await Future.delayed(Duration(milliseconds: delayMs));
             continue;
@@ -410,9 +413,12 @@ class NutritionPlanService {
         } on FunctionException catch (e) {
           if (attempt < maxRetries && _isTransientError(e)) {
             final delayMs = (1 << attempt) * 1000;
-            _logger.warning(
-              'V2 transient error (${e.status} ${e.reasonPhrase}), retrying in ${delayMs}ms (attempt ${attempt + 1}/$maxRetries)',
-              context: 'NUTRITION_PLAN_SERVICE',
+            _report.degraded(
+              LoggedFault(
+                'V2 transient error (${e.status} ${e.reasonPhrase}), retrying in ${delayMs}ms (attempt ${attempt + 1}/$maxRetries)',
+                context: 'NUTRITION_PLAN_SERVICE',
+              ),
+              area: 'NUTRITION_PLAN_SERVICE',
             );
             await Future.delayed(Duration(milliseconds: delayMs));
             continue;
@@ -433,12 +439,12 @@ class NutritionPlanService {
       final beforeFoods = planData?['before'];
       final duringFoods = planData?['during'];
       final afterFoods = planData?['after'];
-      _logger.info(
+      _report.info(
         '📥 [V3-RESPONSE] plan_id=${data['plan_id']}, '
         'before_keys=${beforeFoods is Map ? beforeFoods.keys.toList() : 'N/A'}, '
         'during_food_count=${duringFoods is Map ? (duringFoods['foods'] as List?)?.length ?? 0 : (duringFoods is List ? duringFoods.length : 0)}, '
         'after_food_count=${afterFoods is List ? afterFoods.length : 0}',
-        context: 'NUTRITION_PLAN_SERVICE',
+        area: 'NUTRITION_PLAN_SERVICE',
       );
 
       // Parse the v2 response into NutritionPlan
@@ -457,11 +463,11 @@ class NutritionPlanService {
 
       // Log the targets on each PlanSection after V2 parse
       for (final section in plan.sections) {
-        _logger.info(
+        _report.info(
           '🎯 OVERRIDE DEBUG [4/5]: V2 plan section "${section.id}": '
           'carbsTarget=${section.carbsTarget}, proteinTarget=${section.proteinTarget}, '
           'sodiumTarget=${section.sodiumTarget}, fluidsTarget=${section.fluidsTarget}',
-          context: 'NUTRITION_PLAN_SERVICE',
+          area: 'NUTRITION_PLAN_SERVICE',
         );
       }
 
@@ -470,11 +476,11 @@ class NutritionPlanService {
         source: NutritionPlanGenerationSource.edge,
       );
     } catch (e, stackTrace) {
-      _logger.error(
-        '❌ [V3-FAILED] V3 edge function failed. Error: $e',
-        context: 'NUTRITION_PLAN_SERVICE',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'NUTRITION_PLAN_SERVICE',
+        message: '❌ [V3-FAILED] V3 edge function failed. Error: $e',
       );
 
       final fallbackPlan = await _generateLocalFallbackPlanFromMacros(
@@ -509,9 +515,12 @@ class NutritionPlanService {
 
     if (resolvedUserId != null && resolvedUserId.isNotEmpty) {
       try {
-        _logger.warning(
-          'Using client-side nutrition solver after V3 failure',
-          context: 'NUTRITION_PLAN_SERVICE',
+        _report.degraded(
+          LoggedFault(
+            'Using client-side nutrition solver after V3 failure',
+            context: 'NUTRITION_PLAN_SERVICE',
+          ),
+          area: 'NUTRITION_PLAN_SERVICE',
         );
         return await _clientPlanService.generatePlan(
           userId: resolvedUserId,
@@ -523,10 +532,11 @@ class NutritionPlanService {
           gutTrainingLevel: gutTrainingLevel,
         );
       } catch (fallbackError) {
-        _logger.warning(
-          'Client-side nutrition solver failed; using generic local fallback',
-          context: 'NUTRITION_PLAN_SERVICE',
-          error: fallbackError,
+        _report.degraded(
+          fallbackError,
+          area: 'NUTRITION_PLAN_SERVICE',
+          message:
+              'Client-side nutrition solver failed; using generic local fallback',
         );
       }
     }

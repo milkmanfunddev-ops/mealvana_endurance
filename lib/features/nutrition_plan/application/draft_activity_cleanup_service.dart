@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:mealvana_endurance/core/utils/debug_logger.dart';
+import 'package:mealvana_endurance/shared/services/report/report.dart';
 import '../../activities/application/activities_service.dart';
 import '../../activities/domain/activity.dart' as domain;
 
@@ -12,9 +12,13 @@ import '../../activities/domain/activity.dart' as domain;
 /// - Checking if activity is still in draft status
 /// - Deleting draft activities safely
 class DraftActivityCleanupService {
-  DraftActivityCleanupService({required this.activitiesService});
+  DraftActivityCleanupService({
+    required this.activitiesService,
+    required Report report,
+  }) : _report = report;
 
   final ActivitiesService activitiesService;
+  final Report _report;
 
   /// Pending cleanup timers, tracked so they can be cancelled on [dispose].
   ///
@@ -82,23 +86,35 @@ class DraftActivityCleanupService {
       );
 
       if (activity != null && activity.status == domain.ActivityStatus.draft) {
-        DebugLogger.info(
+        _report.info(
           '🗑️ CLEANUP: Deleting draft activity $activityId (status: ${activity.status.name})',
+          area: 'nutrition_plan',
         );
         await activitiesService.deleteActivity(
           deviceId: userId,
           activityId: activityId,
         );
-        DebugLogger.info('✅ CLEANUP: Draft activity deleted successfully');
+        _report.info(
+          '✅ CLEANUP: Draft activity deleted successfully',
+          area: 'nutrition_plan',
+        );
       } else if (activity != null) {
-        DebugLogger.info(
+        _report.info(
           '⏭️ CLEANUP: Skipping cleanup - activity status is ${activity.status.name}',
+          area: 'nutrition_plan',
         );
       } else {
-        DebugLogger.info('⏭️ CLEANUP: Skipping cleanup - activity not found');
+        _report.info(
+          '⏭️ CLEANUP: Skipping cleanup - activity not found',
+          area: 'nutrition_plan',
+        );
       }
     } catch (e) {
-      DebugLogger.error('❌ CLEANUP: Failed to cleanup draft activity: $e');
+      _report.fault(
+        e,
+        message: '❌ CLEANUP: Failed to cleanup draft activity: $e',
+        area: 'nutrition_plan',
+      );
       // Don't rethrow - cleanup failure is acceptable
     }
   }

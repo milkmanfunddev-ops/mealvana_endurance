@@ -28,7 +28,7 @@
 ///   `_saveNutritionPlanToActivity`).
 library;
 
-import 'package:mealvana_endurance/core/utils/debug_logger.dart';
+import 'package:mealvana_endurance/shared/services/report/report.dart';
 
 import '../data/macro_repository.dart';
 import '../data/offline_macro_calculator.dart';
@@ -98,10 +98,14 @@ abstract final class PreWorkoutHydrationCheckService {
     // swallowed the whole write on the first real device (2026-08-26).
     if (!_bandMatches(pre.fluidsLowMl, result.fluidLowMl) ||
         !_bandMatches(pre.fluidsHighMl, result.fluidHighMl)) {
-      DebugLogger.warning(
-        'hydration check: recomputed band differs from the stored band by '
-        '> 1% (stored ${pre.fluidsLowMl}–${pre.fluidsHighMl}, recomputed '
-        '${result.fluidLowMl}–${result.fluidHighMl}); keeping the stored band',
+      SentryReport.global.degraded(
+        LoggedFault(
+          'hydration check: recomputed band differs from the stored band by '
+          '> 1% (stored ${pre.fluidsLowMl}–${pre.fluidsHighMl}, recomputed '
+          '${result.fluidLowMl}–${result.fluidHighMl}); keeping the stored band',
+          context: 'nutrition_plan',
+        ),
+        area: 'nutrition_plan',
       );
     }
 

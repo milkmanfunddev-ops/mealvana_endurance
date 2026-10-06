@@ -5,7 +5,7 @@ import 'cycling_input_controller.dart';
 import 'swimming_input_controller.dart';
 import 'brick_input_controller.dart';
 import 'macro_targets_controller.dart';
-import '../../../../core/utils/debug_logger.dart';
+import 'package:mealvana_endurance/shared/services/report/report.dart';
 import '../../../../shared/providers/user_id_provider.dart';
 
 part 'new_activity_coordinator.g.dart';
@@ -44,6 +44,11 @@ DateTime defaultNewActivityDateTime([DateTime? reference]) {
 /// Status: Phase 0 - File structure created
 @riverpod
 class NewActivityCoordinator extends _$NewActivityCoordinator {
+  /// Reads after disposal throw; a disposed notifier reports through the
+  /// global instance (the one `reportProvider` built).
+  Report get _report =>
+      ref.mounted ? ref.read(reportProvider) : SentryReport.global;
+
   @override
   NewActivityCoordinatorState build() {
     final defaultDateTime = defaultNewActivityDateTime();
@@ -62,14 +67,18 @@ class NewActivityCoordinator extends _$NewActivityCoordinator {
 
   /// Select a sport tab
   void selectTab(SportTab tab) {
-    DebugLogger.info('🏃 COORDINATOR: Switching sport tab to ${tab.name}');
+    _report.info(
+      '🏃 COORDINATOR: Switching sport tab to ${tab.name}',
+      area: 'nutrition_plan',
+    );
 
     // Clear cached macro targets when switching sports to prevent stale data
     ref.read(macroTargetsControllerProvider.notifier).clearCachedMacros();
 
     state = state.copyWith(selectedTab: tab);
-    DebugLogger.info(
+    _report.info(
       '✅ COORDINATOR: Sport tab switched, cached macros cleared',
+      area: 'nutrition_plan',
     );
 
     // Trigger location fetch for the newly selected sport
@@ -80,8 +89,9 @@ class NewActivityCoordinator extends _$NewActivityCoordinator {
   /// This ensures only ONE controller requests location at a time,
   /// preventing race conditions with the geolocator.
   Future<void> fetchLocationForActiveTab() async {
-    DebugLogger.info(
+    _report.info(
       '📍 COORDINATOR: Fetching location for ${state.selectedTab.name} tab',
+      area: 'nutrition_plan',
     );
 
     switch (state.selectedTab) {
@@ -117,8 +127,10 @@ class NewActivityCoordinator extends _$NewActivityCoordinator {
           .applyZonePaceIfAvailable(userId);
     } catch (e) {
       // Non-blocking - skip if userId isn't available
-      DebugLogger.warning(
-        '🏃 COORDINATOR: Unable to apply running zone pace -> $e',
+      _report.degraded(
+        e,
+        message: '🏃 COORDINATOR: Unable to apply running zone pace -> $e',
+        area: 'nutrition_plan',
       );
     }
   }
@@ -131,8 +143,10 @@ class NewActivityCoordinator extends _$NewActivityCoordinator {
           .applyZonePaceIfAvailable(userId);
     } catch (e) {
       // Non-blocking - skip if userId isn't available
-      DebugLogger.warning(
-        '🏊 COORDINATOR: Unable to apply swimming zone pace -> $e',
+      _report.degraded(
+        e,
+        message: '🏊 COORDINATOR: Unable to apply swimming zone pace -> $e',
+        area: 'nutrition_plan',
       );
     }
   }
@@ -164,17 +178,20 @@ class NewActivityCoordinator extends _$NewActivityCoordinator {
     String?
     forUserId, // NEW: If provided, create activity for this user (coach creating for athlete)
   }) async {
-    DebugLogger.info(
+    _report.info(
       '🎮 COORDINATOR: generateMacros called for sport: ${state.selectedTab.name}',
+      area: 'nutrition_plan',
     );
 
     // CRITICAL: Clear cached macros BEFORE generating to prevent stale data
-    DebugLogger.info(
+    _report.info(
       '🎮 COORDINATOR: Clearing cached macros before generation...',
+      area: 'nutrition_plan',
     );
     await ref.read(macroTargetsControllerProvider.notifier).clearCachedMacros();
-    DebugLogger.info(
+    _report.info(
       '🎮 COORDINATOR: Cached macros cleared, proceeding with generation',
+      area: 'nutrition_plan',
     );
 
     state = state.copyWith(isGenerating: true);
@@ -182,8 +199,9 @@ class NewActivityCoordinator extends _$NewActivityCoordinator {
     try {
       switch (state.selectedTab) {
         case SportTab.running:
-          DebugLogger.info(
+          _report.info(
             '🎮 COORDINATOR: Calling runningInputController.generateMacros...',
+            area: 'nutrition_plan',
           );
           await ref
               .read(runningInputControllerProvider.notifier)
@@ -192,13 +210,15 @@ class NewActivityCoordinator extends _$NewActivityCoordinator {
                 eventId: eventId,
                 forUserId: forUserId, // NEW: Pass through forUserId
               );
-          DebugLogger.info(
+          _report.info(
             '🎮 COORDINATOR: runningInputController.generateMacros returned',
+            area: 'nutrition_plan',
           );
           break;
         case SportTab.cycling:
-          DebugLogger.info(
+          _report.info(
             '🎮 COORDINATOR: Calling cyclingInputController.generateMacros...',
+            area: 'nutrition_plan',
           );
           await ref
               .read(cyclingInputControllerProvider.notifier)
@@ -207,13 +227,15 @@ class NewActivityCoordinator extends _$NewActivityCoordinator {
                 eventId: eventId,
                 forUserId: forUserId, // NEW: Pass through forUserId
               );
-          DebugLogger.info(
+          _report.info(
             '🎮 COORDINATOR: cyclingInputController.generateMacros returned',
+            area: 'nutrition_plan',
           );
           break;
         case SportTab.swimming:
-          DebugLogger.info(
+          _report.info(
             '🎮 COORDINATOR: Calling swimmingInputController.generateMacros...',
+            area: 'nutrition_plan',
           );
           await ref
               .read(swimmingInputControllerProvider.notifier)
@@ -222,13 +244,15 @@ class NewActivityCoordinator extends _$NewActivityCoordinator {
                 eventId: eventId,
                 forUserId: forUserId, // NEW: Pass through forUserId
               );
-          DebugLogger.info(
+          _report.info(
             '🎮 COORDINATOR: swimmingInputController.generateMacros returned',
+            area: 'nutrition_plan',
           );
           break;
         case SportTab.brick:
-          DebugLogger.info(
+          _report.info(
             '🎮 COORDINATOR: Calling brickInputController to get segments...',
+            area: 'nutrition_plan',
           );
           final brickController = ref.read(
             brickInputControllerProvider.notifier,
@@ -236,8 +260,12 @@ class NewActivityCoordinator extends _$NewActivityCoordinator {
 
           // Validate before calling edge function
           if (!brickController.isValid()) {
-            DebugLogger.error(
-              '❌ COORDINATOR: Brick form is not valid - missing required fields',
+            _report.fault(
+              LoggedFault(
+                '❌ COORDINATOR: Brick form is not valid - missing required fields',
+                context: 'nutrition_plan',
+              ),
+              area: 'nutrition_plan',
             );
             throw Exception(
               'Please fill in all required fields for each sport segment before generating a plan.',
@@ -253,8 +281,9 @@ class NewActivityCoordinator extends _$NewActivityCoordinator {
               ? brickController.state.activityTitle
               : null;
 
-          DebugLogger.info(
+          _report.info(
             '🎮 COORDINATOR: Got ${segments.length} brick segments (preActivityMinutes=$preActivityMinutes), calling macroTargetsController...',
+            area: 'nutrition_plan',
           );
           await ref
               .read(macroTargetsControllerProvider.notifier)
@@ -269,24 +298,39 @@ class NewActivityCoordinator extends _$NewActivityCoordinator {
                 eventId: eventId,
                 forUserId: forUserId,
               );
-          DebugLogger.info(
+          _report.info(
             '🎮 COORDINATOR: macroTargetsController.generateBrickMacros returned',
+            area: 'nutrition_plan',
           );
       }
 
       // CRITICAL: Wait for distancePageGutEntryController state to fully update
       // This ensures the state has propagated through Riverpod before we return
-      DebugLogger.info(
+      _report.info(
         '🎮 COORDINATOR: Waiting for distancePageGutEntryController state update...',
+        area: 'nutrition_plan',
       );
       await ref.read(macroTargetsControllerProvider.future);
-      DebugLogger.info('🎮 COORDINATOR: State update confirmed');
+      _report.info(
+        '🎮 COORDINATOR: State update confirmed',
+        area: 'nutrition_plan',
+      );
 
-      DebugLogger.info('🎮 COORDINATOR: Setting isGenerating to false');
+      _report.info(
+        '🎮 COORDINATOR: Setting isGenerating to false',
+        area: 'nutrition_plan',
+      );
       state = state.copyWith(isGenerating: false);
-      DebugLogger.info('✅ COORDINATOR: generateMacros completed successfully');
+      _report.info(
+        '✅ COORDINATOR: generateMacros completed successfully',
+        area: 'nutrition_plan',
+      );
     } catch (e) {
-      DebugLogger.error('❌ COORDINATOR: Error in generateMacros: $e');
+      _report.fault(
+        e,
+        message: '❌ COORDINATOR: Error in generateMacros: $e',
+        area: 'nutrition_plan',
+      );
       state = state.copyWith(isGenerating: false, errorMessage: e.toString());
       rethrow;
     }

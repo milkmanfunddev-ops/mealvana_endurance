@@ -1,7 +1,7 @@
 import 'dart:convert';
 
 import '../../../shared/domain/activity_type.dart';
-import '../../../shared/services/report/report.dart';
+import '../../../shared/domain/decode_issue.dart';
 
 /// User-configured default nutrition target overrides.
 /// Null fields mean "use algorithm defaults."
@@ -161,22 +161,22 @@ class NutritionTargetOverrides {
   }
 
   /// Parse from a JSON string (for Drift TEXT column).
-  static NutritionTargetOverrides? fromJsonString(String? jsonString) {
+  static NutritionTargetOverrides? fromJsonString(
+    String? jsonString, {
+    DecodeIssue onIssue = ignoreDecodeIssue,
+  }) {
     if (jsonString == null || jsonString.isEmpty) return null;
     try {
       final map = jsonDecode(jsonString) as Map<String, dynamic>;
       return NutritionTargetOverrides.fromJson(map);
     } catch (e, stackTrace) {
-      // A static parser has no `ref`; the global instance is the one the
-      // provider built. Returning null silently would drop the athlete's
-      // saved overrides and fall back to algorithm defaults unnoticed.
-      SentryReport.global.degraded(
-        e,
+      // Returning null silently would drop the athlete's saved overrides and
+      // fall back to algorithm defaults unnoticed; the data-layer caller
+      // supplies [onIssue] so the domain stays free of `Report`.
+      onIssue(
+        'Saved nutrition target overrides unreadable; algorithm defaults used',
+        error: e,
         stackTrace: stackTrace,
-        area: 'nutrition_plan',
-        message:
-            'Saved nutrition target overrides unreadable; algorithm defaults '
-            'used',
       );
       return null;
     }

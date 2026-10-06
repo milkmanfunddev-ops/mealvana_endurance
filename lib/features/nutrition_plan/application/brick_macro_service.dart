@@ -11,7 +11,6 @@ import '../../../shared/domain/activity_type.dart';
 import '../../../shared/services/analytics/analytics_tracker.dart';
 import '../../../shared/services/analytics/analytics_events.dart';
 import '../../../shared/services/report/report.dart';
-import 'package:mealvana_endurance/core/utils/debug_logger.dart';
 
 /// Service responsible for generating brick macro targets by calling edge functions.
 ///
@@ -62,8 +61,9 @@ class BrickMacroService {
     required int preActivityMinutes,
     NutritionTargetOverrides? overrides,
   }) async {
-    DebugLogger.info(
+    _r.info(
       '🧱 BRICK MACRO SERVICE: generateBrickMacros called - ${segments.length} segments',
+      area: 'nutrition_plan',
     );
 
     // Validate segments
@@ -83,8 +83,9 @@ class BrickMacroService {
       // (Formula Kit PR 2 substep 5b-followup, 2026-05-22).
       requestData['device_id'] = deviceId;
 
-      DebugLogger.info(
+      _r.info(
         '🧱 BRICK MACRO SERVICE: Calling generate-macros edge function...',
+        area: 'nutrition_plan',
       );
 
       // Call edge function with timeout
@@ -93,15 +94,22 @@ class BrickMacroService {
         body: requestData,
       );
 
-      DebugLogger.info('📥 EDGE FUNCTION: Response status: ${response.status}');
+      _r.info(
+        '📥 EDGE FUNCTION: Response status: ${response.status}',
+        area: 'nutrition_plan',
+      );
 
       // Handle HTTP errors
       if (response.status >= 400) {
         final data = response.data as Map<String, dynamic>?;
         final errorMessage =
             data?['message'] ?? 'Failed to generate brick macro targets';
-        DebugLogger.error(
-          '❌ EDGE FUNCTION: HTTP error ${response.status}: $errorMessage',
+        _r.fault(
+          LoggedFault(
+            '❌ EDGE FUNCTION: HTTP error ${response.status}: $errorMessage',
+            context: 'nutrition_plan',
+          ),
+          area: 'nutrition_plan',
         );
         throw BrickMacroGenerationException.edgeFunctionError(
           errorMessage,
@@ -115,7 +123,13 @@ class BrickMacroService {
       if (data['success'] != true) {
         final errorMessage =
             data['message'] ?? 'Failed to generate brick macro targets';
-        DebugLogger.error('❌ EDGE FUNCTION: Success=false: $errorMessage');
+        _r.fault(
+          LoggedFault(
+            '❌ EDGE FUNCTION: Success=false: $errorMessage',
+            context: 'nutrition_plan',
+          ),
+          area: 'nutrition_plan',
+        );
         throw BrickMacroGenerationException.edgeFunctionError(errorMessage);
       }
 
@@ -129,8 +143,12 @@ class BrickMacroService {
             overrides: overrides,
           );
       if (usedClientFallback) {
-        DebugLogger.warning(
-          '🧱 BRICK MACRO SERVICE: Using temporary client fallback for brick during overrides.',
+        _r.degraded(
+          LoggedFault(
+            '🧱 BRICK MACRO SERVICE: Using temporary client fallback for brick during overrides.',
+            context: 'nutrition_plan',
+          ),
+          area: 'nutrition_plan',
         );
         macroTargets = _applyDuringOverridesForBrick(
           macroTargets: macroTargets,
@@ -168,8 +186,9 @@ class BrickMacroService {
         totalCarbs: _calculateTotalCarbs(macroTargets),
       );
 
-      DebugLogger.info(
+      _r.info(
         '✅ BRICK MACRO SERVICE: Successfully generated brick macro targets',
+        area: 'nutrition_plan',
       );
 
       return macroTargets;
