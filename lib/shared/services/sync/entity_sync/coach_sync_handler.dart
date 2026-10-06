@@ -5,7 +5,6 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../database/app_database.dart';
 import '../../../database/database_provider.dart';
 import '../../../utils/sync_type_converters.dart';
-import '../../logging_service.dart';
 import '../../report/report.dart';
 import 'activity_sync_handler.dart';
 import 'event_sync_handler.dart';
@@ -18,7 +17,6 @@ part 'coach_sync_handler.g.dart';
 CoachSyncHandler coachSyncHandler(Ref ref) {
   return CoachSyncHandler(
     database: ref.read(appDatabaseProvider),
-    logger: ref.read(appLoggerProvider),
     supabase: Supabase.instance.client,
     activitySyncHandler: ref.read(activitySyncHandlerProvider),
     eventSyncHandler: ref.read(eventSyncHandlerProvider),
@@ -33,7 +31,6 @@ CoachSyncHandler coachSyncHandler(Ref ref) {
 class CoachSyncHandler {
   const CoachSyncHandler({
     required AppDatabase database,
-    required AppLogger logger,
     required SupabaseClient supabase,
     required ActivitySyncHandler activitySyncHandler,
     required EventSyncHandler eventSyncHandler,
@@ -41,7 +38,6 @@ class CoachSyncHandler {
     required UserSyncHandler userSyncHandler,
     Report? report,
   }) : _database = database,
-       _logger = logger,
        _supabase = supabase,
        _activitySyncHandler = activitySyncHandler,
        _eventSyncHandler = eventSyncHandler,
@@ -50,7 +46,6 @@ class CoachSyncHandler {
        _report = report;
 
   final AppDatabase _database;
-  final AppLogger _logger;
   final SupabaseClient _supabase;
   final ActivitySyncHandler _activitySyncHandler;
   final EventSyncHandler _eventSyncHandler;
@@ -65,10 +60,7 @@ class CoachSyncHandler {
   /// Lightweight, focused sync triggered when viewing an activity's feedback.
   Future<void> syncCoachMessagesForActivity(String activityId) async {
     try {
-      _logger.info(
-        'Syncing coach messages for activity $activityId',
-        context: 'COACH_SYNC',
-      );
+      _r.info('Syncing coach messages for activity $activityId', area: 'sync');
 
       // Query Supabase directly for messages related to this activity
       final response = await _supabase
@@ -82,15 +74,12 @@ class CoachSyncHandler {
       if (messages.isNotEmpty) {
         await syncCoachMessages(messages);
 
-        _logger.info(
+        _r.info(
           'Successfully synced ${messages.length} messages for activity $activityId',
-          context: 'COACH_SYNC',
+          area: 'sync',
         );
       } else {
-        _logger.info(
-          'No messages found for activity $activityId',
-          context: 'COACH_SYNC',
-        );
+        _r.info('No messages found for activity $activityId', area: 'sync');
       }
     } catch (e) {
       // The caller (activity feedback screen) owns the error.
@@ -107,10 +96,7 @@ class CoachSyncHandler {
   /// Triggered when a coach views athlete details and taps refresh.
   Future<void> syncAthleteData(String athleteUserId) async {
     try {
-      _logger.info(
-        'Syncing data for athlete $athleteUserId',
-        context: 'COACH_SYNC',
-      );
+      _r.info('Syncing data for athlete $athleteUserId', area: 'sync');
 
       // Query Supabase for athlete's data in parallel (including profile)
       final responses = await Future.wait([
@@ -146,9 +132,9 @@ class CoachSyncHandler {
 
       // Sync athlete profile first
       if (profileData != null) {
-        _logger.info(
+        _r.info(
           'Syncing athlete profile: ${profileData['first_name']} ${profileData['last_name']}',
-          context: 'COACH_SYNC',
+          area: 'sync',
           data: {
             'athlete_user_id': athleteUserId,
             'has_first_name': profileData['first_name'] != null,
@@ -160,9 +146,11 @@ class CoachSyncHandler {
           athleteUserId,
         );
       } else {
-        _logger.warning(
-          'No profile data found for athlete $athleteUserId in Supabase',
-          context: 'COACH_SYNC',
+        _r.degraded(
+          LoggedFault(
+            'No profile data found for athlete $athleteUserId in Supabase',
+          ),
+          area: 'sync',
         );
       }
 
@@ -180,11 +168,11 @@ class CoachSyncHandler {
         );
       }
 
-      _logger.info(
+      _r.info(
         'Successfully synced athlete data: profile=${profileData != null}, '
         '${eventsData.length} events, ${activitiesData.length} activities, '
         '${carbLoadingData.length} carb loading plans',
-        context: 'COACH_SYNC',
+        area: 'sync',
       );
     } catch (e) {
       _r.breadcrumb(
@@ -201,9 +189,9 @@ class CoachSyncHandler {
     try {
       final coachId = coachData['id'] as String?;
       if (coachId == null) {
-        _logger.warning(
-          'Coach record missing id, skipping sync',
-          context: 'COACH_SYNC',
+        _r.degraded(
+          const LoggedFault('Coach record missing id, skipping sync'),
+          area: 'sync',
         );
         return;
       }
@@ -242,9 +230,9 @@ class CoachSyncHandler {
           .into(_database.coachesTable)
           .insert(companion, mode: InsertMode.insertOrReplace);
 
-      _logger.info(
+      _r.info(
         'Synced coach record to local DB',
-        context: 'COACH_SYNC',
+        area: 'sync',
         data: {
           'coach_id': coachId,
           'user_id': coachData['user_id'],
@@ -316,9 +304,9 @@ class CoachSyncHandler {
             .insert(companion, mode: InsertMode.insertOrReplace);
       }
 
-      _logger.info(
+      _r.info(
         'Synced ${relationships.length} coach-athlete relationships',
-        context: 'COACH_SYNC',
+        area: 'sync',
       );
     } catch (e, stackTrace) {
       // Don't rethrow - continue with other syncs
@@ -367,10 +355,7 @@ class CoachSyncHandler {
             .insert(companion, mode: InsertMode.insertOrReplace);
       }
 
-      _logger.info(
-        'Synced ${messages.length} coach messages',
-        context: 'COACH_SYNC',
-      );
+      _r.info('Synced ${messages.length} coach messages', area: 'sync');
     } catch (e, stackTrace) {
       // Don't rethrow - continue with other syncs
       await _r.fault(
@@ -417,9 +402,9 @@ class CoachSyncHandler {
             .insertOnConflictUpdate(companion);
       }
 
-      _logger.info(
+      _r.info(
         'Synced ${profiles.length} athlete profiles for coach',
-        context: 'COACH_SYNC',
+        area: 'sync',
       );
     } catch (e, stackTrace) {
       // Don't rethrow - continue with other syncs
@@ -456,9 +441,9 @@ class CoachSyncHandler {
             .insertOnConflictUpdate(companion);
       }
 
-      _logger.info(
+      _r.info(
         'Synced ${profiles.length} coach profiles for athlete',
-        context: 'COACH_SYNC',
+        area: 'sync',
       );
     } catch (e, stackTrace) {
       // Don't rethrow - continue with other syncs

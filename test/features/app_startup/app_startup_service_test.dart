@@ -47,9 +47,7 @@ import 'package:mealvana_endurance/shared/database/app_database.dart';
 import 'package:mealvana_endurance/shared/database/database_provider.dart';
 import 'package:mealvana_endurance/shared/services/analytics/analytics_tracker.dart';
 import 'package:mealvana_endurance/shared/services/app_external_deps.dart';
-import 'package:mealvana_endurance/shared/services/logging_service.dart';
 import 'package:mealvana_endurance/shared/services/report/report.dart';
-import 'package:mealvana_endurance/shared/services/sentry/sentry_reporter.dart';
 
 import '../../helpers/fakes/recording_report.dart';
 
@@ -58,10 +56,6 @@ import '../../helpers/fakes/recording_report.dart';
 class MockSupabaseClient extends Mock implements SupabaseClient {}
 
 class MockGoTrueClient extends Mock implements GoTrueClient {}
-
-class MockAppLogger extends Mock implements AppLogger {}
-
-class MockSentryReporter extends Mock implements SentryReporter {}
 
 class MockAnalyticsTracker extends Mock implements AnalyticsTracker {}
 
@@ -102,43 +96,6 @@ class _UnmountedBuildContext extends Fake implements BuildContext {
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-void _stubLogger(MockAppLogger logger) {
-  when(
-    () => logger.debug(
-      any(),
-      context: any(named: 'context'),
-      data: any(named: 'data'),
-      error: any(named: 'error'),
-      stackTrace: any(named: 'stackTrace'),
-    ),
-  ).thenReturn(null);
-  when(
-    () => logger.info(
-      any(),
-      context: any(named: 'context'),
-      data: any(named: 'data'),
-    ),
-  ).thenReturn(null);
-  when(
-    () => logger.warning(
-      any(),
-      context: any(named: 'context'),
-      data: any(named: 'data'),
-      error: any(named: 'error'),
-      stackTrace: any(named: 'stackTrace'),
-    ),
-  ).thenReturn(null);
-  when(
-    () => logger.error(
-      any(),
-      context: any(named: 'context'),
-      data: any(named: 'data'),
-      error: any(named: 'error'),
-      stackTrace: any(named: 'stackTrace'),
-    ),
-  ).thenReturn(null);
-}
-
 /// Inserts a minimal user profile so userDao.getCurrentUserProfile() is
 /// non-null. Uses only the two required fields from the generated companion.
 Future<void> _insertUserProfile(AppDatabase db) async {
@@ -159,8 +116,6 @@ Future<void> _insertUserProfile(AppDatabase db) async {
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  late MockAppLogger mockLogger;
-  late MockSentryReporter mockSentry;
   late MockAnalyticsTracker mockAnalytics;
   late MockSupabaseClient mockSupabase;
   late MockGoTrueClient mockAuth;
@@ -184,41 +139,16 @@ void main() {
     tempDir = await Directory.systemTemp.createTemp('mealvana_startup_test_');
     PathProviderPlatform.instance = FakePathProviderPlatform(tempDir);
 
-    mockLogger = MockAppLogger();
-    mockSentry = MockSentryReporter();
     mockAnalytics = MockAnalyticsTracker();
     mockSupabase = MockSupabaseClient();
     mockAuth = MockGoTrueClient();
     mockPrefs = MockSharedPreferences();
     report = RecordingReport();
 
-    _stubLogger(mockLogger);
-
     when(() => mockSupabase.auth).thenReturn(mockAuth);
     when(() => mockAuth.currentUser).thenReturn(null);
     when(() => mockAuth.currentSession).thenReturn(null);
 
-    when(
-      () => mockSentry.setUserContext(
-        deviceId: any(named: 'deviceId'),
-        appVersion: any(named: 'appVersion'),
-      ),
-    ).thenAnswer((_) async {});
-    when(
-      () => mockSentry.reportCriticalError(
-        any(),
-        stackTrace: any(named: 'stackTrace'),
-        context: any(named: 'context'),
-        tags: any(named: 'tags'),
-      ),
-    ).thenAnswer((_) async {});
-    when(
-      () => mockSentry.addBreadcrumb(
-        message: any(named: 'message'),
-        category: any(named: 'category'),
-        data: any(named: 'data'),
-      ),
-    ).thenReturn(null);
     when(
       () => mockAnalytics.track(any(), properties: any(named: 'properties')),
     ).thenAnswer((_) async {});
@@ -248,8 +178,6 @@ void main() {
   ProviderContainer makeContainer({MockFoodRepository? foodRepo}) {
     final deps = AppExternalDeps(
       supabaseClient: mockSupabase,
-      logger: mockLogger,
-      sentry: mockSentry,
       analytics: mockAnalytics,
       sharedPreferences: mockPrefs,
     );
@@ -327,8 +255,6 @@ void main() {
     ProviderContainer makeReportContainer() {
       final deps = AppExternalDeps(
         supabaseClient: mockSupabase,
-        logger: mockLogger,
-        sentry: mockSentry,
         analytics: mockAnalytics,
         sharedPreferences: mockPrefs,
         report: report,
@@ -555,14 +481,13 @@ void main() {
 
       final deps = AppExternalDeps(
         supabaseClient: mockSupabase,
-        logger: mockLogger,
-        sentry: mockSentry,
         analytics: mockAnalytics,
         sharedPreferences: mockPrefs,
       );
       final container = ProviderContainer(
         overrides: [
           appExternalDepsProvider.overrideWithValue(deps),
+          reportProvider.overrideWithValue(report),
           appDatabaseProvider.overrideWithValue(closedDb),
         ],
       );

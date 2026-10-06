@@ -1,4 +1,4 @@
-import '../logging_service.dart';
+import '../report/report.dart';
 
 // Mapping of legacy product_type_id UUIDs to the current product_type enum codes
 const Map<String, String> _legacyProductTypeIdToEnum = {
@@ -25,7 +25,7 @@ final _uuidPattern = RegExp(r'^[0-9a-fA-F-]{36}$');
 
 /// Convert legacy product_type_id values to the new product_type enum codes.
 /// Returns null when we can't confidently map the value to avoid enum errors upstream.
-String? normalizeProductType(dynamic rawValue, {AppLogger? logger}) {
+String? normalizeProductType(dynamic rawValue, {Report? report}) {
   final value = rawValue?.toString();
   if (value == null || value.isEmpty) return null;
 
@@ -36,10 +36,10 @@ String? normalizeProductType(dynamic rawValue, {AppLogger? logger}) {
   if (!_uuidPattern.hasMatch(value)) return value;
 
   // Unknown legacy UUID - drop it to keep sync/upload from failing
-  logger?.warning(
-    'Dropping unmapped legacy product_type_id',
-    context: 'ProductTypeMapper',
-    data: {'productTypeId': value},
+  report?.degraded(
+    const LoggedFault('Dropping unmapped legacy product_type_id'),
+    area: 'food_management',
+    extra: {'productTypeId': value},
   );
   return null;
 }

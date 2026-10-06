@@ -2,8 +2,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../features/nutrition_plan/domain/food.dart';
 import '../../../features/auth/domain/user_preferences.dart';
-import '../app_external_deps.dart';
-import '../logging_service.dart';
+import '../report/report.dart';
 import 'user_food_crud_service.dart';
 import '../../../features/nutrition_plan/data/food_repository.dart';
 
@@ -13,8 +12,8 @@ final foodRecommendationServiceProvider = Provider<FoodRecommendationService>((
 ) {
   final userFoodService = ref.read(userFoodCrudServiceProvider);
   final foodRepository = ref.read(foodRepositoryProvider);
-  final logger = ref.read(appExternalDepsProvider).logger;
-  return FoodRecommendationService(userFoodService, foodRepository, logger);
+  final report = ref.read(reportProvider);
+  return FoodRecommendationService(userFoodService, foodRepository, report);
 });
 
 /// Service for generating smart food recommendations
@@ -24,12 +23,12 @@ class FoodRecommendationService {
   FoodRecommendationService(
     this._userFoodService,
     this._foodRepository,
-    this._logger,
+    this._report,
   );
 
   final UserFoodCrudService _userFoodService;
   final FoodRepository _foodRepository;
-  final AppLogger _logger;
+  final Report _report;
 
   /// Get smart recommendations for food selection
   /// Combines user foods and generic foods based on context.
@@ -102,10 +101,10 @@ class FoodRecommendationService {
       );
       return recommendations;
     } catch (e) {
-      _logger.error(
-        'Error getting recommendations',
-        context: 'FoodRecommendationService',
-        error: e,
+      _report.fault(
+        e,
+        area: 'food_management',
+        message: 'Error getting recommendations',
       );
       return [];
     }

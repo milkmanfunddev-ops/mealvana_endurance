@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../theme/app_theme.dart';
-import 'package:mealvana_endurance/core/utils/debug_logger.dart';
+import 'package:mealvana_endurance/shared/services/report/report.dart';
 
 /// Food icon component for displaying food images from online URLs
 /// Used in plan items and food selection
@@ -25,10 +25,12 @@ class FoodIcon extends StatelessWidget {
   Widget build(BuildContext context) {
     final iconSize = size ?? 48.w;
 
-    // Debug logging
+    // A missing URL is an ordinary render state (the fallback icon), so it is
+    // narrative, not a Degraded event per build.
     if (imageUrl == null || imageUrl!.isEmpty) {
-      DebugLogger.warning(
-        '   ⚠️  No image URL provided, showing fallback icon',
+      SentryReport.global.debug(
+        'FoodIcon: no image URL, showing fallback icon',
+        area: 'food_icon',
       );
     }
 
@@ -77,11 +79,15 @@ class FoodIcon extends StatelessWidget {
                   );
                 },
                 errorBuilder: (context, error, stackTrace) {
-                  DebugLogger.error(
-                    '❌ FoodIcon: Failed to load image: $imageUrl',
+                  // Stateless widget, no ref: the global Report is the only
+                  // way out. One event per failed image, with the error.
+                  SentryReport.global.degraded(
+                    error,
+                    stackTrace: stackTrace,
+                    area: 'food_icon',
+                    message: 'FoodIcon: failed to load image',
+                    extra: {'image_url': imageUrl},
                   );
-                  DebugLogger.error('   Error: $error');
-                  DebugLogger.debug('   StackTrace: $stackTrace');
                   // Fallback icon if image fails to load
                   return Icon(
                     Icons.restaurant,

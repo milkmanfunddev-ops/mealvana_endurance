@@ -3,7 +3,6 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'app_startup_service.dart';
 import '../../../shared/database/database_provider.dart';
 import '../../../shared/services/app_external_deps.dart';
-import '../../../shared/services/logging_service.dart';
 import '../../../shared/services/report/report.dart';
 import '../../../shared/services/version_check_service.dart';
 import '../../../shared/services/privacy/analytics_consent.dart';
@@ -53,7 +52,6 @@ class AppStartupData {
 /// This coordinates the AppStartupService and provides async state management
 @riverpod
 class AppStartup extends _$AppStartup {
-  AppLogger get _logger => ref.read(appExternalDepsProvider).logger;
   Report get _report => ref.read(reportProvider);
 
   @override
@@ -151,9 +149,9 @@ class AppStartup extends _$AppStartup {
             );
           }
         } else {
-          _logger.info(
+          _report.info(
             'Schema resync completed - reinitializing database',
-            context: 'VERSION_CHECK',
+            area: 'startup',
           );
 
           // Invalidate database provider to create fresh instance with new schema
@@ -165,9 +163,9 @@ class AppStartup extends _$AppStartup {
       }
 
       // Version check passed - continue with normal startup
-      _logger.info(
+      _report.info(
         'Version check passed - continuing with normal startup',
-        context: 'VERSION_CHECK',
+        area: 'startup',
       );
 
       // 1. CRITICAL PATH: Run only essential initializations in parallel

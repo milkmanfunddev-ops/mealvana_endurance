@@ -3,7 +3,6 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../database/app_database.dart';
 import '../../database/database_provider.dart';
-import '../logging_service.dart';
 import '../report/report.dart';
 
 part 'duplicate_cleanup_service.g.dart';
@@ -12,7 +11,6 @@ part 'duplicate_cleanup_service.g.dart';
 DuplicateCleanupService duplicateCleanupService(Ref ref) {
   return DuplicateCleanupService(
     database: ref.read(appDatabaseProvider),
-    logger: ref.read(appLoggerProvider),
     report: ref.read(reportProvider),
   );
 }
@@ -23,16 +21,11 @@ DuplicateCleanupService duplicateCleanupService(Ref ref) {
 /// This service keeps the most recent record (by local_updated_at or updated_at) and
 /// deletes older duplicates.
 class DuplicateCleanupService {
-  const DuplicateCleanupService({
-    required AppDatabase database,
-    required AppLogger logger,
-    Report? report,
-  }) : _database = database,
-       _logger = logger,
-       _report = report;
+  const DuplicateCleanupService({required AppDatabase database, Report? report})
+    : _database = database,
+      _report = report;
 
   final AppDatabase _database;
-  final AppLogger _logger;
   final Report? _report;
 
   /// Injected by the provider; tests may pass a `RecordingReport`.
@@ -82,9 +75,9 @@ class DuplicateCleanupService {
       totalDuplicatesDeleted += await _cleanUserProfilesDuplicates(userId);
 
       if (totalDuplicatesDeleted > 0) {
-        _logger.info(
+        _r.info(
           'Cleaned duplicate records from Drift',
-          context: 'DUPLICATE_CLEANUP',
+          area: 'sync',
           data: {
             'total_duplicates_deleted': totalDuplicatesDeleted,
             'user_id': userId,
@@ -149,9 +142,9 @@ class DuplicateCleanupService {
         final id = duplicate.data['id'].toString();
         final count = duplicate.data['count'] as int;
 
-        _logger.debug(
+        _r.debug(
           'Found duplicate records in $tableName',
-          context: 'DUPLICATE_CLEANUP',
+          area: 'sync',
           data: {'id': id, 'count': count, 'table': tableName},
         );
 
@@ -179,9 +172,9 @@ class DuplicateCleanupService {
             [rowid],
           );
 
-          _logger.debug(
+          _r.debug(
             'Deleted duplicate record from $tableName',
-            context: 'DUPLICATE_CLEANUP',
+            area: 'sync',
             data: {
               'id': id,
               'rowid': rowid,
@@ -195,9 +188,9 @@ class DuplicateCleanupService {
       }
 
       if (deletedCount > 0) {
-        _logger.info(
+        _r.info(
           'Cleaned duplicates from $tableName',
-          context: 'DUPLICATE_CLEANUP',
+          area: 'sync',
           data: {'table': tableName, 'duplicates_deleted': deletedCount},
         );
       }
@@ -243,9 +236,9 @@ class DuplicateCleanupService {
         final id = duplicate.data['id'].toString();
         final count = duplicate.data['count'] as int;
 
-        _logger.debug(
+        _r.debug(
           'Found duplicate users records',
-          context: 'DUPLICATE_CLEANUP',
+          area: 'sync',
           data: {'id': id, 'count': count},
         );
 
@@ -271,9 +264,9 @@ class DuplicateCleanupService {
             rowid,
           ]);
 
-          _logger.debug(
+          _r.debug(
             'Deleted duplicate user',
-            context: 'DUPLICATE_CLEANUP',
+            area: 'sync',
             data: {
               'id': id,
               'rowid': rowid,
@@ -296,9 +289,9 @@ class DuplicateCleanupService {
       final count = needsUploadCount.data['count'] as int;
 
       if (count > 1) {
-        _logger.info(
+        _r.info(
           'Multiple users need upload, keeping only most recent',
-          context: 'DUPLICATE_CLEANUP',
+          area: 'sync',
           data: {'count': count},
         );
 

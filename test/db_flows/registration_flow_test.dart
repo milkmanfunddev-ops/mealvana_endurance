@@ -33,7 +33,6 @@ import 'package:mealvana_endurance/shared/services/sync/entity_sync/user_sync_ha
 import 'package:mealvana_endurance/shared/services/sync/sync_coordinator.dart';
 
 import '../helpers/fakes/fake_supabase_client.dart';
-import '../helpers/fakes/recording_app_logger.dart';
 import '../helpers/fakes/recording_report.dart';
 
 void main() {
@@ -44,7 +43,7 @@ void main() {
     database = AppDatabase.memory();
     handler = UserSyncHandler(
       database: database,
-      logger: RecordingAppLogger(),
+      report: RecordingReport(),
       // The paths under test never touch the network client.
       supabase: fakeSupabaseClient(),
     );

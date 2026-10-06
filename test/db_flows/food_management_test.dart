@@ -9,20 +9,17 @@ import 'package:drift/drift.dart' hide isNull, isNotNull;
 import 'package:mealvana_endurance/shared/database/app_database.dart';
 import 'package:mealvana_endurance/shared/database/database_provider.dart';
 import 'package:mealvana_endurance/shared/services/analytics/analytics_tracker.dart';
-import 'package:mealvana_endurance/shared/services/sentry/sentry_reporter.dart';
-import 'package:mealvana_endurance/shared/services/logging_service.dart';
+import 'package:mealvana_endurance/shared/services/report/report.dart';
 
 import '../helpers/fakes/recording_analytics_tracker.dart';
-import '../helpers/fakes/recording_sentry_reporter.dart';
-import '../helpers/fakes/recording_app_logger.dart';
+import '../helpers/fakes/recording_report.dart';
 import '../helpers/utils/console_logging.dart';
 
 void main() {
   group('Food Management Flow Tests', () {
     late AppDatabase database;
     late RecordingAnalyticsTracker analytics;
-    late RecordingSentryReporter sentry;
-    late RecordingAppLogger logger;
+    late RecordingReport report;
     ProviderContainer? container;
 
     setUp(() {
@@ -31,8 +28,7 @@ void main() {
 
       // Create recording mocks
       analytics = RecordingAnalyticsTracker();
-      sentry = RecordingSentryReporter();
-      logger = RecordingAppLogger();
+      report = RecordingReport();
     });
 
     tearDown() async {
@@ -42,8 +38,7 @@ void main() {
 
       // Clear mock data
       analytics.clear();
-      sentry.clear();
-      logger.clear();
+      report.calls.clear();
     }
 
     /// Helper to create container with mocked dependencies
@@ -52,8 +47,7 @@ void main() {
         overrides: [
           appDatabaseProvider.overrideWithValue(database),
           analyticsTrackerProvider.overrideWith((ref) => analytics),
-          sentryReporterProvider.overrideWith((ref) => sentry),
-          appLoggerProvider.overrideWith((ref) => logger),
+          reportProvider.overrideWithValue(report),
         ],
       );
     }

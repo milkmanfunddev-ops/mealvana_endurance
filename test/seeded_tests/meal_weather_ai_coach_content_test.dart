@@ -45,8 +45,9 @@ import 'package:mealvana_endurance/features/nutrition_plan/domain/run_parameters
     show UnitSystem;
 import 'package:mealvana_endurance/shared/providers/unit_system_provider.dart';
 import 'package:mealvana_endurance/shared/services/app_config.dart';
-import 'package:mealvana_endurance/shared/services/logging_service.dart';
+import 'package:mealvana_endurance/shared/services/report/report.dart';
 
+import '../helpers/fakes/recording_report.dart';
 import '../helpers/widget_test_harness.dart';
 
 // =============================================================================
@@ -131,31 +132,6 @@ class _FakeContentService extends Fake implements ContentService {
   @override
   String getValue(String key, {String? defaultValue = ''}) =>
       defaultValue ?? '';
-}
-
-// =============================================================================
-// Fakes — AppLogger
-// =============================================================================
-
-class _FakeLogger extends Fake implements AppLogger {
-  @override
-  void info(String message, {String? context, Map<String, dynamic>? data}) {}
-  @override
-  void error(
-    String message, {
-    String? context,
-    Map<String, dynamic>? data,
-    dynamic error,
-    StackTrace? stackTrace,
-  }) {}
-  @override
-  void warning(
-    String message, {
-    String? context,
-    Map<String, dynamic>? data,
-    dynamic error,
-    StackTrace? stackTrace,
-  }) {}
 }
 
 // =============================================================================
@@ -1144,7 +1120,7 @@ void main() {
     /// Wire up the AI-coach dependencies the screen needs:
     ///   - aiCoachChatRepositoryProvider → _FakeAiCoachChatRepository
     ///   - contentServiceProvider     → _FakeContentService
-    ///   - appLoggerProvider          → _FakeLogger
+    ///   - reportProvider             → RecordingReport
     List<Override> _AiCoachOverrides({
       List<AiCoachConversation> conversations = const [],
       Map<String, List<AiCoachMessage>> messagesByConversation = const {},
@@ -1157,7 +1133,7 @@ void main() {
           ),
         ),
         contentServiceProvider.overrideWithValue(_FakeContentService()),
-        appLoggerProvider.overrideWithValue(_FakeLogger()),
+        reportProvider.overrideWithValue(RecordingReport()),
       ];
     }
 

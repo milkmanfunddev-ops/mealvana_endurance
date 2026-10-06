@@ -5,7 +5,6 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../features/auth/domain/user_preferences.dart';
 import '../../../database/app_database.dart';
 import '../../../database/database_provider.dart';
-import '../../logging_service.dart';
 import '../../report/report.dart';
 
 part 'user_sync_handler.g.dart';
@@ -14,7 +13,6 @@ part 'user_sync_handler.g.dart';
 UserSyncHandler userSyncHandler(Ref ref) {
   return UserSyncHandler(
     database: ref.read(appDatabaseProvider),
-    logger: ref.read(appLoggerProvider),
     supabase: Supabase.instance.client,
     report: ref.read(reportProvider),
   );
@@ -24,16 +22,13 @@ UserSyncHandler userSyncHandler(Ref ref) {
 class UserSyncHandler {
   const UserSyncHandler({
     required AppDatabase database,
-    required AppLogger logger,
     required SupabaseClient supabase,
     Report? report,
   }) : _database = database,
-       _logger = logger,
        _supabase = supabase,
        _report = report;
 
   final AppDatabase _database;
-  final AppLogger _logger;
   final SupabaseClient _supabase;
   final Report? _report;
 
@@ -83,10 +78,12 @@ class UserSyncHandler {
 
       // At this point localUser should not be null
       if (localUser == null) {
-        _logger.warning(
-          'Failed to establish user profile after fetch attempt',
-          context: 'USER_SYNC',
-          data: {'userId': userId},
+        _r.degraded(
+          const LoggedFault(
+            'Failed to establish user profile after fetch attempt',
+          ),
+          area: 'sync',
+          extra: {'userId': userId},
         );
         return;
       }
@@ -152,9 +149,9 @@ class UserSyncHandler {
       )..where((t) => t.id.equals(userId))).getSingleOrNull();
 
       if (localRow?.needsUpload == true) {
-        _logger.info(
+        _r.info(
           'Skipped remote profile overwrite — local row is dirty and wins',
-          context: 'USER_SYNC',
+          area: 'sync',
           data: {'userId': userId},
         );
         return;

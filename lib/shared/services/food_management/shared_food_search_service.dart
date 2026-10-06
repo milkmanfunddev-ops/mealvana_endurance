@@ -6,8 +6,7 @@ import '../../../features/barcode_scanning/application/open_food_facts_search_se
 import '../../../features/barcode_scanning/application/catalog_search_service.dart';
 import '../../../features/barcode_scanning/application/product_detail_service.dart';
 import '../../../features/barcode_scanning/application/food_mapping_service.dart';
-import '../app_external_deps.dart';
-import '../logging_service.dart';
+import '../report/report.dart';
 import 'user_food_crud_service.dart';
 
 /// Provider for SharedFoodSearchService
@@ -19,14 +18,14 @@ final sharedFoodSearchServiceProvider = Provider<SharedFoodSearchService>((
   final productDetailService = ref.read(productDetailServiceProvider);
   final foodMappingService = ref.read(foodMappingServiceProvider);
   final userFoodService = ref.read(userFoodCrudServiceProvider);
-  final logger = ref.read(appExternalDepsProvider).logger;
+  final report = ref.read(reportProvider);
   return SharedFoodSearchService(
     openFoodFactsService,
     catalogSearchService,
     productDetailService,
     foodMappingService,
     userFoodService,
-    logger,
+    report,
   );
 });
 
@@ -39,7 +38,7 @@ class SharedFoodSearchService {
     this._productDetailService,
     this._foodMappingService,
     this._userFoodService,
-    this._logger,
+    this._report,
   );
 
   final OpenFoodFactsSearchService _openFoodFactsService;
@@ -47,7 +46,7 @@ class SharedFoodSearchService {
   final ProductDetailService _productDetailService;
   final FoodMappingService _foodMappingService;
   final UserFoodCrudService _userFoodService;
-  final AppLogger _logger;
+  final Report _report;
 
   /// Search Open Food Facts for products
   Future<List<FoodSearchResult>> searchProducts(String query) async {
@@ -55,19 +54,19 @@ class SharedFoodSearchService {
       final results = await _openFoodFactsService.searchProducts(query);
       return results;
     } on SearchException catch (e) {
-      _logger.error(
-        'Search failed with SearchException',
-        context: 'SharedFoodSearchService',
-        data: {'query': query},
-        error: e,
+      _report.fault(
+        e,
+        area: 'food_management',
+        extra: {'query': query},
+        message: 'Search failed with SearchException',
       );
       rethrow;
     } catch (e) {
-      _logger.error(
-        'Search failed with unexpected error',
-        context: 'SharedFoodSearchService',
-        data: {'query': query},
-        error: e,
+      _report.fault(
+        e,
+        area: 'food_management',
+        extra: {'query': query},
+        message: 'Search failed with unexpected error',
       );
       throw SearchException('Search failed. Please try again.');
     }
@@ -82,10 +81,10 @@ class SharedFoodSearchService {
   }) async {
     try {
       if (!result.hasValidId) {
-        _logger.warning(
-          'Invalid search result ID',
-          context: 'SharedFoodSearchService',
-          data: {'result': result.toString()},
+        _report.degraded(
+          const LoggedFault('Invalid search result ID'),
+          area: 'food_management',
+          extra: {'result': result.toString()},
         );
         return null;
       } // Get product details from Open Food Facts
@@ -94,10 +93,10 @@ class SharedFoodSearchService {
       );
 
       if (apiProduct == null) {
-        _logger.warning(
-          'Failed to get product details',
-          context: 'SharedFoodSearchService',
-          data: {'productId': result.id},
+        _report.degraded(
+          const LoggedFault('Failed to get product details'),
+          area: 'food_management',
+          extra: {'productId': result.id},
         );
         return null;
       }
@@ -115,11 +114,11 @@ class SharedFoodSearchService {
       await _userFoodService.saveUserFood(food, categoryIds);
       return food;
     } catch (e) {
-      _logger.error(
-        'Error adding search result to user foods',
-        context: 'SharedFoodSearchService',
-        data: {'productId': result.id, 'deviceId': deviceId},
-        error: e,
+      _report.fault(
+        e,
+        area: 'food_management',
+        extra: {'productId': result.id, 'deviceId': deviceId},
+        message: 'Error adding search result to user foods',
       );
       return null;
     }
@@ -202,9 +201,9 @@ class SharedFoodSearchService {
       const categoryIds = <int>[];
       await _userFoodService.saveUserFood(food, categoryIds);
 
-      _logger.info(
+      _report.info(
         'Catalog result imported to user foods',
-        context: 'SharedFoodSearchService',
+        area: 'food_management',
         data: {
           'catalogId': result.id,
           'foodId': foodId,
@@ -215,11 +214,11 @@ class SharedFoodSearchService {
 
       return food;
     } catch (e) {
-      _logger.error(
-        'Error adding catalog result to user foods',
-        context: 'SharedFoodSearchService',
-        data: {'catalogId': result.id, 'userId': userId},
-        error: e,
+      _report.fault(
+        e,
+        area: 'food_management',
+        extra: {'catalogId': result.id, 'userId': userId},
+        message: 'Error adding catalog result to user foods',
       );
       return null;
     }
