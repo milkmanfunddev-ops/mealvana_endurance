@@ -23,15 +23,11 @@ import 'package:mealvana_endurance/features/coach_mode/data/coach_repository.dar
 import 'package:mealvana_endurance/features/events/data/events_repository.dart';
 import 'package:mealvana_endurance/shared/data/syncable_repository.dart';
 import 'package:mealvana_endurance/shared/database/app_database.dart';
-import 'package:mealvana_endurance/shared/services/logging_service.dart';
-import 'package:mealvana_endurance/shared/services/sentry/sentry_reporter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../helpers/fakes/recording_report.dart';
+
 class MockSupabaseClient extends Mock implements SupabaseClient {}
-
-class MockAppLogger extends Mock implements AppLogger {}
-
-class MockSentryReporter extends Mock implements SentryReporter {}
 
 class MockCoachRepository extends Mock implements CoachRepository {}
 
@@ -50,48 +46,7 @@ void main() {
   setUp(() async {
     SharedPreferences.setMockInitialValues({});
     db = AppDatabase.forTesting(NativeDatabase.memory());
-    final logger = MockAppLogger();
-    when(
-      () => logger.info(
-        any(),
-        context: any(named: 'context'),
-        data: any(named: 'data'),
-      ),
-    ).thenReturn(null);
-    when(
-      () => logger.debug(
-        any(),
-        context: any(named: 'context'),
-        data: any(named: 'data'),
-      ),
-    ).thenReturn(null);
-    when(
-      () => logger.warning(
-        any(),
-        context: any(named: 'context'),
-        data: any(named: 'data'),
-        error: any(named: 'error'),
-        stackTrace: any(named: 'stackTrace'),
-      ),
-    ).thenReturn(null);
-    when(
-      () => logger.error(
-        any(),
-        context: any(named: 'context'),
-        error: any(named: 'error'),
-        stackTrace: any(named: 'stackTrace'),
-        data: any(named: 'data'),
-      ),
-    ).thenReturn(null);
-    final sentry = MockSentryReporter();
-    when(
-      () => sentry.reportNetworkError(
-        any<Object>(),
-        url: any(named: 'url'),
-        method: any(named: 'method'),
-        stackTrace: any(named: 'stackTrace'),
-      ),
-    ).thenAnswer((_) async {});
+    final report = RecordingReport();
     final eventsRepo = MockEventsRepository();
     when(
       () => eventsRepo.uploadDirtyRecords(any()),
@@ -99,12 +54,11 @@ void main() {
     repository = CarbLoadingRepository(
       supabase: MockSupabaseClient(),
       database: db,
-      logger: logger,
-      sentry: sentry,
+      report: report,
     );
     service = CarbLoadingService(
       db,
-      logger,
+      report,
       repository,
       MockCoachRepository(),
       eventsRepo,

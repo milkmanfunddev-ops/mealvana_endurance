@@ -5,8 +5,7 @@ import 'supabase_barcode_service.dart';
 import 'food_mapping_service.dart';
 import '../../../shared/database/app_database.dart';
 import '../../../shared/database/database_provider.dart';
-import '../../../shared/services/app_external_deps.dart';
-import '../../../shared/services/logging_service.dart';
+import '../../../shared/services/report/report.dart';
 
 part 'barcode_scanner_service.g.dart';
 
@@ -16,27 +15,27 @@ class BarcodeScannerService {
   final SupabaseBarcodeService _barcodeService;
   final FoodMappingService _mappingService;
   final AppDatabase _database;
-  final AppLogger _logger;
+  final Report _report;
 
   BarcodeScannerService({
     required SupabaseBarcodeService barcodeService,
     required FoodMappingService mappingService,
     required AppDatabase database,
-    required AppLogger logger,
+    required Report report,
   }) : _barcodeService = barcodeService,
        _mappingService = mappingService,
        _database = database,
-       _logger = logger;
+       _report = report;
 
   /// Scan a barcode and return a Food model if successful
   /// Returns null if the product is not found or there's an error
   Future<BarcodeScanResult> scanBarcode(String barcode) async {
     // Validate barcode format
     if (!_barcodeService.isValidBarcodeFormat(barcode)) {
-      _logger.warning(
-        'Invalid barcode format',
-        context: 'BARCODE_SCAN',
-        data: {'rawBarcode': barcode},
+      _report.degraded(
+        LoggedFault('Invalid barcode format', context: 'barcode_scanning'),
+        area: 'barcode_scanning',
+        extra: {'rawBarcode': barcode},
       );
       return BarcodeScanResult.invalidFormat(
         barcode: barcode,
@@ -51,10 +50,13 @@ class BarcodeScannerService {
     final result = await _barcodeService.lookupBarcode(cleanBarcode);
 
     if (result == null) {
-      _logger.error(
-        'Barcode lookup returned null',
-        context: 'BARCODE_SCAN',
-        data: {'cleanBarcode': cleanBarcode},
+      _report.fault(
+        LoggedFault(
+          'Barcode lookup returned null',
+          context: 'barcode_scanning',
+        ),
+        area: 'barcode_scanning',
+        extra: {'cleanBarcode': cleanBarcode},
       );
       return BarcodeScanResult.error(
         barcode: cleanBarcode,
@@ -102,11 +104,11 @@ class BarcodeScannerService {
       // Cache to database
       await _database.foodsDao.cacheFoods([foodData]);
     } catch (e) {
-      _logger.error(
-        'Error caching scanned food',
-        context: 'BARCODE_SCAN',
-        error: e,
-        data: {'foodId': food.id},
+      _report.fault(
+        e,
+        area: 'barcode_scanning',
+        extra: {'foodId': food.id},
+        message: 'Error caching scanned food',
       );
       // Don't throw - caching failure shouldn't break the scanning flow
     }
@@ -265,11 +267,10 @@ final class BarcodeScanResultInvalidFormat extends BarcodeScanResult {
 
 @riverpod
 BarcodeScannerService barcodeScannerService(Ref ref) {
-  final externalDeps = ref.read(appExternalDepsProvider);
   return BarcodeScannerService(
     barcodeService: ref.watch(supabaseBarcodeServiceProvider),
     mappingService: ref.watch(foodMappingServiceProvider),
     database: ref.read(appDatabaseProvider),
-    logger: externalDeps.logger,
+    report: ref.read(reportProvider),
   );
 }

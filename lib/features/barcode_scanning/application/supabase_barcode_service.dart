@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import '../../../shared/services/app_external_deps.dart';
-import '../../../shared/services/logging_service.dart';
+import '../../../shared/services/report/report.dart';
 import '../domain/barcode_result.dart';
 import 'product_detail_service.dart';
 
@@ -11,13 +10,13 @@ part 'supabase_barcode_service.g.dart';
 /// Handles API integration with Open Food Facts via the ProductDetailService
 class SupabaseBarcodeService {
   final ProductDetailService _productDetailService;
-  final AppLogger _logger;
+  final Report _report;
 
   SupabaseBarcodeService({
     required ProductDetailService productDetailService,
-    required AppLogger logger,
+    required Report report,
   }) : _productDetailService = productDetailService,
-       _logger = logger;
+       _report = report;
 
   /// Look up a barcode using the unified ProductDetailService
   /// Returns null if the product is not found or if there's an error
@@ -37,14 +36,20 @@ class SupabaseBarcodeService {
         );
       }
     } on ProductDetailException catch (e) {
-      _logger.error('ProductDetailService error: ${e.message}');
+      // ProductDetailService already reported the cause (Fault or Degraded);
+      // a second event here would double-count it.
+      _report.note(
+        'ProductDetailService error: ${e.message}',
+        area: 'barcode_scanning',
+      );
 
       return BarcodeResult.error(barcode: barcode, message: e.message);
     } catch (e, stackTrace) {
-      _logger.error(
-        'Barcode lookup error for $barcode: $e',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'barcode_scanning',
+        message: 'Barcode lookup error for $barcode: $e',
       );
 
       return BarcodeResult.error(
@@ -71,9 +76,8 @@ class SupabaseBarcodeService {
 
 @riverpod
 SupabaseBarcodeService supabaseBarcodeService(Ref ref) {
-  final logger = ref.read(appExternalDepsProvider).logger;
   return SupabaseBarcodeService(
     productDetailService: ref.read(productDetailServiceProvider),
-    logger: logger,
+    report: ref.read(reportProvider),
   );
 }

@@ -17,15 +17,11 @@ import 'package:mealvana_endurance/features/macro_dashboard/presentation/provide
 import 'package:mealvana_endurance/features/meal_logging/presentation/providers/meal_log_providers.dart';
 import 'package:mealvana_endurance/shared/database/app_database.dart';
 import 'package:mealvana_endurance/shared/providers/user_id_provider.dart';
-import 'package:mealvana_endurance/shared/services/logging_service.dart';
-import 'package:mealvana_endurance/shared/services/sentry/sentry_reporter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../helpers/fakes/recording_report.dart';
+
 class MockSupabaseClient extends Mock implements SupabaseClient {}
-
-class MockAppLogger extends Mock implements AppLogger {}
-
-class MockSentryReporter extends Mock implements SentryReporter {}
 
 const uid = 'user-g23a';
 
@@ -36,27 +32,11 @@ void main() {
 
   setUp(() async {
     db = AppDatabase.forTesting(NativeDatabase.memory());
-    final logger = MockAppLogger();
-    when(() => logger.error(any(),
-        context: any(named: 'context'),
-        error: any(named: 'error'),
-        stackTrace: any(named: 'stackTrace'),
-        data: any(named: 'data'))).thenReturn(null);
-    when(() => logger.warning(any(),
-        context: any(named: 'context'),
-        error: any(named: 'error'),
-        stackTrace: any(named: 'stackTrace'),
-        data: any(named: 'data'))).thenReturn(null);
-    final sentry = MockSentryReporter();
-    when(() => sentry.reportNetworkError(any(),
-        url: any(named: 'url'),
-        method: any(named: 'method'),
-        stackTrace: any(named: 'stackTrace'))).thenAnswer((_) async {});
+    final report = RecordingReport();
     repo = CarbLoadingRepository(
       supabase: MockSupabaseClient(),
       database: db,
-      logger: logger,
-      sentry: sentry,
+      report: report,
     );
 
     container = ProviderContainer(overrides: [

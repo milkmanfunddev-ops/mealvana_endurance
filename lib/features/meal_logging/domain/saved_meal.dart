@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:drift/drift.dart'; // Value<T>
 
 import '../../../shared/database/app_database.dart';
-import '../../../shared/services/report/report.dart';
+import '../../../shared/domain/decode_issue.dart';
 import 'meal_component.dart';
 
 /// Immutable domain model for an explicit user favorite ("My Meals").
@@ -91,12 +91,15 @@ class SavedMeal {
 
   // ── Drift serialization ───────────────────────────────────────────────────
 
-  static SavedMeal fromDriftEntry(SavedMealEntry entry) {
+  static SavedMeal fromDriftEntry(
+    SavedMealEntry entry, {
+    DecodeIssue onIssue = ignoreDecodeIssue,
+  }) {
     return SavedMeal(
       id: entry.id,
       userId: entry.userId,
       name: entry.name,
-      components: _decodeComponents(entry.items),
+      components: _decodeComponents(entry.items, onIssue),
       calories: entry.calories,
       carbsG: entry.carbsG,
       proteinG: entry.proteinG,
@@ -105,7 +108,7 @@ class SavedMeal {
       photoPath: entry.photoPath,
       icon: entry.icon,
       notes: entry.notes,
-      mealTypes: _decodeStringList(entry.mealTypes),
+      mealTypes: _decodeStringList(entry.mealTypes, onIssue),
       batch: entry.batch,
       libraryMealId: entry.libraryMealId,
       lastUsedAt: entry.lastUsedAt,
@@ -173,12 +176,15 @@ class SavedMeal {
   }
 
   /// Parse a Supabase row.
-  static SavedMeal fromSupabaseJson(Map<String, dynamic> json) {
+  static SavedMeal fromSupabaseJson(
+    Map<String, dynamic> json, {
+    DecodeIssue onIssue = ignoreDecodeIssue,
+  }) {
     return SavedMeal(
       id: json['id'] as String,
       userId: json['user_id'] as String,
       name: json['name'] as String,
-      components: _coerceComponents(json['items']),
+      components: _coerceComponents(json['items'], onIssue),
       calories: (json['calories'] as num?)?.toInt(),
       carbsG: (json['carbs_g'] as num?)?.toDouble(),
       proteinG: (json['protein_g'] as num?)?.toDouble(),
@@ -187,7 +193,7 @@ class SavedMeal {
       photoPath: json['photo_path'] as String?,
       icon: json['icon'] as String?,
       notes: json['notes'] as String?,
-      mealTypes: _coerceStringList(json['meal_types']),
+      mealTypes: _coerceStringList(json['meal_types'], onIssue),
       batch: json['batch'] as bool?,
       libraryMealId: json['library_meal_id'] as String?,
       lastUsedAt: json['last_used_at'] == null
@@ -251,49 +257,51 @@ class SavedMeal {
 
   // ── JSON helpers ──────────────────────────────────────────────────────────
 
-  static List<MealComponent> _decodeComponents(String? raw) {
+  static List<MealComponent> _decodeComponents(
+    String? raw,
+    DecodeIssue onIssue,
+  ) {
     if (raw == null || raw.isEmpty || raw == '[]') return const [];
     try {
       final decoded = jsonDecode(raw);
-      return _coerceComponents(decoded);
+      return _coerceComponents(decoded, onIssue);
     } catch (e, st) {
-      SentryReport.global.degraded(
-        e,
+      onIssue(
+        'saved_meal items column did not decode (raw_length: ${raw.length})',
+        error: e,
         stackTrace: st,
-        area: 'meal_logging',
-        message: 'saved_meal items column did not decode',
-        extra: {'raw_length': raw.length},
       );
       return const [];
     }
   }
 
   /// Decode the Drift TEXT `meal_types` column (a JSON-encoded string array).
-  static List<String> _decodeStringList(String? raw) {
+  static List<String> _decodeStringList(String? raw, DecodeIssue onIssue) {
     if (raw == null || raw.isEmpty || raw == '[]') return const [];
     try {
-      return _coerceStringList(jsonDecode(raw));
+      return _coerceStringList(jsonDecode(raw), onIssue);
     } catch (e, st) {
-      SentryReport.global.degraded(
-        e,
+      onIssue(
+        'saved_meal meal_types column did not decode (raw_length: ${raw.length})',
+        error: e,
         stackTrace: st,
-        area: 'meal_logging',
-        message: 'saved_meal meal_types column did not decode',
-        extra: {'raw_length': raw.length},
       );
       return const [];
     }
   }
 
   /// Coerce a Supabase `text[]` (decoded List) or a JSON string.
-  static List<String> _coerceStringList(Object? raw) {
-    if (raw is String) return _decodeStringList(raw);
+  static List<String> _coerceStringList(Object? raw, DecodeIssue onIssue) {
+    if (raw is String) return _decodeStringList(raw, onIssue);
     if (raw is List) return raw.whereType<String>().toList(growable: false);
     return const [];
   }
 
-  static List<MealComponent> _coerceComponents(Object? raw) {
-    if (raw is String) return _decodeComponents(raw);
+  static List<MealComponent> _coerceComponents(
+    Object? raw,
+    DecodeIssue onIssue,
+  ) {
+    if (raw is String) return _decodeComponents(raw, onIssue);
     if (raw is List) {
       return raw
           .whereType<Map>()

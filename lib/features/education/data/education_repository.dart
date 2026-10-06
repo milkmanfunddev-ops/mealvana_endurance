@@ -1,6 +1,6 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../../../shared/services/logging_service.dart';
+import '../../../shared/services/report/report.dart';
 import '../domain/education_content.dart';
 
 part 'education_repository.g.dart';
@@ -9,7 +9,7 @@ part 'education_repository.g.dart';
 EducationRepository educationRepository(Ref ref) {
   return EducationRepository(
     supabase: Supabase.instance.client,
-    logger: ref.read(appLoggerProvider),
+    report: ref.read(reportProvider),
   );
 }
 
@@ -18,12 +18,12 @@ EducationRepository educationRepository(Ref ref) {
 class EducationRepository {
   const EducationRepository({
     required SupabaseClient supabase,
-    required AppLogger logger,
+    required Report report,
   }) : _supabase = supabase,
-       _logger = logger;
+       _report = report;
 
   final SupabaseClient _supabase;
-  final AppLogger _logger;
+  final Report _report;
 
   /// Fetch all published education content ordered by sort_order
   Future<List<EducationContent>> getPublishedContent() async {
@@ -39,8 +39,13 @@ class EducationRepository {
             (json) => EducationContent.fromJson(json as Map<String, dynamic>),
           )
           .toList();
-    } catch (e) {
-      _logger.warning('Failed to fetch education content: $e');
+    } catch (e, stackTrace) {
+      _report.degraded(
+        e,
+        stackTrace: stackTrace,
+        area: 'education',
+        message: 'Failed to fetch education content',
+      );
       return [];
     }
   }

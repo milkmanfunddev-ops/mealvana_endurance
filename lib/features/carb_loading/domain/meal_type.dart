@@ -1,5 +1,5 @@
 import 'dart:convert';
-import '../../../shared/services/report/report.dart';
+import '../../../shared/domain/decode_issue.dart';
 
 /// Meal type for carb loading (breakfast, lunch, dinner, snacks)
 /// Maps to meal_types database table
@@ -53,7 +53,11 @@ enum MealType {
 ///
 /// Unknown names fall back to breakfast (matching [MealType.fromName]) rather
 /// than throwing — a bad tag must not break a user's carb loading day.
-List<int> parseMealTypeIds(String? raw, {Report? report}) {
+/// A column that does not parse at all goes to [onIssue] and reads as none.
+List<int> parseMealTypeIds(
+  String? raw, {
+  DecodeIssue onIssue = ignoreDecodeIssue,
+}) {
   if (raw == null || raw.isEmpty) return [];
 
   int nameOrIdToId(String token) {
@@ -90,12 +94,10 @@ List<int> parseMealTypeIds(String? raw, {Report? report}) {
   } catch (e, stackTrace) {
     // Malformed data must not take the screen down; it is still a bug in
     // whatever wrote the column.
-    (report ?? SentryReport.global).fault(
-      e,
+    onIssue(
+      'meal_types column unparseable; treating as none (raw: $raw)',
+      error: e,
       stackTrace: stackTrace,
-      area: 'carb_loading',
-      message: 'meal_types column unparseable; treating as none',
-      extra: {'raw': raw},
     );
     return [];
   }

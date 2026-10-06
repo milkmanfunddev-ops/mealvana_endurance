@@ -1,8 +1,8 @@
-import 'package:mealvana_endurance/core/utils/debug_logger.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../shared/services/app_external_deps.dart';
+import '../../../shared/services/report/report.dart';
 import '../domain/api_food_product.dart';
 
 part 'product_detail_service.g.dart';
@@ -11,8 +11,10 @@ part 'product_detail_service.g.dart';
 /// Replaces the previous barcode-specific lookup with a more flexible approach
 class ProductDetailService {
   final SupabaseClient _supabase;
+  final Report _report;
 
-  ProductDetailService(this._supabase);
+  ProductDetailService(this._supabase, {required Report report})
+    : _report = report;
 
   /// Get product details using either barcode or Open Food Facts ID
   /// Returns null if product not found or if there's an error
@@ -24,19 +26,27 @@ class ProductDetailService {
       throw ArgumentError('Either barcode or openFoodFactsId must be provided');
     }
 
-    DebugLogger.debug('🔄 ProductDetailService - Looking up product with:');
-    if (barcode != null) DebugLogger.debug('  Barcode: $barcode');
-    if (openFoodFactsId != null)
-      DebugLogger.debug('  Open Food Facts ID: $openFoodFactsId');
+    _report.debug(
+      '🔄 ProductDetailService - Looking up product',
+      area: 'barcode_scanning',
+      data: {
+        if (barcode != null) 'barcode': barcode,
+        if (openFoodFactsId != null) 'open_food_facts_id': openFoodFactsId,
+      },
+    );
 
-    DebugLogger.debug(
+    _report.debug(
       '🚀 ProductDetailService - CALLING EDGE FUNCTION: lookup-product',
+      area: 'barcode_scanning',
     );
     final requestBody = {
       if (barcode != null) 'barcode': barcode,
       if (openFoodFactsId != null) 'open_food_facts_id': openFoodFactsId,
     };
-    DebugLogger.debug('📦 ProductDetailService - Request body: $requestBody');
+    _report.debug(
+      '📦 ProductDetailService - Request body: $requestBody',
+      area: 'barcode_scanning',
+    );
 
     try {
       final response = await _supabase.functions.invoke(
@@ -44,17 +54,23 @@ class ProductDetailService {
         body: requestBody,
       );
 
-      DebugLogger.debug(
+      _report.debug(
         '📡 ProductDetailService - Edge function response status: ${response.status}',
+        area: 'barcode_scanning',
       );
-      DebugLogger.debug(
+      _report.debug(
         '📄 ProductDetailService - Edge function response data: ${response.data}',
+        area: 'barcode_scanning',
       );
 
       if (response.status != 200) {
-        DebugLogger.error(
-          '❌ ProductDetailService - API error',
-          error: response.status,
+        _report.fault(
+          LoggedFault(
+            '❌ ProductDetailService - API error: status ${response.status}',
+            context: 'barcode_scanning',
+          ),
+          area: 'barcode_scanning',
+          extra: {'status': response.status},
         );
         final errorData = response.data;
         if (errorData != null && errorData['message'] != null) {
@@ -66,8 +82,12 @@ class ProductDetailService {
       final data = response.data;
       if (data == null || !data['success']) {
         final errorMessage = data?['message'] ?? 'Product not found';
-        DebugLogger.warning(
-          '❌ ProductDetailService - Product not found: $errorMessage',
+        _report.degraded(
+          LoggedFault(
+            '❌ ProductDetailService - Product not found: $errorMessage',
+            context: 'barcode_scanning',
+          ),
+          area: 'barcode_scanning',
         );
         throw ProductDetailException(errorMessage);
       }
@@ -77,8 +97,9 @@ class ProductDetailService {
         throw ProductDetailException('No product data returned');
       }
 
-      DebugLogger.info(
+      _report.info(
         '✅ ProductDetailService - Product found via ${data['source']}',
+        area: 'barcode_scanning',
       );
 
       // Convert to ApiFoodProduct using the existing factory method
@@ -88,10 +109,11 @@ class ProductDetailService {
     } on ProductDetailException {
       rethrow; // Re-throw our custom exceptions
     } catch (e, stackTrace) {
-      DebugLogger.error(
-        '❌ ProductDetailService - Unexpected error',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'barcode_scanning',
+        message: '❌ ProductDetailService - Unexpected error',
       );
       throw ProductDetailException(
         'Unable to connect to product lookup service',
@@ -123,5 +145,5 @@ class ProductDetailException implements Exception {
 @riverpod
 ProductDetailService productDetailService(Ref ref) {
   final supabase = ref.read(appExternalDepsProvider).supabaseClient;
-  return ProductDetailService(supabase);
+  return ProductDetailService(supabase, report: ref.read(reportProvider));
 }

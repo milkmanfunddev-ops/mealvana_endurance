@@ -10,15 +10,11 @@ import 'package:mealvana_endurance/features/coach_mode/data/coach_repository.dar
 import 'package:mealvana_endurance/features/events/data/events_repository.dart';
 import 'package:mealvana_endurance/shared/data/syncable_repository.dart';
 import 'package:mealvana_endurance/shared/database/app_database.dart';
-import 'package:mealvana_endurance/shared/services/logging_service.dart';
-import 'package:mealvana_endurance/shared/services/sentry/sentry_reporter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../helpers/fakes/recording_report.dart';
+
 class MockSupabaseClient extends Mock implements SupabaseClient {}
-
-class MockAppLogger extends Mock implements AppLogger {}
-
-class MockSentryReporter extends Mock implements SentryReporter {}
 
 class MockCoachRepository extends Mock implements CoachRepository {}
 
@@ -26,8 +22,7 @@ class MockEventsRepository extends Mock implements EventsRepository {}
 
 void main() {
   late AppDatabase db;
-  late MockAppLogger mockLogger;
-  late MockSentryReporter mockSentry;
+  late RecordingReport report;
   late MockCoachRepository mockCoachRepo;
   late MockEventsRepository mockEventsRepo;
   late CarbLoadingRepository carbLoadingRepository;
@@ -39,43 +34,9 @@ void main() {
   setUp(() async {
     SharedPreferences.setMockInitialValues({});
     db = AppDatabase.forTesting(NativeDatabase.memory());
-    mockLogger = MockAppLogger();
-    mockSentry = MockSentryReporter();
+    report = RecordingReport();
     mockCoachRepo = MockCoachRepository();
     mockEventsRepo = MockEventsRepository();
-
-    // Stub all logger calls
-    when(
-      () => mockLogger.info(
-        any(),
-        context: any(named: 'context'),
-        data: any(named: 'data'),
-      ),
-    ).thenReturn(null);
-    when(
-      () => mockLogger.debug(
-        any(),
-        context: any(named: 'context'),
-        data: any(named: 'data'),
-      ),
-    ).thenReturn(null);
-    when(
-      () => mockLogger.warning(
-        any(),
-        context: any(named: 'context'),
-        data: any(named: 'data'),
-        error: any(named: 'error'),
-      ),
-    ).thenReturn(null);
-    when(
-      () => mockLogger.error(
-        any(),
-        context: any(named: 'context'),
-        error: any(named: 'error'),
-        stackTrace: any(named: 'stackTrace'),
-        data: any(named: 'data'),
-      ),
-    ).thenReturn(null);
 
     // Stub uploadDirtyRecords on events repo (called after carb loading plan created/deleted)
     when(
@@ -85,13 +46,12 @@ void main() {
     carbLoadingRepository = CarbLoadingRepository(
       supabase: MockSupabaseClient(),
       database: db,
-      logger: mockLogger,
-      sentry: mockSentry,
+      report: report,
     );
 
     service = CarbLoadingService(
       db,
-      mockLogger,
+      report,
       carbLoadingRepository,
       mockCoachRepo,
       mockEventsRepo,
