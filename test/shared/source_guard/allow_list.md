@@ -27,12 +27,6 @@ unreportedCatch lib/shared/services/sentry/sentry_provider_observer.dart :: } on
 ## baseline
 
 printInCatch lib/features/ai_coach/data/ai_coach_chat_repository.dart :: } catch (e) {
-printInCatch lib/features/ai_credits/application/credits_controller.dart :: } catch (e) {
-printInCatch lib/features/ai_credits/application/purchase_controller.dart :: } catch (e) {
-printInCatch lib/features/ai_credits/data/credits_repository.dart :: } catch (e) {
-printInCatch lib/features/ai_credits/data/credits_repository.dart :: } catch (e) {
-printInCatch lib/features/ai_credits/data/credits_repository.dart :: } catch (e) {
-printInCatch lib/features/ai_credits/data/credits_repository.dart :: } catch (e) {
 printInCatch lib/features/carb_loading/presentation/screens/carb_loading_food_selection_screen.dart :: } catch (e, stackTrace) {
 printInCatch lib/features/carb_loading/presentation/screens/carb_loading_food_selection_screen.dart :: } catch (e) {
 printInCatch lib/features/carb_loading/presentation/screens/carb_loading_food_selection_screen.dart :: } catch (e) {
@@ -87,12 +81,7 @@ printInCatch lib/features/nutrition_plan/presentation/screens/swap_food_screen.d
 printInCatch lib/features/nutrition_plan/presentation/screens/swap_food_screen.dart :: } catch (e) {
 printInCatch lib/features/nutrition_plan/presentation/screens/swap_food_screen.dart :: } catch (e) {
 printInCatch lib/features/settings/presentation/screens/debug_screen.dart :: } catch (e, stackTrace) {
-printInCatch lib/features/subscription/application/subscription_status_provider.dart :: } catch (e) {
 printInCatch lib/shared/database/app_database.dart :: } catch (closeError) {
-printInCatch lib/shared/services/notification_service.dart :: } catch (e) {
-printInCatch lib/shared/services/notification_service.dart :: } catch (e) {
-printInCatch lib/shared/services/notification_service.dart :: } catch (e) {
-printInCatch lib/shared/services/notification_service.dart :: } catch (e) {
 sentryImport lib/features/daily_macros/data/daily_macro_targets_repository.dart :: import 'package:sentry_flutter/sentry_flutter.dart';
 sentryImport lib/features/formula_kit/data/formula_pins_repository.dart :: import 'package:sentry_flutter/sentry_flutter.dart';
 sentryImport lib/features/formula_kit/data/personal_formulas_repository.dart :: import 'package:sentry_flutter/sentry_flutter.dart';
@@ -115,19 +104,6 @@ unreportedCatch lib/features/ai_coach/data/ai_coach_chat_repository.dart :: } ca
 unreportedCatch lib/features/ai_coach/domain/ai_coach_message.dart :: } catch (_) {
 unreportedCatch lib/features/ai_coach/domain/ai_coach_ui_part.dart :: } catch (_) {
 unreportedCatch lib/features/ai_coach/presentation/providers/ai_coach_banner_providers.dart :: } catch (_) {
-unreportedCatch lib/features/ai_credits/application/credits_controller.dart :: } catch (e) {
-unreportedCatch lib/features/ai_credits/application/purchase_controller.dart :: } catch (_) {
-unreportedCatch lib/features/ai_credits/application/purchase_controller.dart :: } catch (e) {
-unreportedCatch lib/features/ai_credits/data/credits_repository.dart :: } catch (e) {
-unreportedCatch lib/features/ai_credits/data/credits_repository.dart :: } catch (e) {
-unreportedCatch lib/features/ai_credits/data/credits_repository.dart :: } catch (e) {
-unreportedCatch lib/features/ai_credits/data/credits_repository.dart :: } catch (e) {
-unreportedCatch lib/features/ai_credits/data/revenuecat_service.dart :: } catch (e, st) {
-unreportedCatch lib/features/ai_credits/data/revenuecat_service.dart :: } catch (e, st) {
-unreportedCatch lib/features/ai_credits/data/revenuecat_service.dart :: } catch (e, st) {
-unreportedCatch lib/features/ai_credits/data/revenuecat_service.dart :: } catch (e, st) {
-unreportedCatch lib/features/ai_credits/data/revenuecat_service.dart :: } catch (e, st) {
-unreportedCatch lib/features/ai_credits/data/revenuecat_service.dart :: } on PurchasesError catch (e, st) {
 unreportedCatch lib/features/app_startup/application/app_startup_service.dart :: } catch (_) {
 unreportedCatch lib/features/app_startup/presentation/screens/force_upgrade_screen.dart :: } catch (_) {
 unreportedCatch lib/features/auth/application/auth_service.dart :: } catch (e) {
@@ -456,9 +432,6 @@ unreportedCatch lib/features/settings/presentation/screens/nutrition_targets_scr
 unreportedCatch lib/features/settings/presentation/screens/preferences_screen.dart :: } catch (e) {
 unreportedCatch lib/features/sharing/application/email_service.dart :: } catch (e) {
 unreportedCatch lib/features/sharing/presentation/providers/share_form_controller.dart :: } catch (e) {
-unreportedCatch lib/features/subscription/application/subscription_status_provider.dart :: } catch (e) {
-unreportedCatch lib/features/subscription/data/subscription_service.dart :: } catch (e, st) {
-unreportedCatch lib/features/subscription/data/subscription_service.dart :: } catch (e, st) {
 unreportedCatch lib/features/user_foods/data/user_foods_repository.dart :: } catch (_) {
 unreportedCatch lib/shared/controllers/food_search_controller.dart :: } catch (_) {
 unreportedCatch lib/shared/data/syncable_repository.dart :: } catch (e) {
@@ -485,12 +458,6 @@ unreportedCatch lib/shared/services/device_info_service.dart :: } catch (e) {
 unreportedCatch lib/shared/services/launch_trail.dart :: } catch (_) {
 unreportedCatch lib/shared/services/launch_trail.dart :: } catch (_) {
 unreportedCatch lib/shared/services/launch_trail.dart :: } catch (_) {
-unreportedCatch lib/shared/services/notification_service.dart :: } catch (e) {
-unreportedCatch lib/shared/services/notification_service.dart :: } catch (e) {
-unreportedCatch lib/shared/services/notification_service.dart :: } catch (e) {
-unreportedCatch lib/shared/services/notification_service.dart :: } catch (e) {
-unreportedCatch lib/shared/services/notification_service.dart :: } catch (e) {
-unreportedCatch lib/shared/services/notification_service.dart :: } catch (e) {
 unreportedCatch lib/shared/services/privacy/privacy_links.dart :: } catch (_) {
 unreportedCatch lib/shared/services/privacy/privacy_region_service.dart :: } catch (_) {
 unreportedCatch lib/shared/services/report/report.dart :: } catch (_) {

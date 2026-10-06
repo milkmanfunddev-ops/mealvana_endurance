@@ -1,7 +1,7 @@
-import 'package:flutter/foundation.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../shared/services/report/report.dart';
 import '../../../shared/services/supabase/supabase_client_provider.dart';
 import '../domain/credit_wallet.dart';
 
@@ -9,7 +9,10 @@ part 'credits_repository.g.dart';
 
 @riverpod
 CreditsRepository creditsRepository(Ref ref) {
-  return CreditsRepository(supabase: ref.watch(supabaseClientProvider));
+  return CreditsRepository(
+    supabase: ref.watch(supabaseClientProvider),
+    report: ref.watch(reportProvider),
+  );
 }
 
 /// Remote-only repository for reading the authenticated user's credit wallet.
@@ -18,9 +21,16 @@ CreditsRepository creditsRepository(Ref ref) {
 /// (RLS: read-own). All mutations are performed server-side by edge functions
 /// and RevenueCat webhooks.
 class CreditsRepository {
-  CreditsRepository({required SupabaseClient supabase}) : _supabase = supabase;
+  CreditsRepository({required SupabaseClient supabase, Report? report})
+    : _supabase = supabase,
+      _report = report;
 
   final SupabaseClient _supabase;
+  final Report? _report;
+
+  Report get _r => _report ?? SentryReport.global;
+
+  static const _area = 'credits';
 
   /// Whether any Supabase user (including an anonymous one) is signed in.
   ///
@@ -75,10 +85,15 @@ class CreditsRepository {
       final data = res.data;
       if (data is Map && data['balance'] is int) return data['balance'] as int;
       return null;
-    } catch (e) {
+    } catch (e, st) {
       // Non-fatal: the AI functions still provision on first use, so a failure
       // here costs a stale zero on screen, never a lost grant.
-      debugPrint('[CreditsRepository] ensureWallet error: $e');
+      await _r.fault(
+        e,
+        stackTrace: st,
+        area: _area,
+        message: 'ensure-credits failed; wallet shows a stale zero',
+      );
       return null;
     }
   }
@@ -101,11 +116,14 @@ class CreditsRepository {
 
       if (row == null) return CreditWallet.zero;
       return CreditWallet.fromMap(row);
-    } catch (e) {
-      if (kDebugMode) {
-        debugPrint('[CreditsRepository] fetchWallet error: $e');
-      }
-      // Return safe default so the app never crashes on a wallet read error.
+    } catch (e, st) {
+      // Safe default so the app never crashes on a wallet read error.
+      await _r.fault(
+        e,
+        stackTrace: st,
+        area: _area,
+        message: 'token_wallets read failed; showing zero',
+      );
       return CreditWallet.zero;
     }
   }
@@ -141,8 +159,15 @@ class CreditsRepository {
             if (payload.newRecord.isEmpty) return;
             try {
               onChange(CreditWallet.fromMap(payload.newRecord));
-            } catch (e) {
-              debugPrint('[CreditsRepository] realtime payload parse: $e');
+            } catch (e, st) {
+              // A row we cannot parse is a schema drift, not a network blip.
+              _r.fault(
+                e,
+                stackTrace: st,
+                area: _area,
+                message: 'token_wallets realtime payload did not parse',
+                extra: {'keys': payload.newRecord.keys.join(',')},
+              );
             }
           },
         )
@@ -170,10 +195,13 @@ class CreditsRepository {
           .limit(limit);
 
       return List<Map<String, dynamic>>.from(rows as List);
-    } catch (e) {
-      if (kDebugMode) {
-        debugPrint('[CreditsRepository] recentLedger error: $e');
-      }
+    } catch (e, st) {
+      await _r.fault(
+        e,
+        stackTrace: st,
+        area: _area,
+        message: 'token_ledger read failed; showing an empty ledger',
+      );
       return [];
     }
   }

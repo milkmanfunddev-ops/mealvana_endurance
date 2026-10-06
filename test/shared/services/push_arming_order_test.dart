@@ -21,8 +21,19 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mealvana_endurance/shared/services/launch_trail.dart';
 import 'package:mealvana_endurance/shared/services/notification_service.dart';
 
+import '../../helpers/fakes/recording_report.dart';
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+
+  late RecordingReport report;
+
+  setUp(() {
+    report = RecordingReport();
+    NotificationService.debugSetReport(report);
+  });
+
+  tearDown(() => NotificationService.debugSetReport(null));
 
   setUpAll(() {
     // The arm path fires real OneSignal platform-channel calls (initialize,
@@ -76,6 +87,14 @@ void main() {
       isNot(contains('arming now')),
       reason: 'nothing may arm before an app id exists',
     );
+    // The tape is dev-only; rule D9 wants the bail PROD-readable too. A Note
+    // in `push` is promoted to a warning event by Report.
+    expect(
+      report.notes.where((n) => n.area == 'push'),
+      hasLength(1),
+      reason: 'the empty-id bail must reach Report, not only the tape',
+    );
+    expect(report.notes.single.message, contains('no app id configured yet'));
 
     // The app id arrives late (as deferred.analytics used to deliver it).
     NotificationService.configureRemotePush(
