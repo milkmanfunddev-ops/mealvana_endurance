@@ -28,7 +28,7 @@ part 'activities_controller.g.dart';
 @riverpod
 class ActivitiesController extends _$ActivitiesController {
   ActivitiesService get _service => ref.read(activitiesServiceProvider);
-  Report get _report => ref.read(reportProvider);
+  Report get _report => ref.report;
 
   @override
   FutureOr<List<Activity>> build() async {
@@ -177,11 +177,14 @@ class ActivitiesController extends _$ActivitiesController {
     BrickMetadata? brickMetadata,
     String? brickId,
   }) async {
+    final service = _service;
+    final report = _report;
+    final analytics = ref.read(appExternalDepsProvider).analytics;
     try {
       final priorCount = state.value?.length ?? 0;
       final deviceIdValue = await ref.read(userIdProvider.future);
 
-      final createdActivity = await _service.createActivity(
+      final createdActivity = await service.createActivity(
         deviceId: deviceIdValue,
         userId: deviceIdValue,
         forUserId:
@@ -214,10 +217,7 @@ class ActivitiesController extends _$ActivitiesController {
       // workouts fire the same event from their sync service with
       // `source: 'synced'`.
       try {
-        ref
-            .read(appExternalDepsProvider)
-            .analytics
-            .trackWorkoutPlanned(
+        analytics.trackWorkoutPlanned(
               sport: activityType.name,
               source: 'manual',
               durationMinutes: durationMinutes,
@@ -225,7 +225,7 @@ class ActivitiesController extends _$ActivitiesController {
               isCoachCreated: forUserId != null,
             );
       } catch (e, stackTrace) {
-        _report.fault(
+        report.fault(
           e,
           stackTrace: stackTrace,
           area: 'activities',
@@ -235,18 +235,15 @@ class ActivitiesController extends _$ActivitiesController {
 
       if (priorCount == 0) {
         try {
-          ref
-              .read(appExternalDepsProvider)
-              .analytics
-              .track(
-                'first_activity_added',
-                properties: {
-                  'activity_type': activityType.name,
-                  'activity_id': createdActivity.id,
-                },
-              );
+          analytics.track(
+            'first_activity_added',
+            properties: {
+              'activity_type': activityType.name,
+              'activity_id': createdActivity.id,
+            },
+          );
         } catch (e, stackTrace) {
-          _report.fault(
+          report.fault(
             e,
             stackTrace: stackTrace,
             area: 'activities',
@@ -256,29 +253,31 @@ class ActivitiesController extends _$ActivitiesController {
       }
 
       // Refresh activities list
-      ref.invalidateSelf();
+      if (ref.mounted) ref.invalidateSelf();
 
       return createdActivity.id;
     } catch (e) {
-      _report.fault(e, area: 'activities', message: 'Error creating activity');
+      report.fault(e, area: 'activities', message: 'Error creating activity');
       rethrow;
     }
   }
 
   /// Update an existing activity
   Future<void> updateActivity(Activity activity) async {
+    final service = _service;
+    final report = _report;
     try {
       final deviceIdValue = await ref.read(userIdProvider.future);
 
-      await _service.updateActivity(
+      await service.updateActivity(
         deviceId: deviceIdValue,
         activity: activity,
       );
 
       // Refresh activities list
-      ref.invalidateSelf();
+      if (ref.mounted) ref.invalidateSelf();
     } catch (e) {
-      _report.fault(e, area: 'activities', message: 'Error updating activity');
+      report.fault(e, area: 'activities', message: 'Error updating activity');
       rethrow;
     }
   }
@@ -303,15 +302,17 @@ class ActivitiesController extends _$ActivitiesController {
     state = AsyncData(
       previous.where((a) => a.id != activityId).toList(growable: false),
     );
+    final service = _service;
+    final report = _report;
     try {
       final deviceIdValue = await ref.read(userIdProvider.future);
 
-      await _service.deleteActivity(
+      await service.deleteActivity(
         deviceId: deviceIdValue,
         activityId: activityId,
       );
     } catch (e) {
-      _report.fault(e, area: 'activities', message: 'Error deleting activity');
+      report.fault(e, area: 'activities', message: 'Error deleting activity');
       // Roll back the optimistic removal so the card reappears on failure.
       if (ref.mounted) state = AsyncData(previous);
       rethrow;
@@ -336,10 +337,12 @@ class ActivitiesController extends _$ActivitiesController {
         else
           a,
     ]);
+    final service = _service;
+    final report = _report;
     try {
-      await _service.markWorkoutDone(activityId: activityId);
+      await service.markWorkoutDone(activityId: activityId);
     } catch (e) {
-      _report.fault(
+      report.fault(
         e,
         area: 'activities',
         message: 'Error marking workout done',
@@ -360,10 +363,12 @@ class ActivitiesController extends _$ActivitiesController {
         else
           a,
     ]);
+    final service = _service;
+    final report = _report;
     try {
-      await _service.markWorkoutUndone(activityId: activityId);
+      await service.markWorkoutUndone(activityId: activityId);
     } catch (e) {
-      _report.fault(
+      report.fault(
         e,
         area: 'activities',
         message: 'Error marking workout undone',
@@ -386,10 +391,12 @@ class ActivitiesController extends _$ActivitiesController {
         else
           a,
     ]);
+    final service = _service;
+    final report = _report;
     try {
-      await _service.skipWorkout(activityId: activityId);
+      await service.skipWorkout(activityId: activityId);
     } catch (e) {
-      _report.fault(e, area: 'activities', message: 'Error skipping workout');
+      report.fault(e, area: 'activities', message: 'Error skipping workout');
       if (ref.mounted) state = AsyncData(previous);
       rethrow;
     }
@@ -406,10 +413,12 @@ class ActivitiesController extends _$ActivitiesController {
         else
           a,
     ]);
+    final service = _service;
+    final report = _report;
     try {
-      await _service.unskipWorkout(activityId: activityId);
+      await service.unskipWorkout(activityId: activityId);
     } catch (e) {
-      _report.fault(e, area: 'activities', message: 'Error unskipping workout');
+      report.fault(e, area: 'activities', message: 'Error unskipping workout');
       if (ref.mounted) state = AsyncData(previous);
       rethrow;
     }
@@ -432,14 +441,16 @@ class ActivitiesController extends _$ActivitiesController {
     final next = [...previous.where((a) => a.id != activity.id), activity]
       ..sort((a, b) => a.scheduledDateTime.compareTo(b.scheduledDateTime));
     state = AsyncData(List.unmodifiable(next));
+    final service = _service;
+    final report = _report;
     try {
       final deviceIdValue = await ref.read(userIdProvider.future);
-      await _service.updateActivity(
+      await service.updateActivity(
         deviceId: deviceIdValue,
         activity: activity,
       );
     } catch (e) {
-      _report.fault(e, area: 'activities', message: 'Error restoring activity');
+      report.fault(e, area: 'activities', message: 'Error restoring activity');
       // Roll back the optimistic restore so the card disappears again.
       if (ref.mounted) state = AsyncData(previous);
       rethrow;
@@ -448,6 +459,8 @@ class ActivitiesController extends _$ActivitiesController {
 
   /// Get activities for a specific date
   Future<List<Activity>> getActivitiesForDate(DateTime date) async {
+    final service = _service;
+    final report = _report;
     try {
       final userId = await ref.read(userIdProvider.future);
       final startOfDay = DateTime(date.year, date.month, date.day);
@@ -455,13 +468,13 @@ class ActivitiesController extends _$ActivitiesController {
           .add(const Duration(days: 1))
           .subtract(const Duration(seconds: 1));
 
-      return await _service.getActivitiesForDateRange(
+      return await service.getActivitiesForDateRange(
         userId,
         startOfDay,
         endOfDay,
       );
     } catch (e) {
-      _report.fault(
+      report.fault(
         e,
         area: 'activities',
         message: 'Error getting activities for date',
@@ -472,11 +485,13 @@ class ActivitiesController extends _$ActivitiesController {
 
   /// Get activity by ID
   Future<Activity?> getActivityById(String activityId) async {
+    final service = _service;
+    final report = _report;
     try {
       final userId = await ref.read(userIdProvider.future);
-      return await _service.getActivityById(userId, activityId);
+      return await service.getActivityById(userId, activityId);
     } catch (e) {
-      _report.fault(
+      report.fault(
         e,
         area: 'activities',
         message: 'Error getting activity by ID',
@@ -496,30 +511,32 @@ class ActivitiesController extends _$ActivitiesController {
   /// or when athlete needs to see coach-made changes immediately.
   /// Runs Supabase sync and integration sync in parallel with a 20s timeout.
   Future<void> forceRefresh() async {
+    final report = _report;
+    final syncCoordinator = ref.read(syncCoordinatorProvider.notifier);
+    final repository = ref.read(activitiesRepositoryProvider);
+    final integrationSyncCoordinator = ref.read(
+      integrationSyncCoordinatorProvider.notifier,
+    );
     try {
       final userId = await ref.read(userIdProvider.future);
 
       await Future.wait([
-        ref
-            .read(syncCoordinatorProvider.notifier)
-            .forceSyncRepository(
-              'activities',
-              userId,
-              repository: ref.read(activitiesRepositoryProvider),
-            ),
-        ref
-            .read(integrationSyncCoordinatorProvider.notifier)
-            .forceSyncIntegrations(userId),
+        syncCoordinator.forceSyncRepository(
+          'activities',
+          userId,
+          repository: repository,
+        ),
+        integrationSyncCoordinator.forceSyncIntegrations(userId),
       ]).timeout(const Duration(seconds: 20), onTimeout: () => [null, null]);
 
-      ref.invalidateSelf();
+      if (ref.mounted) ref.invalidateSelf();
     } catch (e) {
-      _report.fault(
+      report.fault(
         e,
         area: 'activities',
         message: 'Error during force refresh',
       );
-      ref.invalidateSelf();
+      if (ref.mounted) ref.invalidateSelf();
     }
   }
 }
@@ -527,15 +544,15 @@ class ActivitiesController extends _$ActivitiesController {
 /// Provider for getting a specific activity by ID
 @riverpod
 Future<Activity?> activityDetail(Ref ref, String activityId) async {
-  final userId = await ref.read(userIdProvider.future);
   final service = ref.read(activitiesServiceProvider);
+  final userId = await ref.read(userIdProvider.future);
   return await service.getActivityById(userId, activityId);
 }
 
 /// Provider for getting all activities
 @riverpod
 Future<List<Activity>> allActivities(Ref ref) async {
-  final userId = await ref.read(userIdProvider.future);
   final service = ref.read(activitiesServiceProvider);
+  final userId = await ref.read(userIdProvider.future);
   return await service.getAllActivities(userId);
 }

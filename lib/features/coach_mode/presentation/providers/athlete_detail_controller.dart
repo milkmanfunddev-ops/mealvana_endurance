@@ -83,6 +83,7 @@ class AthleteDetailController extends _$AthleteDetailController {
       (r) => r.id == relationshipId,
       orElse: () => _createPlaceholderRelationship(relationshipId),
     );
+    if (!ref.mounted) return AthleteDetailState(relationship: relationship);
 
     // Automatically sync athlete data from Supabase on initial load
     // This ensures fresh data when coach views athlete details
@@ -96,26 +97,29 @@ class AthleteDetailController extends _$AthleteDetailController {
     }
 
     // Now load from local database (which has fresh synced data)
+    if (!ref.mounted) return AthleteDetailState(relationship: relationship);
     return _loadAthleteDetails(relationshipId);
   }
 
   Future<AthleteDetailState> _loadAthleteDetails(String relationshipId) async {
+    final coachService = _coachService;
+    final database = ref.read(appDatabaseProvider);
+    final report = ref.read(reportProvider);
     try {
       // Get all relationships for this coach to find the specific one
-      final relationships = await _coachService.getMyAthletes();
+      final relationships = await coachService.getMyAthletes();
       final relationship = relationships.firstWhere(
         (r) => r.id == relationshipId,
         orElse: () => _createPlaceholderRelationship(relationshipId),
       );
 
       // Get conversation messages with this athlete
-      final messages = await _coachService.getConversation(
+      final messages = await coachService.getConversation(
         coachUserId: relationship.coachUserId,
         athleteUserId: relationship.athleteUserId,
       );
 
       // Fetch athlete's data from local database
-      final database = ref.read(appDatabaseProvider);
 
       // Load athlete profile by user ID
       final athleteProfile = await database.userDao.getUserProfileById(
@@ -190,15 +194,13 @@ class AthleteDetailController extends _$AthleteDetailController {
         carbLoadingDays: carbLoadingDays,
       );
     } catch (e, stackTrace) {
-      ref
-          .read(reportProvider)
-          .fault(
-            e,
-            stackTrace: stackTrace,
-            area: 'coach_mode',
-            message: 'Athlete detail load failed',
-            extra: {'relationshipId': relationshipId},
-          );
+      report.fault(
+        e,
+        stackTrace: stackTrace,
+        area: 'coach_mode',
+        message: 'Athlete detail load failed',
+        extra: {'relationshipId': relationshipId},
+      );
       return AthleteDetailState(
         relationship: _createPlaceholderRelationship(relationshipId),
         error: 'Failed to load athlete details: ${e.toString()}',
@@ -315,9 +317,11 @@ class AthleteDetailController extends _$AthleteDetailController {
     if (currentState == null) return;
 
     state = AsyncData(currentState.copyWith(isLoading: true));
+    final coachService = _coachService;
+    final report = ref.read(reportProvider);
 
     try {
-      final newMessage = await _coachService.sendMessage(
+      final newMessage = await coachService.sendMessage(
         coachUserId: currentState.relationship.coachUserId,
         athleteUserId: currentState.relationship.athleteUserId,
         messageText: messageText,
@@ -325,6 +329,7 @@ class AthleteDetailController extends _$AthleteDetailController {
         nutritionPlanId: nutritionPlanId,
       );
 
+      if (!ref.mounted) return;
       if (newMessage != null) {
         final updatedMessages = [newMessage, ...currentState.messages];
         state = AsyncData(
@@ -339,14 +344,13 @@ class AthleteDetailController extends _$AthleteDetailController {
         );
       }
     } catch (e, stackTrace) {
-      ref
-          .read(reportProvider)
-          .fault(
-            e,
-            stackTrace: stackTrace,
-            area: 'coach_mode',
-            message: 'Coach message send failed',
-          );
+      report.fault(
+        e,
+        stackTrace: stackTrace,
+        area: 'coach_mode',
+        message: 'Coach message send failed',
+      );
+      if (!ref.mounted) return;
       state = AsyncData(
         currentState.copyWith(
           isLoading: false,
@@ -363,26 +367,29 @@ class AthleteDetailController extends _$AthleteDetailController {
 
     state = AsyncData(currentState.copyWith(isLoading: true));
 
+    final coachService = _coachService;
+    final report = ref.read(reportProvider);
+
     try {
-      await _coachService.deleteMessage(messageId);
+      await coachService.deleteMessage(messageId);
 
       final updatedMessages = currentState.messages
           .where((m) => m.id != messageId)
           .toList();
 
+      if (!ref.mounted) return;
       state = AsyncData(
         currentState.copyWith(messages: updatedMessages, isLoading: false),
       );
     } catch (e, stackTrace) {
-      ref
-          .read(reportProvider)
-          .fault(
-            e,
-            stackTrace: stackTrace,
-            area: 'coach_mode',
-            message: 'Coach message delete failed',
-            extra: {'messageId': messageId},
-          );
+      report.fault(
+        e,
+        stackTrace: stackTrace,
+        area: 'coach_mode',
+        message: 'Coach message delete failed',
+        extra: {'messageId': messageId},
+      );
+      if (!ref.mounted) return;
       state = AsyncData(
         currentState.copyWith(
           isLoading: false,
@@ -403,7 +410,7 @@ class AthleteDetailController extends _$AthleteDetailController {
 
     state = const AsyncLoading();
 
-    state = await AsyncValue.guard(() async {
+    final result = await AsyncValue.guard(() async {
       // Invalidate the cached sync provider to force a fresh sync
       ref.invalidate(
         athleteDataSyncProvider(
@@ -421,8 +428,10 @@ class AthleteDetailController extends _$AthleteDetailController {
       );
 
       // Reload data from local database (now fresh)
+      if (!ref.mounted) return currentState;
       return await _loadAthleteDetails(currentState.relationship.id);
     });
+    if (ref.mounted) state = result;
   }
 
   /// Save nutrition target overrides for athlete
@@ -430,7 +439,7 @@ class AthleteDetailController extends _$AthleteDetailController {
     final currentState = state.value;
     if (currentState == null) return;
 
-    state = await AsyncValue.guard(() async {
+    final result = await AsyncValue.guard(() async {
       final repo = ref.read(coachRepositoryProvider);
 
       // Apply guardrails
@@ -449,6 +458,7 @@ class AthleteDetailController extends _$AthleteDetailController {
 
       return currentState.copyWith(athleteProfile: updatedProfile);
     });
+    if (ref.mounted) state = result;
   }
 
   /// Create carb loading plan for athlete
@@ -461,9 +471,9 @@ class AthleteDetailController extends _$AthleteDetailController {
     final currentState = state.value;
     if (currentState == null) return;
 
-    state = await AsyncValue.guard(() async {
+    final service = ref.read(carbLoadingServiceProvider);
+    final result = await AsyncValue.guard(() async {
       final coachUserId = await ref.read(userIdProvider.future);
-      final service = ref.read(carbLoadingServiceProvider);
 
       await service.createCarbLoadingPlan(
         deviceId: coachUserId,
@@ -476,8 +486,10 @@ class AthleteDetailController extends _$AthleteDetailController {
       );
 
       // Reload to pick up the new plan
+      if (!ref.mounted) return currentState;
       return await _loadAthleteDetails(currentState.relationship.id);
     });
+    if (ref.mounted) state = result;
   }
 
   /// Delete carb loading plan for athlete
@@ -485,9 +497,9 @@ class AthleteDetailController extends _$AthleteDetailController {
     final currentState = state.value;
     if (currentState == null) return;
 
-    state = await AsyncValue.guard(() async {
+    final service = ref.read(carbLoadingServiceProvider);
+    final result = await AsyncValue.guard(() async {
       final coachUserId = await ref.read(userIdProvider.future);
-      final service = ref.read(carbLoadingServiceProvider);
 
       await service.deleteCarbLoadingPlan(
         deviceId: coachUserId,
@@ -497,8 +509,10 @@ class AthleteDetailController extends _$AthleteDetailController {
       );
 
       // Reload to reflect the deleted plan
+      if (!ref.mounted) return currentState;
       return await _loadAthleteDetails(currentState.relationship.id);
     });
+    if (ref.mounted) state = result;
   }
 
   /// Clear error

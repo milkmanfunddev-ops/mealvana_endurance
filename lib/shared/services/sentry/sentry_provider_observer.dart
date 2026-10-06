@@ -21,6 +21,18 @@
 ///    retries are exhausted (or the policy declines), which is the one
 ///    `AsyncError` Riverpod emits with `retrying: false`.
 ///
+/// Two lifecycle cases are not Faults (ticket 18):
+///
+/// - A failure that arrives after the container itself was disposed is the
+///   teardown, not a bug: every provider still awaiting `userIdProvider`
+///   gets "disposed during loading state" when a Patrol test unmounts the
+///   app. It becomes a [riverpodDuplicateCategory] breadcrumb.
+/// - A provider whose own build used its `Ref` after it was disposed (the
+///   `UnmountedRefException` names that same provider) lost a result nobody
+///   was waiting for. Riverpod discards it, so it is Degraded, tagged
+///   `riverpod_lifecycle: disposed_mid_build`, still counted but never an
+///   alert. The fix is still a `ref.mounted` guard at the site.
+///
 /// Why the retry callback and the observer share one object: Riverpod's retry
 /// hook is `Duration? Function(int retryCount, Object error)` and carries no
 /// provider. The element calls it synchronously and then notifies observers
@@ -47,6 +59,15 @@ const String riverpodRetryCategory = 'riverpod.retry';
 /// Breadcrumb category for a failure the observer saw but did not report
 /// again (rule D9: a skipped step is written down).
 const String riverpodDuplicateCategory = 'riverpod.duplicate';
+
+/// Read only to learn whether a container is disposed (see `_isTeardown`).
+final Provider<bool> _containerProbe = Provider<bool>(
+  (ref) => true,
+  name: 'sentryContainerProbe',
+);
+
+/// `riverpod_lifecycle` tag value on a disposed provider's own discarded build.
+const String disposedMidBuildTag = 'disposed_mid_build';
 
 /// The retry policy signature Riverpod expects (its `Retry` typedef is marked
 /// internal, so the shape is spelled out here).
@@ -126,6 +147,11 @@ final class SentryProviderObserver extends ProviderObserver {
       return;
     }
 
+    if (_isTeardown(context.container, error)) {
+      _skipped(providerName, error, reason: 'container disposed');
+      return;
+    }
+
     var reported = error;
     var reportedStack = stackTrace;
     var wrapped = false;
@@ -146,6 +172,22 @@ final class SentryProviderObserver extends ProviderObserver {
       return;
     }
     _markReported(reported);
+
+    if (!wrapped && isOwnDisposal(context.provider, reported)) {
+      unawaited(
+        _reporter.degraded(
+          reported,
+          stackTrace: reportedStack,
+          message: 'Provider used its Ref after disposal; result discarded',
+          tags: <String, String>{
+            'component': 'riverpod_provider',
+            'provider': providerName,
+            'riverpod_lifecycle': disposedMidBuildTag,
+          },
+        ),
+      );
+      return;
+    }
 
     unawaited(
       _reporter.fault(
@@ -213,6 +255,38 @@ final class SentryProviderObserver extends ProviderObserver {
       _reportedPrimitives.add(_primitiveKey(error));
     }
   }
+
+  /// Whether [error] is the "disposed during loading state" error Riverpod
+  /// hands to every `.future` awaiter of a provider that was torn down
+  /// before its first value, AND the container itself is gone. The same
+  /// error on a live container (an auto-dispose provider read without a
+  /// listener) is a real bug and stays a Fault.
+  static bool _isTeardown(ProviderContainer container, Object error) {
+    final text = error is ProviderException
+        ? error.exception.toString()
+        : error.toString();
+    if (!text.contains(_disposedDuringLoading)) return false;
+    // `ProviderContainer.disposed` is Riverpod-internal; reading from a
+    // disposed container throws a StateError, which is the public signal.
+    try {
+      container.read(_containerProbe);
+      return false;
+    } on StateError {
+      return true;
+    }
+  }
+
+  static const String _disposedDuringLoading =
+      'was disposed during loading state, yet no value could be emitted';
+
+  /// Whether [error] is Riverpod's `UnmountedRefException` for [provider]
+  /// itself. The exception type is internal to Riverpod (and its name is
+  /// obfuscated in release builds), so this matches the message it builds
+  /// from the provider's own `toString()`.
+  static bool isOwnDisposal(ProviderBase<Object?> provider, Object error) =>
+      error.toString().startsWith(
+        'Cannot use the Ref of $provider after it has been disposed',
+      );
 
   static String _primitiveKey(Object error) => '${error.runtimeType}|$error';
 

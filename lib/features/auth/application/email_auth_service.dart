@@ -17,7 +17,7 @@ part 'email_auth_service.g.dart';
 /// Follows Andrea Bizzotto's AsyncNotifier pattern with @riverpod
 @riverpod
 class EmailAuthService extends _$EmailAuthService {
-  Report get _report => ref.read(reportProvider);
+  Report get _report => ref.report;
   SupabaseClient get _supabase =>
       ref.read(appExternalDepsProvider).supabaseClient;
   AnalyticsTracker get _analytics => ref.read(analyticsTrackerProvider);
@@ -33,12 +33,15 @@ class EmailAuthService extends _$EmailAuthService {
     required String email,
     required String password,
   }) async {
+    final report = _report;
+    final supabase = _supabase;
+    final analytics = _analytics;
     state = const AsyncLoading();
 
-    state = await AsyncValue.guard(() async {
+    final result = await AsyncValue.guard(() async {
       // Defensive check - this should never happen but adding for safety
       if (email.isEmpty || password.isEmpty) {
-        _report.fault(
+        report.fault(
           LoggedFault(
             'Empty email or password received',
             context: 'EMAIL_AUTH',
@@ -53,7 +56,7 @@ class EmailAuthService extends _$EmailAuthService {
         throw Exception('Email and password are required');
       }
 
-      _report.info(
+      report.info(
         'Starting email account linking',
         area: 'auth',
         data: {
@@ -66,7 +69,7 @@ class EmailAuthService extends _$EmailAuthService {
       // Validate inputs
       final emailValidation = validateEmail(email);
       if (emailValidation != null) {
-        _report.fault(
+        report.fault(
           LoggedFault('Email validation failed', context: 'EMAIL_AUTH'),
           area: 'auth',
           extra: {'email': email, 'validation_error': emailValidation},
@@ -76,7 +79,7 @@ class EmailAuthService extends _$EmailAuthService {
 
       final passwordValidation = validatePassword(password);
       if (passwordValidation != null) {
-        _report.fault(
+        report.fault(
           LoggedFault('Password validation failed', context: 'EMAIL_AUTH'),
           area: 'auth',
           extra: {'validation_error': passwordValidation},
@@ -85,13 +88,13 @@ class EmailAuthService extends _$EmailAuthService {
       }
 
       // Get current anonymous user before linking
-      final currentUser = _supabase.auth.currentUser;
+      final currentUser = supabase.auth.currentUser;
       if (currentUser == null) {
         throw Exception('No active auth session - cannot link email account');
       }
 
       final anonymousUserId = currentUser.id;
-      _report.info(
+      report.info(
         'Linking email account to user',
         area: 'auth',
         data: {
@@ -112,7 +115,7 @@ class EmailAuthService extends _$EmailAuthService {
       // integrations, food_preferences, ...) stays addressable with zero
       // migration.
 
-      _report.info(
+      report.info(
         'Step 1: Setting email address',
         area: 'auth',
         data: {
@@ -125,7 +128,7 @@ class EmailAuthService extends _$EmailAuthService {
       // Create UserAttributes and log what will be sent
       final userAttributes = UserAttributes(email: email);
 
-      _report.info(
+      report.info(
         'Step 1: UserAttributes created',
         area: 'auth',
         data: {
@@ -135,7 +138,7 @@ class EmailAuthService extends _$EmailAuthService {
       );
 
       // Step 1: Update user with email only
-      final emailResponse = await _supabase.auth.updateUser(userAttributes);
+      final emailResponse = await supabase.auth.updateUser(userAttributes);
 
       if (emailResponse.user == null) {
         throw Exception('Email linking failed - no user returned');
@@ -154,7 +157,7 @@ class EmailAuthService extends _$EmailAuthService {
           (updatedUser.newEmail?.isNotEmpty ?? false) ||
           (updatedUser.email ?? '').toLowerCase() != email.toLowerCase();
 
-      _report.info(
+      report.info(
         'Step 1 complete: Email set',
         area: 'auth',
         data: {
@@ -167,7 +170,7 @@ class EmailAuthService extends _$EmailAuthService {
 
       // Verify the user ID didn't change (critical for data preservation)
       if (updatedUser.id != anonymousUserId) {
-        _report.fault(
+        report.fault(
           LoggedFault('User ID changed during linking', context: 'EMAIL_AUTH'),
           area: 'auth',
           extra: {'old_id': anonymousUserId, 'new_id': updatedUser.id},
@@ -191,12 +194,12 @@ class EmailAuthService extends _$EmailAuthService {
         // until the code is verified the session is still anonymous, so an
         // abandoned confirmation must leave a fully usable anonymous account
         // rather than a half-upgraded one.
-        _report.info(
+        report.info(
           'Email link pending verification — password deferred until verify',
           area: 'auth',
           data: {'user_id': anonymousUserId},
         );
-        await _analytics.track(
+        await analytics.track(
           'email_verification_required',
           properties: {'user_id': anonymousUserId, 'flow': 'link'},
         );
@@ -205,9 +208,9 @@ class EmailAuthService extends _$EmailAuthService {
 
       // Auto-confirm path only (no confirmation pending): the address is
       // already on the account, so the password is accepted now.
-      _report.info('Step 2: Setting password', area: 'auth');
+      report.info('Step 2: Setting password', area: 'auth');
 
-      final response = await _supabase.auth.updateUser(
+      final response = await supabase.auth.updateUser(
         UserAttributes(password: password),
       );
 
@@ -215,12 +218,9 @@ class EmailAuthService extends _$EmailAuthService {
         throw Exception('Password linking failed - no user returned');
       }
 
-      _report.info(
-        'Step 2 complete: Password set successfully',
-        area: 'auth',
-      );
+      report.info('Step 2 complete: Password set successfully', area: 'auth');
 
-      _report.info(
+      report.info(
         'Email account linked successfully',
         area: 'auth',
         data: {
@@ -234,23 +234,25 @@ class EmailAuthService extends _$EmailAuthService {
       await _completeEmailLink(anonymousUserId);
     });
 
+    if (ref.mounted) state = result;
+
     // Re-throw errors for UI to handle
-    if (state.hasError) {
-      final error = state.error;
+    if (result.hasError) {
+      final error = result.error;
 
       // Not a failure — the account exists and the uid is intact; the caller
       // must collect the emailed code. Surface it verbatim so the UI can
       // route to the verify screen instead of showing "creation failed".
       if (error is EmailVerificationRequiredException) throw error;
 
-      _report.fault(
+      report.fault(
         error!,
         area: 'auth',
         message: 'Email account linking failed',
       );
 
       // Track failure in analytics
-      await _analytics.track(
+      await analytics.track(
         'email_account_linking_failed',
         properties: {'error': error.toString()},
       );
@@ -288,6 +290,8 @@ class EmailAuthService extends _$EmailAuthService {
   /// migrate — the uid never moved — so it only flips the identity fields
   /// (`auth_provider`, `is_anonymous: false`) locally and in Supabase.
   Future<void> _completeEmailLink(String userId) async {
+    final report = _report;
+    final analytics = _analytics;
     final authMigrationService = await ref.read(
       authMigrationServiceProvider.future,
     );
@@ -303,12 +307,12 @@ class EmailAuthService extends _$EmailAuthService {
     // authUserId. Without this, the provider remains cached with old data.
     ref.invalidate(userIdProvider);
 
-    await _analytics.track(
+    await analytics.track(
       'email_account_linked',
       properties: {'user_id': userId},
     );
 
-    _report.info('Email account linking complete', area: 'auth');
+    report.info('Email account linking complete', area: 'auth');
   }
 
   /// Sign up with email/password (creates NEW user)
@@ -318,10 +322,13 @@ class EmailAuthService extends _$EmailAuthService {
     required String email,
     required String password,
   }) async {
+    final report = _report;
+    final supabase = _supabase;
+    final analytics = _analytics;
     state = const AsyncLoading();
 
-    state = await AsyncValue.guard(() async {
-      _report.info(
+    final result = await AsyncValue.guard(() async {
+      report.info(
         'Starting email signup (new user)',
         area: 'auth',
         data: {'email_length': email.length},
@@ -339,7 +346,7 @@ class EmailAuthService extends _$EmailAuthService {
       }
 
       // Create NEW Supabase auth user with email/password
-      final response = await _supabase.auth.signUp(
+      final response = await supabase.auth.signUp(
         email: email,
         password: password,
       );
@@ -358,19 +365,19 @@ class EmailAuthService extends _$EmailAuthService {
       // So stop here and tell the caller to collect the code. The rest of the
       // signup completes in [verifyEmailOtp] once a session exists.
       if (response.session == null) {
-        _report.info(
+        report.info(
           'Email signup pending verification',
           area: 'auth',
           data: {'user_id': newUserId},
         );
-        await _analytics.track(
+        await analytics.track(
           'email_verification_required',
           properties: {'user_id': newUserId},
         );
         throw const EmailVerificationRequiredException();
       }
 
-      _report.info(
+      report.info(
         'Email signup successful',
         area: 'auth',
         data: {
@@ -390,13 +397,10 @@ class EmailAuthService extends _$EmailAuthService {
 
       // CRITICAL: Invalidate userIdProvider to force re-read with new user
       ref.invalidate(userIdProvider);
-      _report.info(
-        'Invalidated userIdProvider after signup',
-        area: 'auth',
-      );
+      report.info('Invalidated userIdProvider after signup', area: 'auth');
 
       // Track successful signup in analytics
-      await _analytics.track(
+      await analytics.track(
         'email_account_created',
         properties: {
           'user_id': newUserId,
@@ -404,12 +408,14 @@ class EmailAuthService extends _$EmailAuthService {
         },
       );
 
-      _report.info('Email signup complete', area: 'auth');
+      report.info('Email signup complete', area: 'auth');
     });
 
+    if (ref.mounted) state = result;
+
     // Re-throw errors for UI to handle
-    if (state.hasError) {
-      final error = state.error;
+    if (result.hasError) {
+      final error = result.error;
 
       // Control-flow signal, not a failure: the account was created and the
       // caller must collect the emailed code. Rethrowing it verbatim is what
@@ -417,10 +423,10 @@ class EmailAuthService extends _$EmailAuthService {
       // generic wrapper below would erase that distinction.
       if (error is EmailVerificationRequiredException) throw error;
 
-      _report.fault(error!, area: 'auth', message: 'Email signup failed');
+      report.fault(error!, area: 'auth', message: 'Email signup failed');
 
       // Track failure in analytics
-      await _analytics.track(
+      await analytics.track(
         'email_signup_failed',
         properties: {'error': error.toString()},
       );
@@ -474,9 +480,12 @@ class EmailAuthService extends _$EmailAuthService {
     OtpType type = OtpType.signup,
     String? pendingPassword,
   }) async {
+    final report = _report;
+    final supabase = _supabase;
+    final analytics = _analytics;
     state = const AsyncLoading();
 
-    state = await AsyncValue.guard(() async {
+    final result = await AsyncValue.guard(() async {
       final code = token.trim();
       if (code.length != 6 || int.tryParse(code) == null) {
         throw const InvalidVerificationCodeException(
@@ -484,7 +493,7 @@ class EmailAuthService extends _$EmailAuthService {
         );
       }
 
-      _report.info(
+      report.info(
         'Verifying email code',
         area: 'auth',
         data: {'otp_type': type.name},
@@ -492,11 +501,11 @@ class EmailAuthService extends _$EmailAuthService {
 
       // Captured before the verify so the uid assertion below has something to
       // compare against on the upgrade path.
-      final priorUserId = _supabase.auth.currentUser?.id;
+      final priorUserId = supabase.auth.currentUser?.id;
 
       final AuthResponse response;
       try {
-        response = await _supabase.auth.verifyOTP(
+        response = await supabase.auth.verifyOTP(
           email: email.trim(),
           token: code,
           type: type,
@@ -519,11 +528,11 @@ class EmailAuthService extends _$EmailAuthService {
 
       ref.invalidate(userIdProvider);
 
-      await _analytics.track(
+      await analytics.track(
         'email_verification_completed',
         properties: {'user_id': response.user?.id, 'otp_type': type.name},
       );
-      _report.info('Email verified; session established', area: 'auth');
+      report.info('Email verified; session established', area: 'auth');
 
       if (type == OtpType.emailChange) {
         final newUserId = response.user!.id;
@@ -532,7 +541,7 @@ class EmailAuthService extends _$EmailAuthService {
         // back a different user here, completing the link would silently
         // orphan every row keyed by the old id — fail loudly instead.
         if (priorUserId != null && priorUserId != newUserId) {
-          _report.fault(
+          report.fault(
             LoggedFault(
               'User ID changed during email verification',
               context: 'EMAIL_AUTH',
@@ -548,11 +557,11 @@ class EmailAuthService extends _$EmailAuthService {
         // the profile flip so a password failure is still surfaced to the user
         // — without it they would finish the flow unable to sign back in.
         if (pendingPassword != null && pendingPassword.isNotEmpty) {
-          _report.info(
+          report.info(
             'Applying deferred password after verification',
             area: 'auth',
           );
-          final pwResponse = await _supabase.auth.updateUser(
+          final pwResponse = await supabase.auth.updateUser(
             UserAttributes(password: pendingPassword),
           );
           if (pwResponse.user == null) {
@@ -572,7 +581,7 @@ class EmailAuthService extends _$EmailAuthService {
         try {
           await _completeEmailLink(newUserId);
         } catch (e, stackTrace) {
-          _report.fault(
+          report.fault(
             e,
             stackTrace: stackTrace,
             area: 'auth',
@@ -584,13 +593,11 @@ class EmailAuthService extends _$EmailAuthService {
       }
     });
 
-    if (state.hasError) {
-      final error = state.error!;
-      _report.fault(
-        error,
-        area: 'auth',
-        message: 'Email verification failed',
-      );
+    if (ref.mounted) state = result;
+
+    if (result.hasError) {
+      final error = result.error!;
+      report.fault(error, area: 'auth', message: 'Email verification failed');
       throw error;
     }
   }
@@ -604,10 +611,13 @@ class EmailAuthService extends _$EmailAuthService {
     required String email,
     OtpType type = OtpType.signup,
   }) async {
+    final report = _report;
+    final supabase = _supabase;
+    final analytics = _analytics;
     try {
-      await _supabase.auth.resend(type: type, email: email.trim());
-      await _analytics.track('email_verification_resent');
-      _report.info('Verification code resent', area: 'auth');
+      await supabase.auth.resend(type: type, email: email.trim());
+      await analytics.track('email_verification_resent');
+      report.info('Verification code resent', area: 'auth');
     } on AuthApiException catch (e) {
       throw InvalidVerificationCodeException(
         e.message.toLowerCase().contains('rate')
@@ -621,10 +631,15 @@ class EmailAuthService extends _$EmailAuthService {
     required String email,
     required String password,
   }) async {
+    final report = _report;
+    final supabase = _supabase;
+    final analytics = _analytics;
+    final prefs = ref.read(sharedPreferencesProvider);
+    final syncCoordinator = ref.read(syncCoordinatorProvider.notifier);
     state = const AsyncLoading();
 
-    state = await AsyncValue.guard(() async {
-      _report.info(
+    final result = await AsyncValue.guard(() async {
+      report.info(
         'Starting email sign in',
         area: 'auth',
         data: {'email_length': email.length},
@@ -642,19 +657,18 @@ class EmailAuthService extends _$EmailAuthService {
 
       // CRITICAL: Capture anonymous user ID BEFORE signing in
       // This allows us to migrate their data after the session switch
-      var previousUserId = _supabase.auth.currentUser?.id;
-      var wasAnonymous = _supabase.auth.currentUser?.isAnonymous ?? false;
+      var previousUserId = supabase.auth.currentUser?.id;
+      var wasAnonymous = supabase.auth.currentUser?.isAnonymous ?? false;
 
       // Also check for temp onboarding user ID (used when no Supabase session exists)
       // This handles the case where user synced with TP/FS during onboarding then signs in
-      final prefs = ref.read(sharedPreferencesProvider);
       final tempUserId = prefs.getString('onboarding_temp_user_id');
       if (previousUserId == null && tempUserId != null) {
         previousUserId = tempUserId;
         wasAnonymous = true;
       }
 
-      _report.info(
+      report.info(
         'Capturing user state before sign-in',
         area: 'auth',
         data: {
@@ -665,7 +679,7 @@ class EmailAuthService extends _$EmailAuthService {
       );
 
       // Sign in with Supabase
-      final response = await _supabase.auth.signInWithPassword(
+      final response = await supabase.auth.signInWithPassword(
         email: email,
         password: password,
       );
@@ -676,7 +690,7 @@ class EmailAuthService extends _$EmailAuthService {
 
       final newUserId = response.user!.id;
 
-      _report.info(
+      report.info(
         'Email sign in successful',
         area: 'auth',
         data: {'user_id': newUserId, 'email': response.user!.email},
@@ -697,7 +711,7 @@ class EmailAuthService extends _$EmailAuthService {
       // Clear temp user ID after successful migration
       if (tempUserId != null) {
         await prefs.remove('onboarding_temp_user_id');
-        _report.info(
+        report.info(
           'Cleared onboarding temp user ID after sign-in migration',
           area: 'auth',
         );
@@ -705,26 +719,23 @@ class EmailAuthService extends _$EmailAuthService {
 
       // CRITICAL: Invalidate userIdProvider to force re-read after auth change
       ref.invalidate(userIdProvider);
-      _report.info(
-        'Invalidated userIdProvider after sign-in',
-        area: 'auth',
-      );
+      report.info('Invalidated userIdProvider after sign-in', area: 'auth');
 
-      _report.info(
+      report.info(
         'Sign-in completion handled',
         area: 'auth',
         data: {'data_migrated': dataMigrated},
       );
 
       // Track successful sign in
-      await _analytics.track(
+      await analytics.track(
         'email_sign_in_success',
         properties: {'user_id': newUserId, 'migrated_data': dataMigrated},
       );
 
       // Trigger sync after sign-in to pull user data from Supabase
       // This is essential for new device logins where local DB is empty
-      _report.info(
+      report.info(
         'Triggering post-sign-in sync',
         area: 'auth',
         data: {'user_id': newUserId},
@@ -734,32 +745,30 @@ class EmailAuthService extends _$EmailAuthService {
         // CRITICAL: Clear sync timestamp to force full sync (not incremental)
         // Otherwise, if user logs out and back in on same device, we might send
         // an old timestamp and get no data back (because local DB was cleared)
-        final prefs = ref.read(sharedPreferencesProvider);
         await prefs.remove('last_sync_timestamp_$newUserId');
 
         // Sync all data including coach status (handled by edge function)
-        await ref
-            .read(syncCoordinatorProvider.notifier)
-            .sync(userId: newUserId, trigger: SyncTrigger.oauthSignIn);
-        _report.info('Post-sign-in sync completed', area: 'auth');
-      } catch (e) {
-        _report.fault(
-          e,
-          area: 'auth',
-          message: 'Post-sign-in sync failed',
+        await syncCoordinator.sync(
+          userId: newUserId,
+          trigger: SyncTrigger.oauthSignIn,
         );
+        report.info('Post-sign-in sync completed', area: 'auth');
+      } catch (e) {
+        report.fault(e, area: 'auth', message: 'Post-sign-in sync failed');
         // Don't rethrow - sign-in was successful, user can pull-to-refresh
       }
     });
 
+    if (ref.mounted) state = result;
+
     // Re-throw errors for UI to handle
-    if (state.hasError) {
-      _report.fault(
-        state.error!,
+    if (result.hasError) {
+      report.fault(
+        result.error!,
         area: 'auth',
         message: 'Email sign in failed',
       );
-      throw state.error!;
+      throw result.error!;
     }
   }
 

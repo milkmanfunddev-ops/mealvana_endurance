@@ -107,7 +107,7 @@ class MealCatalogController extends _$MealCatalogController {
 
   MealLibraryRemoteDataSource get _remote =>
       ref.read(mealLibraryRemoteDataSourceProvider);
-  Report get _report => ref.read(reportProvider);
+  Report get _report => ref.report;
 
   Timer? _debounce;
   int _searchSeq = 0;
@@ -117,21 +117,29 @@ class MealCatalogController extends _$MealCatalogController {
     ref.onDispose(() => _debounce?.cancel());
 
     final userId = await ref.watch(userIdProvider.future);
+    if (!ref.mounted) return const MealCatalogState();
     final local = await _loadLocalRails(userId);
 
     // Online rails are a refinement, never a gate.
-    unawaited(_loadServerRails());
+    if (ref.mounted) unawaited(_loadServerRails());
     return local;
   }
 
   // ── Rails ──────────────────────────────────────────────────────────────────
 
   Future<MealCatalogState> _loadLocalRails(String userId) async {
+    final planRepo = ref.read(mealPlanRepositoryProvider);
+    final mealLogRepo = ref.read(mealLogRepositoryProvider);
     final saved = await ref
         .read(savedMealsRepositoryProvider)
         .watchSavedMeals(userId)
         .first;
-    final recents = await _localRecents(userId, saved);
+    final recents = await _localRecents(
+      userId,
+      saved,
+      planRepo: planRepo,
+      mealLogRepo: mealLogRepo,
+    );
     return MealCatalogState(
       recents: recents,
       myFoods: saved.map(MealRefMapping.fromSavedMeal).toList(growable: false),
@@ -143,14 +151,13 @@ class MealCatalogController extends _$MealCatalogController {
   /// library lookup the server does when online).
   Future<List<RecentMeal>> _localRecents(
     String userId,
-    List<SavedMeal> saved,
-  ) async {
-    final planRepo = ref.read(mealPlanRepositoryProvider);
+    List<SavedMeal> saved, {
+    required MealPlanRepository planRepo,
+    required MealLogRepository mealLogRepo,
+  }) async {
     final planMeals = await planRepo.getRecentPlanMeals(userId);
     final createdAt = await planRepo.planMealCreatedAt(userId);
-    final logs = await ref
-        .read(mealLogRepositoryProvider)
-        .getRecentLogs(userId, limit: 60);
+    final logs = await mealLogRepo.getRecentLogs(userId, limit: 60);
 
     final savedById = {for (final s in saved) s.id: s};
     final planById = {for (final p in planMeals) p.id: p};
@@ -195,12 +202,14 @@ class MealCatalogController extends _$MealCatalogController {
   }
 
   Future<void> _loadServerRails() async {
+    final remote = _remote;
+    final report = _report;
     if (!await ref.read(connectivityCheckerProvider).isOnline()) return;
     try {
       final results = await Future.wait([
-        _remote.searchMeals(kind: MealKind.assembly, limit: railLimit),
-        _remote.searchMeals(kind: MealKind.recipe, limit: railLimit),
-        _remote.recentMeals(limit: recentsLimit),
+        remote.searchMeals(kind: MealKind.assembly, limit: railLimit),
+        remote.searchMeals(kind: MealKind.recipe, limit: railLimit),
+        remote.recentMeals(limit: recentsLimit),
       ]);
       if (!ref.mounted) return;
       final current = state.value;
@@ -215,7 +224,7 @@ class MealCatalogController extends _$MealCatalogController {
         ),
       );
     } catch (e, st) {
-      _report.degraded(
+      report.degraded(
         e,
         stackTrace: st,
         area: 'meal_planning',
@@ -229,6 +238,7 @@ class MealCatalogController extends _$MealCatalogController {
     final current = state.value;
     if (current == null) return;
     final userId = await ref.read(userIdProvider.future);
+    if (!ref.mounted) return;
     final local = await _loadLocalRails(userId);
     if (!ref.mounted) return;
     state = AsyncData(

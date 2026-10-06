@@ -27,7 +27,7 @@ class AuthService {
   AuthRepositoryEdge get _authRepositoryEdge =>
       ref.read(authRepositoryEdgeProvider);
 
-  Report get _report => ref.read(reportProvider);
+  Report get _report => ref.report;
   SupabaseClient get _supabase =>
       ref.read(appExternalDepsProvider).supabaseClient;
 

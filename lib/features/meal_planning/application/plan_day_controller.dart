@@ -32,18 +32,20 @@ class PlanDayController extends _$PlanDayController {
   Future<void> setSlot(MealType slot, DaySlotRef ref) async {
     final current = state.value ?? DayPlan.empty;
     state = AsyncData(current.withSlot(slot, ref));
-    state = await AsyncValue.guard(() async {
+    final result = await AsyncValue.guard(() async {
       await _plan.setDaySlot(date, slot, ref);
       return current.withSlot(slot, ref);
     });
+    if (this.ref.mounted) state = result;
   }
 
   Future<void> clearSlot(MealType slot) async {
     final current = state.value ?? DayPlan.empty;
-    state = await AsyncValue.guard(() async {
+    final result = await AsyncValue.guard(() async {
       await _plan.clearDaySlot(date, slot);
       return current.withSlot(slot, null);
     });
+    if (ref.mounted) state = result;
   }
 
   /// `plan_day` — fill the empty slots server-side. Remote-ack; throws
@@ -52,12 +54,13 @@ class PlanDayController extends _$PlanDayController {
     final previous = state;
     state = const AsyncLoading();
     VanaDayPart? part;
-    state = await AsyncValue.guard(() async {
+    final result = await AsyncValue.guard(() async {
       part = await _plan.planDay(date: date);
       return part?.slots ?? previous.value ?? DayPlan.empty;
     });
-    if (state.hasError) {
-      Error.throwWithStackTrace(state.error!, state.stackTrace!);
+    if (ref.mounted) state = result;
+    if (result.hasError) {
+      Error.throwWithStackTrace(result.error!, result.stackTrace!);
     }
     return part;
   }

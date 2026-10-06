@@ -46,8 +46,7 @@ DateTime defaultNewActivityDateTime([DateTime? reference]) {
 class NewActivityCoordinator extends _$NewActivityCoordinator {
   /// Reads after disposal throw; a disposed notifier reports through the
   /// global instance (the one `reportProvider` built).
-  Report get _report =>
-      ref.mounted ? ref.read(reportProvider) : SentryReport.global;
+  Report get _report => ref.report;
 
   @override
   NewActivityCoordinatorState build() {
@@ -99,6 +98,7 @@ class NewActivityCoordinator extends _$NewActivityCoordinator {
         await ref
             .read(runningInputControllerProvider.notifier)
             .fetchLocationIfNeeded();
+        if (!ref.mounted) return;
         await _applyZonePaceIfAvailableForRunning();
         break;
       case SportTab.cycling:
@@ -110,6 +110,7 @@ class NewActivityCoordinator extends _$NewActivityCoordinator {
         await ref
             .read(swimmingInputControllerProvider.notifier)
             .fetchLocationIfNeeded();
+        if (!ref.mounted) return;
         await _applyZonePaceIfAvailableForSwimming();
         break;
       case SportTab.brick:
@@ -120,11 +121,10 @@ class NewActivityCoordinator extends _$NewActivityCoordinator {
   }
 
   Future<void> _applyZonePaceIfAvailableForRunning() async {
+    final running = ref.read(runningInputControllerProvider.notifier);
     try {
       final userId = await ref.read(userIdProvider.future);
-      await ref
-          .read(runningInputControllerProvider.notifier)
-          .applyZonePaceIfAvailable(userId);
+      await running.applyZonePaceIfAvailable(userId);
     } catch (e) {
       // Non-blocking - skip if userId isn't available
       _report.degraded(
@@ -136,11 +136,10 @@ class NewActivityCoordinator extends _$NewActivityCoordinator {
   }
 
   Future<void> _applyZonePaceIfAvailableForSwimming() async {
+    final swimming = ref.read(swimmingInputControllerProvider.notifier);
     try {
       final userId = await ref.read(userIdProvider.future);
-      await ref
-          .read(swimmingInputControllerProvider.notifier)
-          .applyZonePaceIfAvailable(userId);
+      await swimming.applyZonePaceIfAvailable(userId);
     } catch (e) {
       // Non-blocking - skip if userId isn't available
       _report.degraded(
@@ -183,33 +182,48 @@ class NewActivityCoordinator extends _$NewActivityCoordinator {
       area: 'nutrition_plan',
     );
 
+    // Everything read from `ref` is captured before the first await: the
+    // screen may pop (disposing this notifier) while generation runs.
+    final macroTargets = ref.read(macroTargetsControllerProvider.notifier);
+    final tab = state.selectedTab;
+    final running = tab == SportTab.running
+        ? ref.read(runningInputControllerProvider.notifier)
+        : null;
+    final cycling = tab == SportTab.cycling
+        ? ref.read(cyclingInputControllerProvider.notifier)
+        : null;
+    final swimming = tab == SportTab.swimming
+        ? ref.read(swimmingInputControllerProvider.notifier)
+        : null;
+    final brickController = tab == SportTab.brick
+        ? ref.read(brickInputControllerProvider.notifier)
+        : null;
+
     // CRITICAL: Clear cached macros BEFORE generating to prevent stale data
     _report.info(
       '🎮 COORDINATOR: Clearing cached macros before generation...',
       area: 'nutrition_plan',
     );
-    await ref.read(macroTargetsControllerProvider.notifier).clearCachedMacros();
+    await macroTargets.clearCachedMacros();
     _report.info(
       '🎮 COORDINATOR: Cached macros cleared, proceeding with generation',
       area: 'nutrition_plan',
     );
 
-    state = state.copyWith(isGenerating: true);
+    if (ref.mounted) state = state.copyWith(isGenerating: true);
 
     try {
-      switch (state.selectedTab) {
+      switch (tab) {
         case SportTab.running:
           _report.info(
             '🎮 COORDINATOR: Calling runningInputController.generateMacros...',
             area: 'nutrition_plan',
           );
-          await ref
-              .read(runningInputControllerProvider.notifier)
-              .generateMacros(
-                activityId: activityId,
-                eventId: eventId,
-                forUserId: forUserId, // NEW: Pass through forUserId
-              );
+          await running!.generateMacros(
+            activityId: activityId,
+            eventId: eventId,
+            forUserId: forUserId, // NEW: Pass through forUserId
+          );
           _report.info(
             '🎮 COORDINATOR: runningInputController.generateMacros returned',
             area: 'nutrition_plan',
@@ -220,13 +234,11 @@ class NewActivityCoordinator extends _$NewActivityCoordinator {
             '🎮 COORDINATOR: Calling cyclingInputController.generateMacros...',
             area: 'nutrition_plan',
           );
-          await ref
-              .read(cyclingInputControllerProvider.notifier)
-              .generateMacros(
-                activityId: activityId,
-                eventId: eventId,
-                forUserId: forUserId, // NEW: Pass through forUserId
-              );
+          await cycling!.generateMacros(
+            activityId: activityId,
+            eventId: eventId,
+            forUserId: forUserId, // NEW: Pass through forUserId
+          );
           _report.info(
             '🎮 COORDINATOR: cyclingInputController.generateMacros returned',
             area: 'nutrition_plan',
@@ -237,13 +249,11 @@ class NewActivityCoordinator extends _$NewActivityCoordinator {
             '🎮 COORDINATOR: Calling swimmingInputController.generateMacros...',
             area: 'nutrition_plan',
           );
-          await ref
-              .read(swimmingInputControllerProvider.notifier)
-              .generateMacros(
-                activityId: activityId,
-                eventId: eventId,
-                forUserId: forUserId, // NEW: Pass through forUserId
-              );
+          await swimming!.generateMacros(
+            activityId: activityId,
+            eventId: eventId,
+            forUserId: forUserId, // NEW: Pass through forUserId
+          );
           _report.info(
             '🎮 COORDINATOR: swimmingInputController.generateMacros returned',
             area: 'nutrition_plan',
@@ -254,12 +264,8 @@ class NewActivityCoordinator extends _$NewActivityCoordinator {
             '🎮 COORDINATOR: Calling brickInputController to get segments...',
             area: 'nutrition_plan',
           );
-          final brickController = ref.read(
-            brickInputControllerProvider.notifier,
-          );
-
           // Validate before calling edge function
-          if (!brickController.isValid()) {
+          if (!brickController!.isValid()) {
             _report.fault(
               LoggedFault(
                 '❌ COORDINATOR: Brick form is not valid - missing required fields',
@@ -285,19 +291,17 @@ class NewActivityCoordinator extends _$NewActivityCoordinator {
             '🎮 COORDINATOR: Got ${segments.length} brick segments (preActivityMinutes=$preActivityMinutes), calling macroTargetsController...',
             area: 'nutrition_plan',
           );
-          await ref
-              .read(macroTargetsControllerProvider.notifier)
-              .generateBrickMacros(
-                segments: segments,
-                segmentOrder: segmentOrder,
-                scheduledDate: selectedDate,
-                scheduledTime: selectedTime,
-                preActivityMinutes: preActivityMinutes,
-                activityTitle: activityTitle,
-                activityId: activityId,
-                eventId: eventId,
-                forUserId: forUserId,
-              );
+          await macroTargets.generateBrickMacros(
+            segments: segments,
+            segmentOrder: segmentOrder,
+            scheduledDate: selectedDate,
+            scheduledTime: selectedTime,
+            preActivityMinutes: preActivityMinutes,
+            activityTitle: activityTitle,
+            activityId: activityId,
+            eventId: eventId,
+            forUserId: forUserId,
+          );
           _report.info(
             '🎮 COORDINATOR: macroTargetsController.generateBrickMacros returned',
             area: 'nutrition_plan',
@@ -310,7 +314,7 @@ class NewActivityCoordinator extends _$NewActivityCoordinator {
         '🎮 COORDINATOR: Waiting for distancePageGutEntryController state update...',
         area: 'nutrition_plan',
       );
-      await ref.read(macroTargetsControllerProvider.future);
+      if (ref.mounted) await ref.read(macroTargetsControllerProvider.future);
       _report.info(
         '🎮 COORDINATOR: State update confirmed',
         area: 'nutrition_plan',
@@ -320,7 +324,7 @@ class NewActivityCoordinator extends _$NewActivityCoordinator {
         '🎮 COORDINATOR: Setting isGenerating to false',
         area: 'nutrition_plan',
       );
-      state = state.copyWith(isGenerating: false);
+      if (ref.mounted) state = state.copyWith(isGenerating: false);
       _report.info(
         '✅ COORDINATOR: generateMacros completed successfully',
         area: 'nutrition_plan',
@@ -331,7 +335,9 @@ class NewActivityCoordinator extends _$NewActivityCoordinator {
         message: '❌ COORDINATOR: Error in generateMacros: $e',
         area: 'nutrition_plan',
       );
-      state = state.copyWith(isGenerating: false, errorMessage: e.toString());
+      if (ref.mounted) {
+        state = state.copyWith(isGenerating: false, errorMessage: e.toString());
+      }
       rethrow;
     }
   }

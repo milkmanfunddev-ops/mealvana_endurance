@@ -63,19 +63,23 @@ class HomeController extends _$HomeController {
   FutureOr<HomePayload?> build([String? date]) async {
     ref.onDispose(() => _stalePoll?.cancel());
     if (!await ref.read(connectivityCheckerProvider).isOnline()) return null;
+    // `_load` reads `ref`; a build disposed during the connectivity check
+    // (Sentry MEALVANA-ENDURANCE-DEV-92) has nobody waiting for it.
+    if (!ref.mounted) return null;
     final home = await _load(date ?? todayIso());
     return home;
   }
 
+  /// Call only while mounted: every `ref` read happens before the first await.
   Future<HomePayload> _load(String date) async {
-    final home = await ref.read(homeServiceProvider).fetch(date: date);
+    final service = ref.read(homeServiceProvider);
+    final mealPlan = ref.read(mealPlanControllerProvider.notifier);
+    final home = await service.fetch(date: date);
     final batch = home.batch;
     if (batch != null) {
-      await ref
-          .read(mealPlanControllerProvider.notifier)
-          .applyServerPlan(batch.plan);
+      await mealPlan.applyServerPlan(batch.plan);
     }
-    _scheduleStalePoll(home, date);
+    if (ref.mounted) _scheduleStalePoll(home, date);
     return home;
   }
 
@@ -99,11 +103,13 @@ class HomeController extends _$HomeController {
     _stalePolls = 0;
     final previous = state.value;
     state = const AsyncLoading();
-    state = await AsyncValue.guard(() async {
+    final result = await AsyncValue.guard(() async {
       if (!await ref.read(connectivityCheckerProvider).isOnline()) {
         return previous;
       }
+      if (!ref.mounted) return previous;
       return _load(date ?? todayIso());
     });
+    if (ref.mounted) state = result;
   }
 }

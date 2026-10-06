@@ -45,18 +45,18 @@ class CoachDirectoryController extends _$CoachDirectoryController {
   }
 
   Future<CoachDirectoryState> _loadCoaches() async {
+    final coachService = _coachService;
+    final report = ref.read(reportProvider);
     try {
-      final coaches = await _coachService.getAvailableCoaches();
+      final coaches = await coachService.getAvailableCoaches();
       return CoachDirectoryState(coaches: coaches);
     } catch (e, stackTrace) {
-      ref
-          .read(reportProvider)
-          .fault(
-            e,
-            stackTrace: stackTrace,
-            area: 'coach_mode',
-            message: 'Coach directory load failed',
-          );
+      report.fault(
+        e,
+        stackTrace: stackTrace,
+        area: 'coach_mode',
+        message: 'Coach directory load failed',
+      );
       return CoachDirectoryState(error: 'Failed to load coaches: $e');
     }
   }
@@ -64,7 +64,8 @@ class CoachDirectoryController extends _$CoachDirectoryController {
   /// Refresh coach list
   Future<void> refresh() async {
     state = const AsyncLoading();
-    state = await AsyncValue.guard(() => _loadCoaches());
+    final result = await AsyncValue.guard(() => _loadCoaches());
+    if (ref.mounted) state = result;
   }
 
   /// Request to connect with a coach (athlete initiates)
@@ -73,14 +74,19 @@ class CoachDirectoryController extends _$CoachDirectoryController {
     if (currentState == null) return false;
 
     state = AsyncData(currentState.copyWith(isLoading: true));
+    final coachService = _coachService;
+    final report = ref.read(reportProvider);
 
     try {
-      final success = await _coachService.requestCoachConnection(coachUserId);
+      final success = await coachService.requestCoachConnection(coachUserId);
 
       if (success) {
-        state = AsyncData(currentState.copyWith(isLoading: false));
+        if (ref.mounted) {
+          state = AsyncData(currentState.copyWith(isLoading: false));
+        }
         return true;
       } else {
+        if (!ref.mounted) return false;
         state = AsyncData(
           currentState.copyWith(
             isLoading: false,
@@ -90,15 +96,14 @@ class CoachDirectoryController extends _$CoachDirectoryController {
         return false;
       }
     } catch (e, stackTrace) {
-      ref
-          .read(reportProvider)
-          .fault(
-            e,
-            stackTrace: stackTrace,
-            area: 'coach_mode',
-            message: 'Coach connection request failed',
-            extra: {'coachUserId': coachUserId},
-          );
+      report.fault(
+        e,
+        stackTrace: stackTrace,
+        area: 'coach_mode',
+        message: 'Coach connection request failed',
+        extra: {'coachUserId': coachUserId},
+      );
+      if (!ref.mounted) return false;
       state = AsyncData(
         currentState.copyWith(
           isLoading: false,

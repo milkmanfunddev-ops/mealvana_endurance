@@ -18,6 +18,7 @@ class EducationController extends _$EducationController {
   /// Pull-to-refresh
   Future<void> refresh() async {
     state = const AsyncLoading();
-    state = await AsyncValue.guard(() => _service.getContentGroups());
+    final result = await AsyncValue.guard(() => _service.getContentGroups());
+    if (ref.mounted) state = result;
   }
 }

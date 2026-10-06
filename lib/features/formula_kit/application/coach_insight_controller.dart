@@ -66,19 +66,23 @@ class CoachInsightController extends _$CoachInsightController {
     CoachInsightContext context, {
     String trigger = 'initial',
   }) async {
-    await _track('coach_insight_requested', {
+    final track = _tracker();
+    final client = ref.read(aiCoachClientProvider);
+    final repo = ref.read(personalFormulasRepositoryProvider);
+    final report = ref.read(reportProvider);
+    final fid = formulaId;
+    await track('coach_insight_requested', {
       'phase': context.phase.analyticsValue,
       'trigger': trigger,
       'component_count': context.components.length,
     });
-    state = const AsyncLoading<CoachInsight?>();
+    if (ref.mounted) state = const AsyncLoading<CoachInsight?>();
     final sw = Stopwatch()..start();
 
-    state = await AsyncValue.guard<CoachInsight?>(() async {
-      final client = ref.read(aiCoachClientProvider);
+    final result = await AsyncValue.guard<CoachInsight?>(() async {
       final insight = await client.fetchInsight(context);
       sw.stop();
-      await _track('coach_insight_generated', {
+      await track('coach_insight_generated', {
         'phase': context.phase.analyticsValue,
         'mode': 'insight',
         'cached': false,
@@ -93,38 +97,35 @@ class CoachInsightController extends _$CoachInsightController {
         'component_count': context.components.length,
       });
 
-      if (formulaId != null) {
+      if (fid != null) {
         try {
-          final repo = ref.read(personalFormulasRepositoryProvider);
           await repo.persistInsight(
-            formulaId: formulaId!,
+            formulaId: fid,
             insightText: insight.insight,
             marker: insight.staleMarker,
           );
         } catch (e, st) {
           // The insight still shows; only the saved copy is missing.
-          await ref
-              .read(reportProvider)
-              .fault(
-                e,
-                stackTrace: st,
-                area: 'formula_kit',
-                message: 'coach insight auto-persist failed',
-                extra: {'formula_id': formulaId},
-              );
+          await report.fault(
+            e,
+            stackTrace: st,
+            area: 'formula_kit',
+            message: 'coach insight auto-persist failed',
+            extra: {'formula_id': fid},
+          );
         }
       }
 
       return insight;
     });
+    if (ref.mounted) state = result;
 
     // If the call failed because the user is out of AI credits, surface the
     // buy-credits paywall. The error also stays in [state] so the panel can
     // render its inline error.
-    final result = state;
     if (result is AsyncError) {
       sw.stop();
-      await _track('coach_insight_failed', {
+      await track('coach_insight_failed', {
         'phase': context.phase.analyticsValue,
         'trigger': trigger,
         'component_count': context.components.length,
@@ -137,27 +138,32 @@ class CoachInsightController extends _$CoachInsightController {
 
   /// Fire the refresh-tapped analytics event, then re-fetch for [context].
   Future<void> refresh(CoachInsightContext context) async {
-    await _track('coach_insight_refresh_tapped', {
+    await _tracker()('coach_insight_refresh_tapped', {
       'phase': context.phase.analyticsValue,
     });
+    if (!ref.mounted) return;
     await generate(context, trigger: 'refresh');
   }
 
-  Future<void> _track(String event, Map<String, dynamic> properties) async {
-    try {
-      final analytics = ref.read(appExternalDepsProvider).analytics;
-      await analytics.track(event, properties: properties);
-    } catch (e, st) {
-      // Analytics must never break the feature.
-      await ref
-          .read(reportProvider)
-          .fault(
-            e,
-            stackTrace: st,
-            area: 'formula_kit',
-            message: 'coach insight analytics event failed',
-            extra: {'event': event},
-          );
-    }
+  /// Captures analytics and report now, so the returned tracker stays usable
+  /// after an async gap even if this notifier has been disposed.
+  Future<void> Function(String event, Map<String, dynamic> properties)
+  _tracker() {
+    final analytics = ref.read(appExternalDepsProvider).analytics;
+    final report = ref.read(reportProvider);
+    return (event, properties) async {
+      try {
+        await analytics.track(event, properties: properties);
+      } catch (e, st) {
+        // Analytics must never break the feature.
+        await report.fault(
+          e,
+          stackTrace: st,
+          area: 'formula_kit',
+          message: 'coach insight analytics event failed',
+          extra: {'event': event},
+        );
+      }
+    };
   }
 }

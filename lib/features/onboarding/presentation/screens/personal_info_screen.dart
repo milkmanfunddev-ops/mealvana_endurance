@@ -88,6 +88,12 @@ class _PersonalInfoScreenState extends ConsumerState<PersonalInfoScreen> {
   OnboardingController get _controller =>
       ref.read(onboardingControllerProvider.notifier);
 
+  /// True only while [initState] runs: a `fireImmediately` listener firing
+  /// then must not touch the draft, which notifies providers mid-build
+  /// ("Tried to modify a provider while the widget tree was building",
+  /// Sentry MEALVANA-ENDURANCE-CM / CJ).
+  bool _inInitState = true;
+
   @override
   void initState() {
     super.initState();
@@ -130,7 +136,13 @@ class _PersonalInfoScreenState extends ConsumerState<PersonalInfoScreen> {
         return;
       }
       _autofillApplied = true;
-      _applyIntegrationProfile(profile);
+      if (_inInitState) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) _applyIntegrationProfile(profile);
+        });
+      } else {
+        _applyIntegrationProfile(profile);
+      }
     }, fireImmediately: true);
 
     // Disconnecting a platform clears the answers it supplied from the
@@ -160,6 +172,7 @@ class _PersonalInfoScreenState extends ConsumerState<PersonalInfoScreen> {
             if (widget.stepIndex != null) 'step_index': widget.stepIndex,
           },
         );
+    _inInitState = false;
   }
 
   @override

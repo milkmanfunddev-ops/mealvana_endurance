@@ -36,7 +36,7 @@ class OnboardingController extends _$OnboardingController {
       ref.read(onboardingServiceProvider);
   ContentService get _contentService => ref.read(contentServiceProvider);
   AuthService get _authService => ref.read(authServiceProvider);
-  Report get _report => ref.read(reportProvider);
+  Report get _report => ref.report;
   UserProfile? _currentUser;
 
   /// The immutable accumulator for everything the redesigned flow collects.

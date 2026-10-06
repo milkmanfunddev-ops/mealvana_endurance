@@ -181,11 +181,11 @@ class SweatProfileController extends _$SweatProfileController {
 
     if (result.hasError) {
       // Restore non-saving state and propagate error through AsyncValue
-      state = AsyncData(current.copyWith(isSaving: false));
+      if (ref.mounted) state = AsyncData(current.copyWith(isSaving: false));
       return result.error.toString();
     }
 
-    state = result;
+    if (ref.mounted) state = result;
     return null; // success
   }
 }

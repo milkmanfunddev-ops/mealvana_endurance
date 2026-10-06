@@ -26,7 +26,7 @@ part 'meal_detail_controller.g.dart';
 class MealDetailController extends _$MealDetailController {
   MealLibraryRemoteDataSource get _remote =>
       ref.read(mealLibraryRemoteDataSourceProvider);
-  Report get _report => ref.read(reportProvider);
+  Report get _report => ref.report;
 
   @override
   FutureOr<MealDetail> build(String id) => _remote.getMeal(id);

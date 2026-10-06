@@ -49,6 +49,9 @@ MealLoggingService mealLoggingService(Ref ref) {
 /// callers handle the empty-state UI).
 @riverpod
 Stream<List<MealLog>> mealLogsForDate(Ref ref, String date) async* {
+  // Read before the first await: the day can change (and this family member
+  // be disposed) while the user loads (Sentry MEALVANA-ENDURANCE-DEV-8J).
+  final repo = ref.read(mealLogRepositoryProvider);
   final userRepo = await ref.read(userRepositoryProvider.future);
   final user = await userRepo.getCurrentUser();
   final userId = user?.id;
@@ -57,7 +60,6 @@ Stream<List<MealLog>> mealLogsForDate(Ref ref, String date) async* {
     return;
   }
 
-  final repo = ref.read(mealLogRepositoryProvider);
   yield* repo.watchLogsForDate(userId, date);
 }
 
@@ -67,6 +69,7 @@ Stream<List<MealLog>> mealLogsForDate(Ref ref, String date) async* {
 /// Empty when there is no authenticated user.
 @riverpod
 Stream<List<Activity>> completedActivitiesForDate(Ref ref, String date) async* {
+  final activitiesRepo = ref.read(activitiesRepositoryProvider);
   final userRepo = await ref.read(userRepositoryProvider.future);
   final user = await userRepo.getCurrentUser();
   final userId = user?.id;
@@ -75,9 +78,10 @@ Stream<List<Activity>> completedActivitiesForDate(Ref ref, String date) async* {
     return;
   }
 
-  yield* ref
-      .read(activitiesRepositoryProvider)
-      .watchCompletedActivitiesForDate(userId, DateTime.parse(date));
+  yield* activitiesRepo.watchCompletedActivitiesForDate(
+    userId,
+    DateTime.parse(date),
+  );
 }
 
 /// DURING-section consumed totals from a completed activity's fuel log.
@@ -138,10 +142,15 @@ ConsumedTotals duringFuelTotalsForActivity(
 Stream<ConsumedTotals> consumedTotalsForDate(Ref ref, String date) async* {
   final service = ref.read(mealLoggingServiceProvider);
 
-  final logs = await ref.watch(mealLogsForDateProvider(date).future);
-  final activities = await ref.watch(
+  // Both watched before either await (a watch after an await throws once
+  // this family member is disposed). The second is `ignore()`d so a failure
+  // of the first never leaves its error unhandled.
+  final logsFuture = ref.watch(mealLogsForDateProvider(date).future);
+  final activitiesFuture = ref.watch(
     completedActivitiesForDateProvider(date).future,
-  );
+  )..ignore();
+  final logs = await logsFuture;
+  final activities = await activitiesFuture;
 
   final mealTotals = service.consumedTotalsForLogs(logs);
   final fuelTotals = ConsumedTotals.fold(
@@ -160,12 +169,13 @@ Stream<ConsumedTotals> consumedTotalsForDate(Ref ref, String date) async* {
 /// (not a stream — recents don't need real-time updates within a session).
 @riverpod
 Future<List<MealLog>> recentMeals(Ref ref) async {
+  final repo = ref.read(mealLogRepositoryProvider);
   final userRepo = await ref.read(userRepositoryProvider.future);
   final user = await userRepo.getCurrentUser();
   final userId = user?.id;
   if (userId == null) return const [];
 
-  return ref.read(mealLogRepositoryProvider).getRecentLogs(userId);
+  return repo.getRecentLogs(userId);
 }
 
 // ============================================================================
@@ -178,6 +188,7 @@ Future<List<MealLog>> recentMeals(Ref ref) async {
 /// Used by the "My Meals" section of the meal picker.
 @riverpod
 Stream<List<SavedMeal>> savedMeals(Ref ref) async* {
+  final repo = ref.read(savedMealsRepositoryProvider);
   final userRepo = await ref.read(userRepositoryProvider.future);
   final user = await userRepo.getCurrentUser();
   final userId = user?.id;
@@ -186,7 +197,6 @@ Stream<List<SavedMeal>> savedMeals(Ref ref) async* {
     return;
   }
 
-  final repo = ref.read(savedMealsRepositoryProvider);
   yield* repo.watchSavedMeals(userId);
 }
 
@@ -211,7 +221,7 @@ class MealLogController extends _$MealLogController {
     return null;
   }
 
-  Report get _report => ref.read(reportProvider);
+  Report get _report => ref.report;
 
   /// Runs [action] inside [AsyncValue.guard], but only writes the result back
   /// to [state] if this provider is still mounted.
@@ -536,6 +546,7 @@ class MealLogController extends _$MealLogController {
 @riverpod
 Future<String?> mealPhotoSignedUrl(Ref ref, String? photoPath) async {
   if (photoPath == null || photoPath.isEmpty) return null;
+  final report = ref.read(reportProvider);
   try {
     final supabase = ref.read(supabaseClientProvider);
     final url = await supabase.storage
@@ -543,15 +554,13 @@ Future<String?> mealPhotoSignedUrl(Ref ref, String? photoPath) async {
         .createSignedUrl(photoPath, 3600);
     return url;
   } catch (e, st) {
-    ref
-        .read(reportProvider)
-        .fault(
-          e,
-          stackTrace: st,
-          area: 'meal_logging',
-          message: 'meal photo signed URL failed',
-          extra: {'photo_path': photoPath},
-        );
+    report.fault(
+      e,
+      stackTrace: st,
+      area: 'meal_logging',
+      message: 'meal photo signed URL failed',
+      extra: {'photo_path': photoPath},
+    );
     return null;
   }
 }

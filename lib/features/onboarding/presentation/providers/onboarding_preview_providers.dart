@@ -55,6 +55,7 @@ class OnboardingPreviewBundle {
 /// under each candidate and take the first that actually holds data.
 Future<List<String>> _candidateDataUserIds(Ref ref) async {
   final deps = ref.read(appExternalDepsProvider);
+  final report = ref.read(reportProvider);
   final ids = <String>[];
 
   void add(String? id) {
@@ -69,13 +70,11 @@ Future<List<String>> _candidateDataUserIds(Ref ref) async {
     add(profile?.id);
   } catch (e) {
     // No local profile yet (first run) — the ids below still apply.
-    ref
-        .read(reportProvider)
-        .note(
-          'local profile unavailable; using auth and temp ids',
-          area: 'onboarding',
-          data: {'error': e.toString()},
-        );
+    report.note(
+      'local profile unavailable; using auth and temp ids',
+      area: 'onboarding',
+      data: {'error': e.toString()},
+    );
   }
   add(deps.supabaseClient.auth.currentUser?.id);
   add(deps.sharedPreferences.getString(_onboardingTempUserIdKey));

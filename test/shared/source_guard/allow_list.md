@@ -21,7 +21,7 @@ import). Lines starting with `>` are notes.
 
 unreportedCatch lib/shared/services/sentry/sentry_provider_observer.dart :: } on ArgumentError {  :: Expando refuses primitive keys; the catch is the type test, the primitive goes to its own set
 unreportedCatch lib/shared/services/sentry/sentry_provider_observer.dart :: } on ArgumentError {  :: same as above, the mark side of the pair
-unreportedCatch lib/shared/controllers/food_search_controller.dart :: } catch (_) { :: the catch IS the mounted test: reading `state` after dispose throws; nothing failed, so there is nothing to report
+unreportedCatch lib/shared/services/sentry/sentry_provider_observer.dart :: } on StateError { :: the catch IS the test: reading from a disposed container throws, and Riverpod keeps `ProviderContainer.disposed` internal (ticket 18)
 unreportedCatch lib/shared/services/launch_trail.dart :: } catch (_) { :: LaunchTrail is the tape the D9 trail is written to; a recorder that reports into what it records recurses. Lee ruled it stays as is (ticket 05): begin() falls back to memory-only
 unreportedCatch lib/shared/services/launch_trail.dart :: } catch (_) { :: same ruling, the native-key re-read: best effort, memory-only on failure
 unreportedCatch lib/shared/services/launch_trail.dart :: } catch (_) { :: same ruling, the prefs persist step: the tape stays in memory for this launch
@@ -36,7 +36,6 @@ unreportedCatch lib/features/meal_planning/data/vana_transport.dart :: } on Form
 unreportedCatch lib/features/integrations/application/tp_writeback_service.dart :: } on IntegrationApiException catch (e) {  :: delegates to handleApiException, which classifies every status through Report (403 degraded, 404 note, else degraded); the guard only sees the block text
 unreportedCatch lib/features/integrations/application/tp_writeback_service.dart :: } on IntegrationApiException catch (e) {  :: same as above (feedback push)
 unreportedCatch lib/features/integrations/application/tp_writeback_service.dart :: } on IntegrationApiException catch (e) {  :: same as above (plan removal)
-unreportedCatch lib/features/nutrition_plan/presentation/providers/swap_food_controller.dart :: } catch (_) {  :: the catch is the mounted test: reading `state` on a disposed notifier throws and Riverpod exposes no mounted flag here
 unreportedCatch lib/features/integrations/data/vdot_api_client.dart :: } catch (_) {  :: the body is read as JSON only to pick out an error message; a non-JSON body (HTML error page) is an expected input and the raw text is the fallback output
 unreportedCatch lib/shared/services/report/metrickit_relay.dart :: } on FormatException { :: the catch IS the parse: an unparseable payload is still forwarded whole under `raw`, so nothing is lost
 unreportedCatch lib/shared/services/report/performance_telemetry.dart :: } catch (_) { :: `_startSpan`: span bookkeeping inside the Report layer; a Fault over a lost span would recurse into Report
