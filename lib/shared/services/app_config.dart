@@ -34,6 +34,7 @@ class AppConfig {
     required this.revenueCatApiKeyGoogle,
     required this.aiCreditsEnabled,
     this.revenueCatApiKeyTest = '',
+    this.appleAuthServicesId = '',
     this.describeMealEnabled = true,
     this.coachInsightsEnabled = false,
     this.proGateEnabled = true,
@@ -134,6 +135,13 @@ class AppConfig {
   /// complete Test Store purchases — exercise those on a simulator or a local
   /// `flutter run` instead.
   final String revenueCatApiKeyTest;
+
+  /// Apple **Services ID** (e.g. `com.milkman.mealvanaendurance.auth`) used as
+  /// the `webAuthenticationOptions.clientId` for Sign in with Apple on Android.
+  /// iOS sign-in uses the app's bundle ID and does not need this; when empty
+  /// the Android web-auth sheet cannot be launched (sign_in_with_apple throws
+  /// "`webAuthenticationOptions` argument must be provided on Android").
+  final String appleAuthServicesId;
 
   /// Feature flag controlling AI credit purchasing UI (token pill, top-up
   /// sheet, buy-credits screen).
@@ -331,6 +339,7 @@ class AppConfig {
         fallback: '',
       ),
       revenueCatApiKeyTest: dotenv.get('REVENUECAT_API_KEY_TEST', fallback: ''),
+      appleAuthServicesId: dotenv.get('APPLE_AUTH_SERVICES_ID', fallback: ''),
       // AI surfaces default ON for dev builds (2026-07-22, Lee): dev is the
       // proving ground for Describe/Photo meal logging, formula coach insights,
       // and the token/paywall surfaces. An explicit env value still wins in
@@ -410,6 +419,7 @@ class AppConfig {
     String revenueCatApiKeyApple = '',
     String revenueCatApiKeyGoogle = '',
     String revenueCatApiKeyTest = '',
+    String appleAuthServicesId = '',
     bool aiCreditsEnabled = false,
     bool describeMealEnabled = true,
     bool coachInsightsEnabled = true,
@@ -449,6 +459,7 @@ class AppConfig {
       revenueCatApiKeyApple: revenueCatApiKeyApple,
       revenueCatApiKeyGoogle: revenueCatApiKeyGoogle,
       revenueCatApiKeyTest: revenueCatApiKeyTest,
+      appleAuthServicesId: appleAuthServicesId,
       aiCreditsEnabled: aiCreditsEnabled,
       describeMealEnabled: describeMealEnabled,
       coachInsightsEnabled: coachInsightsEnabled,
@@ -625,6 +636,10 @@ class AppConfig {
       ),
       revenueCatApiKeyGoogle: const String.fromEnvironment(
         'REVENUECAT_API_KEY_GOOGLE',
+        defaultValue: '',
+      ),
+      appleAuthServicesId: const String.fromEnvironment(
+        'APPLE_AUTH_SERVICES_ID',
         defaultValue: '',
       ),
       revenueCatApiKeyTest: const String.fromEnvironment(
