@@ -14,6 +14,7 @@ import '../../../weather/domain/weather_forecast.dart';
 import '../../../weather/application/weather_service.dart';
 import 'package:mealvana_endurance/core/utils/debug_logger.dart';
 import '../../../../shared/services/location_service.dart';
+import '../../../../shared/services/report/report.dart';
 import '../../../../shared/widgets/kyle_design/inputs/duration_pace_toggle.dart';
 
 part 'cycling_input_controller.g.dart';
@@ -320,11 +321,16 @@ class CyclingInputController extends _$CyclingInputController {
           );
         }
       }
-    } catch (e) {
-      DebugLogger.error(
-        '🚴 CYCLING CONTROLLER: Failed to load user preferences',
-        error: e,
-      );
+    } catch (e, stackTrace) {
+      ref
+          .read(reportProvider)
+          .fault(
+            e,
+            stackTrace: stackTrace,
+            area: 'nutrition_plan',
+            message:
+                'Cycling form: loading user preferences failed; defaults kept',
+          );
     } finally {
       _preferencesLoaded = true;
       if (!completer.isCompleted) {
@@ -432,9 +438,7 @@ class CyclingInputController extends _$CyclingInputController {
       // CP-6: the reset restores the AUTO SOURCE, not a flat constant — so the
       // provenance follows the value it restored. This is the second path that
       // seeds the CP-1 placeholders with no fetch failure anywhere (CP-5).
-      temperatureC: hasForecast
-          ? forecast.temperatureC
-          : _kDefaultTemperatureC,
+      temperatureC: hasForecast ? forecast.temperatureC : _kDefaultTemperatureC,
       humidityPct: hasForecast
           ? forecast.humidityPct.toDouble()
           : (isIndoor ? _kIndoorHumidityPct : _kDefaultHumidityPct),
@@ -745,7 +749,15 @@ class CyclingInputController extends _$CyclingInputController {
       if (location != null) {
         fetchWeatherForecast();
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
+      ref
+          .read(reportProvider)
+          .degraded(
+            e,
+            stackTrace: stackTrace,
+            area: 'nutrition_plan',
+            message: 'Cycling form: current location unavailable',
+          );
       state = state.copyWith(isLoadingLocation: false);
     }
   }
@@ -803,7 +815,16 @@ class CyclingInputController extends _$CyclingInputController {
           locationFailureReason: failureReason,
         );
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
+      ref
+          .read(reportProvider)
+          .degraded(
+            e,
+            stackTrace: stackTrace,
+            area: 'nutrition_plan',
+            message:
+                'Cycling form: weather forecast fetch failed; defaults kept',
+          );
       state = state.copyWith(isLoadingWeather: false);
     }
   }

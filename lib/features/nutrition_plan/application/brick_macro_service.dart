@@ -10,6 +10,7 @@ import '../../activities/domain/brick_exceptions.dart';
 import '../../../shared/domain/activity_type.dart';
 import '../../../shared/services/analytics/analytics_tracker.dart';
 import '../../../shared/services/analytics/analytics_events.dart';
+import '../../../shared/services/report/report.dart';
 import 'package:mealvana_endurance/core/utils/debug_logger.dart';
 
 /// Service responsible for generating brick macro targets by calling edge functions.
@@ -28,12 +29,16 @@ class BrickMacroService {
     required this.macroRepository,
     required this.authService,
     required this.analytics,
-  });
+    Report? report,
+  }) : _report = report;
 
   final SupabaseClient supabaseClient;
   final MacroRepository macroRepository;
   final AuthService authService;
   final AnalyticsTracker analytics;
+  final Report? _report;
+  Report get _r => _report ?? SentryReport.global;
+  static const String _area = 'nutrition_plan';
   static const double _overrideMatchToleranceGPerH = 0.5;
   static const bool _enableTemporaryBrickClientFallback = true;
 
@@ -172,13 +177,17 @@ class BrickMacroService {
       // Re-throw brick-specific exceptions as-is
       rethrow;
     } on FunctionException catch (e) {
-      // Supabase function invocation error
-      DebugLogger.error('❌ BRICK MACRO SERVICE: Function exception: $e');
+      // Supabase function invocation error. The wrapped exception propagates
+      // to the controller, which reports it; this is narrative only.
+      _r.info('Brick macro function exception: $e', area: _area);
       throw BrickMacroGenerationException.networkError(e);
     } catch (e, stackTrace) {
-      // Network or parsing errors
-      DebugLogger.error(
-        '❌ BRICK MACRO SERVICE: Unexpected error: $e\n$stackTrace',
+      // Network or parsing errors. The wrapped exception propagates to the
+      // controller, which reports it; this is narrative only.
+      _r.info(
+        'Brick macro generation failed: $e',
+        area: _area,
+        data: {'stackTrace': stackTrace.toString()},
       );
 
       if (e.toString().contains('network') ||
@@ -965,11 +974,14 @@ class BrickMacroService {
     if (value is double) return value;
     if (value is int) return value.toDouble();
     if (value is String) return double.tryParse(value);
-    try {
-      return (value as num).toDouble();
-    } catch (_) {
-      return null;
-    }
+    // Not null, num or String: the payload shape drifted. A nullable field
+    // tolerates it, but the drift must be visible.
+    _r.note(
+      'Brick macro numeric field had unexpected type; treated as absent',
+      area: _area,
+      data: {'type': value.runtimeType.toString(), 'value': value.toString()},
+    );
+    return null;
   }
 
   /// Safely convert to list of string-keyed maps.
@@ -999,10 +1011,15 @@ class BrickMacroService {
       if (value is int) return value.toDouble();
       if (value is String) return double.tryParse(value) ?? 0.0;
       return (value as num).toDouble();
-    } catch (e) {
-      DebugLogger.error(
-        '❌ BRICK MACRO SERVICE: Error converting field "$fieldName" with value "$value" '
-        '(${value.runtimeType}) to double: $e',
+    } catch (e, stackTrace) {
+      _r.degraded(
+        e,
+        stackTrace: stackTrace,
+        area: _area,
+        message:
+            'Brick macro field "$fieldName" (${value.runtimeType}) could not '
+            'be read as a number; defaulted to 0',
+        extra: {'field': fieldName, 'value': value.toString()},
       );
       return 0.0;
     }

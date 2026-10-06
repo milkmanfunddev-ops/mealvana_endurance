@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../shared/services/app_external_deps.dart';
+import '../../../shared/services/report/report.dart';
 
 /// Per-user thumbs-up/thumbs-down votes for transparency Q&A and calc-card
 /// "Does this make sense?" footers. Stored locally in SharedPreferences as a
@@ -38,8 +39,16 @@ class TransparencyFeedbackStore extends Notifier<Map<String, String>> {
             entry.key.toString(): entry.value.toString(),
         };
       }
-    } catch (_) {
-      // Corrupt payload — drop it on the floor and start fresh.
+    } catch (e, stackTrace) {
+      // Corrupt payload: start fresh, but say so. The votes are gone.
+      ref
+          .read(reportProvider)
+          .degraded(
+            e,
+            stackTrace: stackTrace,
+            area: 'nutrition_plan',
+            message: 'Transparency feedback store unreadable; votes reset',
+          );
     }
     return const {};
   }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../../shared/services/report/report.dart';
 import '../../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../providers/macro_targets_controller.dart';
 import '../../../domain/macro_targets.dart' as domain;
@@ -247,20 +248,39 @@ class _EditMacrosDialogWidgetState
   }
 
   Future<void> _saveChanges() async {
-    try {
-      // Parse values
-      final preCarbs = double.parse(_controllers['preCarbs']!.text);
-      final duringCarbs = double.parse(_controllers['duringCarbs']!.text);
-      final postCarbs = double.parse(_controllers['postCarbs']!.text);
-      final preProtein = double.parse(_controllers['preProtein']!.text);
-      final postProtein = double.parse(_controllers['postProtein']!.text);
-      final preFluids = double.parse(_controllers['preFluids']!.text);
-      final duringFluids = double.parse(_controllers['duringFluids']!.text);
-      final postFluids = double.parse(_controllers['postFluids']!.text);
-      final preSodium = double.parse(_controllers['preSodium']!.text);
-      final duringSodium = double.parse(_controllers['duringSodium']!.text);
-      final postSodium = double.parse(_controllers['postSodium']!.text);
+    // Validation is the screen's job: a typo in a field is the athlete's to
+    // fix, not a report. Only the save itself is guarded below.
+    final preCarbs = double.tryParse(_controllers['preCarbs']!.text);
+    final duringCarbs = double.tryParse(_controllers['duringCarbs']!.text);
+    final postCarbs = double.tryParse(_controllers['postCarbs']!.text);
+    final preProtein = double.tryParse(_controllers['preProtein']!.text);
+    final postProtein = double.tryParse(_controllers['postProtein']!.text);
+    final preFluids = double.tryParse(_controllers['preFluids']!.text);
+    final duringFluids = double.tryParse(_controllers['duringFluids']!.text);
+    final postFluids = double.tryParse(_controllers['postFluids']!.text);
+    final preSodium = double.tryParse(_controllers['preSodium']!.text);
+    final duringSodium = double.tryParse(_controllers['duringSodium']!.text);
+    final postSodium = double.tryParse(_controllers['postSodium']!.text);
+    if (preCarbs == null ||
+        duringCarbs == null ||
+        postCarbs == null ||
+        preProtein == null ||
+        postProtein == null ||
+        preFluids == null ||
+        duringFluids == null ||
+        postFluids == null ||
+        preSodium == null ||
+        duringSodium == null ||
+        postSodium == null) {
+      MealvanaSnackbar.showError(
+        context,
+        'Invalid input: enter a number in every field',
+      );
+      return;
+    }
 
+    final report = ref.read(reportProvider);
+    try {
       // Save to controller
       await ref
           .read(macroTargetsControllerProvider.notifier)
@@ -281,10 +301,15 @@ class _EditMacrosDialogWidgetState
       if (mounted) {
         Navigator.of(context).pop();
       }
-    } catch (e) {
-      // Show error
+    } catch (e, stackTrace) {
+      report.fault(
+        e,
+        stackTrace: stackTrace,
+        area: 'nutrition_plan',
+        message: 'Saving edited macro targets failed',
+      );
       if (mounted) {
-        MealvanaSnackbar.showError(context, 'Invalid input: ${e.toString()}');
+        MealvanaSnackbar.showError(context, 'Failed to save: ${e.toString()}');
       }
     }
   }

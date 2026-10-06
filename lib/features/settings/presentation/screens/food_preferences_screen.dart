@@ -10,6 +10,7 @@ import 'package:uuid/uuid.dart';
 import '../../../auth/domain/user_preferences.dart';
 import '../../../nutrition_plan/data/food_repository.dart';
 import '../../../../shared/services/app_external_deps.dart';
+import '../../../../shared/services/report/report.dart';
 import '../../../../core/utils/debug_logger.dart';
 import '../../../nutrition_plan/domain/food_item.dart';
 import '../../../../shared/services/food_management/fuel_predicate.dart';
@@ -48,6 +49,11 @@ class FoodPreferencesScreen extends ConsumerStatefulWidget {
 
 class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
   static const _searchControllerKey = 'food_preferences';
+  static const String _area = 'settings';
+
+  /// Taken in [initState]: a catch that runs after the widget unmounted
+  /// cannot touch `ref`.
+  late final Report _report;
 
   // Store slider levels (0-4) locally
   final Map<String, int> _sliderLevels = {};
@@ -67,6 +73,7 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
   @override
   void initState() {
     super.initState();
+    _report = ref.read(reportProvider);
     _loadFoods();
 
     ref
@@ -184,9 +191,12 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
         await ref
             .read(syncCoordinatorProvider.notifier)
             .ensureSynced('user_foods', deviceId, repository: userFoodsRepo);
-      } catch (e) {
-        DebugLogger.warning(
-          '[FOOD_PREFS] User foods sync failed, continuing with cached data: $e',
+      } catch (e, stackTrace) {
+        _report.degraded(
+          e,
+          stackTrace: stackTrace,
+          area: _area,
+          message: 'User foods sync failed; continuing with cached data',
         );
       }
 
@@ -299,10 +309,11 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
         '[FOOD_PREFS] Load completed (${primaryFoods.length} primary, ${userFoods.length} user)',
       );
     } catch (e, stackTrace) {
-      DebugLogger.error(
-        '[FOOD_PREFS] Failed to load foods',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
+        area: _area,
+        message: 'Loading food preferences failed',
       );
       setState(() {
         _isLoading = false;
@@ -360,7 +371,7 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
         context.pop();
       }
     } catch (e) {
-      DebugLogger.error('Food preferences settings - Failed to save: $e');
+      _report.fault(e, area: _area, message: 'Saving food preferences failed');
       if (mounted) {
         MealvanaSnackbar.showError(
           context,
@@ -532,7 +543,7 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
       if (mounted) {
         MealvanaSnackbar.showError(context, 'Failed to load product details');
       }
-      DebugLogger.error('Error loading product details: $e');
+      _report.fault(e, area: _area, message: 'Loading product details failed');
     }
   }
 
@@ -638,7 +649,7 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
         );
       }
     } catch (e) {
-      DebugLogger.error('Error saving searched food: $e');
+      _report.fault(e, area: _area, message: 'Saving a searched food failed');
       if (mounted) {
         MealvanaSnackbar.showError(
           context,
@@ -663,9 +674,13 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
             .delete()
             .eq('device_id', deviceId)
             .eq('id', food.id);
-      } catch (supabaseError) {
-        DebugLogger.warning(
-          'Supabase delete sync failed, but local delete succeeded: $supabaseError',
+      } catch (supabaseError, stackTrace) {
+        _report.degraded(
+          supabaseError,
+          stackTrace: stackTrace,
+          area: 'sync',
+          message: 'Remote user_foods delete failed; local delete succeeded',
+          extra: {'foodId': food.id},
         );
       }
 
@@ -684,7 +699,7 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
         );
       }
     } catch (e) {
-      DebugLogger.error('Error deleting user food: $e');
+      _report.fault(e, area: _area, message: 'Deleting a user food failed');
       if (mounted) {
         MealvanaSnackbar.showError(
           context,
@@ -783,7 +798,13 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
         if (mounted) {
           MealvanaSnackbar.showSuccess(context, 'Custom food created!');
         }
-      } catch (e) {
+      } catch (e, stackTrace) {
+        _report.fault(
+          e,
+          stackTrace: stackTrace,
+          area: _area,
+          message: 'Saving a scanned custom food failed',
+        );
         if (mounted) {
           MealvanaSnackbar.showError(context, 'Failed to save food: $e');
         }
@@ -824,7 +845,7 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
         );
       }
     } catch (e) {
-      DebugLogger.error('Error with barcode scanning: $e');
+      _report.fault(e, area: _area, message: 'Barcode scanning threw');
       if (mounted) {
         MealvanaSnackbar.showError(context, 'Unable to open barcode scanner');
       }
@@ -1119,7 +1140,7 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
           MealvanaSnackbar.showSuccess(context, '${result.name} updated!');
         }
       } catch (e) {
-        DebugLogger.error('Error updating user food: $e');
+        _report.fault(e, area: _area, message: 'Updating a user food failed');
         if (mounted) {
           MealvanaSnackbar.showError(
             context,

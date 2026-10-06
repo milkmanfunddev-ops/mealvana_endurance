@@ -11,13 +11,20 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mealvana_endurance/features/nutrition_plan/application/client_plan/client_food_pool_service.dart';
+import 'package:mealvana_endurance/shared/services/report/report.dart';
+
+import '../../../helpers/fakes/recording_report.dart';
 
 void main() {
   late ProviderContainer container;
   late ClientFoodPoolService service;
+  late RecordingReport report;
 
   setUp(() {
-    container = ProviderContainer();
+    report = RecordingReport();
+    container = ProviderContainer(
+      overrides: [reportProvider.overrideWithValue(report)],
+    );
     service = container.read(clientFoodPoolServiceProvider);
   });
   tearDown(() => container.dispose());
@@ -54,6 +61,20 @@ void main() {
 
     test('single-value pg literal', () {
       expect(service.parseCategoryList('{during_run}'), ['during_run']);
+    });
+
+    test('a value in neither format is empty AND written down as a Note', () {
+      expect(service.parseCategoryList('before_run,during_run'), isEmpty);
+      expect(report.notes, hasLength(1));
+      expect(report.notes.single.area, 'nutrition_plan');
+      expect(report.notes.single.data?['raw'], 'before_run,during_run');
+      expect(report.faults, isEmpty);
+    });
+
+    test('a well-formed value writes nothing down', () {
+      service.parseCategoryList('["before_run"]');
+      service.parseCategoryList('{before_run}');
+      expect(report.calls, isEmpty);
     });
   });
 }

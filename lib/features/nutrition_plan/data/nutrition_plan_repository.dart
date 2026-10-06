@@ -8,7 +8,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../shared/database/app_database.dart';
 import '../../../shared/database/database_provider.dart';
 import '../../../shared/services/app_external_deps.dart';
-import '../../../shared/services/sentry/sentry_reporter.dart';
+import '../../../shared/services/report/report.dart';
 import '../../activities/data/activities_repository.dart';
 import '../../calendar/application/calendar_service.dart';
 import '../application/food_data_transformation_service.dart';
@@ -23,15 +23,17 @@ class NutritionPlanRepository {
   NutritionPlanRepository({
     required this.supabase,
     required this.database,
-    required this.sentry,
+    required this.report,
     required this.transformationService,
     required this.calendarService,
     required this.activitiesRepository,
   });
 
+  static const String _area = 'nutrition_plan';
+
   final SupabaseClient supabase;
   final AppDatabase database;
-  final SentryReporter sentry;
+  final Report report;
   final CalendarService calendarService;
   final FoodDataTransformationService transformationService;
   final ActivitiesRepository activitiesRepository;
@@ -52,8 +54,15 @@ class NutritionPlanRepository {
       if (decoded is Map<String, dynamic>) {
         return decoded;
       }
-    } catch (_) {
-      // Ignore parse errors and fall back to empty map.
+    } catch (e, stackTrace) {
+      // The caller gets an empty map and the mapper fails from there; this
+      // is the one place that knows the stored plan itself was unreadable.
+      report.degraded(
+        e,
+        stackTrace: stackTrace,
+        area: _area,
+        message: 'Stored nutrition plan JSON unreadable; treated as empty',
+      );
     }
     return {};
   }
@@ -66,8 +75,10 @@ class NutritionPlanRepository {
     try {
       final activityId = plan.activityId;
       if (activityId == null) {
-        DebugLogger.warning(
-          '⚠️ Cannot cache plan ${plan.id} without activityId',
+        await report.note(
+          'Plan not cached locally: no activityId',
+          area: _area,
+          data: {'planId': plan.id},
         );
         return;
       }
@@ -83,16 +94,16 @@ class NutritionPlanRepository {
       );
       DebugLogger.info('✅ Plan cached on activity row');
     } catch (e, stackTrace) {
-      DebugLogger.error(
-        '❌ Error caching plan locally',
-        error: e,
-        stackTrace: stackTrace,
-      );
-      await sentry.reportDatabaseError(
+      await report.fault(
         e,
-        operation: 'setActivityNutritionPlan',
-        table: 'activities',
         stackTrace: stackTrace,
+        area: _area,
+        message: 'Caching nutrition plan on the activity row failed',
+        extra: {
+          'operation': 'setActivityNutritionPlan',
+          'table': 'activities',
+          'planId': plan.id,
+        },
       );
     }
   }
@@ -120,11 +131,13 @@ class NutritionPlanRepository {
       final planJson = _decodePlanJson(activity.nutritionPlanData!);
       return NutritionPlanMapper.fromJson(planJson);
     } catch (e, stackTrace) {
-      DebugLogger.error(
-        'Failed to get nutrition plan for activity $activityId',
-        error: e,
+      await report.fault(
+        e,
+        stackTrace: stackTrace,
+        area: _area,
+        message: 'Reading the nutrition plan for an activity failed',
+        extra: {'activityId': activityId},
       );
-      DebugLogger.debug(stackTrace.toString());
       return null;
     }
   }
@@ -149,10 +162,12 @@ class NutritionPlanRepository {
 
       return true;
     } catch (e, stackTrace) {
-      DebugLogger.error(
-        'Error deleting nutrition plan',
-        error: e,
+      await report.fault(
+        e,
         stackTrace: stackTrace,
+        area: _area,
+        message: 'Clearing the nutrition plan on an activity failed',
+        extra: {'activityId': activityId},
       );
       return false;
     }
@@ -170,10 +185,11 @@ class NutritionPlanRepository {
           json.decode(activity!.nutritionPlanData!) as Map<String, dynamic>;
       return NutritionPlanMapper.fromJson(planData);
     } catch (e, stackTrace) {
-      DebugLogger.error(
-        'Error getting cached plan',
-        error: e,
+      await report.fault(
+        e,
         stackTrace: stackTrace,
+        area: _area,
+        message: 'Reading the latest cached nutrition plan failed',
       );
       return null;
     }
@@ -201,12 +217,12 @@ class NutritionPlanRepository {
       DebugLogger.info(
         '✅ Plan run date updated: activityId=$activityId, runDateTime=$runDateTime',
       );
-    } catch (e, stackTrace) {
-      DebugLogger.error('❌ Failed to update plan run date: $e');
-      await sentry.reportDatabaseError(
-        e,
-        stackTrace: stackTrace,
-        operation: 'updatePlanRunDateTime',
+    } catch (e) {
+      // The error propagates; the caller owns the report.
+      report.info(
+        'Updating the plan run date failed: $e',
+        area: _area,
+        data: {'activityId': activityId},
       );
       rethrow;
     }
@@ -248,9 +264,13 @@ class NutritionPlanRepository {
             final planJson = _decodePlanJson(activity.nutritionPlanData!);
             plans.add(NutritionPlanMapper.fromJson(planJson));
           }
-        } catch (e) {
-          DebugLogger.warning(
-            'Failed to parse plan for activity ${activity.id}: $e',
+        } catch (e, stackTrace) {
+          await report.degraded(
+            e,
+            stackTrace: stackTrace,
+            area: _area,
+            message: 'Stored plan did not parse; left out of feedback list',
+            extra: {'activityId': activity.id},
           );
         }
       }
@@ -258,8 +278,12 @@ class NutritionPlanRepository {
       DebugLogger.info('Found ${plans.length} plans pending feedback');
       return plans;
     } catch (e, stackTrace) {
-      DebugLogger.error('Failed to get plans pending feedback', error: e);
-      DebugLogger.debug(stackTrace.toString());
+      await report.fault(
+        e,
+        stackTrace: stackTrace,
+        area: _area,
+        message: 'Listing plans pending feedback failed',
+      );
       return [];
     }
   }
@@ -289,9 +313,13 @@ class NutritionPlanRepository {
             final planJson = _decodePlanJson(activity.nutritionPlanData!);
             plans.add(NutritionPlanMapper.fromJson(planJson));
           }
-        } catch (e) {
-          DebugLogger.warning(
-            'Failed to parse plan for activity ${activity.id}: $e',
+        } catch (e, stackTrace) {
+          await report.degraded(
+            e,
+            stackTrace: stackTrace,
+            area: _area,
+            message: 'Stored plan did not parse; left out of plan list',
+            extra: {'activityId': activity.id},
           );
         }
       }
@@ -299,8 +327,12 @@ class NutritionPlanRepository {
       DebugLogger.info('Found ${plans.length} nutrition plans');
       return plans;
     } catch (e, stackTrace) {
-      DebugLogger.error('Failed to get user nutrition plans', error: e);
-      DebugLogger.debug(stackTrace.toString());
+      await report.fault(
+        e,
+        stackTrace: stackTrace,
+        area: _area,
+        message: 'Listing the user\'s nutrition plans failed',
+      );
       return [];
     }
   }
@@ -329,7 +361,7 @@ class CreateNutritionPlanResult {
 @riverpod
 Future<NutritionPlanRepository> nutritionPlanRepository(Ref ref) async {
   final database = ref.watch(appDatabaseProvider);
-  final sentry = ref.watch(sentryReporterProvider);
+  final report = ref.watch(reportProvider);
   final transformationService = ref.watch(
     foodDataTransformationServiceProvider,
   );
@@ -340,7 +372,7 @@ Future<NutritionPlanRepository> nutritionPlanRepository(Ref ref) async {
   return NutritionPlanRepository(
     supabase: supabase,
     database: database,
-    sentry: sentry,
+    report: report,
     transformationService: transformationService,
     calendarService: calendarService,
     activitiesRepository: activitiesRepository,

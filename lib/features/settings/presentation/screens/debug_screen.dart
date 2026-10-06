@@ -5,6 +5,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../../theme/app_theme.dart';
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../../../shared/services/debug_log_storage.dart';
+import '../../../../shared/services/report/report.dart';
 import '../../../../shared/services/sync/data_sync_service.dart';
 import '../../../../shared/database/database_provider.dart';
 import '../../../auth/data/user_repository.dart';
@@ -36,6 +37,8 @@ class _DebugScreenState extends ConsumerState<DebugScreen> {
       _syncResult = null;
     });
 
+    // Before the first await: a catch after unmount cannot touch `ref`.
+    final report = ref.read(reportProvider);
     try {
       // Get current user and database
       final database = ref.read(appDatabaseProvider);
@@ -75,8 +78,13 @@ class _DebugScreenState extends ConsumerState<DebugScreen> {
         _isSyncing = false;
       });
     } catch (e, stackTrace) {
-      debugPrint('Debug sync error: $e');
-      debugPrint('Stack trace: $stackTrace');
+      report.fault(
+        e,
+        stackTrace: stackTrace,
+        area: 'sync',
+        message: 'Manual sync from the debug screen failed',
+      );
+      if (!mounted) return;
       setState(() {
         _syncResult = '❌ Sync error: $e';
         _isSyncing = false;

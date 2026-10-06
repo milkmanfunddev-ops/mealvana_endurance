@@ -7,6 +7,7 @@ import 'package:uuid/uuid.dart';
 import '../../../../shared/domain/activity_type.dart';
 import '../../../../shared/services/app_external_deps.dart';
 import '../../../../shared/services/logging_service.dart';
+import '../../../../shared/services/report/report.dart';
 import '../../../auth/application/auth_service.dart';
 import '../../../auth/domain/user_preferences.dart';
 import '../../../food_preferences/data/food_preferences_repository.dart';
@@ -52,6 +53,8 @@ class ClientPlanService {
   PersonalFormulasRepository get _personalFormulasRepo =>
       _ref.read(personalFormulasRepositoryProvider);
   AppLogger get _logger => _ref.read(appExternalDepsProvider).logger;
+  Report get _report => _ref.read(reportProvider);
+  static const String _area = 'nutrition_plan';
 
   /// Generate a complete nutrition plan with real food selections.
   ///
@@ -280,11 +283,14 @@ class ClientPlanService {
         );
       }
       return result.items;
-    } catch (e) {
-      _logger.warning(
-        '$phase phase: electrolyte/water pairing pass failed',
-        context: 'CLIENT_PLAN_SERVICE',
-        error: e,
+    } catch (e, stackTrace) {
+      _report.fault(
+        e,
+        stackTrace: stackTrace,
+        area: _area,
+        message:
+            '$phase phase: electrolyte/water pairing pass failed; items '
+            'returned unpaired',
       );
       return items;
     }
@@ -328,11 +334,12 @@ class ClientPlanService {
         );
         return templateResult;
       }
-    } catch (e) {
-      _logger.warning(
-        'Template-based before failed, using greedy',
-        context: 'CLIENT_PLAN_SERVICE',
-        error: e,
+    } catch (e, stackTrace) {
+      _report.fault(
+        e,
+        stackTrace: stackTrace,
+        area: _area,
+        message: 'Template-based before selection failed; using greedy',
       );
     }
 
@@ -455,11 +462,12 @@ class ClientPlanService {
         final solverFood = foods.firstWhere((f) => f.id == s.foodId);
         return solverFood.toFoodItemData(s.quantity);
       }).toList();
-    } catch (e) {
-      _logger.warning(
-        'During rule solver failed; falling back to greedy',
-        context: 'CLIENT_PLAN_SERVICE',
-        error: e,
+    } catch (e, stackTrace) {
+      _report.fault(
+        e,
+        stackTrace: stackTrace,
+        area: _area,
+        message: 'During rule solver failed; falling back to greedy',
       );
       return _solvePhase(
         userId: userId,
@@ -571,11 +579,12 @@ class ClientPlanService {
         context: 'CLIENT_PLAN_SERVICE',
       );
       return items;
-    } catch (e) {
-      _logger.warning(
-        'Pinned personal formula lookup failed; falling through',
-        context: 'CLIENT_PLAN_SERVICE',
-        error: e,
+    } catch (e, stackTrace) {
+      _report.fault(
+        e,
+        stackTrace: stackTrace,
+        area: _area,
+        message: 'Pinned personal formula lookup failed; falling through',
       );
       return null;
     }
@@ -717,11 +726,12 @@ class ClientPlanService {
         activityType: activityType,
       );
       essentials = pool.where((f) => f.isEssential).toList();
-    } catch (e) {
-      _logger.warning(
-        'Pin backfill: essential foods unavailable',
-        context: 'CLIENT_PLAN_SERVICE',
-        error: e,
+    } catch (e, stackTrace) {
+      _report.fault(
+        e,
+        stackTrace: stackTrace,
+        area: _area,
+        message: 'Pin backfill: essential foods unavailable; backfill skipped',
       );
     }
 
@@ -858,11 +868,12 @@ class ClientPlanService {
         final solverFood = foods.firstWhere((f) => f.id == s.foodId);
         return solverFood.toFoodItemData(s.quantity);
       }).toList();
-    } catch (e) {
-      _logger.warning(
-        'Greedy solver failed for $phase phase',
-        context: 'CLIENT_PLAN_SERVICE',
-        error: e,
+    } catch (e, stackTrace) {
+      _report.fault(
+        e,
+        stackTrace: stackTrace,
+        area: _area,
+        message: 'Greedy solver failed for $phase phase; phase left empty',
       );
       return [];
     }
@@ -987,7 +998,14 @@ class ClientPlanService {
     List<dynamic> foodsList;
     try {
       foodsList = jsonDecode(best.foods) as List<dynamic>;
-    } catch (_) {
+    } catch (e, stackTrace) {
+      _report.degraded(
+        e,
+        stackTrace: stackTrace,
+        area: _area,
+        message: 'Template foods JSON unreadable; template skipped',
+        extra: {'templateId': best.id},
+      );
       return null;
     }
 
@@ -1099,7 +1117,13 @@ class ClientPlanService {
     try {
       final decoded = jsonDecode(jsonStr);
       if (decoded is List) return decoded.cast<String>();
-    } catch (_) {}
+    } catch (e) {
+      _report.note(
+        'Template JSON list unreadable; treated as empty',
+        area: _area,
+        data: {'raw': jsonStr, 'error': e.toString()},
+      );
+    }
     return [];
   }
 }

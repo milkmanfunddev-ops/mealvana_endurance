@@ -4,6 +4,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../../integrations/presentation/providers/athlete_zones_provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' show HttpMethod;
 import '../../../../shared/services/app_external_deps.dart';
+import '../../../../shared/services/report/report.dart';
 import '../../../activities/data/activities_repository.dart';
 import '../../../auth/application/supabase_auth_service.dart';
 import '../../../auth/data/user_repository.dart';
@@ -876,8 +877,17 @@ class SettingsController extends _$SettingsController {
       // Sign out to trigger auth state listener to create a new anonymous user
       try {
         await supabaseClient.auth.signOut();
-      } catch (e) {
-        // Ignore errors during sign out - user is already deleted
+      } catch (e, stackTrace) {
+        // The account is already gone server-side, so a failed sign-out is
+        // survivable; the auth listener still needs to see it, so say so.
+        await ref
+            .read(reportProvider)
+            .degraded(
+              e,
+              stackTrace: stackTrace,
+              area: 'auth',
+              message: 'Sign-out after account deletion failed',
+            );
       }
 
       // Wait a moment for auth state listener to complete

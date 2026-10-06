@@ -8,6 +8,7 @@ import 'package:mealvana_endurance/shared/widgets/kyle_design/kyle_design.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:mealvana_endurance/shared/widgets/custom_app_bar_back_button.dart';
 import '../../../../shared/providers/unit_system_provider.dart';
+import '../../../../shared/services/report/report.dart';
 import '../../../../shared/utils/unit_formatter.dart';
 import '../../../../shared/widgets/content_area.dart';
 import '../../../nutrition_plan/domain/run_parameters.dart';
@@ -169,6 +170,8 @@ class _NutritionTargetsScreenState
   }
 
   Future<void> _applyFluidUnitPreference() async {
+    // Before the first await: a catch after unmount cannot touch `ref`.
+    final report = ref.read(reportProvider);
     try {
       final unitSystem = await ref.read(unitSystemProvider.future);
       final useMetric = unitSystem == UnitSystem.metric;
@@ -178,8 +181,14 @@ class _NutritionTargetsScreenState
           _useMetric = useMetric;
         });
       }
-    } catch (_) {
+    } catch (e, stackTrace) {
       // Non-fatal - default to the mL display already set.
+      report.fault(
+        e,
+        stackTrace: stackTrace,
+        area: 'settings',
+        message: 'Unit preference unavailable; mL display kept',
+      );
     }
   }
 
@@ -445,6 +454,8 @@ class _NutritionTargetsScreenState
       overrides = NutritionTargetGuardrails.clampAll(overrides);
     }
 
+    // Before the first await: a catch after unmount cannot touch `ref`.
+    final report = ref.read(reportProvider);
     try {
       await ref
           .read(settingsControllerProvider.notifier)
@@ -466,7 +477,13 @@ class _NutritionTargetsScreenState
         _hasChanges = false;
       });
       MealvanaSnackbar.showSuccess(context, 'Nutrition targets saved');
-    } catch (e) {
+    } catch (e, stackTrace) {
+      report.fault(
+        e,
+        stackTrace: stackTrace,
+        area: 'settings',
+        message: 'Saving nutrition target overrides threw',
+      );
       if (mounted) {
         setState(() => _isSaving = false);
         MealvanaSnackbar.showError(context, 'Failed to save nutrition targets');

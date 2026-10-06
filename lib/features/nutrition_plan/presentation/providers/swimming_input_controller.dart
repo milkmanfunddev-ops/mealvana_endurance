@@ -13,6 +13,7 @@ import '../../../weather/domain/location.dart' as weather_domain;
 import '../../../weather/domain/weather_forecast.dart';
 import '../../../weather/application/weather_service.dart';
 import '../../../../shared/services/location_service.dart';
+import '../../../../shared/services/report/report.dart';
 import '../../../../shared/widgets/kyle_design/inputs/duration_pace_toggle.dart';
 import 'package:mealvana_endurance/core/utils/debug_logger.dart';
 
@@ -224,11 +225,16 @@ class SwimmingInputController extends _$SwimmingInputController {
           '🏊 SWIMMING CONTROLLER: Loaded user preferences - unitSystem: ${userProfile.unitSystem.name}',
         );
       }
-    } catch (e) {
-      DebugLogger.error(
-        '🏊 SWIMMING CONTROLLER: Failed to load user preferences',
-        error: e,
-      );
+    } catch (e, stackTrace) {
+      ref
+          .read(reportProvider)
+          .fault(
+            e,
+            stackTrace: stackTrace,
+            area: 'nutrition_plan',
+            message:
+                'Swimming form: loading user preferences failed; defaults kept',
+          );
     }
   }
 
@@ -260,12 +266,16 @@ class SwimmingInputController extends _$SwimmingInputController {
           '🏊 SWIMMING CONTROLLER: Applied zone-based pace: ${paceSeconds}s/100m',
         );
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
       // Non-blocking - keep default pace if zone fetch fails
-      DebugLogger.error(
-        '🏊 SWIMMING CONTROLLER: Zone pace unavailable',
-        error: e,
-      );
+      ref
+          .read(reportProvider)
+          .degraded(
+            e,
+            stackTrace: stackTrace,
+            area: 'nutrition_plan',
+            message: 'Swimming form: zone pace unavailable; default pace kept',
+          );
     }
   }
 
@@ -612,7 +622,15 @@ class SwimmingInputController extends _$SwimmingInputController {
       if (location != null) {
         fetchWeatherForecast();
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
+      ref
+          .read(reportProvider)
+          .degraded(
+            e,
+            stackTrace: stackTrace,
+            area: 'nutrition_plan',
+            message: 'Swimming form: current location unavailable',
+          );
       state = state.copyWith(isLoadingLocation: false);
     }
   }
@@ -666,7 +684,16 @@ class SwimmingInputController extends _$SwimmingInputController {
           locationFailureReason: failureReason,
         );
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
+      ref
+          .read(reportProvider)
+          .degraded(
+            e,
+            stackTrace: stackTrace,
+            area: 'nutrition_plan',
+            message:
+                'Swimming form: weather forecast fetch failed; defaults kept',
+          );
       state = state.copyWith(isLoadingWeather: false);
     }
   }
