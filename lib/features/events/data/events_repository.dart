@@ -5,9 +5,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../shared/database/app_database.dart';
 import '../../../shared/database/database_provider.dart';
-import '../../../shared/services/logging_service.dart';
-import '../../../shared/services/sentry/sentry_reporter.dart';
-import '../../../shared/services/app_external_deps.dart';
+import '../../../shared/services/report/report.dart';
 import '../../../shared/services/sync/sync_dependency_graph.dart';
 import '../../../shared/domain/activity_type.dart';
 import '../../../shared/data/syncable_repository.dart';
@@ -19,13 +17,11 @@ part 'events_repository.g.dart';
 
 @riverpod
 EventsRepository eventsRepository(Ref ref) {
-  final deps = ref.read(appExternalDepsProvider);
   return EventsRepository(
     supabase: Supabase.instance.client,
     database: ref.read(appDatabaseProvider),
-    logger: ref.read(appLoggerProvider),
     carbLoadingRepository: ref.read(carbLoadingRepositoryProvider),
-    sentry: deps.sentry,
+    report: ref.read(reportProvider),
   );
 }
 
@@ -35,20 +31,17 @@ class EventsRepository with SyncableRepository {
   const EventsRepository({
     required SupabaseClient supabase,
     required AppDatabase database,
-    required AppLogger logger,
     required CarbLoadingRepository carbLoadingRepository,
-    required SentryReporter sentry,
+    required Report report,
   }) : _supabase = supabase,
        _database = database,
-       _logger = logger,
        _carbLoadingRepository = carbLoadingRepository,
-       _sentry = sentry;
+       _report = report;
 
   final SupabaseClient _supabase;
   final AppDatabase _database;
-  final AppLogger _logger;
   final CarbLoadingRepository _carbLoadingRepository;
-  final SentryReporter _sentry;
+  final Report _report;
 
   // ========================================================================
   // SyncableRepository Implementation
@@ -64,9 +57,9 @@ class EventsRepository with SyncableRepository {
   @override
   Future<SyncResult> syncFromRemote(String userId) async {
     try {
-      _logger.info(
+      _report.info(
         'Syncing events from Supabase',
-        context: 'EVENTS_REPOSITORY',
+        area: 'EVENTS_REPOSITORY',
         data: {'userId': userId},
       );
 
@@ -84,20 +77,20 @@ class EventsRepository with SyncableRepository {
 
       await setLastSyncTime(DateTime.now());
 
-      _logger.info(
+      _report.info(
         'Successfully synced events from Supabase',
-        context: 'EVENTS_REPOSITORY',
+        area: 'EVENTS_REPOSITORY',
         data: {'userId': userId, 'count': syncedCount},
       );
 
       return SyncResult.successful(syncedCount);
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to sync events from Supabase',
-        context: 'EVENTS_REPOSITORY',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
-        data: {'userId': userId},
+        area: 'EVENTS_REPOSITORY',
+        extra: {'userId': userId},
+        message: 'Failed to sync events from Supabase',
       );
       return SyncResult.failed(e.toString());
     }
@@ -146,10 +139,13 @@ class EventsRepository with SyncableRepository {
     });
 
     if (dirtyIds.isNotEmpty) {
-      _logger.warning(
-        'Skipped remote event overwrite for dirty local rows',
-        context: 'EVENTS_REPOSITORY',
-        data: {
+      _report.degraded(
+        LoggedFault(
+          'Skipped remote event overwrite for dirty local rows',
+          context: 'EVENTS_REPOSITORY',
+        ),
+        area: 'EVENTS_REPOSITORY',
+        extra: {
           'skippedCount': dirtyIds.length,
           'totalRemote': remoteById.length,
         },
@@ -162,9 +158,9 @@ class EventsRepository with SyncableRepository {
   @override
   Future<UploadResult> uploadDirtyRecords(String userId) async {
     try {
-      _logger.info(
+      _report.info(
         'Uploading dirty events to Supabase',
-        context: 'EVENTS_REPOSITORY',
+        area: 'EVENTS_REPOSITORY',
         data: {'userId': userId},
       );
 
@@ -179,9 +175,9 @@ class EventsRepository with SyncableRepository {
         return UploadResult.nothingToUpload();
       }
 
-      _logger.debug(
+      _report.debug(
         'Found dirty events to upload',
-        context: 'EVENTS_REPOSITORY',
+        area: 'EVENTS_REPOSITORY',
         data: {'count': dirtyRecords.length},
       );
 
@@ -203,20 +199,20 @@ class EventsRepository with SyncableRepository {
         }
       });
 
-      _logger.info(
+      _report.info(
         'Successfully uploaded dirty events',
-        context: 'EVENTS_REPOSITORY',
+        area: 'EVENTS_REPOSITORY',
         data: {'count': dirtyRecords.length},
       );
 
       return UploadResult.successful(dirtyRecords.length);
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to upload dirty events',
-        context: 'EVENTS_REPOSITORY',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
-        data: {'userId': userId},
+        area: 'EVENTS_REPOSITORY',
+        extra: {'userId': userId},
+        message: 'Failed to upload dirty events',
       );
       return UploadResult.failed(e.toString());
     }
@@ -258,25 +254,24 @@ class EventsRepository with SyncableRepository {
           // record already stays dirty and uploads via ensureSynced once the
           // users row lands. Queue-and-retry, not an error worth Sentry
           // (was MEALVANA-ENDURANCE-3W: 350+ noise events).
-          _logger.info(
+          _report.info(
             'Deferred event upload: users row not created yet; '
             'record stays dirty for retry',
-            context: 'EVENTS_REPOSITORY',
+            area: 'EVENTS_REPOSITORY',
             data: {'operation': 'create', 'recordId': createdEvent.id},
           );
         } else {
-          _logger.warning(
-            'Immediate upload failed; record stays dirty for retry',
-            context: 'EVENTS_REPOSITORY',
-            error: e,
-            stackTrace: stackTrace,
-            data: {'operation': 'create', 'recordId': createdEvent.id},
-          );
-          _sentry.reportNetworkError(
+          _report.degraded(
             e,
-            url: 'supabase:events:create',
-            method: 'INSERT',
             stackTrace: stackTrace,
+            area: 'EVENTS_REPOSITORY',
+            tags: {'method': 'INSERT'},
+            extra: {
+              'operation': 'create',
+              'recordId': createdEvent.id,
+              'url': 'supabase:events:create',
+            },
+            message: 'Immediate upload failed; record stays dirty for retry',
           );
         }
         if (requireRemoteAck) {
@@ -292,11 +287,11 @@ class EventsRepository with SyncableRepository {
 
       return createdEvent;
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to create event',
-        context: 'EVENTS_REPOSITORY',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'EVENTS_REPOSITORY',
+        message: 'Failed to create event',
       );
       rethrow;
     }
@@ -323,18 +318,17 @@ class EventsRepository with SyncableRepository {
         try {
           await _uploadEventToSupabase(eventWithDirtyFlag, 'update');
         } catch (e, stackTrace) {
-          _logger.warning(
-            'Immediate upload failed; record stays dirty for retry',
-            context: 'EVENTS_REPOSITORY',
-            error: e,
-            stackTrace: stackTrace,
-            data: {'operation': 'update', 'recordId': eventWithDirtyFlag.id},
-          );
-          _sentry.reportNetworkError(
+          _report.degraded(
             e,
-            url: 'supabase:events:update',
-            method: 'UPSERT',
             stackTrace: stackTrace,
+            area: 'EVENTS_REPOSITORY',
+            tags: {'method': 'UPSERT'},
+            extra: {
+              'operation': 'update',
+              'recordId': eventWithDirtyFlag.id,
+              'url': 'supabase:events:update',
+            },
+            message: 'Immediate upload failed; record stays dirty for retry',
           );
           rethrow;
         }
@@ -344,18 +338,17 @@ class EventsRepository with SyncableRepository {
           try {
             await _uploadEventToSupabase(eventWithDirtyFlag, 'update');
           } catch (e, stackTrace) {
-            _logger.warning(
-              'Immediate upload failed; record stays dirty for retry',
-              context: 'EVENTS_REPOSITORY',
-              error: e,
-              stackTrace: stackTrace,
-              data: {'operation': 'update', 'recordId': eventWithDirtyFlag.id},
-            );
-            _sentry.reportNetworkError(
+            _report.degraded(
               e,
-              url: 'supabase:events:update',
-              method: 'UPSERT',
               stackTrace: stackTrace,
+              area: 'EVENTS_REPOSITORY',
+              tags: {'method': 'UPSERT'},
+              extra: {
+                'operation': 'update',
+                'recordId': eventWithDirtyFlag.id,
+                'url': 'supabase:events:update',
+              },
+              message: 'Immediate upload failed; record stays dirty for retry',
             );
           }
         }());
@@ -363,11 +356,11 @@ class EventsRepository with SyncableRepository {
 
       return eventWithDirtyFlag;
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to update event',
-        context: 'EVENTS_REPOSITORY',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'EVENTS_REPOSITORY',
+        message: 'Failed to update event',
       );
       rethrow;
     }
@@ -404,9 +397,9 @@ class EventsRepository with SyncableRepository {
         await (_database.delete(
           _database.activitiesTable,
         )..where((tbl) => tbl.id.equals(activityId))).go();
-        _logger.info(
+        _report.info(
           'CASCADE deleted activity $activityId for event $eventId',
-          context: 'EVENTS_REPOSITORY',
+          area: 'EVENTS_REPOSITORY',
         );
       }
 
@@ -422,28 +415,27 @@ class EventsRepository with SyncableRepository {
           try {
             await _uploadEventDeletion(userIdForRemoteDelete, eventId);
           } catch (e, stackTrace) {
-            _logger.warning(
-              'Immediate upload failed; record stays dirty for retry',
-              context: 'EVENTS_REPOSITORY',
-              error: e,
-              stackTrace: stackTrace,
-              data: {'operation': 'delete', 'recordId': eventId},
-            );
-            _sentry.reportNetworkError(
+            _report.degraded(
               e,
-              url: 'supabase:events:delete',
-              method: 'DELETE',
               stackTrace: stackTrace,
+              area: 'EVENTS_REPOSITORY',
+              tags: {'method': 'DELETE'},
+              extra: {
+                'operation': 'delete',
+                'recordId': eventId,
+                'url': 'supabase:events:delete',
+              },
+              message: 'Immediate upload failed; record stays dirty for retry',
             );
           }
         }());
       }
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to delete event',
-        context: 'EVENTS_REPOSITORY',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'EVENTS_REPOSITORY',
+        message: 'Failed to delete event',
       );
       rethrow;
     }
@@ -459,11 +451,11 @@ class EventsRepository with SyncableRepository {
       final events = await query.get();
       return events.map(_mapToEventDomain).toList();
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to get events',
-        context: 'EVENTS_REPOSITORY',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'EVENTS_REPOSITORY',
+        message: 'Failed to get events',
       );
       rethrow;
     }
@@ -483,20 +475,23 @@ class EventsRepository with SyncableRepository {
       final events = await query.get();
 
       if (events.length > 1) {
-        _logger.warning(
-          'Found duplicate events with same ID',
-          context: 'EVENTS_REPOSITORY',
-          data: {'eventId': eventId, 'count': events.length},
+        _report.degraded(
+          LoggedFault(
+            'Found duplicate events with same ID',
+            context: 'EVENTS_REPOSITORY',
+          ),
+          area: 'EVENTS_REPOSITORY',
+          extra: {'eventId': eventId, 'count': events.length},
         );
       }
 
       return events.isNotEmpty ? _mapToEventDomain(events.first) : null;
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to get event by ID',
-        context: 'EVENTS_REPOSITORY',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'EVENTS_REPOSITORY',
+        message: 'Failed to get event by ID',
       );
       rethrow;
     }
@@ -511,11 +506,11 @@ class EventsRepository with SyncableRepository {
       final event = await query.getSingleOrNull();
       return event != null ? _mapToEventDomain(event) : null;
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to get event for activity',
-        context: 'EVENTS_REPOSITORY',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
+        area: 'EVENTS_REPOSITORY',
+        message: 'Failed to get event for activity',
       );
       rethrow;
     }
@@ -549,16 +544,16 @@ class EventsRepository with SyncableRepository {
       final event = await query.getSingleOrNull();
       return event != null ? _mapToEventDomain(event) : null;
     } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to find existing event',
-        context: 'EVENTS_REPOSITORY',
-        error: e,
+      _report.fault(
+        e,
         stackTrace: stackTrace,
-        data: {
+        area: 'EVENTS_REPOSITORY',
+        extra: {
           'userId': userId,
           'eventName': eventName,
           'eventDate': eventDate.toIso8601String(),
         },
+        message: 'Failed to find existing event',
       );
       return null; // Return null on error to allow sync to continue
     }
@@ -607,9 +602,9 @@ class EventsRepository with SyncableRepository {
           .into(_database.eventsTable)
           .insertReturning(companion);
 
-      _logger.debug(
+      _report.debug(
         'Created new event',
-        context: 'EVENTS_REPOSITORY',
+        area: 'EVENTS_REPOSITORY',
         data: {'eventId': insertedRow.id},
       );
 
@@ -655,9 +650,9 @@ class EventsRepository with SyncableRepository {
         _database.eventsTable,
       )..where((tbl) => tbl.id.equals(event.id))).write(companion);
 
-      _logger.debug(
+      _report.debug(
         'Updated existing event',
-        context: 'EVENTS_REPOSITORY',
+        area: 'EVENTS_REPOSITORY',
         data: {'eventId': event.id},
       );
 
@@ -691,9 +686,9 @@ class EventsRepository with SyncableRepository {
       // Insert with explicit UUID from Drift
       await _supabase.from('events').insert(eventData);
 
-      _logger.info(
+      _report.info(
         'Event uploaded to Supabase with UUID',
-        context: 'EVENTS_REPOSITORY',
+        area: 'EVENTS_REPOSITORY',
         data: {'eventId': event.id},
       );
 

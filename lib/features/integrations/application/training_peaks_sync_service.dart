@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import '../../../shared/services/analytics/analytics_tracker.dart';
+import '../../../shared/services/report/decode_issue_report.dart';
 import '../../../shared/services/report/report.dart';
 import 'synced_workout_analytics.dart';
 import '../../activities/data/activities_repository.dart';
@@ -765,6 +766,7 @@ class TrainingPeaksSyncService {
     if (integration.athleteZonesJson != null) {
       final existingZones = AthleteZones.fromJsonString(
         integration.athleteZonesJson,
+        onIssue: _r.decodeIssue('training_peaks'),
       );
       if (existingZones != null) {
         // Consider zones fresh if integration was updated within threshold
@@ -817,8 +819,7 @@ class TrainingPeaksSyncService {
           decoded['fetchedAt'] as String? ?? '',
         );
         if (fetchedAt != null &&
-            DateTime.now().difference(fetchedAt) <
-                _metricsStalenessThreshold) {
+            DateTime.now().difference(fetchedAt) < _metricsStalenessThreshold) {
           return;
         }
       } catch (e) {
@@ -902,7 +903,8 @@ class TrainingPeaksSyncService {
       await _r.degraded(
         expired,
         area: _area,
-        message: 'TrainingPeaks integration has no refresh token; reconnect required',
+        message:
+            'TrainingPeaks integration has no refresh token; reconnect required',
       );
       throw expired;
     }

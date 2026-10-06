@@ -1,8 +1,7 @@
 import 'dart:async';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import '../../../../shared/services/app_external_deps.dart';
 import '../../../../shared/services/analytics/analytics_tracker.dart';
-import '../../../../shared/services/logging_service.dart';
+import '../../../../shared/services/report/report.dart';
 import '../../application/oauth_service.dart';
 import '../../application/email_auth_service.dart';
 import '../../domain/auth_exceptions.dart';
@@ -13,7 +12,7 @@ part 'post_onboarding_auth_controller.g.dart';
 /// Handles native Apple Sign-In, native Google Sign-In, and Email/Password signup
 @riverpod
 class PostOnboardingAuthController extends _$PostOnboardingAuthController {
-  AppLogger get _logger => ref.read(appExternalDepsProvider).logger;
+  Report get _report => ref.read(reportProvider);
   AnalyticsTracker get _analytics => ref.read(analyticsTrackerProvider);
   OAuthService get _oauthService => ref.read(oAuthServiceProvider.notifier);
   EmailAuthService get _emailAuthService =>
@@ -28,10 +27,7 @@ class PostOnboardingAuthController extends _$PostOnboardingAuthController {
   Future<bool> linkAppleAccount() async {
     state = const AsyncLoading();
 
-    _logger.info(
-      'Post-onboarding auth: Starting Apple Sign-In',
-      context: 'AUTH',
-    );
+    _report.info('Post-onboarding auth: Starting Apple Sign-In', area: 'AUTH');
 
     await _analytics.track(
       'auth_flow_started',
@@ -47,19 +43,19 @@ class PostOnboardingAuthController extends _$PostOnboardingAuthController {
 
       // Don't log account exists exception as an error - it's a valid flow
       if (error is AccountAlreadyExistsException) {
-        _logger.info(
+        _report.info(
           'Post-onboarding auth: Apple account already exists',
-          context: 'AUTH',
+          area: 'AUTH',
         );
         await _analytics.track(
           'auth_account_already_exists',
           properties: {'provider': 'apple', 'source': 'post_onboarding'},
         );
       } else {
-        _logger.error(
-          'Post-onboarding auth: Apple Sign-In failed',
-          context: 'AUTH',
-          error: error,
+        _report.fault(
+          error!,
+          area: 'AUTH',
+          message: 'Post-onboarding auth: Apple Sign-In failed',
         );
 
         await _analytics.track(
@@ -72,9 +68,9 @@ class PostOnboardingAuthController extends _$PostOnboardingAuthController {
         );
       }
     } else {
-      _logger.info(
+      _report.info(
         'Post-onboarding auth: Apple Sign-In completed successfully',
-        context: 'AUTH',
+        area: 'AUTH',
       );
 
       await _analytics.track(
@@ -90,10 +86,7 @@ class PostOnboardingAuthController extends _$PostOnboardingAuthController {
   Future<bool> linkGoogleAccount() async {
     state = const AsyncLoading();
 
-    _logger.info(
-      'Post-onboarding auth: Starting Google Sign-In',
-      context: 'AUTH',
-    );
+    _report.info('Post-onboarding auth: Starting Google Sign-In', area: 'AUTH');
 
     await _analytics.track(
       'auth_flow_started',
@@ -109,19 +102,19 @@ class PostOnboardingAuthController extends _$PostOnboardingAuthController {
 
       // Don't log account exists exception as an error - it's a valid flow
       if (error is AccountAlreadyExistsException) {
-        _logger.info(
+        _report.info(
           'Post-onboarding auth: Google account already exists',
-          context: 'AUTH',
+          area: 'AUTH',
         );
         await _analytics.track(
           'auth_account_already_exists',
           properties: {'provider': 'google', 'source': 'post_onboarding'},
         );
       } else {
-        _logger.error(
-          'Post-onboarding auth: Google Sign-In failed',
-          context: 'AUTH',
-          error: error,
+        _report.fault(
+          error!,
+          area: 'AUTH',
+          message: 'Post-onboarding auth: Google Sign-In failed',
         );
 
         await _analytics.track(
@@ -134,9 +127,9 @@ class PostOnboardingAuthController extends _$PostOnboardingAuthController {
         );
       }
     } else {
-      _logger.info(
+      _report.info(
         'Post-onboarding auth: Google Sign-In completed successfully',
-        context: 'AUTH',
+        area: 'AUTH',
       );
 
       await _analytics.track(
@@ -151,9 +144,9 @@ class PostOnboardingAuthController extends _$PostOnboardingAuthController {
   /// Sign in with Apple (replaces current user)
   Future<bool> signInWithApple() async {
     state = const AsyncLoading();
-    _logger.info(
+    _report.info(
       'Post-onboarding auth: Switching to existing Apple account',
-      context: 'AUTH',
+      area: 'AUTH',
     );
 
     state = await AsyncValue.guard(() async {
@@ -164,15 +157,15 @@ class PostOnboardingAuthController extends _$PostOnboardingAuthController {
       // Expected control-flow signal: this Apple identity has no account.
       // The screen turns it into "try the provider you signed up with".
       if (state.error is OAuthAccountNotFoundException) {
-        _logger.info(
+        _report.info(
           'Post-onboarding auth: no existing account for this Apple identity',
-          context: 'AUTH',
+          area: 'AUTH',
         );
       } else {
-        _logger.error(
-          'Post-onboarding auth: Apple Sign-In failed',
-          context: 'AUTH',
-          error: state.error,
+        _report.fault(
+          state.error!,
+          area: 'AUTH',
+          message: 'Post-onboarding auth: Apple Sign-In failed',
         );
       }
     }
@@ -183,9 +176,9 @@ class PostOnboardingAuthController extends _$PostOnboardingAuthController {
   /// Sign in with Google (replaces current user)
   Future<bool> signInWithGoogle() async {
     state = const AsyncLoading();
-    _logger.info(
+    _report.info(
       'Post-onboarding auth: Switching to existing Google account',
-      context: 'AUTH',
+      area: 'AUTH',
     );
 
     state = await AsyncValue.guard(() async {
@@ -196,15 +189,15 @@ class PostOnboardingAuthController extends _$PostOnboardingAuthController {
       // Expected control-flow signal: this Google identity has no account.
       // The screen turns it into "try the provider you signed up with".
       if (state.error is OAuthAccountNotFoundException) {
-        _logger.info(
+        _report.info(
           'Post-onboarding auth: no existing account for this Google identity',
-          context: 'AUTH',
+          area: 'AUTH',
         );
       } else {
-        _logger.error(
-          'Post-onboarding auth: Google Sign-In failed',
-          context: 'AUTH',
-          error: state.error,
+        _report.fault(
+          state.error!,
+          area: 'AUTH',
+          message: 'Post-onboarding auth: Google Sign-In failed',
         );
       }
     }
@@ -219,9 +212,9 @@ class PostOnboardingAuthController extends _$PostOnboardingAuthController {
   }) async {
     state = const AsyncLoading();
 
-    _logger.info(
+    _report.info(
       'Post-onboarding auth: Starting email account creation',
-      context: 'AUTH',
+      area: 'AUTH',
     );
 
     await _analytics.track(
@@ -240,17 +233,17 @@ class PostOnboardingAuthController extends _$PostOnboardingAuthController {
       // Pending verification is a routing signal, not a failure — the caller
       // inspects state.error and pushes the verify-code screen.
       if (state.error is EmailVerificationRequiredException) {
-        _logger.info(
+        _report.info(
           'Post-onboarding auth: email link pending verification',
-          context: 'AUTH',
+          area: 'AUTH',
         );
         return false;
       }
 
-      _logger.error(
-        'Post-onboarding auth: Email account creation failed',
-        context: 'AUTH',
-        error: state.error,
+      _report.fault(
+        state.error!,
+        area: 'AUTH',
+        message: 'Post-onboarding auth: Email account creation failed',
       );
 
       await _analytics.track(
@@ -262,9 +255,9 @@ class PostOnboardingAuthController extends _$PostOnboardingAuthController {
         },
       );
     } else {
-      _logger.info(
+      _report.info(
         'Post-onboarding auth: Email account created successfully',
-        context: 'AUTH',
+        area: 'AUTH',
       );
 
       await _analytics.track(
@@ -284,9 +277,9 @@ class PostOnboardingAuthController extends _$PostOnboardingAuthController {
   }) async {
     state = const AsyncLoading();
 
-    _logger.info(
+    _report.info(
       'Post-onboarding auth: Starting email signup (new user)',
-      context: 'AUTH',
+      area: 'AUTH',
     );
 
     await _analytics.track(
@@ -301,17 +294,17 @@ class PostOnboardingAuthController extends _$PostOnboardingAuthController {
     if (state.hasError) {
       // Pending verification is a routing signal, not a failure.
       if (state.error is EmailVerificationRequiredException) {
-        _logger.info(
+        _report.info(
           'Post-onboarding auth: email signup pending verification',
-          context: 'AUTH',
+          area: 'AUTH',
         );
         return false;
       }
 
-      _logger.error(
-        'Post-onboarding auth: Email signup failed',
-        context: 'AUTH',
-        error: state.error,
+      _report.fault(
+        state.error!,
+        area: 'AUTH',
+        message: 'Post-onboarding auth: Email signup failed',
       );
 
       await _analytics.track(
@@ -323,9 +316,9 @@ class PostOnboardingAuthController extends _$PostOnboardingAuthController {
         },
       );
     } else {
-      _logger.info(
+      _report.info(
         'Post-onboarding auth: Email signup successful',
-        context: 'AUTH',
+        area: 'AUTH',
       );
 
       await _analytics.track(
@@ -344,10 +337,7 @@ class PostOnboardingAuthController extends _$PostOnboardingAuthController {
   }) async {
     state = const AsyncLoading();
 
-    _logger.info(
-      'Post-onboarding auth: Starting email sign in',
-      context: 'AUTH',
-    );
+    _report.info('Post-onboarding auth: Starting email sign in', area: 'AUTH');
 
     await _analytics.track(
       'auth_flow_started',
@@ -359,10 +349,10 @@ class PostOnboardingAuthController extends _$PostOnboardingAuthController {
     });
 
     if (state.hasError) {
-      _logger.error(
-        'Post-onboarding auth: Email sign in failed',
-        context: 'AUTH',
-        error: state.error,
+      _report.fault(
+        state.error!,
+        area: 'AUTH',
+        message: 'Post-onboarding auth: Email sign in failed',
       );
 
       await _analytics.track(
@@ -374,9 +364,9 @@ class PostOnboardingAuthController extends _$PostOnboardingAuthController {
         },
       );
     } else {
-      _logger.info(
+      _report.info(
         'Post-onboarding auth: Email sign in successful',
-        context: 'AUTH',
+        area: 'AUTH',
       );
 
       await _analytics.track(
@@ -390,9 +380,9 @@ class PostOnboardingAuthController extends _$PostOnboardingAuthController {
 
   /// Track when user skips authentication
   Future<void> skipAuthentication() async {
-    _logger.info(
+    _report.info(
       'Post-onboarding auth: User skipped authentication',
-      context: 'AUTH',
+      area: 'AUTH',
     );
 
     await _analytics.track(

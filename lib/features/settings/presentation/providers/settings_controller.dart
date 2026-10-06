@@ -24,6 +24,7 @@ import '../../../feedback/data/feedback_repository.dart';
 import '../../../food_preferences/data/food_preferences_repository.dart';
 import '../../../meal_logging/data/meal_log_repository.dart';
 import '../../../meal_logging/data/saved_meals_repository.dart';
+import '../../../../shared/data/syncable_repository.dart';
 import '../../../nutrition_plan/presentation/providers/macro_targets_controller.dart';
 import '../../../onboarding/application/onboarding_snapshot_service.dart';
 import '../../domain/settings_state.dart';
@@ -743,7 +744,7 @@ class SettingsController extends _$SettingsController {
     // Capture all dependencies BEFORE signOut (which disposes this controller)
     final supabaseClient = ref.read(appExternalDepsProvider).supabaseClient;
     final analytics = ref.read(appExternalDepsProvider).analytics;
-    final logger = ref.read(appExternalDepsProvider).logger;
+    final report = ref.read(reportProvider);
     final prefs = ref.read(sharedPreferencesProvider);
 
     // Track sign out event
@@ -758,7 +759,7 @@ class SettingsController extends _$SettingsController {
         await _uploadDirtyBeforeLogout(currentUser.id);
       } catch (e) {
         // Log error but continue with sign-out
-        logger.error('Pre-logout upload failed', context: 'SETTINGS', error: e);
+        report.fault(e, area: 'SETTINGS', message: 'Pre-logout upload failed');
       }
     }
 
@@ -779,6 +780,7 @@ class SettingsController extends _$SettingsController {
   /// Upload dirty records from all repositories before logout.
   /// Uses Future.wait for parallel uploads - fast and targeted.
   Future<void> _uploadDirtyBeforeLogout(String userId) async {
+    final report = ref.read(reportProvider);
     final activitiesRepo = ref.read(activitiesRepositoryProvider);
     final eventsRepo = ref.read(eventsRepositoryProvider);
     final carbLoadingRepo = ref.read(carbLoadingRepositoryProvider);
@@ -791,16 +793,33 @@ class SettingsController extends _$SettingsController {
     final mealLogRepo = ref.read(mealLogRepositoryProvider);
     final savedMealsRepo = ref.read(savedMealsRepositoryProvider);
 
-    await Future.wait([
-      activitiesRepo.uploadDirtyRecords(userId),
-      eventsRepo.uploadDirtyRecords(userId),
-      carbLoadingRepo.uploadDirtyRecords(userId),
-      feedbackRepo.uploadDirtyRecords(userId),
-      foodPrefsRepo.uploadDirtyRecords(userId),
-      userRepo.uploadDirtyRecords(userId),
-      mealLogRepo.uploadDirtyRecords(userId),
-      savedMealsRepo.uploadDirtyRecords(userId),
-    ]);
+    final repos = <SyncableRepository>[
+      activitiesRepo,
+      eventsRepo,
+      carbLoadingRepo,
+      feedbackRepo,
+      foodPrefsRepo,
+      userRepo,
+      mealLogRepo,
+      savedMealsRepo,
+    ];
+
+    final results = await Future.wait(
+      repos.map((repo) => repo.uploadDirtyRecords(userId)),
+    );
+
+    for (var i = 0; i < repos.length; i++) {
+      final result = results[i];
+      if (result.success) continue;
+      report.fault(
+        LoggedFault(
+          'Pre-logout upload failed for ${repos[i].repositoryKey}',
+          context: 'SETTINGS',
+        ),
+        area: 'SETTINGS',
+        extra: {'repository': repos[i].repositoryKey, 'error': result.error},
+      );
+    }
   }
 
   /// Delete the current user account
@@ -812,7 +831,7 @@ class SettingsController extends _$SettingsController {
     state = await AsyncValue.guard(() async {
       final supabaseClient = ref.read(appExternalDepsProvider).supabaseClient;
       final analytics = ref.read(appExternalDepsProvider).analytics;
-      final logger = ref.read(appExternalDepsProvider).logger;
+      final report = ref.read(reportProvider);
       final database = ref.read(appDatabaseProvider);
       final currentUserId = supabaseClient.auth.currentUser?.id;
 
@@ -826,7 +845,7 @@ class SettingsController extends _$SettingsController {
       // If authenticated, call the delete-user Edge Function
       // This deletes from both auth.users and public.users (with CASCADE)
       try {
-        logger.info('Calling delete-user Edge Function', context: 'SETTINGS');
+        report.info('Calling delete-user Edge Function', area: 'SETTINGS');
 
         final response = await supabaseClient.functions.invoke(
           'delete-user',
@@ -837,23 +856,26 @@ class SettingsController extends _$SettingsController {
         if (response.status != 200) {
           final errorData = response.data;
           final errorMessage = errorData?['message'] ?? 'Unknown error';
-          logger.error(
-            'delete-user Edge Function failed',
-            context: 'SETTINGS',
-            data: {'status': response.status, 'message': errorMessage},
+          report.fault(
+            LoggedFault(
+              'delete-user Edge Function failed',
+              context: 'SETTINGS',
+            ),
+            area: 'SETTINGS',
+            extra: {'status': response.status, 'message': errorMessage},
           );
           // Continue with local cleanup even if server deletion fails
         } else {
-          logger.info(
+          report.info(
             'User deleted from Supabase successfully',
-            context: 'SETTINGS',
+            area: 'SETTINGS',
           );
         }
       } catch (e) {
-        logger.error(
-          'Error calling delete-user Edge Function',
-          context: 'SETTINGS',
-          error: e,
+        report.fault(
+          e,
+          area: 'SETTINGS',
+          message: 'Error calling delete-user Edge Function',
         );
         // Continue with local cleanup even if edge function call fails
       }

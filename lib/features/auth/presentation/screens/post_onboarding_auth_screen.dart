@@ -368,32 +368,32 @@ class _PostOnboardingAuthScreenState
   }
 
   Future<void> _handleEmailSignUp() async {
-    final logger = ref.read(appExternalDepsProvider).logger;
+    final report = ref.read(reportProvider);
 
     // Navigate to email signup screen
-    logger.info('Navigating to email signup screen', context: 'NAV');
+    report.info('Navigating to email signup screen', area: 'NAV');
     final result = await context.push('/auth/email-signup');
 
-    logger.info(
+    report.info(
       'Email signup returned',
-      context: 'NAV',
+      area: 'NAV',
       data: {'result': result, 'mounted': mounted},
     );
 
     // If email signup successful, save onboarding data and navigate to main app
     if (result == true && mounted) {
-      logger.info(
+      report.info(
         'Email signup successful, saving onboarding data',
-        context: 'NAV',
+        area: 'NAV',
       );
       await _saveOnboardingDataAndNavigate(
         authProvider: 'email',
         isAnonymous: false,
       );
     } else {
-      logger.info(
+      report.info(
         'Email signup did not return true or widget unmounted',
-        context: 'NAV',
+        area: 'NAV',
         data: {'result': result, 'mounted': mounted},
       );
     }
@@ -462,7 +462,6 @@ class _PostOnboardingAuthScreenState
     String authProvider = 'anonymous',
     bool isAnonymous = true,
   }) async {
-    final logger = ref.read(appExternalDepsProvider).logger;
     final report = ref.read(reportProvider);
     final onboardingController = ref.read(
       onboardingControllerProvider.notifier,
@@ -494,9 +493,9 @@ class _PostOnboardingAuthScreenState
       if (!mounted) return;
 
       if (existingUser != null) {
-        logger.info(
+        report.info(
           'Upgrading an already-onboarded account — skipping onboarding save',
-          context: 'NAV',
+          area: 'NAV',
           data: {'authProvider': authProvider, 'userId': existingUser.id},
         );
 
@@ -519,9 +518,9 @@ class _PostOnboardingAuthScreenState
       // so saveAllOnboardingData reports the failure to the user.
     }
 
-    logger.info(
+    report.info(
       'Starting saveAllOnboardingData',
-      context: 'NAV',
+      area: 'NAV',
       data: {'authProvider': authProvider, 'isAnonymous': isAnonymous},
     );
 
@@ -531,16 +530,16 @@ class _PostOnboardingAuthScreenState
       isAnonymous: isAnonymous,
     );
 
-    logger.info(
+    report.info(
       'saveAllOnboardingData completed',
-      context: 'NAV',
+      area: 'NAV',
       data: {'success': success, 'mounted': mounted},
     );
 
     if (!mounted) {
-      logger.info(
+      report.info(
         'Widget unmounted after save, aborting navigation',
-        context: 'NAV',
+        area: 'NAV',
       );
       return;
     }
@@ -549,9 +548,9 @@ class _PostOnboardingAuthScreenState
       // Get current user ID for background sync
       final currentUser = await authService.getCurrentUser();
 
-      logger.info(
+      report.info(
         'Navigating to /main',
-        context: 'NAV',
+        area: 'NAV',
         data: {'hasUser': currentUser != null, 'userId': currentUser?.id},
       );
 

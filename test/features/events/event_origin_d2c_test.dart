@@ -14,10 +14,10 @@ import 'package:mealvana_endurance/features/coach_mode/data/coach_repository.dar
 import 'package:mealvana_endurance/features/events/application/events_service.dart';
 import 'package:mealvana_endurance/features/events/data/events_repository.dart';
 import 'package:mealvana_endurance/features/events/domain/event.dart';
-import 'package:mealvana_endurance/shared/database/app_database.dart' hide Event;
+import 'package:mealvana_endurance/shared/database/app_database.dart'
+    hide Event;
 import 'package:mealvana_endurance/shared/domain/activity_type.dart';
 
-import '../../helpers/widget_test_harness.dart';
 
 class _MockEventsRepository extends Mock implements EventsRepository {}
 
@@ -26,15 +26,15 @@ class _MockActivitiesService extends Mock implements ActivitiesService {}
 class _MockCoachRepository extends Mock implements CoachRepository {}
 
 Event _event({String? origin}) => Event(
-      id: 'e1',
-      userId: 'u1',
-      eventType: ActivityType.running,
-      eventName: 'City Marathon',
-      eventDate: DateTime(2026, 10, 12),
-      origin: origin,
-      createdAt: DateTime(2026, 9, 1),
-      updatedAt: DateTime(2026, 9, 1),
-    );
+  id: 'e1',
+  userId: 'u1',
+  eventType: ActivityType.running,
+  eventName: 'City Marathon',
+  eventDate: DateTime(2026, 10, 12),
+  origin: origin,
+  createdAt: DateTime(2026, 9, 1),
+  updatedAt: DateTime(2026, 9, 1),
+);
 
 /// The dedupe-flip rule as implemented at both import sites
 /// (connect_training_controller: TP events + FS race candidates): only a
@@ -45,12 +45,11 @@ String? dedupeOrigin(Event existing, String provider) =>
 /// The edit-flip rule as implemented in EventsService.updateEvent.
 String? editOrigin(Event event) =>
     (event.origin == 'training_peaks' || event.origin == 'final_surge')
-        ? 'manual'
-        : event.origin;
+    ? 'manual'
+    : event.origin;
 
 void main() {
-  test('a legacy (null-origin) row flips to the provider on dedupe-match',
-      () {
+  test('a legacy (null-origin) row flips to the provider on dedupe-match', () {
     expect(dedupeOrigin(_event(), 'training_peaks'), 'training_peaks');
     expect(dedupeOrigin(_event(), 'final_surge'), 'final_surge');
   });
@@ -66,8 +65,9 @@ void main() {
   test('re-sync exemption: a manual-flipped row is never flipped back by a '
       'later dedupe-match', () {
     // The athlete edited a TP-imported event -> manual.
-    final edited = _event(origin: 'training_peaks')
-        .copyWith(origin: editOrigin(_event(origin: 'training_peaks')));
+    final edited = _event(
+      origin: 'training_peaks',
+    ).copyWith(origin: editOrigin(_event(origin: 'training_peaks')));
     expect(edited.origin, 'manual');
     // The next TP import dedupe-matches the same event: origin stands.
     expect(dedupeOrigin(edited, 'training_peaks'), 'manual');
@@ -84,7 +84,9 @@ void main() {
     final db = AppDatabase.forTesting(NativeDatabase.memory());
     addTearDown(db.close);
 
-    await db.into(db.eventsTable).insert(
+    await db
+        .into(db.eventsTable)
+        .insert(
           EventsTableCompanion.insert(
             id: const Value('ev-fs'),
             userId: 'u1',
@@ -99,7 +101,6 @@ void main() {
 
     final service = EventsService(
       db,
-      MockAppLogger(),
       _MockEventsRepository(),
       _MockActivitiesService(),
       _MockCoachRepository(),
