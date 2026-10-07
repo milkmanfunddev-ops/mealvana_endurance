@@ -97,6 +97,9 @@ so.
   with the mobile MCP on `UDID`; `idb ui tap X Y --udid UDID` is the fallback.
 - Scroll with slow idb drags (`idb ui swipe X1 Y1 X2 Y2 --duration 1.2 --udid UDID`) whenever the
   run counts rows or list items: the mobile MCP's swipe flings past them (#43).
+- The dev overlay buttons (red accessibility, blue testing tools, x ~367, y ~695 and ~756) sit on
+  the Timeline rows' ⋯ and the Recipes rows' +: scroll a row out of y 650-790 before tapping its
+  menu, and read the tap target back from the element list (#98).
 - Type text with the mobile MCP; `idb ui text "<text>" --udid UDID` is the fallback (it once
   mangled a long address, #35). After `idb ui text`, wait 2 s before tapping the next field and
   read the value back: a tap sooner drops the tail. Backspace deletes forward from the tap point,

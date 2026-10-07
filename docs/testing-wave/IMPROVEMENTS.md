@@ -34,6 +34,7 @@ Their dates come from the wave each entry names.
   Recipes rows' +; 113 made three stray taps. Suggested fix: runbook step 5 says to scroll a row
   out of y 650-790 before tapping its ⋯.
   Ruled 2026-09-26 (Lee): the dev buttons fold into one small button at the top edge (ticket 141).
+  2026-10-07 (develop-2026-10, wave 1): the runbook line (step 5, scroll the row out of y 650-790) is in; the folded button (ticket 141) is a mealplanning change not on develop-next, so the item stays open until Phase B merges it.
 - 2026-09-26 · mealplanning-2026-09 · open · **#100 the password's last character still showed 3 s after `CRED type` (ticket 142's proof).**
   Even with the new 2 s wait, a screenshot 0.2 s after tapping Log In (about 3 s after typing) showed
   the last character of the throwaway's password next to the dots, on the "Logging in..." screen.
@@ -48,6 +49,7 @@ Their dates come from the wave each entry names.
   `.claude/skills/notification-testing/` is missing on develop-next although CLAUDE.md requires it
   before touching notifications; restore or fix CLAUDE.md. A round ticket that reaches nudges or
   push surfaces has nothing to read first until then.
+  2026-10-07 (develop-2026-10, wave 1): the skill is in no branch's history (`git log --all -- .claude/skills/notification-testing` is empty) and `../ops/docs/messaging-relay-and-testing.md` does not exist on this Mac; CLAUDE.md points at files that were never committed. Ticket 17 waits for Lee to say where they live (or for CLAUDE.md to drop the rule).
 
 ## Done
 
