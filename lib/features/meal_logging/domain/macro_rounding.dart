@@ -2,7 +2,7 @@
 ///
 /// Scaling a quick log by 1.5 servings multiplies doubles, and the product
 /// carries float noise (60.449999999999996, 0.6000000000000001) into the
-/// row and on to the server, coach views and Vana. Every scaled item and
+/// row and on to the server and coach views. Every scaled item and
 /// every summed total is rounded here before the write: macros to one
 /// decimal, sodium to a whole milligram. Unknown stays unknown (`null ≠ 0`).
 library;
