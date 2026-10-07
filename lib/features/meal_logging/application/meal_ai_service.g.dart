@@ -48,4 +48,4 @@ final class MealAiServiceProvider
   }
 }
 
-String _$mealAiServiceHash() => r'1257da01ae91e78d9a0a7bb96dd95fd0004b21dc';
+String _$mealAiServiceHash() => r'7db4a892f13d4379fba401c899a303d888871190';

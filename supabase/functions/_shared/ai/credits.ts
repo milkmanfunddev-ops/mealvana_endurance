@@ -26,18 +26,15 @@ import { captureEdgeError } from '../sentry.ts';
 export const CREDITS_ENFORCED = Deno.env.get('AI_CREDITS_ENFORCED') === 'true';
 
 /**
- * Free credits granted once per calendar month.
+ * Free credits granted once per calendar month: 50 whole tokens.
  *
- * 20 is the figure the pricing model is built on ("AI Features — Cost
- * Accounting & Token Pricing" §5): at Sonnet 4.6's worst case of ~$0.013 per
- * analysis it costs ≤ $0.26 per user per month, and it sits below the ~30
- * analyses/month a daily meal-logger runs, so the packs have a reason to exist.
- *
- * Scale this with the model, not with generosity. Dev ran at 500 for a while,
- * which is $6.50/user/month at Sonnet rates — more than the $4.99 pack itself,
- * and enough that no user would ever need to buy one.
+ * Lee's ruling of 2026-10-07 (round develop-2026-10, ticket 23): "tokens that
+ * start at 50 and go down to 0 ... people can purchase token packs." A new
+ * account starts at 50; each describe, photo and formula-kit model call costs
+ * 1 (DEFAULT_COSTS below). The grant is added on the first ensure of each
+ * calendar month, on top of any balance. The env var overrides it per project.
  */
-export const FREE_MONTHLY_CREDITS = intEnv('AI_FREE_MONTHLY_CREDITS', 20);
+export const FREE_MONTHLY_CREDITS = intEnv('AI_FREE_MONTHLY_CREDITS', 50);
 
 /** Per-action credit cost. User-facing credits, NOT raw LLM tokens — the real
  *  token cost is tracked separately in ai_usage. Tune freely. */

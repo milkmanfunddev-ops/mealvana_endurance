@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
+import '../../ai_credits/application/credits_controller.dart';
 import '../../ai_credits/domain/insufficient_credits_exception.dart';
 import '../../ai_credits/presentation/insufficient_credits_paywall.dart';
 import '../../../shared/services/app_external_deps.dart';
@@ -58,12 +59,15 @@ class CoachInsightController extends _$CoachInsightController {
   /// );
   /// ```
   ///
-  /// TODO: adopt the same [InsufficientCreditsException] catch pattern in:
-  ///  - `lib/features/_archived/ai_coach/data/ai_coach_chat_repository.dart`
-  ///    (jade-chat edge function, HTTP 402; archived 2026-10-07, so only if
-  ///    it is restored)
-  ///  - describe-meal client (describe-meal edge function, HTTP 402)
-  ///  - analyze-meal-photo client (analyze-meal-photo edge function, HTTP 402)
+  /// **Credits refresh** (round develop-2026-10, ticket 23): after a model
+  /// answer (the function debited 1 before answering) or a 402, the credits
+  /// balance is re-read so the token pill moves. A rules answer costs nothing
+  /// and refreshes nothing.
+  ///
+  /// TODO: adopt the same [InsufficientCreditsException] catch pattern in
+  /// `lib/features/_archived/ai_coach/data/ai_coach_chat_repository.dart`
+  /// (jade-chat edge function, HTTP 402; archived 2026-10-07, so only if it is
+  /// restored).
   Future<void> generate(
     CoachInsightContext context, {
     String trigger = 'initial',
@@ -72,6 +76,9 @@ class CoachInsightController extends _$CoachInsightController {
     final client = ref.read(aiCoachClientProvider);
     final repo = ref.read(personalFormulasRepositoryProvider);
     final report = ref.read(reportProvider);
+    // Read before the async gap: this notifier may be disposed by the time the
+    // answer lands, and CreditsController (keepAlive) outlives it.
+    final credits = ref.read(creditsControllerProvider.notifier);
     final fid = formulaId;
     await track('coach_insight_requested', {
       'phase': context.phase.analyticsValue,
@@ -121,6 +128,23 @@ class CoachInsightController extends _$CoachInsightController {
       return insight;
     });
     if (ref.mounted) state = result;
+
+    final spent =
+        result.value?.generationSource == 'model' ||
+        result.error is InsufficientCreditsException;
+    if (spent) {
+      try {
+        await credits.refresh();
+      } catch (e, st) {
+        // The pill keeps its old number until the next refresh; record it.
+        await report.degraded(
+          e,
+          stackTrace: st,
+          area: 'formula_kit',
+          message: 'credits refresh after coach insight failed',
+        );
+      }
+    }
 
     // If the call failed because the user is out of AI credits, surface the
     // buy-credits paywall. The error also stays in [state] so the panel can

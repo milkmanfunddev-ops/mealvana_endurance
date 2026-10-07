@@ -327,10 +327,10 @@ serve(withSentry("ai-coach", async (req: Request) => {
         costUsd,
       }),
     );
-    // deno-lint-ignore no-explicit-any
-    (globalThis as any).EdgeRuntime?.waitUntil?.(
-      debitForUsage(serviceClient, user.id, "ai-coach"),
-    );
+    // The debit is awaited, not handed to waitUntil, so the balance is final
+    // by the time the client hears 200 and refreshes its pill (round
+    // develop-2026-10, ticket 23). debitForUsage never throws.
+    await debitForUsage(serviceClient, user.id, "ai-coach");
 
     return jsonResponse({
       insight,

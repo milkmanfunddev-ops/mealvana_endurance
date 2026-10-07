@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
@@ -5,6 +6,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 
+import '../../ai_credits/application/credits_controller.dart';
 import '../../ai_credits/domain/insufficient_credits_exception.dart';
 import '../../../shared/services/report/report.dart';
 import '../../../shared/services/supabase/supabase_client_provider.dart';
@@ -72,9 +74,14 @@ class MealPhotoAnalysis {
 
 @riverpod
 MealAiService mealAiService(Ref ref) {
+  // The notifier is read here, not inside the callback: screens `ref.read`
+  // this autoDispose provider, so its ref is gone by the time a call returns.
+  // CreditsController is keepAlive, so the notifier outlives every call.
+  final credits = ref.read(creditsControllerProvider.notifier);
   return MealAiService(
     supabase: ref.watch(supabaseClientProvider),
     report: ref.watch(reportProvider),
+    onCreditsChanged: credits.refresh,
   );
 }
 
@@ -88,12 +95,21 @@ MealAiService mealAiService(Ref ref) {
 /// [MealAiException.userMessage] and a discriminated [MealAiFailureKind] so
 /// the presentation layer can branch on the error type without string-matching.
 class MealAiService {
-  MealAiService({required SupabaseClient supabase, Report? report})
-    : _supabase = supabase,
-      _report = report;
+  MealAiService({
+    required SupabaseClient supabase,
+    Report? report,
+    Future<void> Function()? onCreditsChanged,
+  }) : _supabase = supabase,
+       _report = report,
+       _onCreditsChanged = onCreditsChanged;
 
   final SupabaseClient _supabase;
   final Report? _report;
+
+  /// Re-reads the credit balance after the server may have changed it: a 200
+  /// (the function debited before answering) or a 402 (the balance the pill
+  /// shows was stale). Fire-and-forget; the analysis result never waits on it.
+  final Future<void> Function()? _onCreditsChanged;
   Report get _r => _report ?? SentryReport.global;
   static const _uuid = Uuid();
   static const _area = 'meal_logging';
@@ -299,6 +315,7 @@ class MealAiService {
     // 402 → out of AI credits. Throw the typed exception so the presentation
     // layer can route the user to the buy-credits paywall.
     if (response.status == 402) {
+      _creditsChanged(functionName);
       throw _insufficientCreditsFrom(response.data);
     }
 
@@ -316,6 +333,9 @@ class MealAiService {
         debugMessage: '$functionName returned status ${response.status}',
       );
     }
+
+    // 200: the function debited before answering, so the balance is final.
+    _creditsChanged(functionName);
 
     try {
       final data = response.data as Map<String, dynamic>;
@@ -353,6 +373,7 @@ class MealAiService {
     // 402 → out of AI credits. Throw the typed exception (this method's callers
     // `throw` its result, so throwing here propagates identically).
     if (e.status == 402) {
+      _creditsChanged(functionName);
       throw _insufficientCreditsFrom(e.details);
     }
 
@@ -371,6 +392,30 @@ class MealAiService {
       userMessage: 'The AI service returned an error. Please try again.',
       debugMessage: 'FunctionException ${e.status} from $functionName: $e',
     );
+  }
+
+  /// Kick off the credits refresh without waiting on it.
+  void _creditsChanged(String functionName) {
+    final refresh = _onCreditsChanged;
+    if (refresh == null) return;
+    unawaited(_refreshCredits(refresh, functionName));
+  }
+
+  Future<void> _refreshCredits(
+    Future<void> Function() refresh,
+    String functionName,
+  ) async {
+    try {
+      await refresh();
+    } catch (e, st) {
+      // The pill keeps its old number until the next refresh; record it.
+      await _r.degraded(
+        e,
+        stackTrace: st,
+        area: _area,
+        message: 'credits refresh after $functionName failed',
+      );
+    }
   }
 
   /// Build an [InsufficientCreditsException] from a 402 response body.

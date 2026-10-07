@@ -295,6 +295,12 @@ class ContentKeys {
   static const String learnOfflineMessage = 'learn.offline_message';
   static const String learnRetry = 'learn.retry';
 
+  // Out of AI credits dialog (testing-wave develop-2026-10 ticket 23: 02-001)
+  static const String aiCreditsOutTitle = 'ai_credits.out_title';
+  static const String aiCreditsOutBody = 'ai_credits.out_body';
+  static const String aiCreditsOutNotNow = 'ai_credits.out_not_now';
+  static const String aiCreditsOutGetCredits = 'ai_credits.out_get_credits';
+
   /// Interpolates `{name}` placeholders in a content value:
   /// `format('Give me {n} seconds', {'n': 30})`. (From mealplanning 7b206f04;
   /// the code screens' countdown reads it.)
