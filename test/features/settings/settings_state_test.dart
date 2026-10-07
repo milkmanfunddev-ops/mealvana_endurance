@@ -146,16 +146,10 @@ void main() {
     // so passing null for firstName PRESERVES the existing name at the
     // SettingsState layer.
     //
-    // HOWEVER, the controller's saveAllPreferences passes:
-    //   firstName: firstName,   // ← passed directly, not firstName ?? currentState.firstName
-    //   lastName: lastName,
-    //
-    // Because SettingsState.copyWith guards with ??, calling
-    // saveAllPreferences() without name args does NOT clear state-level name.
-    //
-    // The potential bug is if a future refactor were to pass name fields to
-    // SettingsState.copyWith differently. These tests pin the current safe
-    // behavior.
+    // saveAllPreferences() without name args therefore keeps the state-level
+    // name. Clearing a name is an empty string, not null (31-004); that path
+    // is pinned through the real screen in
+    // presentation/screens/preferences_clear_text_fields_test.dart.
 
     test(
       'SettingsState.copyWith with null firstName preserves existing firstName',

@@ -711,6 +711,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   }
 
   Widget _buildQuickLinksSection(BuildContext context) {
+    final content = ref.watch(contentServiceProvider);
     return BaseCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -720,8 +721,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             context: context,
             rowKey: const ValueKey('settings.profile_row'),
             icon: FontAwesomeIcons.user.data,
-            title: 'Profile & Preferences',
-            subtitle: 'Edit your profile, units, and preferences',
+            title: content.getValue(
+              ContentKeys.settingsProfilePreferencesTitle,
+            ),
+            subtitle: content.getValue(
+              ContentKeys.settingsProfilePreferencesSubtitle,
+            ),
             onTap: () {
               final analytics = ref.read(appExternalDepsProvider);
               analytics.analytics.track('settings_preferences_tapped');

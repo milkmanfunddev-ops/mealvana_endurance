@@ -186,7 +186,9 @@
     "sign_out_unsynced_kept": "You're offline, so your unsynced changes stay on this phone and sync the next time you sign in.",
     "delete_needs_connection": "Deleting your account needs a connection. Nothing was deleted; try again when you're online.",
     "connection_reconnect_button": "Reconnect",
-    "connection_needs_reconnect": "Sign in again to keep your workouts syncing."
+    "connection_needs_reconnect": "Sign in again to keep your workouts syncing.",
+    "profile_preferences_title": "Profile & Preferences",
+    "profile_preferences_subtitle": "Edit your profile, units, and preferences"
   },
   "cycling_preferences": {
     "ftp_label": "FTP (Functional Threshold Power)",
@@ -329,5 +331,12 @@
     "garmin_sync_note": "Garmin syncs automatically when your watch uploads to Garmin Connect. Tap Sync Now to pull any activities that arrived while the app was closed.",
     "reconnect_notice": "{provider} needs you to sign in again to keep syncing.",
     "reconnect_notice_action": "Reconnect"
+  },
+  "profile_edit": {
+    "email_login_label": "Your login email",
+    "discard_title": "Discard changes?",
+    "discard_body": "Your edits to your profile will be lost.",
+    "discard": "Discard",
+    "keep_editing": "Keep editing"
   }
 }

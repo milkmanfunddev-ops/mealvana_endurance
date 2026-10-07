@@ -119,6 +119,13 @@ class ContentKeys {
       'settings.sign_out_confirm_title';
   static const String settingsSignOutConfirmBody =
       'settings.sign_out_confirm_body';
+  // The Profile & Preferences screen's own title (31-014): the settings
+  // screen, not onboarding's "Tell us about yourself".
+  static const String settingsProfilePreferencesTitle =
+      'settings.profile_preferences_title';
+  // The Settings tile that opens it: same title, its own subtitle.
+  static const String settingsProfilePreferencesSubtitle =
+      'settings.profile_preferences_subtitle';
   static const String settingsSignOutConfirmAction =
       'settings.sign_out_confirm_action';
   static const String settingsConfirmCancel = 'settings.confirm_cancel';
@@ -210,6 +217,15 @@ class ContentKeys {
   // Success Messages
   static const String successFeedbackSubmitted = 'success.feedback_submitted';
   static const String successProfileSaved = 'success.profile_saved';
+
+  // Profile & Preferences (testing-wave 138: 119-002 read-only email,
+  // 119-010 Discard changes? on leaving)
+  static const String profileEditEmailLoginLabel =
+      'profile_edit.email_login_label';
+  static const String profileEditDiscardTitle = 'profile_edit.discard_title';
+  static const String profileEditDiscardBody = 'profile_edit.discard_body';
+  static const String profileEditDiscard = 'profile_edit.discard';
+  static const String profileEditKeepEditing = 'profile_edit.keep_editing';
 
   // Connected apps (testing-wave 138: 118-007 Reconnect notice, 119-008
   // the Garmin note names Sync Now)
