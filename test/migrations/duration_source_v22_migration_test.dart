@@ -41,10 +41,10 @@ void main() {
       expect(col.single.read<String>('type').toUpperCase(), 'TEXT');
     });
 
-    test('schemaVersion is 22', () async {
+    test('schemaVersion is at least 22', () async {
       final db = AppDatabase.memory();
       addTearDown(db.close);
-      expect(db.schemaVersion, 22);
+      expect(db.schemaVersion, greaterThanOrEqualTo(22));
     });
 
     test('a row written without it reads back NULL, i.e. authoritative',

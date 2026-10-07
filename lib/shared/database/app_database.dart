@@ -314,7 +314,15 @@ class AppDatabase extends _$AppDatabase {
   /// app_config.current_schema_version must be bumped to 20 when the build
   /// carrying this ships. NOTE: on develop, Vana holds v21 — nothing of Vana
   /// may live at or below v20.
-  int get schemaVersion => 22;
+  ///
+  /// v23: `activities.completion_type`, the local mirror of the existing
+  /// Supabase column (default 'manual'). A FinalSurge workout the platform
+  /// reports done is stored with 'provider' so the card can show it verified
+  /// (mealplanning testing-wave ticket 99, backported by develop-2026-10
+  /// ticket 29 with mealplanning's number). Nullable; null reads as manual.
+  /// Supabase app_config.current_schema_version must be bumped to 23 when
+  /// the build carrying this ships.
+  int get schemaVersion => 23;
 
   /// Ensure sync tracking columns exist for user-authored tables.
   /// Uses ALTER TABLE IF NOT EXISTS which is supported in modern SQLite (3.35+).
@@ -656,6 +664,17 @@ class AppDatabase extends _$AppDatabase {
           // P3 (ruled 2026-09-30): provenance for an importer-derived duration.
           // Written only as 'estimated'; NULL means authoritative, so nothing
           // needs back-filling and no existing row changes meaning.
+          await addColumn('activities', 'duration_source', 'TEXT');
+        }
+
+        // v23: who completed a workout (manual mark-done vs a platform's
+        // reported completion). Nullable; addColumn is idempotent for web
+        // user_version replays.
+        if (from < 23) {
+          await addColumn('activities', 'completion_type', 'TEXT');
+          // Fork catch-up (idempotent): a mealplanning-lineage dev device
+          // whose v22 was home location never ran develop's v22
+          // duration_source step above.
           await addColumn('activities', 'duration_source', 'TEXT');
         }
       },
