@@ -8,9 +8,6 @@
 // dev schema has (docs/dev_schema.txt). A first pull lands the row clean, an
 // offline edit marks it dirty, the server's copy changes, and a second pull
 // must leave the local edit and its flag alone.
-//
-// meal_plans and user_memories pull through their own remote seams and are
-// covered in test/features/meal_planning/data/.
 
 import 'package:drift/drift.dart' hide isNull, isNotNull;
 import 'package:drift/native.dart';

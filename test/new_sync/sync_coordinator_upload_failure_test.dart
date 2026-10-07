@@ -29,7 +29,7 @@ const _user = '607f9dd5-6fa7-48ee-a628-720d4a0506a1';
 /// repositories pass it into `UploadResult.failed()`.
 const _rlsError =
     'PostgrestException(message: new row violates row-level security policy '
-    'for table "meal_plans", code: 42501, details: Forbidden, hint: null)';
+    'for table "meal_logs", code: 42501, details: Forbidden, hint: null)';
 
 /// A local table of `id -> (name, needsUpload)` behind a repository whose
 /// server refuses every upload (or accepts them once [serverAccepts] is set).
@@ -202,9 +202,8 @@ void main() {
 
   group('a dependency whose upload fails', () {
     test('does not stop the dependent repository\'s pull', () async {
-      // events depends on users and activities (develop's graph; on
-      // mealplanning this case used meal_plans -> saved_meals). activities
-      // holds a row the server rejects.
+      // events depends on users and activities. activities holds a row the
+      // server rejects.
       final users = _MockUserRepository();
       when(() => users.isStale()).thenAnswer((_) async => false);
       final activities = _MockActivitiesRepository();

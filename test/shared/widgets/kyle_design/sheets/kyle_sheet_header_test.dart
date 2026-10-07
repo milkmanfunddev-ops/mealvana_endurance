@@ -12,7 +12,7 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
-          body: KyleSheetHeader(title: 'Redeem a code', onClose: () {}),
+          body: KyleSheetHeader(title: 'Edit meal', onClose: () {}),
         ),
       ),
     );
