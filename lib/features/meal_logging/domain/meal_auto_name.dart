@@ -17,7 +17,9 @@ import 'meal_component.dart';
 ///
 /// Also used directly by quick-log flows (a single quick-logged food's name
 /// is just [deriveMealName] applied to its one-item component list, which
-/// collapses to the item's own name).
+/// collapses to the item's own name). A quick log that already has a name
+/// keeps it instead: a Common quick-add tile saves under the tile's name and
+/// a Recent re-log under the original's (testing-wave 26-002, 26-003).
 String deriveMealName(List<MealComponent> components) {
   if (components.isEmpty) return '';
   final names = components.map((c) => c.name).toList();

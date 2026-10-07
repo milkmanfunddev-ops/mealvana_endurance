@@ -8,6 +8,7 @@ import '../domain/consumed_totals.dart';
 import '../domain/meal_component.dart';
 import '../domain/meal_log.dart';
 import '../domain/meal_log_source.dart';
+import '../domain/meal_relog.dart';
 import '../domain/meal_slot.dart';
 import '../domain/saved_meal.dart';
 
@@ -145,6 +146,55 @@ class MealLoggingService {
       recipeId: recipeId,
       savedMealId: savedMealId,
       notes: notes,
+      eatenAt: eatenAt,
+      createdAt: now,
+      updatedAt: now,
+    );
+    return _mealLogRepo.insertLog(log);
+  }
+
+  /// Re-log a past meal (Log a Meal → Recent) as a copy of [original].
+  ///
+  /// The new row carries the original's items, name, `source` and the
+  /// `saved_meal_id` / `recipe_id` / photo it had — never a synthetic
+  /// one-line item or a provenance the original lacked (testing-wave 26-002).
+  /// Items and the stored totals are scaled by [servings]; at 1 serving they
+  /// are copied verbatim. A meal logged with totals only stays item-less.
+  ///
+  /// Not copied: `plan_meal_id` (the plan serving was taken by the original
+  /// log; a re-log does not take another) and notes (they described that
+  /// sitting).
+  Future<MealLog> relogMeal({
+    required MealLog original,
+    required String userId,
+    MealSlot? slot,
+    required String logDate,
+    DateTime? eatenAt,
+    double servings = 1,
+  }) {
+    double? scale(double? v) => v == null ? null : v * servings;
+    final now = DateTime.now();
+    final log = MealLog(
+      id: _uuid.v4(),
+      userId: userId,
+      logDate: logDate,
+      slot: slot,
+      name: original.name,
+      source: original.source,
+      components: [
+        for (final c in original.components)
+          scaleComponentForRelog(c, servings),
+      ],
+      calories: original.calories == null
+          ? null
+          : (original.calories! * servings).round(),
+      carbsG: scale(original.carbsG),
+      proteinG: scale(original.proteinG),
+      fatG: scale(original.fatG),
+      sodiumMg: scale(original.sodiumMg),
+      photoPath: original.photoPath,
+      recipeId: original.recipeId,
+      savedMealId: original.savedMealId,
       eatenAt: eatenAt,
       createdAt: now,
       updatedAt: now,
