@@ -22,6 +22,7 @@ import {
   shouldPrioritizeMacroTarget,
 } from "./types.ts";
 import { calculateTotals } from "./food-utils.ts";
+import { normalizeAllergen } from "./allergen-normalize.ts";
 import { MACRO_CONSTRAINT_RANGES, PREFERENCE_SCORE_MAP } from "./constants.ts";
 import {
   buildFoodResult,
@@ -262,7 +263,7 @@ export function selectTemplateCandidates(
 ): DuringWorkoutTemplate[] {
   const mappedActivities = mapActivityTypeForTemplate(activityType);
   const durationBracket = getDurationBracket(durationMinutes);
-  const allergiesLower = (allergies ?? []).map((a) => a.toLowerCase());
+  const allergiesLower = (allergies ?? []).map(normalizeAllergen);
   const dietPrefLower = dietaryPreference?.toLowerCase() ?? "";
 
   console.log(
@@ -318,7 +319,7 @@ export function selectTemplateCandidates(
     // Allergens: if user has allergies, skip templates with overlapping allergens
     if (allergiesLower.length > 0 && template.allergens.length > 0) {
       const hasAllergen = template.allergens.some(
-        (a) => allergiesLower.includes(a.toLowerCase()),
+        (a) => allergiesLower.includes(normalizeAllergen(a)),
       );
       if (hasAllergen) {
         console.log(

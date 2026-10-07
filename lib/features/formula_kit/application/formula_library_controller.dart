@@ -9,6 +9,7 @@ import '../../../shared/services/report/report.dart';
 import '../../auth/data/user_repository.dart';
 import '../../nutrition_plan/data/template_foods_repository.dart';
 import '../../nutrition_plan/domain/food_item_data.dart';
+import '../../onboarding/domain/allergen_normalizer.dart';
 import '../../onboarding/domain/allergy.dart';
 import '../../onboarding/domain/dietary_preference.dart';
 import '../data/during_workout_templates_repository.dart';
@@ -137,22 +138,21 @@ class FormulaLibraryState {
   }
 
   bool _passesDietary(List<String> allergens, List<String> excludedDiets) {
-    // Compare case-insensitively: the seed data stores values like "Dairy" /
-    // "Gluten" (capitalized) while the user-side enums use lowercase dbValues
-    // ("dairy", "gluten"). The DB will be normalized in a follow-up migration;
-    // the controller stays defensive in the meantime.
-    final allergensLower = allergens.map((a) => a.toLowerCase()).toSet();
+    // Diets compare case-insensitively: the seed data stores "Vegan" while
+    // the enum's dbValue is "vegan".
     final excludedDietsLower = excludedDiets
         .map((d) => d.toLowerCase())
         .toSet();
-
     for (final d in filter.activeDietFilters) {
       if (excludedDietsLower.contains(d.dbValue.toLowerCase())) return false;
     }
-    for (final a in filter.activeAllergyFilters) {
-      if (allergensLower.contains(a.dbValue.toLowerCase())) return false;
-    }
-    return true;
+    // Allergens go through the one normaliser (ticket 138, 116-001): the
+    // catalog says "Peanut" and "Tree nut", the athlete's filter says
+    // `peanuts` and `tree_nuts`.
+    return !allergensConflict(
+      allergens,
+      filter.activeAllergyFilters.map((a) => a.dbValue),
+    );
   }
 
   /// Default active-filter sets implied by the user's profile. Used to

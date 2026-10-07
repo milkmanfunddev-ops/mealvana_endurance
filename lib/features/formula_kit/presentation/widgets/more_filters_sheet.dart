@@ -162,11 +162,14 @@ class MoreFiltersSheet extends ConsumerWidget {
                           child: _ChipWrap(
                             children: [
                               // Diets: render one chip per dietary preference
-                              // from the user's profile (skip `.none`). The
-                              // user only sees their selected diet here; we
-                              // don't surface all diets in this V1.
+                              // from the user's profile (skip `.none`, and
+                              // `.omnivore`, which excludes nothing and is
+                              // never a "hide" choice: 116-013). The user
+                              // only sees their selected diet here; we don't
+                              // surface all diets in this V1.
                               for (final d in state.userDiets)
-                                if (d != DietaryPreference.none)
+                                if (d != DietaryPreference.none &&
+                                    d != DietaryPreference.omnivore)
                                   _Chip(
                                     key: ValueKey(
                                       'formula_kit.more_filters.diet.${d.dbValue}',
