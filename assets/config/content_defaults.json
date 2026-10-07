@@ -364,5 +364,12 @@
     "discard_body": "The foods you added will be lost.",
     "discard": "Discard",
     "keep_building": "Keep building"
+  },
+  "learn": {
+    "notify_me": "Notify Me",
+    "notify_me_noted": "Noted",
+    "notify_me_confirm": "We'll let you know",
+    "offline_message": "Couldn't load the lessons. Check your connection and try again.",
+    "retry": "Retry"
   }
 }
