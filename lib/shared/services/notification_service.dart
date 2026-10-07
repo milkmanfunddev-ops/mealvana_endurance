@@ -122,6 +122,14 @@ class NotificationService {
   @visibleForTesting
   static RemotePushClient remotePush = const OneSignalRemotePush();
 
+  /// Time this process has spent awaiting the OS notification prompt
+  /// (`requestPermission(false)` in [_registerForRemotePush]). On an install
+  /// that has never answered, that call returns only when the athlete taps,
+  /// so the startup timer for `deferred.notifications` leaves it out of its
+  /// slow checks (develop-2026-10 ticket 22, 08-009). Grows only.
+  static Duration get permissionPromptWait => _permissionPromptWait;
+  static Duration _permissionPromptWait = Duration.zero;
+
   /// Returns the static state to a fresh launch, for tests.
   @visibleForTesting
   static void debugReset() {
@@ -141,6 +149,7 @@ class NotificationService {
     _resumeListener?.dispose();
     _resumeListener = null;
     remotePush = const OneSignalRemotePush();
+    _permissionPromptWait = Duration.zero;
   }
 
   /// A guard bail in the push path, written down (rule D9): the tape for the
@@ -577,9 +586,19 @@ class NotificationService {
     if (_remotePushRegistered) return;
     _remotePushRegistered = true;
     try {
+      final promptWatch = Stopwatch()..start();
       final granted = await remotePush.requestPermission(
         fallbackToSettings: false,
       );
+      promptWatch.stop();
+      _permissionPromptWait += promptWatch.elapsed;
+      // Written down (D9): how long the ask held this launch, next to the
+      // heal lines; the startup timer leaves this time out (08-009).
+      final waitLine =
+          'permission prompt wait ${promptWatch.elapsedMilliseconds}ms '
+          'granted=$granted';
+      LaunchTrail.add(waitLine);
+      _r.breadcrumb(waitLine, category: 'push');
       await _reportPermission(granted);
 
       // HEAL THE ONE-WAY OPT-OUT DOOR (2026-10-01, the unreachable-player

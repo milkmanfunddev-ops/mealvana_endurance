@@ -27,9 +27,13 @@ class _RecordingRemotePush implements RemotePushClient {
     starts++;
   }
 
+  /// How long the athlete leaves the prompt up.
+  Duration promptDelay = Duration.zero;
+
   @override
   Future<bool> requestPermission({required bool fallbackToSettings}) async {
     permissionRequests.add(fallbackToSettings);
+    if (promptDelay > Duration.zero) await Future<void>.delayed(promptDelay);
     return granted;
   }
 
@@ -110,15 +114,17 @@ void main() {
     expect(remotePush.permissionRequests, [false]);
   });
 
-  test('a restored session known before startup asks as OneSignal starts',
-      () async {
-    await NotificationService.setRemotePushUserId('athlete-1');
-    expect(remotePush.permissionRequests, isEmpty);
+  test(
+    'a restored session known before startup asks as OneSignal starts',
+    () async {
+      await NotificationService.setRemotePushUserId('athlete-1');
+      expect(remotePush.permissionRequests, isEmpty);
 
-    await NotificationService.initialize();
+      await NotificationService.initialize();
 
-    expect(remotePush.permissionRequests, [false]);
-  });
+      expect(remotePush.permissionRequests, [false]);
+    },
+  );
 
   // develop's opt-out heal (2026-10-01) moved with the ask: it reads the
   // ask's answer, so it runs once an athlete is attached, never at startup.
@@ -186,5 +192,21 @@ void main() {
       await NotificationService.refreshPermission();
       expect(stored, isEmpty);
     });
+  });
+
+  test('the time the prompt is up is counted as the athlete\'s, not the '
+      'app\'s (develop-2026-10 ticket 22, 08-009)', () async {
+    expect(NotificationService.permissionPromptWait, Duration.zero);
+    remotePush.promptDelay = const Duration(milliseconds: 40);
+    await NotificationService.setRemotePushUserId('athlete-1');
+
+    await NotificationService.initialize();
+
+    expect(
+      NotificationService.permissionPromptWait,
+      greaterThanOrEqualTo(const Duration(milliseconds: 40)),
+    );
+    NotificationService.debugReset();
+    expect(NotificationService.permissionPromptWait, Duration.zero);
   });
 }
