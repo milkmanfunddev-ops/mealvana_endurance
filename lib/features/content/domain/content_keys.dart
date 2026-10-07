@@ -109,6 +109,10 @@ class ContentKeys {
       'settings.delete_confirm_body';
   static const String settingsDeleteConfirmAction =
       'settings.delete_confirm_action';
+  // Sign-out with the pre-logout upload failing (ticket 102, Finding 86-007):
+  // the athlete's unsynced changes stay on the phone for the next sign-in.
+  static const String settingsSignOutUnsyncedKept =
+      'settings.sign_out_unsynced_kept';
   static const String settingsProfileSection = 'settings.profile_section';
   static const String settingsPreferencesSection =
       'settings.preferences_section';

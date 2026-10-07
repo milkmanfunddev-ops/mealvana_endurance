@@ -41,7 +41,7 @@ final class PostOnboardingAuthControllerProvider
 }
 
 String _$postOnboardingAuthControllerHash() =>
-    r'66453b0b03d430400ebb0e8c5746b9ffb972e63b';
+    r'875d01e64817bff700a143782d246b5db3875017';
 
 /// Controller for managing post-onboarding authentication flow
 /// Handles native Apple Sign-In, native Google Sign-In, and Email/Password signup
