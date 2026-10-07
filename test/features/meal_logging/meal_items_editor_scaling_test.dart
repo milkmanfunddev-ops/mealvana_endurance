@@ -3,9 +3,9 @@
 // Quantity field on an item's Edit dialog must scale every macro
 // proportionally while the Portion label stays at the unit portion — the
 // quantity is communicated by the Quantity field, not by rewriting the
-// portion text. On save, the quantity IS folded into the persisted portion
-// (the portion string is the only place quantity is stored), so saved items
-// carry the eaten amount exactly as before.
+// portion text. On save, MealItemsEditor folds the quantity into the
+// persisted portion; MealComponentEditor saves it beside the portion in
+// `MealComponent.quantity` instead (testing-wave develop-2026-10, 02-005).
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -308,6 +308,8 @@ void main() {
     expect(saved!.calories, 300);
     expect(saved!.carbG, 54);
     expect(saved!.proteinG, isNull);
-    expect(saved!.portion, '2 cup');
+    // The portion stays as written; the amount is the quantity (02-005).
+    expect(saved!.portion, '1 cup');
+    expect(saved!.quantity, 2.0);
   });
 }

@@ -31,5 +31,8 @@ MealComponent scaleComponentForRelog(MealComponent item, double servings) {
     sodiumMg: roundSodium(
       item.sodiumMg == null ? null : item.sodiumMg! * servings,
     ),
+    // The scaled portion is one serving of the re-log; the item's own
+    // quantity still applies on top of it (testing-wave 02-005).
+    quantity: item.quantity,
   );
 }

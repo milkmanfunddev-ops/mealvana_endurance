@@ -1,3 +1,5 @@
+import 'portion_quantity.dart';
+
 /// A single food component within a [MealLog] or [SavedMeal].
 ///
 /// The `meal_logs.items` and `saved_meals.items` columns store a JSON array
@@ -7,6 +9,8 @@
 /// JSON key names follow snake_case to match the Supabase JSONB shape exactly:
 /// `{ name, portion, calories, carb_g, protein_g, fat_g, sodium_mg }`.
 /// All macro fields are optional — the user may not always have complete data.
+/// `quantity` is written only when it is not 1, so a row without it reads as
+/// one portion.
 class MealComponent {
   const MealComponent({
     required this.name,
@@ -16,6 +20,7 @@ class MealComponent {
     this.proteinG,
     this.fatG,
     this.sodiumMg,
+    this.quantity = 1.0,
   });
 
   /// Display name of the food item (e.g. "Oatmeal", "Banana").
@@ -39,6 +44,18 @@ class MealComponent {
   /// Sodium content in milligrams, if known.
   final double? sodiumMg;
 
+  /// How many of [portion] were eaten (testing-wave 02-005). The macro fields
+  /// above already hold what was **eaten** (portion × quantity), so every
+  /// reader that sums macros stays correct; the editor recovers the
+  /// per-portion base by dividing by this. [portion] stays as written (the
+  /// AI's text and gram figure are never rewritten).
+  final double quantity;
+
+  /// The portion as a row shows it: [portion] at quantity 1, otherwise
+  /// "2 × 1 medium banana (~118g)".
+  String get portionLabel =>
+      quantity == 1 ? portion : '${fmtQty(quantity)} × $portion';
+
   // ── Serialization ─────────────────────────────────────────────────────────
 
   /// Serialize to the canonical JSON shape stored in `meal_logs.items` /
@@ -51,6 +68,7 @@ class MealComponent {
     if (proteinG != null) 'protein_g': proteinG,
     if (fatG != null) 'fat_g': fatG,
     if (sodiumMg != null) 'sodium_mg': sodiumMg,
+    if (quantity != 1) 'quantity': quantity,
   };
 
   /// Deserialize from the JSON shape stored in `meal_logs.items` /
@@ -68,6 +86,7 @@ class MealComponent {
       proteinG: (json['protein_g'] as num?)?.toDouble(),
       fatG: (json['fat_g'] as num?)?.toDouble(),
       sodiumMg: (json['sodium_mg'] as num?)?.toDouble(),
+      quantity: (json['quantity'] as num?)?.toDouble() ?? 1.0,
     );
   }
 
@@ -79,6 +98,7 @@ class MealComponent {
     double? proteinG,
     double? fatG,
     double? sodiumMg,
+    double? quantity,
   }) {
     return MealComponent(
       name: name ?? this.name,
@@ -88,10 +108,12 @@ class MealComponent {
       proteinG: proteinG ?? this.proteinG,
       fatG: fatG ?? this.fatG,
       sodiumMg: sodiumMg ?? this.sodiumMg,
+      quantity: quantity ?? this.quantity,
     );
   }
 
   @override
   String toString() =>
-      'MealComponent(name: $name, portion: $portion, calories: $calories)';
+      'MealComponent(name: $name, portion: $portion, quantity: $quantity, '
+      'calories: $calories)';
 }

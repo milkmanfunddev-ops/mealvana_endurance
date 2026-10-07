@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'meal_component.dart';
 import 'meal_log.dart';
+import 'portion_quantity.dart';
 import 'saved_meal.dart';
 
 /// Builds a stable identity key from a meal's name + component list so a
@@ -15,7 +16,7 @@ import 'saved_meal.dart';
 /// un-favoriting to find the matching [SavedMeal] row to delete.
 ///
 /// Two meals are considered "the same favorite" when their name and the
-/// (name, portion) signature of every component match exactly, in order.
+/// (name, portion, quantity) signature of every component match exactly, in order.
 /// This is intentionally strict — a bare substring/fuzzy match would risk
 /// false-positive un-favorites.
 /// The key is JSON-encoded rather than joined with `|` and `,` separators.
@@ -33,7 +34,14 @@ String mealFavoriteMatchKey(String name, List<MealComponent> components) {
   return jsonEncode([
     name.trim().toLowerCase(),
     for (final c in components)
-      [c.name.trim().toLowerCase(), c.portion.trim().toLowerCase()],
+      [
+        c.name.trim().toLowerCase(),
+        c.portion.trim().toLowerCase(),
+        // Only a quantity other than 1 joins the key, so keys of existing
+        // quantity-1 favourites are unchanged and two bananas never match
+        // one (testing-wave 02-005).
+        if (c.quantity != 1) fmtQty(c.quantity),
+      ],
   ]);
 }
 

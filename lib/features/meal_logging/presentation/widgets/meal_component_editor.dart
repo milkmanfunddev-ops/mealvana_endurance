@@ -130,7 +130,7 @@ class _MealComponentEditorState extends State<MealComponentEditor> {
               ),
               subtitle: Text(
                 [
-                  item.portion,
+                  item.portionLabel,
                   if (item.calories != null) '${item.calories} kcal',
                   if (item.carbG != null)
                     'C ${item.carbG!.toStringAsFixed(0)}g',
@@ -221,17 +221,14 @@ class _MealComponentEditorState extends State<MealComponentEditor> {
 
 /// Per-item "Edit Item" dialog for a [MealComponent].
 ///
-/// Owns its own [TextEditingController]s (disposed in [dispose]). Macros are
-/// absolute for [MealComponent.portion]; the **Quantity** field scales each
-/// known macro proportionally. Unknown (null) macros stay blank rather than
-/// being fabricated.
+/// Owns its own [TextEditingController]s (disposed in [dispose]). The macro
+/// fields show what was eaten ([MealComponent.portion] ×
+/// [MealComponent.quantity]); the **Quantity** field opens at the item's
+/// quantity and scales each known macro from the per-portion base. Unknown
+/// (null) macros stay blank rather than being fabricated.
 ///
-/// While editing, the Portion label is never rewritten (bug 39fe3fdb): it
-/// keeps showing the unit portion (e.g. "1 cup") and the Quantity field alone
-/// communicates how many were eaten. Because the persisted portion string is
-/// the only place quantity is stored, [_persistedPortion] folds the chosen
-/// quantity back into the portion at save time (e.g. "2 cup"), so saved rows
-/// render the eaten amount exactly as before.
+/// The Portion text is never rewritten (bug 39fe3fdb, testing-wave 02-005):
+/// it is saved as typed, and the chosen Quantity is saved beside it.
 class _EditComponentDialog extends StatefulWidget {
   const _EditComponentDialog({required this.component, required this.onSave});
 
@@ -277,7 +274,11 @@ class _EditComponentDialogState extends State<_EditComponentDialog> {
       text: item.sodiumMg?.toStringAsFixed(0) ?? '',
     );
 
-    _baseQty = 1.0;
+    // The macros hold what was eaten at the item's quantity, so the base is
+    // that quantity and [_recompute] scales by qty / _baseQty (per portion =
+    // macro / quantity). Calories are whole numbers, so a fractional quantity
+    // can drift by 1 kcal on reopening (ticket 24's accepted cost).
+    _baseQty = item.quantity > 0 ? item.quantity : 1.0;
     _baseCal = item.calories;
     _baseCarb = item.carbG;
     _baseProt = item.proteinG;
@@ -320,34 +321,23 @@ class _EditComponentDialogState extends State<_EditComponentDialog> {
     if (baseSodium != null) {
       _sodiumCtrl.text = (baseSodium * ratio).toStringAsFixed(0);
     }
-    // The Portion label is deliberately NOT rewritten here — it stays at the
-    // unit portion while Quantity communicates the amount (bug 39fe3fdb). The
-    // quantity is folded into the persisted portion in [_persistedPortion].
-  }
-
-  /// The portion string to persist: the Portion text with the chosen Quantity
-  /// folded into its leading number, so the saved row still renders the eaten
-  /// amount ("2 cup · 300 kcal"). When Quantity is untouched (or invalid) the
-  /// Portion text is saved verbatim, preserving manual portion edits.
-  String _persistedPortion() {
-    final text = _portionCtrl.text.trim();
-    final qty = double.tryParse(_qtyCtrl.text.trim());
-    if (qty == null || qty <= 0 || qty == _baseQty) return text;
-    final portionQty = parseLeadingQuantity(text) ?? 1.0;
-    return replaceLeadingQuantity(text, portionQty * qty) ?? text;
+    // The Portion text is deliberately NOT rewritten here: it stays at the
+    // unit portion while Quantity carries the amount (bug 39fe3fdb).
   }
 
   void _save() {
     final item = widget.component;
-    final persistedPortion = _persistedPortion();
+    final portion = _portionCtrl.text.trim();
+    final qty = double.tryParse(_qtyCtrl.text.trim());
     final updated = MealComponent(
       name: _nameCtrl.text.trim().isEmpty ? item.name : _nameCtrl.text.trim(),
-      portion: persistedPortion.isEmpty ? item.portion : persistedPortion,
+      portion: portion.isEmpty ? item.portion : portion,
       calories: int.tryParse(_calCtrl.text) ?? item.calories,
       carbG: double.tryParse(_carbCtrl.text) ?? item.carbG,
       proteinG: double.tryParse(_protCtrl.text) ?? item.proteinG,
       fatG: double.tryParse(_fatCtrl.text) ?? item.fatG,
       sodiumMg: double.tryParse(_sodiumCtrl.text) ?? item.sodiumMg,
+      quantity: (qty != null && qty > 0) ? qty : item.quantity,
     );
     widget.onSave(updated);
     Navigator.of(context).pop();
