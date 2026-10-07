@@ -117,7 +117,7 @@ void main() {
       overrides: [
         mealLoggingServiceProvider.overrideWithValue(service),
         userRepositoryProvider.overrideWith((ref) async => userRepo),
-        recentMealsProvider.overrideWith((ref) async => [_recentLog]),
+        recentMealsProvider.overrideWith((ref) => Stream.value([_recentLog])),
         savedMealsProvider.overrideWith(
           (ref) => Stream.value(const <SavedMeal>[]),
         ),

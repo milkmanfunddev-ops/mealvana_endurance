@@ -161,9 +161,7 @@ class MealLoggingService {
   /// Items and the stored totals are scaled by [servings]; at 1 serving they
   /// are copied verbatim. A meal logged with totals only stays item-less.
   ///
-  /// Not copied: `plan_meal_id` (the plan serving was taken by the original
-  /// log; a re-log does not take another) and notes (they described that
-  /// sitting).
+  /// Not copied: notes (they described that sitting).
   Future<MealLog> relogMeal({
     required MealLog original,
     required String userId,

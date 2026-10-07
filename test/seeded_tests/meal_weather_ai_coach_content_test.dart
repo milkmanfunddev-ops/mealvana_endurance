@@ -298,7 +298,7 @@ void main() {
         extra: {'logDate': '2026-08-15'},
         overrides: [
           savedMealsProvider.overrideWith((ref) => Stream.value([meal])),
-          recentMealsProvider.overrideWith((ref) async => const []),
+          recentMealsProvider.overrideWith((ref) => Stream.value(const [])),
           mealLogControllerProvider.overrideWith(_FakeMealLogController.new),
         ],
         settle: true,
@@ -326,7 +326,7 @@ void main() {
         extra: {'logDate': '2026-08-15'},
         overrides: [
           savedMealsProvider.overrideWith((ref) => Stream.value([meal])),
-          recentMealsProvider.overrideWith((ref) async => const []),
+          recentMealsProvider.overrideWith((ref) => Stream.value(const [])),
           mealLogControllerProvider.overrideWith(_FakeMealLogController.new),
         ],
         settle: true,
@@ -355,7 +355,7 @@ void main() {
         extra: {'logDate': '2026-08-15'},
         overrides: [
           savedMealsProvider.overrideWith((ref) => Stream.value(const [])),
-          recentMealsProvider.overrideWith((ref) async => const []),
+          recentMealsProvider.overrideWith((ref) => Stream.value(const [])),
           mealLogControllerProvider.overrideWith(_FakeMealLogController.new),
         ],
         settle: true,
@@ -380,7 +380,7 @@ void main() {
         extra: {'logDate': '2026-08-15'},
         overrides: [
           savedMealsProvider.overrideWith((ref) => Stream.value(meals)),
-          recentMealsProvider.overrideWith((ref) async => const []),
+          recentMealsProvider.overrideWith((ref) => Stream.value(const [])),
           mealLogControllerProvider.overrideWith(_FakeMealLogController.new),
         ],
         settle: true,
@@ -407,7 +407,7 @@ void main() {
         extra: {'logDate': '2026-08-15'},
         overrides: [
           savedMealsProvider.overrideWith((ref) => Stream.value(const [])),
-          recentMealsProvider.overrideWith((ref) async => [log]),
+          recentMealsProvider.overrideWith((ref) => Stream.value([log])),
           mealLogControllerProvider.overrideWith(_FakeMealLogController.new),
         ],
         settle: true,
@@ -434,7 +434,7 @@ void main() {
         extra: {'logDate': '2026-08-15'},
         overrides: [
           savedMealsProvider.overrideWith((ref) => Stream.value(const [])),
-          recentMealsProvider.overrideWith((ref) async => const []),
+          recentMealsProvider.overrideWith((ref) => Stream.value(const [])),
           mealLogControllerProvider.overrideWith(_FakeMealLogController.new),
         ],
         settle: true,
@@ -467,7 +467,7 @@ void main() {
         extra: {'logDate': '2026-08-15'},
         overrides: [
           savedMealsProvider.overrideWith((ref) => Stream.value(const [])),
-          recentMealsProvider.overrideWith((ref) async => [log]),
+          recentMealsProvider.overrideWith((ref) => Stream.value([log])),
           mealLogControllerProvider.overrideWith(_FakeMealLogController.new),
         ],
         settle: true,
