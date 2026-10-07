@@ -4,7 +4,7 @@
 
 One line per wave: number, base sha, tickets, start time, who led it.
 
-- wave 1 · base `ef86b802` · tickets 01, 02, 08 · 2026-10-07T10:56Z · lead: Claude (Fable), test wave
+- wave 1 · base `1c254461` · tickets 01, 02, 08 · 2026-10-07T10:56Z · lead: Claude (Fable), test wave
 
 ## Rulings
 

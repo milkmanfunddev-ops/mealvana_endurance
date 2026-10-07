@@ -1,0 +1,385 @@
+# Wave 1 edge-log extract, dev project, 2026-10-07T10:55:00Z to 11:40:00Z. Pulled by the wave lead from /analytics/endpoints/logs (logs table by source), since scripts/edge_logs.sh is broken (02-004). Format: [UTC] [level] [ms] message
+
+## function_edge_logs (requests)
+[10:56:16.668Z] [-] [256ms] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/garmin-push
+[10:59:27.985Z] [-] [300ms] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/garmin-push
+[10:59:29.069Z] [-] [231ms] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/garmin-push
+[10:59:30.595Z] [-] [155ms] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/garmin-push
+[11:01:47.750Z] [-] [293ms] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/garmin-push
+[11:02:11.095Z] [-] [539ms] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/garmin-push
+[11:06:43.713Z] [-] [824ms] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/calculate-daily-macros-v6
+[11:07:18.519Z] [-] [1375ms] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/sync-all-data
+[11:07:20.660Z] [-] [797ms] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/calculate-daily-macros-v6
+[11:07:23.526Z] [-] [475ms] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/calculate-daily-macros-v6
+[11:07:56.064Z] [-] [1083ms] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/ensure-credits
+[11:08:38.862Z] [-] [7364ms] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/describe-meal
+[11:09:29.336Z] [-] [1355ms] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/sync-all-data
+[11:11:05.636Z] [-] [549ms] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/calculate-daily-macros-v6
+[11:11:06.431Z] [-] [631ms] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/sync-all-data
+[11:11:07.571Z] [-] [365ms] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/calculate-daily-macros-v6
+[11:12:54.513Z] [-] [1931ms] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/delete-user
+[11:16:34.972Z] [-] [278ms] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/garmin-push
+[11:17:22.707Z] [-] [736ms] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/ensure-credits
+[11:17:32.049Z] [-] [429ms] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/calculate-daily-macros-v6
+[11:17:32.728Z] [-] [596ms] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/sync-all-data
+[11:17:33.296Z] [-] [361ms] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/calculate-daily-macros-v6
+[11:18:23.958Z] [-] [2003ms] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/delete-user
+[11:18:36.209Z] [-] [236ms] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/garmin-push
+[11:20:07.903Z] [-] [263ms] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/garmin-push
+[11:20:10.103Z] [-] [203ms] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/garmin-push
+[11:20:10.514Z] [-] [245ms] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/garmin-push
+[11:20:10.662Z] [-] [192ms] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/garmin-push
+[11:20:37.107Z] [-] [175ms] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/garmin-push
+[11:23:11.980Z] [-] [226ms] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/garmin-push
+[11:23:14.443Z] [-] [302ms] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/garmin-push
+[11:26:01.738Z] [-] [602ms] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/garmin-push
+[11:26:02.641Z] [-] [169ms] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/garmin-push
+[11:26:41.326Z] [-] [246ms] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/garmin-push
+[11:28:16.710Z] [-] [271ms] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/garmin-push
+[11:28:16.804Z] [-] [298ms] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/garmin-push
+[11:28:23.857Z] [-] [196ms] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/garmin-push
+[11:28:34.073Z] [-] [185ms] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/garmin-push
+[11:28:36.537Z] [-] [208ms] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/garmin-push
+[11:30:55.913Z] [-] [294ms] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/garmin-push
+[11:32:05.830Z] [-] [163ms] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/garmin-push
+[11:32:07.780Z] [-] [295ms] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/garmin-push
+[11:32:32.387Z] [-] [199ms] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/garmin-push
+[11:33:28.797Z] [-] [527ms] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/calculate-daily-macros-v6
+[11:33:29.257Z] [-] [786ms] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/sync-all-data
+[11:33:29.767Z] [-] [403ms] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/calculate-daily-macros-v6
+[11:35:02.191Z] [-] [4582ms] POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/delete-user
+(47 rows)
+
+## function_logs (console)
+[10:55:46.519Z] [log] [-ms] shutdown
+[10:55:47.775Z] [log] [-ms] shutdown
+[10:56:16.628Z] [log] [-ms] booted (time: 74ms)
+[10:56:16.647Z] [info] [-ms] Listening on http://localhost:9999/
+[10:56:16.653Z] [info] [-ms] [garmin-auth] POST request, headers: {"accept":"*/*","accept-encoding":"gzip","accept-language":"*","baggage":"sb-request-id=01a11601-c21c-737c-a2aa-2dbad5aa03be","cdn-loop":"cloudflare; loops=1","cf-connecting-ip":"52.15.188.10","cf-ew-via":"15","cf-ray":"a46c60d6aaa110bf-ORD","cf-visitor":"{\"sche
+[10:56:16.653Z] [info] [-ms] [garmin-auth] Expected client ID: "6e904d60-e9d6-48ff-b1e7-3f3e7ff20db6" (length: 36)
+[10:56:17.922Z] [info] [-ms] [garmin-push] Processing complete: {"dailies":{"processed":1,"errors":0}}
+[10:57:31.641Z] [log] [-ms] shutdown
+[10:59:27.951Z] [log] [-ms] booted (time: 69ms)
+[10:59:27.970Z] [info] [-ms] Listening on http://localhost:9999/
+[10:59:27.974Z] [info] [-ms] [garmin-auth] POST request, headers: {"accept":"*/*","accept-encoding":"gzip","accept-language":"*","baggage":"sb-request-id=01a11604-ad45-7677-a94c-cded276274ca","cdn-loop":"cloudflare; loops=1","cf-connecting-ip":"18.144.88.179","cf-ew-via":"15","cf-ray":"a46c6582cd23cf0a-SJC","cf-visitor":"{\"sch
+[10:59:27.974Z] [info] [-ms] [garmin-auth] Expected client ID: "6e904d60-e9d6-48ff-b1e7-3f3e7ff20db6" (length: 36)
+[10:59:28.544Z] [info] [-ms] [garmin-push] Processing complete: {"userMetrics":{"processed":0,"errors":1}}
+[10:59:29.030Z] [log] [-ms] booted (time: 76ms)
+[10:59:29.049Z] [info] [-ms] Listening on http://localhost:9999/
+[10:59:29.054Z] [info] [-ms] [garmin-auth] Expected client ID: "6e904d60-e9d6-48ff-b1e7-3f3e7ff20db6" (length: 36)
+[10:59:29.054Z] [info] [-ms] [garmin-auth] POST request, headers: {"accept":"*/*","accept-encoding":"gzip","accept-language":"*","baggage":"sb-request-id=01a11604-b1c6-7694-8a09-11872452ba33","cdn-loop":"cloudflare; loops=1","cf-connecting-ip":"18.117.217.28","cf-ew-via":"15","cf-ray":"a46c658948be11e9-ORD","cf-visitor":"{\"sch
+[10:59:29.264Z] [info] [-ms] [garmin-push] Processing complete: {"stressDetails":{"processed":0,"errors":1}}
+[10:59:30.571Z] [log] [-ms] booted (time: 55ms)
+[10:59:30.585Z] [info] [-ms] Listening on http://localhost:9999/
+[10:59:30.589Z] [info] [-ms] [garmin-auth] POST request, headers: {"accept":"*/*","accept-encoding":"gzip","accept-language":"*","baggage":"sb-request-id=01a11604-b808-75ae-b52b-380a26d77ec0","cdn-loop":"cloudflare; loops=1","cf-connecting-ip":"13.56.80.63","cf-ew-via":"15","cf-ray":"a46c65934f27f497-SJC","cf-visitor":"{\"schem
+[10:59:30.589Z] [info] [-ms] [garmin-auth] Expected client ID: "6e904d60-e9d6-48ff-b1e7-3f3e7ff20db6" (length: 36)
+[10:59:32.580Z] [info] [-ms] [garmin-push] Processing complete: {"epochs":{"processed":0,"errors":9}}
+[11:00:31.772Z] [log] [-ms] booted (time: 81ms)
+[11:00:31.792Z] [info] [-ms] Listening on http://localhost:9999/
+[11:00:31.797Z] [info] [-ms] [garmin-auth] POST request, headers: {"accept":"*/*","accept-encoding":"gzip","accept-language":"*","baggage":"sb-request-id=01a11605-a6bb-75ff-814c-e50167d30b45","cdn-loop":"cloudflare; loops=1","cf-connecting-ip":"3.19.54.234","cf-ew-via":"15","cf-ray":"a46c67113996170f-ORD","cf-visitor":"{\"schem
+[11:00:31.797Z] [info] [-ms] [garmin-auth] Expected client ID: "6e904d60-e9d6-48ff-b1e7-3f3e7ff20db6" (length: 36)
+[11:00:32.078Z] [warning] [-ms] [garmin-push] No user mapping for Garmin userId: 1d50dceb-62fc-4592-8be6-51d425effa17
+[11:00:32.078Z] [info] [-ms] [garmin-push] Processing complete: {"dailies":{"processed":0,"errors":1}}
+[11:00:42.968Z] [log] [-ms] shutdown
+[11:00:44.106Z] [log] [-ms] shutdown
+[11:00:45.585Z] [log] [-ms] shutdown
+[11:01:45.259Z] [log] [-ms] booted (time: 97ms)
+[11:01:45.284Z] [info] [-ms] Listening on http://localhost:9999/
+[11:01:45.289Z] [info] [-ms] [garmin-auth] POST request, headers: {"accept":"*/*","accept-encoding":"gzip","accept-language":"*","baggage":"sb-request-id=01a11606-c56d-70d7-bf65-e93a8db61ab9","cdn-loop":"cloudflare; loops=1","cf-connecting-ip":"54.183.225.12","cf-ew-via":"15","cf-ray":"a46c68dcba1ea473-SJC","cf-visitor":"{\"sch
+[11:01:45.289Z] [info] [-ms] [garmin-auth] Expected client ID: "6e904d60-e9d6-48ff-b1e7-3f3e7ff20db6" (length: 36)
+[11:01:45.611Z] [info] [-ms] [garmin-push] Processing complete: {"stressDetails":{"processed":0,"errors":1}}
+[11:01:46.785Z] [log] [-ms] shutdown
+[11:01:47.713Z] [log] [-ms] booted (time: 78ms)
+[11:01:47.731Z] [info] [-ms] Listening on http://localhost:9999/
+[11:01:47.736Z] [info] [-ms] [garmin-auth] Expected client ID: "6e904d60-e9d6-48ff-b1e7-3f3e7ff20db6" (length: 36)
+[11:01:47.736Z] [info] [-ms] [garmin-auth] POST request, headers: {"accept":"*/*","accept-encoding":"gzip","accept-language":"*","baggage":"sb-request-id=01a11606-cf41-7463-b7ec-f2cd30451f76","cdn-loop":"cloudflare; loops=1","cf-connecting-ip":"3.133.58.119","cf-ew-via":"15","cf-ray":"a46c68ebaf9198d8-ORD","cf-visitor":"{\"sche
+[11:01:48.481Z] [info] [-ms] [garmin-push] Processing complete: {"epochs":{"processed":0,"errors":10}}
+[11:02:10.974Z] [log] [-ms] booted (time: 71ms)
+[11:02:11.003Z] [info] [-ms] Listening on http://localhost:9999/
+[11:02:11.079Z] [info] [-ms] [garmin-auth] Expected client ID: "6e904d60-e9d6-48ff-b1e7-3f3e7ff20db6" (length: 36)
+[11:02:11.079Z] [info] [-ms] [garmin-auth] POST request, headers: {"accept":"*/*","accept-encoding":"gzip","accept-language":"*","baggage":"sb-request-id=01a11607-297c-7995-9e57-96440c0e756a","cdn-loop":"cloudflare; loops=1","cf-connecting-ip":"18.224.96.22","cf-ew-via":"15","cf-ray":"a46c697c1d6e0045-ORD","cf-visitor":"{\"sche
+[11:02:11.745Z] [warning] [-ms] [garmin-push] No user mapping for Garmin userId: 8c054624-f6cb-48bf-995c-4602c0df75a2
+[11:02:11.745Z] [info] [-ms] [garmin-push] Processing complete: {"dailies":{"processed":0,"errors":1}}
+[11:03:00.297Z] [log] [-ms] shutdown
+[11:03:02.841Z] [log] [-ms] shutdown
+[11:03:36.739Z] [log] [-ms] shutdown
+[11:06:43.168Z] [log] [-ms] booted (time: 108ms)
+[11:06:43.175Z] [info] [-ms] Listening on http://localhost:9999/
+[11:06:43.699Z] [warning] [-ms] sessionCost: unknown sport "other" — F4a zero-with-estimate-flag (session-demand.md F4a, RULED 2026-09-10)
+[11:06:43.699Z] [warning] [-ms] sessionCost: unknown sport "other" — F4a zero-with-estimate-flag (session-demand.md F4a, RULED 2026-09-10)
+[11:06:43.699Z] [warning] [-ms] sessionCost: unknown sport "other" — F4a zero-with-estimate-flag (session-demand.md F4a, RULED 2026-09-10)
+[11:06:43.699Z] [warning] [-ms] sessionCost: unknown sport "other" — F4a zero-with-estimate-flag (session-demand.md F4a, RULED 2026-09-10)
+[11:06:43.700Z] [warning] [-ms] sessionCost: unknown sport "other" — F4a zero-with-estimate-flag (session-demand.md F4a, RULED 2026-09-10)
+[11:06:43.700Z] [warning] [-ms] sessionCost: unknown sport "other" — F4a zero-with-estimate-flag (session-demand.md F4a, RULED 2026-09-10)
+[11:07:17.423Z] [log] [-ms] booted (time: 66ms)
+[11:07:17.442Z] [info] [-ms] Listening on http://localhost:9999/
+[11:07:17.448Z] [info] [-ms] Full sync (no timestamp provided)
+[11:07:17.448Z] [info] [-ms] Starting unified sync for user: 607f9dd5-6fa7-48ee-a628-720d4a0506a1
+[11:07:18.409Z] [info] [-ms] Skipping bulk athlete data sync - use on-demand sync per athlete instead
+[11:07:18.409Z] [info] [-ms] User is a coach with 8 relationships
+[11:07:18.488Z] [info] [-ms] Sync completed: 480 total records (Incremental: false)
+[11:07:18.488Z] [info] [-ms] Errors: 0
+[11:07:20.182Z] [log] [-ms] booted (time: 88ms)
+[11:07:20.189Z] [info] [-ms] Listening on http://localhost:9999/
+[11:07:20.652Z] [warning] [-ms] sessionCost: unknown sport "other" — F4a zero-with-estimate-flag (session-demand.md F4a, RULED 2026-09-10)
+[11:07:20.653Z] [warning] [-ms] sessionCost: unknown sport "other" — F4a zero-with-estimate-flag (session-demand.md F4a, RULED 2026-09-10)
+[11:07:20.653Z] [warning] [-ms] sessionCost: unknown sport "other" — F4a zero-with-estimate-flag (session-demand.md F4a, RULED 2026-09-10)
+[11:07:20.653Z] [warning] [-ms] sessionCost: unknown sport "other" — F4a zero-with-estimate-flag (session-demand.md F4a, RULED 2026-09-10)
+[11:07:20.653Z] [warning] [-ms] sessionCost: unknown sport "other" — F4a zero-with-estimate-flag (session-demand.md F4a, RULED 2026-09-10)
+[11:07:20.654Z] [warning] [-ms] sessionCost: unknown sport "other" — F4a zero-with-estimate-flag (session-demand.md F4a, RULED 2026-09-10)
+[11:07:20.654Z] [warning] [-ms] sessionCost: unknown sport "other" — F4a zero-with-estimate-flag (session-demand.md F4a, RULED 2026-09-10)
+[11:07:23.228Z] [log] [-ms] booted (time: 68ms)
+[11:07:23.234Z] [info] [-ms] Listening on http://localhost:9999/
+[11:07:23.512Z] [warning] [-ms] sessionCost: unknown sport "other" — F4a zero-with-estimate-flag (session-demand.md F4a, RULED 2026-09-10)
+[11:07:23.512Z] [warning] [-ms] sessionCost: unknown sport "other" — F4a zero-with-estimate-flag (session-demand.md F4a, RULED 2026-09-10)
+[11:07:23.513Z] [warning] [-ms] sessionCost: unknown sport "other" — F4a zero-with-estimate-flag (session-demand.md F4a, RULED 2026-09-10)
+[11:07:23.513Z] [warning] [-ms] sessionCost: unknown sport "other" — F4a zero-with-estimate-flag (session-demand.md F4a, RULED 2026-09-10)
+[11:07:23.513Z] [warning] [-ms] sessionCost: unknown sport "other" — F4a zero-with-estimate-flag (session-demand.md F4a, RULED 2026-09-10)
+[11:07:23.513Z] [warning] [-ms] sessionCost: unknown sport "other" — F4a zero-with-estimate-flag (session-demand.md F4a, RULED 2026-09-10)
+[11:07:55.195Z] [log] [-ms] booted (time: 58ms)
+[11:07:55.209Z] [info] [-ms] Listening on http://localhost:9999/
+[11:07:55.228Z] [log] [-ms] booted (time: 83ms)
+[11:07:55.250Z] [info] [-ms] Listening on http://localhost:9999/
+[11:07:58.226Z] [log] [-ms] shutdown
+[11:08:00.270Z] [log] [-ms] shutdown
+[11:08:31.953Z] [log] [-ms] booted (time: 120ms)
+[11:08:32.023Z] [info] [-ms] Listening on http://localhost:9999/
+[11:08:32.241Z] [info] [-ms] [describe-meal] Processing description for user 607f9dd5-6fa7-48ee-a628-720d4a0506a1, length: 70 chars, model: anthropic/claude-sonnet-4.6
+[11:08:32.439Z] [log] [-ms] shutdown
+[11:08:35.195Z] [log] [-ms] shutdown
+[11:08:35.807Z] [log] [-ms] shutdown
+[11:08:38.239Z] [log] [-ms] shutdown
+[11:08:38.848Z] [info] [-ms] [describe-meal] Success for user 607f9dd5-6fa7-48ee-a628-720d4a0506a1: "Scrambled Eggs, Whole Wheat Toast with Butter, and Banana", 3 items, confidence=medium
+[11:09:28.212Z] [log] [-ms] booted (time: 71ms)
+[11:09:28.231Z] [info] [-ms] Listening on http://localhost:9999/
+[11:09:28.238Z] [info] [-ms] Starting unified sync for user: 607f9dd5-6fa7-48ee-a628-720d4a0506a1
+[11:09:28.238Z] [info] [-ms] Full sync (no timestamp provided)
+[11:09:29.275Z] [info] [-ms] Skipping bulk athlete data sync - use on-demand sync per athlete instead
+[11:09:29.275Z] [info] [-ms] User is a coach with 8 relationships
+[11:09:29.303Z] [info] [-ms] Errors: 0
+[11:09:29.303Z] [info] [-ms] Sync completed: 480 total records (Incremental: false)
+[11:09:46.970Z] [log] [-ms] shutdown
+[11:10:43.226Z] [log] [-ms] shutdown
+[11:11:05.332Z] [log] [-ms] booted (time: 87ms)
+[11:11:05.336Z] [info] [-ms] Listening on http://localhost:9999/
+[11:11:05.622Z] [info] [-ms] [CALC_MACROS] Garmin not connected for user 8fbd939d-ca32-49aa-aabc-de17cafc0383 — skipping week Garmin context
+[11:11:06.076Z] [log] [-ms] booted (time: 108ms)
+[11:11:06.102Z] [info] [-ms] Listening on http://localhost:9999/
+[11:11:06.111Z] [info] [-ms] Starting unified sync for user: 8fbd939d-ca32-49aa-aabc-de17cafc0383
+[11:11:06.111Z] [info] [-ms] Full sync (no timestamp provided)
+[11:11:06.415Z] [info] [-ms] Errors: 0
+[11:11:06.415Z] [info] [-ms] Sync completed: 73 total records (Incremental: false)
+[11:11:06.647Z] [log] [-ms] shutdown
+[11:11:07.416Z] [log] [-ms] booted (time: 70ms)
+[11:11:07.423Z] [info] [-ms] Listening on http://localhost:9999/
+[11:11:07.555Z] [info] [-ms] [CALC_MACROS] Garmin not connected for user 8fbd939d-ca32-49aa-aabc-de17cafc0383 — skipping week Garmin context
+[11:12:14.175Z] [log] [-ms] shutdown
+[11:12:20.343Z] [log] [-ms] shutdown
+[11:12:52.871Z] [log] [-ms] booted (time: 82ms)
+[11:12:52.879Z] [info] [-ms] Listening on http://localhost:9999/
+[11:12:53.308Z] [info] [-ms] Deleting user account: 8fbd939d-ca32-49aa-aabc-de17cafc0383
+[11:12:53.941Z] [info] [-ms] Deleted user from public.users: 8fbd939d-ca32-49aa-aabc-de17cafc0383
+[11:12:54.498Z] [info] [-ms] Successfully deleted auth account: 8fbd939d-ca32-49aa-aabc-de17cafc0383
+[11:14:07.886Z] [log] [-ms] shutdown
+[11:16:32.244Z] [log] [-ms] booted (time: 52ms)
+[11:16:32.258Z] [info] [-ms] Listening on http://localhost:9999/
+[11:16:32.261Z] [info] [-ms] [garmin-auth] POST request, headers: {"accept":"*/*","accept-encoding":"gzip","accept-language":"*","baggage":"sb-request-id=01a11614-4ebc-709b-9054-72a96536aa70","cdn-loop":"cloudflare; loops=1","cf-connecting-ip":"18.144.133.8","cf-ew-via":"15","cf-ray":"a46c7e84cb7315ae-SJC","cf-visitor":"{\"sche
+[11:16:32.261Z] [info] [-ms] [garmin-auth] Expected client ID: "6e904d60-e9d6-48ff-b1e7-3f3e7ff20db6" (length: 36)
+[11:16:33.180Z] [info] [-ms] [garmin-push] Processing complete: {"stressDetails":{"processed":0,"errors":1}}
+[11:16:34.932Z] [log] [-ms] booted (time: 70ms)
+[11:16:34.952Z] [info] [-ms] Listening on http://localhost:9999/
+[11:16:34.956Z] [info] [-ms] [garmin-auth] POST request, headers: {"accept":"*/*","accept-encoding":"gzip","accept-language":"*","baggage":"sb-request-id=01a11614-5906-715d-9f2f-5bd5f1f7c9c2","cdn-loop":"cloudflare; loops=1","cf-connecting-ip":"18.222.60.121","cf-ew-via":"15","cf-ray":"a46c7e94ef40bc23-ORD","cf-visitor":"{\"sch
+[11:16:34.956Z] [info] [-ms] [garmin-auth] Expected client ID: "6e904d60-e9d6-48ff-b1e7-3f3e7ff20db6" (length: 36)
+[11:16:37.023Z] [info] [-ms] [garmin-push] Processing complete: {"epochs":{"processed":0,"errors":21}}
+[11:17:22.253Z] [log] [-ms] booted (time: 107ms)
+[11:17:22.254Z] [log] [-ms] booted (time: 102ms)
+[11:17:22.273Z] [info] [-ms] Listening on http://localhost:9999/
+[11:17:22.280Z] [info] [-ms] Listening on http://localhost:9999/
+[11:17:23.186Z] [log] [-ms] shutdown
+[11:17:31.834Z] [log] [-ms] booted (time: 63ms)
+[11:17:31.840Z] [info] [-ms] Listening on http://localhost:9999/
+[11:17:32.034Z] [info] [-ms] [CALC_MACROS] Garmin not connected for user 6c8552d2-63da-4fec-be3f-641914f92c3e — skipping week Garmin context
+[11:17:32.409Z] [log] [-ms] booted (time: 82ms)
+[11:17:32.430Z] [info] [-ms] Listening on http://localhost:9999/
+[11:17:32.440Z] [info] [-ms] Full sync (no timestamp provided)
+[11:17:32.440Z] [info] [-ms] Starting unified sync for user: 6c8552d2-63da-4fec-be3f-641914f92c3e
+[11:17:32.712Z] [info] [-ms] Sync completed: 73 total records (Incremental: false)
+[11:17:32.713Z] [info] [-ms] Errors: 0
+[11:17:33.075Z] [log] [-ms] booted (time: 53ms)
+[11:17:33.079Z] [info] [-ms] Listening on http://localhost:9999/
+[11:17:33.283Z] [info] [-ms] [CALC_MACROS] Garmin not connected for user 6c8552d2-63da-4fec-be3f-641914f92c3e — skipping week Garmin context
+[11:17:37.793Z] [log] [-ms] shutdown
+[11:17:47.259Z] [log] [-ms] shutdown
+[11:17:49.944Z] [log] [-ms] shutdown
+[11:18:01.877Z] [log] [-ms] shutdown
+[11:18:22.237Z] [log] [-ms] booted (time: 53ms)
+[11:18:22.242Z] [info] [-ms] Listening on http://localhost:9999/
+[11:18:22.579Z] [info] [-ms] Deleting user account: 6c8552d2-63da-4fec-be3f-641914f92c3e
+[11:18:23.409Z] [info] [-ms] Deleted user from public.users: 6c8552d2-63da-4fec-be3f-641914f92c3e
+[11:18:23.555Z] [log] [-ms] shutdown
+[11:18:23.945Z] [info] [-ms] Successfully deleted auth account: 6c8552d2-63da-4fec-be3f-641914f92c3e
+[11:18:36.177Z] [log] [-ms] booted (time: 70ms)
+[11:18:36.196Z] [info] [-ms] Listening on http://localhost:9999/
+[11:18:36.200Z] [info] [-ms] [garmin-auth] POST request, headers: {"accept":"*/*","accept-encoding":"gzip","accept-language":"*","baggage":"sb-request-id=01a11616-32c5-7409-a8e1-c3379b5e3e27","cdn-loop":"cloudflare; loops=1","cf-connecting-ip":"54.215.53.237","cf-ew-via":"15","cf-ray":"a46c818b3d0da6c4-SJC","cf-visitor":"{\"sch
+[11:18:36.200Z] [info] [-ms] [garmin-auth] Expected client ID: "6e904d60-e9d6-48ff-b1e7-3f3e7ff20db6" (length: 36)
+[11:18:36.708Z] [info] [-ms] [garmin-push] Processing complete: {"dailies":{"processed":0,"errors":1}}
+[11:18:36.708Z] [warning] [-ms] [garmin-push] No user mapping for Garmin userId: 40737893-11c6-405e-a5c3-6ab4eb9f1f6c
+[11:18:46.845Z] [log] [-ms] shutdown
+[11:19:37.248Z] [log] [-ms] shutdown
+[11:19:51.193Z] [log] [-ms] shutdown
+[11:20:07.866Z] [log] [-ms] booted (time: 76ms)
+[11:20:07.886Z] [info] [-ms] Listening on http://localhost:9999/
+[11:20:07.890Z] [info] [-ms] [garmin-auth] POST request, headers: {"accept":"*/*","accept-encoding":"gzip","accept-language":"*","baggage":"sb-request-id=01a11617-98d8-7774-87e4-5c10c7cca51e","cdn-loop":"cloudflare; loops=1","cf-connecting-ip":"3.148.194.25","cf-ew-via":"15","cf-ray":"a46c83c7db736072-ORD","cf-visitor":"{\"sche
+[11:20:07.890Z] [info] [-ms] [garmin-auth] Expected client ID: "6e904d60-e9d6-48ff-b1e7-3f3e7ff20db6" (length: 36)
+[11:20:08.223Z] [info] [-ms] [garmin-push] Processing complete: {"stressDetails":{"processed":0,"errors":1}}
+[11:20:10.067Z] [log] [-ms] booted (time: 71ms)
+[11:20:10.085Z] [info] [-ms] Listening on http://localhost:9999/
+[11:20:10.090Z] [info] [-ms] [garmin-auth] POST request, headers: {"accept":"*/*","accept-encoding":"gzip","accept-language":"*","baggage":"sb-request-id=01a11617-a1ac-7240-a1cf-afb65b83d893","cdn-loop":"cloudflare; loops=1","cf-connecting-ip":"18.223.196.136","cf-ew-via":"15","cf-ray":"a46c83d5fc652b4b-ORD","cf-visitor":"{\"sc
+[11:20:10.090Z] [info] [-ms] [garmin-auth] Expected client ID: "6e904d60-e9d6-48ff-b1e7-3f3e7ff20db6" (length: 36)
+[11:20:10.481Z] [log] [-ms] booted (time: 88ms)
+[11:20:10.500Z] [info] [-ms] Listening on http://localhost:9999/
+[11:20:10.504Z] [info] [-ms] [garmin-auth] Expected client ID: "6e904d60-e9d6-48ff-b1e7-3f3e7ff20db6" (length: 36)
+[11:20:10.504Z] [info] [-ms] [garmin-auth] POST request, headers: {"accept":"*/*","accept-encoding":"gzip","accept-language":"*","baggage":"sb-request-id=01a11617-a31d-75cd-ac3f-d707970a6e59","cdn-loop":"cloudflare; loops=1","cf-connecting-ip":"3.101.57.12","cf-ew-via":"15","cf-ray":"a46c83d89fd9ee14-SJC","cf-visitor":"{\"schem
+[11:20:10.622Z] [log] [-ms] booted (time: 70ms)
+[11:20:10.642Z] [info] [-ms] Listening on http://localhost:9999/
+[11:20:10.647Z] [info] [-ms] [garmin-auth] POST request, headers: {"accept":"*/*","accept-encoding":"gzip","accept-language":"*","baggage":"sb-request-id=01a11617-a3e6-73ec-ad0c-14541d247d39","cdn-loop":"cloudflare; loops=1","cf-connecting-ip":"3.15.189.241","cf-ew-via":"15","cf-ray":"a46c83d98bc63061-ORD","cf-visitor":"{\"sche
+[11:20:10.647Z] [info] [-ms] [garmin-auth] Expected client ID: "6e904d60-e9d6-48ff-b1e7-3f3e7ff20db6" (length: 36)
+[11:20:10.828Z] [warning] [-ms] [garmin-push] No user mapping for Garmin userId: 22bb0eaf-e0cc-407c-a5c3-3c93061209da
+[11:20:10.829Z] [info] [-ms] [garmin-push] Processing complete: {"dailies":{"processed":0,"errors":1}}
+[11:20:11.620Z] [info] [-ms] [garmin-push] Processing complete: {"stressDetails":{"processed":0,"errors":1}}
+[11:20:13.863Z] [info] [-ms] [garmin-push] Processing complete: {"epochs":{"processed":0,"errors":24}}
+[11:20:37.075Z] [log] [-ms] booted (time: 71ms)
+[11:20:37.093Z] [info] [-ms] Listening on http://localhost:9999/
+[11:20:37.098Z] [info] [-ms] [garmin-auth] POST request, headers: {"accept":"*/*","accept-encoding":"gzip","accept-language":"*","baggage":"sb-request-id=01a11618-0b44-72e7-ac76-915372c95208","cdn-loop":"cloudflare; loops=1","cf-connecting-ip":"54.183.160.232","cf-ew-via":"15","cf-ray":"a46c847eeb3341ce-SJC","cf-visitor":"{\"sc
+[11:20:37.098Z] [info] [-ms] [garmin-auth] Expected client ID: "6e904d60-e9d6-48ff-b1e7-3f3e7ff20db6" (length: 36)
+[11:20:37.283Z] [info] [-ms] [garmin-push] Processing complete: {"dailies":{"processed":0,"errors":1}}
+[11:20:37.283Z] [warning] [-ms] [garmin-push] No user mapping for Garmin userId: 114759b5-25ef-4256-a502-a10239ef78d1
+[11:21:22.879Z] [log] [-ms] shutdown
+[11:21:25.122Z] [log] [-ms] shutdown
+[11:21:25.497Z] [log] [-ms] shutdown
+[11:21:25.750Z] [log] [-ms] shutdown
+[11:21:52.091Z] [log] [-ms] shutdown
+[11:23:11.948Z] [log] [-ms] booted (time: 69ms)
+[11:23:11.967Z] [info] [-ms] Listening on http://localhost:9999/
+[11:23:11.971Z] [info] [-ms] [garmin-auth] POST request, headers: {"accept":"*/*","accept-encoding":"gzip","accept-language":"*","baggage":"sb-request-id=01a1161a-680a-7f66-859d-ac2b28dbd3c1","cdn-loop":"cloudflare; loops=1","cf-connecting-ip":"18.144.125.38","cf-ew-via":"15","cf-ray":"a46c8846de46c710-SJC","cf-visitor":"{\"sch
+[11:23:11.971Z] [info] [-ms] [garmin-auth] Expected client ID: "6e904d60-e9d6-48ff-b1e7-3f3e7ff20db6" (length: 36)
+[11:23:12.733Z] [info] [-ms] [garmin-push] Processing complete: {"stressDetails":{"processed":0,"errors":1}}
+[11:23:14.393Z] [log] [-ms] booted (time: 72ms)
+[11:23:14.412Z] [info] [-ms] Listening on http://localhost:9999/
+[11:23:14.417Z] [info] [-ms] [garmin-auth] Expected client ID: "6e904d60-e9d6-48ff-b1e7-3f3e7ff20db6" (length: 36)
+[11:23:14.417Z] [info] [-ms] [garmin-auth] POST request, headers: {"accept":"*/*","accept-encoding":"gzip","accept-language":"*","baggage":"sb-request-id=01a1161a-715d-7e02-a9f3-ab3a397101dd","cdn-loop":"cloudflare; loops=1","cf-connecting-ip":"52.14.24.199","cf-ew-via":"15","cf-ray":"a46c885578c5fc38-ORD","cf-visitor":"{\"sche
+[11:23:14.845Z] [info] [-ms] [garmin-push] Processing complete: {"epochs":{"processed":0,"errors":2}}
+[11:24:26.964Z] [log] [-ms] shutdown
+[11:24:29.405Z] [log] [-ms] shutdown
+[11:24:32.798Z] [log] [-ms] booted (time: 80ms)
+[11:24:32.817Z] [info] [-ms] Listening on http://localhost:9999/
+[11:24:32.821Z] [info] [-ms] [garmin-auth] POST request, headers: {"accept":"*/*","accept-encoding":"gzip","accept-language":"*","baggage":"sb-request-id=01a1161b-a3a2-7709-8268-f4f995005726","cdn-loop":"cloudflare; loops=1","cf-connecting-ip":"54.241.196.200","cf-ew-via":"15","cf-ray":"a46c8a401874d84b-SJC","cf-visitor":"{\"sc
+[11:24:32.822Z] [info] [-ms] [garmin-auth] Expected client ID: "6e904d60-e9d6-48ff-b1e7-3f3e7ff20db6" (length: 36)
+[11:24:33.638Z] [warning] [-ms] [garmin-push] No user mapping for Garmin userId: 40737893-11c6-405e-a5c3-6ab4eb9f1f6c
+[11:24:33.639Z] [info] [-ms] [garmin-push] Processing complete: {"dailies":{"processed":0,"errors":1}}
+[11:24:41.144Z] [log] [-ms] shutdown
+[11:26:01.595Z] [log] [-ms] booted (time: 90ms)
+[11:26:01.620Z] [info] [-ms] Listening on http://localhost:9999/
+[11:26:01.712Z] [info] [-ms] [garmin-auth] POST request, headers: {"accept":"*/*","accept-encoding":"gzip","accept-language":"*","baggage":"sb-request-id=01a1161c-fdb0-7326-bfa9-0c4135bfb358","cdn-loop":"cloudflare; loops=1","cf-connecting-ip":"18.221.133.163","cf-ew-via":"15","cf-ray":"a46c8c692e3dc5e4-ORD","cf-visitor":"{\"sc
+[11:26:01.712Z] [info] [-ms] [garmin-auth] Expected client ID: "6e904d60-e9d6-48ff-b1e7-3f3e7ff20db6" (length: 36)
+[11:26:01.976Z] [info] [-ms] [garmin-push] Processing complete: {"stressDetails":{"processed":0,"errors":1}}
+[11:26:02.610Z] [log] [-ms] booted (time: 69ms)
+[11:26:02.628Z] [info] [-ms] Listening on http://localhost:9999/
+[11:26:02.632Z] [info] [-ms] [garmin-auth] Expected client ID: "6e904d60-e9d6-48ff-b1e7-3f3e7ff20db6" (length: 36)
+[11:26:02.632Z] [info] [-ms] [garmin-auth] POST request, headers: {"accept":"*/*","accept-encoding":"gzip","accept-language":"*","baggage":"sb-request-id=01a1161d-02e8-7652-8dc7-6d78c94a9df3","cdn-loop":"cloudflare; loops=1","cf-connecting-ip":"18.144.215.161","cf-ew-via":"15","cf-ray":"a46c8c717d592599-SJC","cf-visitor":"{\"sc
+[11:26:04.032Z] [info] [-ms] [garmin-push] Processing complete: {"epochs":{"processed":0,"errors":8}}
+[11:26:41.286Z] [log] [-ms] booted (time: 76ms)
+[11:26:41.305Z] [info] [-ms] Listening on http://localhost:9999/
+[11:26:41.310Z] [info] [-ms] [garmin-auth] Expected client ID: "6e904d60-e9d6-48ff-b1e7-3f3e7ff20db6" (length: 36)
+[11:26:41.310Z] [info] [-ms] [garmin-auth] POST request, headers: {"accept":"*/*","accept-encoding":"gzip","accept-language":"*","baggage":"sb-request-id=01a1161d-99b8-7328-8349-9d8dde523f4b","cdn-loop":"cloudflare; loops=1","cf-connecting-ip":"52.15.179.99","cf-ew-via":"15","cf-ray":"a46c8d62d9330012-ORD","cf-visitor":"{\"sche
+[11:26:41.513Z] [info] [-ms] [garmin-push] Processing complete: {"dailies":{"processed":0,"errors":1}}
+[11:26:41.513Z] [warning] [-ms] [garmin-push] No user mapping for Garmin userId: fee56be0-bd68-4530-b776-8a1663e19014
+[11:27:16.661Z] [log] [-ms] shutdown
+[11:27:17.627Z] [log] [-ms] shutdown
+[11:27:56.335Z] [log] [-ms] shutdown
+[11:28:16.678Z] [log] [-ms] booted (time: 71ms)
+[11:28:16.696Z] [info] [-ms] Listening on http://localhost:9999/
+[11:28:16.700Z] [info] [-ms] [garmin-auth] POST request, headers: {"accept":"*/*","accept-encoding":"gzip","accept-language":"*","baggage":"sb-request-id=01a1161f-0e37-7da6-9b86-7b0768ea840a","cdn-loop":"cloudflare; loops=1","cf-connecting-ip":"18.145.206.44","cf-ew-via":"15","cf-ray":"a46c8fb7692038c7-SJC","cf-visitor":"{\"sch
+[11:28:16.700Z] [info] [-ms] [garmin-auth] Expected client ID: "6e904d60-e9d6-48ff-b1e7-3f3e7ff20db6" (length: 36)
+[11:28:16.745Z] [log] [-ms] booted (time: 77ms)
+[11:28:16.765Z] [info] [-ms] Listening on http://localhost:9999/
+[11:28:16.772Z] [info] [-ms] [garmin-auth] POST request, headers: {"accept":"*/*","accept-encoding":"gzip","accept-language":"*","baggage":"sb-request-id=01a1161f-0e7a-7721-aff3-fc2cb0392ab9","cdn-loop":"cloudflare; loops=1","cf-connecting-ip":"3.144.227.59","cf-ew-via":"15","cf-ray":"a46c8fb73f2b2964-ORD","cf-visitor":"{\"sche
+[11:28:16.772Z] [info] [-ms] [garmin-auth] Expected client ID: "6e904d60-e9d6-48ff-b1e7-3f3e7ff20db6" (length: 36)
+[11:28:17.232Z] [info] [-ms] [garmin-push] Processing complete: {"stressDetails":{"processed":0,"errors":1}}
+[11:28:18.223Z] [info] [-ms] [garmin-push] Processing complete: {"epochs":{"processed":0,"errors":11}}
+[11:28:23.818Z] [log] [-ms] booted (time: 70ms)
+[11:28:23.837Z] [info] [-ms] Listening on http://localhost:9999/
+[11:28:23.843Z] [info] [-ms] [garmin-auth] POST request, headers: {"accept":"*/*","accept-encoding":"gzip","accept-language":"*","baggage":"sb-request-id=01a1161f-2a6d-7506-a17e-070f09d37f39","cdn-loop":"cloudflare; loops=1","cf-connecting-ip":"18.191.28.244","cf-ew-via":"15","cf-ray":"a46c8fe3fc9d341a-ORD","cf-visitor":"{\"sch
+[11:28:23.843Z] [info] [-ms] [garmin-auth] Expected client ID: "6e904d60-e9d6-48ff-b1e7-3f3e7ff20db6" (length: 36)
+[11:28:24.000Z] [warning] [-ms] [garmin-push] No user mapping for Garmin userId: 6cdc3940-149b-46bf-a470-e9a617e63d39
+[11:28:24.001Z] [info] [-ms] [garmin-push] Processing complete: {"dailies":{"processed":0,"errors":1}}
+[11:28:34.038Z] [log] [-ms] booted (time: 67ms)
+[11:28:34.056Z] [info] [-ms] Listening on http://localhost:9999/
+[11:28:34.060Z] [info] [-ms] [garmin-auth] Expected client ID: "6e904d60-e9d6-48ff-b1e7-3f3e7ff20db6" (length: 36)
+[11:28:34.060Z] [info] [-ms] [garmin-auth] POST request, headers: {"accept":"*/*","accept-encoding":"gzip","accept-language":"*","baggage":"sb-request-id=01a1161f-5260-7718-bbef-45121d7e28e9","cdn-loop":"cloudflare; loops=1","cf-connecting-ip":"18.226.62.98","cf-ew-via":"15","cf-ray":"a46c9023d8ebee11-ORD","cf-visitor":"{\"sche
+[11:28:34.237Z] [info] [-ms] [garmin-push] Processing complete: {"stressDetails":{"processed":0,"errors":1}}
+[11:28:36.502Z] [log] [-ms] booted (time: 71ms)
+[11:28:36.521Z] [info] [-ms] Listening on http://localhost:9999/
+[11:28:36.525Z] [info] [-ms] [garmin-auth] Expected client ID: "6e904d60-e9d6-48ff-b1e7-3f3e7ff20db6" (length: 36)
+[11:28:36.525Z] [info] [-ms] [garmin-auth] POST request, headers: {"accept":"*/*","accept-encoding":"gzip","accept-language":"*","baggage":"sb-request-id=01a1161f-5be9-7eb4-9566-d5d5c9fa490e","cdn-loop":"cloudflare; loops=1","cf-connecting-ip":"18.118.10.242","cf-ew-via":"15","cf-ray":"a46c90332f294f3f-ORD","cf-visitor":"{\"sch
+[11:28:37.701Z] [info] [-ms] [garmin-push] Processing complete: {"epochs":{"processed":0,"errors":16}}
+[11:29:31.695Z] [log] [-ms] shutdown
+[11:29:31.789Z] [log] [-ms] shutdown
+[11:29:38.831Z] [log] [-ms] shutdown
+[11:29:49.080Z] [log] [-ms] shutdown
+[11:29:51.531Z] [log] [-ms] shutdown
+[11:30:55.874Z] [log] [-ms] booted (time: 69ms)
+[11:30:55.893Z] [info] [-ms] Listening on http://localhost:9999/
+[11:30:55.903Z] [info] [-ms] [garmin-auth] POST request, headers: {"accept":"*/*","accept-encoding":"gzip","accept-language":"*","baggage":"sb-request-id=01a11621-7c03-7df7-be92-756b0efcfaef","cdn-loop":"cloudflare; loops=1","cf-connecting-ip":"13.52.102.247","cf-ew-via":"15","cf-ray":"a46c939a6bd5ed3e-SJC","cf-visitor":"{\"sch
+[11:30:55.903Z] [info] [-ms] [garmin-auth] Expected client ID: "6e904d60-e9d6-48ff-b1e7-3f3e7ff20db6" (length: 36)
+[11:30:56.555Z] [warning] [-ms] [garmin-push] No user mapping for Garmin userId: 116cd517-0d26-4915-b01e-e79cbcca7621
+[11:30:56.555Z] [info] [-ms] [garmin-push] Processing complete: {"dailies":{"processed":0,"errors":1}}
+[11:32:05.552Z] [log] [-ms] booted (time: 82ms)
+[11:32:05.571Z] [info] [-ms] Listening on http://localhost:9999/
+[11:32:05.576Z] [info] [-ms] [garmin-auth] Expected client ID: "6e904d60-e9d6-48ff-b1e7-3f3e7ff20db6" (length: 36)
+[11:32:05.576Z] [info] [-ms] [garmin-auth] POST request, headers: {"accept":"*/*","accept-encoding":"gzip","accept-language":"*","baggage":"sb-request-id=01a11622-8c92-7a06-8117-e8604e3cb547","cdn-loop":"cloudflare; loops=1","cf-connecting-ip":"54.183.163.25","cf-ew-via":"15","cf-ray":"a46c954dcc2b7af7-SJC","cf-visitor":"{\"sch
+[11:32:05.806Z] [log] [-ms] booted (time: 66ms)
+[11:32:05.821Z] [info] [-ms] Listening on http://localhost:9999/
+[11:32:05.824Z] [info] [-ms] [garmin-auth] Expected client ID: "6e904d60-e9d6-48ff-b1e7-3f3e7ff20db6" (length: 36)
+[11:32:05.824Z] [info] [-ms] [garmin-auth] POST request, headers: {"accept":"*/*","accept-encoding":"gzip","accept-language":"*","baggage":"sb-request-id=01a11622-8da3-79f7-bbf8-4c8beb7e971f","cdn-loop":"cloudflare; loops=1","cf-connecting-ip":"3.101.132.215","cf-ew-via":"15","cf-ray":"a46c954f7b32f9d8-SJC","cf-visitor":"{\"sch
+[11:32:06.132Z] [info] [-ms] [garmin-push] Processing complete: {"stressDetails":{"processed":0,"errors":2}}
+[11:32:06.142Z] [warning] [-ms] [garmin-push] No user mapping for Garmin userId: 014f249e-a3ba-4dc3-bf53-bc8515455aca
+[11:32:06.142Z] [info] [-ms] [garmin-push] Processing complete: {"dailies":{"processed":0,"errors":1}}
+[11:32:07.742Z] [log] [-ms] booted (time: 79ms)
+[11:32:07.761Z] [info] [-ms] Listening on http://localhost:9999/
+[11:32:07.766Z] [info] [-ms] [garmin-auth] POST request, headers: {"accept":"*/*","accept-encoding":"gzip","accept-language":"*","baggage":"sb-request-id=01a11622-94bd-7042-91df-262215bf78cc","cdn-loop":"cloudflare; loops=1","cf-connecting-ip":"52.14.120.150","cf-ew-via":"15","cf-ray":"a46c955ad8ac0ef9-ORD","cf-visitor":"{\"sch
+[11:32:07.766Z] [info] [-ms] [garmin-auth] Expected client ID: "6e904d60-e9d6-48ff-b1e7-3f3e7ff20db6" (length: 36)
+[11:32:09.408Z] [info] [-ms] [garmin-push] Processing complete: {"epochs":{"processed":0,"errors":21}}
+[11:32:10.892Z] [log] [-ms] shutdown
+[11:32:32.354Z] [log] [-ms] booted (time: 76ms)
+[11:32:32.373Z] [info] [-ms] Listening on http://localhost:9999/
+[11:32:32.377Z] [info] [-ms] [garmin-auth] POST request, headers: {"accept":"*/*","accept-encoding":"gzip","accept-language":"*","baggage":"sb-request-id=01a11622-f53c-74b2-b5cb-3c6839e6eaa2","cdn-loop":"cloudflare; loops=1","cf-connecting-ip":"18.144.81.87","cf-ew-via":"15","cf-ray":"a46c95f53e966ad1-SJC","cf-visitor":"{\"sche
+[11:32:32.377Z] [info] [-ms] [garmin-auth] Expected client ID: "6e904d60-e9d6-48ff-b1e7-3f3e7ff20db6" (length: 36)
+[11:32:32.508Z] [warning] [-ms] [garmin-push] No user mapping for Garmin userId: 40737893-11c6-405e-a5c3-6ab4eb9f1f6c
+[11:32:32.508Z] [info] [-ms] [garmin-push] Processing complete: {"dailies":{"processed":0,"errors":1}}
+[11:33:20.568Z] [log] [-ms] shutdown
+[11:33:20.828Z] [log] [-ms] shutdown
+[11:33:22.757Z] [log] [-ms] shutdown
+[11:33:28.519Z] [log] [-ms] booted (time: 96ms)
+[11:33:28.526Z] [info] [-ms] Listening on http://localhost:9999/
+[11:33:28.781Z] [info] [-ms] [CALC_MACROS] Garmin not connected for user ef00796d-8211-43b4-b4f2-3495812032e0 — skipping week Garmin context
+[11:33:28.837Z] [log] [-ms] booted (time: 89ms)
+[11:33:28.856Z] [info] [-ms] Listening on http://localhost:9999/
+[11:33:28.864Z] [info] [-ms] Full sync (no timestamp provided)
+[11:33:28.864Z] [info] [-ms] Starting unified sync for user: ef00796d-8211-43b4-b4f2-3495812032e0
+[11:33:29.241Z] [info] [-ms] Sync completed: 73 total records (Incremental: false)
+[11:33:29.241Z] [info] [-ms] Errors: 0
+[11:33:29.517Z] [log] [-ms] booted (time: 49ms)
+[11:33:29.521Z] [info] [-ms] Listening on http://localhost:9999/
+[11:33:29.754Z] [info] [-ms] [CALC_MACROS] Garmin not connected for user ef00796d-8211-43b4-b4f2-3495812032e0 — skipping week Garmin context
+[11:33:34.179Z] [log] [-ms] shutdown
+[11:33:34.685Z] [log] [-ms] shutdown
+[11:33:47.370Z] [log] [-ms] shutdown
+[11:34:44.528Z] [log] [-ms] shutdown
+[11:34:57.880Z] [log] [-ms] booted (time: 60ms)
+[11:34:57.886Z] [info] [-ms] Listening on http://localhost:9999/
+[11:34:58.128Z] [info] [-ms] Deleting user account: ef00796d-8211-43b4-b4f2-3495812032e0
+[11:35:01.046Z] [info] [-ms] Deleted user from public.users: ef00796d-8211-43b4-b4f2-3495812032e0
+[11:35:01.722Z] [info] [-ms] Successfully deleted auth account: ef00796d-8211-43b4-b4f2-3495812032e0
+[11:35:02.233Z] [log] [-ms] shutdown
+(331 rows)
