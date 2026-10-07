@@ -236,6 +236,21 @@ class ContentKeys {
   static const String connectionsReconnectNoticeAction =
       'connections.reconnect_notice_action';
 
+  // Barcode scanner (testing-wave 28-004: the no-camera path)
+  static const String barcodeScannerNoCamera = 'barcode_scanner.no_camera';
+  static const String barcodeScannerPermissionDenied =
+      'barcode_scanner.permission_denied';
+  static const String barcodeScannerCameraFailed =
+      'barcode_scanner.camera_failed';
+  static const String barcodeScannerSearchInstead =
+      'barcode_scanner.search_instead';
+  static const String barcodeScannerEnterLabel = 'barcode_scanner.enter_label';
+  static const String barcodeScannerEnterTitle = 'barcode_scanner.enter_title';
+  static const String barcodeScannerEnterBody = 'barcode_scanner.enter_body';
+  static const String barcodeScannerEnterHint = 'barcode_scanner.enter_hint';
+  static const String barcodeScannerEnterSubmit =
+      'barcode_scanner.enter_submit';
+
   /// Interpolates `{name}` placeholders in a content value:
   /// `format('Give me {n} seconds', {'n': 30})`. (From mealplanning 7b206f04;
   /// the code screens' countdown reads it.)

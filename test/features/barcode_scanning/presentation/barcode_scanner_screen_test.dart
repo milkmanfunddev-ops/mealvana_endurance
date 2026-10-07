@@ -17,10 +17,12 @@ import 'package:mealvana_endurance/shared/services/analytics/analytics_tracker.d
 import 'package:mealvana_endurance/shared/services/app_external_deps.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:mealvana_endurance/shared/services/report/report.dart';
+import 'package:mealvana_endurance/features/content/application/content_service.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../helpers/test_content.dart';
 import '../fake_mobile_scanner_platform.dart';
 
 class _MockAnalyticsTracker extends Mock implements AnalyticsTracker {}
@@ -46,6 +48,9 @@ void main() {
       ProviderScope(
         overrides: [
           reportProvider.overrideWithValue(const NoopReport()),
+          // The no-camera words come from the content system (t98); develop
+          // has no bundled-defaults fallback, so serve the real JSON.
+          contentServiceProvider.overrideWith(testContentService),
           appExternalDepsProvider.overrideWithValue(
             AppExternalDeps(
               analytics: analytics,
