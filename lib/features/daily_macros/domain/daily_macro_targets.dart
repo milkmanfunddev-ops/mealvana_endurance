@@ -297,8 +297,11 @@ class DailyMacroTargets {
         if (bodyFatPct != null) 'body_fat_pct': bodyFatPct,
         'energy_basis': energyBasis,
       },
-      'created_at': createdAt.toIso8601String(),
-      'updated_at': updatedAt.toIso8601String(),
+      // UTC with its offset (develop-2026-10 ticket 22, 01-004): a local
+      // DateTime's ISO string carries no zone, and Postgres read the wall
+      // clock as UTC, five hours early in CDT.
+      'created_at': createdAt.toUtc().toIso8601String(),
+      'updated_at': updatedAt.toUtc().toIso8601String(),
     };
   }
 }

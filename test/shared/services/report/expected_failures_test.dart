@@ -117,14 +117,6 @@ void main() {
       );
     });
 
-    test('EmailVerificationRequiredException is verification_pending '
-        '(DEV-8R)', () {
-      expect(
-        classify(const EmailVerificationRequiredException()),
-        ExpectedFailure.verificationPending,
-      );
-    });
-
     test('login before verifying is verification_pending (DEV-9N)', () {
       final error = AuthApiException(
         'Email not confirmed',
@@ -135,15 +127,6 @@ void main() {
     });
 
     test('a wrong or expired code is invalid_credentials (DEV-95, DEV-9P)', () {
-      expect(
-        classify(
-          const InvalidVerificationCodeException(
-            'That code is wrong or has expired. Check the digits, or tap '
-            'Resend for a new one.',
-          ),
-        ),
-        ExpectedFailure.invalidCredentials,
-      );
       // SupabaseAuthService wraps the GoTrue error into its own message.
       final otp = AuthApiException(
         'Token has expired or is invalid',

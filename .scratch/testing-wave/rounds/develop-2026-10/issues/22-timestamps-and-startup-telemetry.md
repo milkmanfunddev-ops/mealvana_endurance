@@ -99,19 +99,35 @@ every area). 28 shares no file (it touches `launch_trail.dart` and `root_app_wid
 `notification_service.dart`). Tickets 23, 24, 26, 27 were not written when this was cut: the lead checks
 `app_startup_service.dart` and `notification_service.dart` against them.
 
-- [ ] Seam test (`user_profile_timestamps_test.dart`): feed a server-shaped row (`created_at:
+- [x] Seam test (`user_profile_timestamps_test.dart`): feed a server-shaped row (`created_at:
       '2026-10-07T11:11:03.123456+00:00'`, Postgres's microseconds and offset), save it locally, read it back,
       upload it twice through `UserRepository` with a fake Supabase that captures the upsert. Each sent
       `created_at` ends in `Z` and `isAtSameMomentAs` the original. Asserting the `Z` catches a naive string in
       any machine time zone.
-- [ ] Same for `daily_macro_targets` (`daily_macro_targets_upload_utc_test.dart`), through the repository's
+- [x] Same for `daily_macro_targets` (`daily_macro_targets_upload_utc_test.dart`), through the repository's
       save path, starting from a Drift epoch row; extend the round-trip test to check the wire string.
-- [ ] `dashboard_transient_telemetry_test.dart` with `RecordingReport` and fake time: the observed sequence
+- [x] `dashboard_transient_telemetry_test.dart` with `RecordingReport` and fake time: the observed sequence
       (computing, then targets at 876 ms) sends no degraded event; computing stuck past the threshold sends one
       event when the timer fires and one "resolved" event when it ends; reason `error` sends at once.
-- [ ] `performance_telemetry_test.dart`: an 18 s `deferred.notifications` with 15 s of `userWait` sends no
+- [x] `performance_telemetry_test.dart`: an 18 s `deferred.notifications` with 15 s of `userWait` sends no
       degraded event and its breadcrumb carries `user_wait_ms: 15000`; a 12 s step with no wait still sends one.
-- [ ] `flutter analyze` clean on touched files.
+- [x] `flutter analyze` clean on touched files.
 - [ ] Retest: ticket 30 (signup) reads `created_at` on `users` and `daily_macro_targets` against
       `email_confirmed_at`, and no `DashboardTargetsAnomaly` event follows a normal signup. Ticket 17's
       lone-simulator cold start: no `deferred.notifications` warning when the prompt is left up.
+
+**Closing note (item 1, 2026-10-07).** Fixed here: `daily_macro_targets` (`DailyMacroTargets.toJson`) and
+`users.updated_at` in `AuthRepositoryEdge.updateUser`. Already UTC from ticket 29: `UserProfile.toJson`, the
+reset-anonymous upsert, `auth_migration_service.dart`. Drift keeps whole seconds, so the users seam test checks
+the server instant to the second. Still sending naive `created_at`/`updated_at` (outside this ruling, not
+changed; grep `'(created_at|updated_at)': .*toIso8601String()` without `toUtc`):
+- coach tables: `coach_repository.dart` (coaches, coach_athlete_relationships, invites; 15 sites),
+  `coach_messaging_repository.dart`, domain `coach.dart`, `coach_athlete_relationship.dart`, `coach_message.dart`
+- `food_preferences`: `food_preferences_repository.dart` (2 sites), `user_sync_handler.dart`
+- `feedback`: `feedback_repository.dart` (2 sites)
+- user foods: `user_foods_repository.dart`, `user_food_crud_service.dart`, `barcode_scanner_service.dart`
+- carb loading: `carb_loading_user_food.dart`, `carb_loading_day_meal.dart`, `carb_loading_food.dart`
+- `activities`: `activity_mapper.dart` (2 sites), `activity_sync_handler.dart`
+- `events`: `events_repository.dart`, `event_sync_handler.dart`
+- `nutrition_plans`: `nutrition_plan_service.dart`
+- personal templates: `personal_template.dart`

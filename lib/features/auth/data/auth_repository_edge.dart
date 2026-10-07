@@ -180,7 +180,8 @@ class AuthRepositoryEdge {
             'runs_with_water_bottle': user.runsWithWaterBottle,
             'gut_training_level': user.gutTraining.value,
             'onboarding_completed': user.onboardingCompleted,
-            'updated_at': DateTime.now().toIso8601String(),
+            // UTC with its offset (develop-2026-10 ticket 22, 01-004).
+            'updated_at': DateTime.now().toUtc().toIso8601String(),
           })
           .eq('device_id', user.id);
 

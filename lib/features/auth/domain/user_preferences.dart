@@ -3,6 +3,7 @@ import 'package:mealvana_endurance/features/onboarding/domain/allergy.dart';
 import 'package:mealvana_endurance/features/nutrition_plan/domain/run_parameters.dart';
 import 'package:mealvana_endurance/features/nutrition_plan/domain/nutrition_target_overrides.dart';
 import 'package:mealvana_endurance/features/daily_macros/domain/enums.dart';
+import 'signup_code.dart';
 
 /// Domain models for user authentication and preferences
 /// Removed Hive dependencies as part of migration to Drift database
@@ -535,8 +536,9 @@ class UserProfile {
       // User identity
       'first_name': firstName,
       'last_name': lastName,
-      // Contact information
-      'email': email,
+      // Contact information: trimmed and lowercase, however it was typed
+      // (01-009).
+      'email': normaliseEmail(email),
       // Nutrition target overrides
       'nutrition_target_overrides': nutritionTargetOverrides?.toJson(),
       // Daily macro calculation fields

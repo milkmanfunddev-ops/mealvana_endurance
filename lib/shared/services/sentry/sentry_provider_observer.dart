@@ -21,6 +21,11 @@
 ///    retries are exhausted (or the policy declines), which is the one
 ///    `AsyncError` Riverpod emits with `retrying: false`.
 ///
+/// An [AuthFlowOutcome] (a signup that needs its code, a refused code, a
+/// failed Resend), bare or inside a [ProviderException], is the flow working:
+/// the screen routes on it. It becomes an [authFlowCategory] breadcrumb and
+/// never a Fault (develop-2026-10 ticket 21, 01-005).
+///
 /// Two lifecycle cases are not Faults (ticket 18):
 ///
 /// - A failure that arrives after the container itself was disposed is the
@@ -51,10 +56,16 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart'
     show ProviderBase, ProviderException;
 
+import '../../../features/auth/domain/auth_exceptions.dart'
+    show AuthFlowOutcome;
 import '../report/report.dart';
 
 /// Breadcrumb category for a retry attempt.
 const String riverpodRetryCategory = 'riverpod.retry';
+
+/// Breadcrumb category for an expected turn in the signup and verify flows
+/// ([AuthFlowOutcome]) that a notifier wrote into its state (01-005).
+const String authFlowCategory = 'auth.flow';
 
 /// Breadcrumb category for a failure the observer saw but did not report
 /// again (rule D9: a skipped step is written down).
@@ -149,6 +160,19 @@ final class SentryProviderObserver extends ProviderObserver {
 
     if (_isTeardown(context.container, error)) {
       _skipped(providerName, error, reason: 'container disposed');
+      return;
+    }
+
+    final outcome = error is ProviderException ? error.exception : error;
+    if (outcome is AuthFlowOutcome) {
+      _reporter.breadcrumb(
+        'Provider $providerName: ${outcome.runtimeType}',
+        category: authFlowCategory,
+        data: <String, dynamic>{
+          'provider': providerName,
+          'type': outcome.runtimeType.toString(),
+        },
+      );
       return;
     }
 

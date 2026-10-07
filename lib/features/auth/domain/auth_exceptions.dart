@@ -1,3 +1,12 @@
+import 'signup_code.dart';
+
+/// An expected turn in the signup and verify flows, not a failure (01-005):
+/// the screen routes on it or shows a line. The Riverpod net turns one it
+/// finds in a notifier's state into an `auth.flow` breadcrumb, never a Fault,
+/// and `EmailAuthService.verifyEmailOtp` does not report it; the verify
+/// screen's note is its record.
+abstract interface class AuthFlowOutcome implements Exception {}
+
 class AccountAlreadyExistsException implements Exception {
   final String message;
   final String? email;
@@ -52,7 +61,7 @@ class OAuthCancelledException implements Exception {
 /// required. This is a *control-flow* signal, not a failure: the account was
 /// created. The caller must route to the verify-code screen and finish signup
 /// via `EmailAuthService.verifyEmailOtp` once the user enters the code.
-class EmailVerificationRequiredException implements Exception {
+class EmailVerificationRequiredException implements AuthFlowOutcome {
   const EmailVerificationRequiredException({this.userId});
 
   /// The auth user the signup created (null on the anonymous-upgrade path,
@@ -117,7 +126,10 @@ class SignInFailedException extends EmailSignInException {
 /// `over_email_send_rate_limit`, "you can only request this after N
 /// seconds"). The screens count down [retryAfterSeconds] instead of showing
 /// a failure (testing-wave 121-001, 124-004).
-class ResendRateLimitedException implements Exception {
+///
+/// On Verify your email it is the rate-limited kind of
+/// [VerificationResendException]; Enter Reset Code uses only its helpers.
+class ResendRateLimitedException extends VerificationResendException {
   const ResendRateLimitedException(this.retryAfterSeconds);
 
   /// Seconds GoTrue asked for; the server's own gap (60 s on dev) when its
@@ -148,46 +160,79 @@ class ResendRateLimitedException implements Exception {
       'ResendRateLimitedException(retryAfterSeconds: $retryAfterSeconds)';
 }
 
-/// The 6-digit code was wrong, expired, or already used.
-class InvalidVerificationCodeException implements Exception {
-  const InvalidVerificationCodeException(this.message);
+/// Why a 6-digit code was refused (01-002). The screen turns each into its
+/// own line from the content system (`auth.verify_email.error_*`).
+enum VerificationCodeRejection {
+  /// GoTrue refused a code younger than [signupCodeLifetime]: mistyped, or
+  /// from an earlier email.
+  wrong,
 
-  /// Maps GoTrue's refusal of a code to text the athlete can act on.
+  /// GoTrue refused a code at or past [signupCodeLifetime].
+  expired,
+
+  /// Not six digits; never sent.
+  malformed,
+
+  /// GoTrue's 429 on verify (`over_request_rate_limit`).
+  tooManyTries,
+}
+
+/// The 6-digit code was refused. Carries the reason, never the words.
+class InvalidVerificationCodeException implements AuthFlowOutcome {
+  const InvalidVerificationCodeException(this.reason);
+
+  /// Maps GoTrue's refusal of a code to a reason.
   ///
   /// GoTrue answers a mistyped code, a superseded one and a stale one alike
   /// (403, `otp_expired`, "Token has expired or is invalid"), so the answer
-  /// alone cannot tell them apart. Saying "expired" sent people who had
-  /// mistyped to Resend instead of back to the digits (Finding 32-001), so
-  /// that answer reads wrong first and names both ways out.
+  /// alone cannot tell them apart. The code's age decides: under
+  /// [signupCodeLifetime] it is [VerificationCodeRejection.wrong], at or past
+  /// it [VerificationCodeRejection.expired] (Lee's ruling on 01-002: each
+  /// case gets its own message). An unknown age reads as wrong.
   factory InvalidVerificationCodeException.fromGoTrue({
     String? code,
     String? statusCode,
     required String message,
+    Duration? codeAge,
   }) {
     if (code == 'over_request_rate_limit' || statusCode == '429') {
-      return const InvalidVerificationCodeException(tooManyTriesText);
+      return const InvalidVerificationCodeException(
+        VerificationCodeRejection.tooManyTries,
+      );
     }
-    final lower = message.toLowerCase();
-    if (code == 'otp_expired' || lower.contains('expired')) {
-      return const InvalidVerificationCodeException(wrongOrExpiredText);
+    final staleAnswer =
+        code == 'otp_expired' || message.toLowerCase().contains('expired');
+    if (staleAnswer && codeAge != null && codeAge >= signupCodeLifetime) {
+      return const InvalidVerificationCodeException(
+        VerificationCodeRejection.expired,
+      );
     }
-    return const InvalidVerificationCodeException(notRightText);
+    return const InvalidVerificationCodeException(
+      VerificationCodeRejection.wrong,
+    );
   }
 
-  /// Whether this is GoTrue's one refusal for a wrong, stale or superseded
-  /// code; after a Resend the screen reads it as "use the newest email"
-  /// (testing-wave 121-002).
-  bool get isWrongOrExpired => message == wrongOrExpiredText;
-
-  static const wrongOrExpiredText =
-      'That code is wrong or has expired. Check the digits, or tap Resend '
-      'for a new one.';
-  static const notRightText = 'That code is not right. Check it and try again.';
-  static const tooManyTriesText =
-      'Too many tries. Wait a minute and try again.';
-
-  final String message;
+  final VerificationCodeRejection reason;
 
   @override
-  String toString() => 'InvalidVerificationCodeException: $message';
+  String toString() => 'InvalidVerificationCodeException: ${reason.name}';
+}
+
+/// A Resend of the verification code did not send one (01-003). Never a
+/// wrong code: the screen shows a countdown or a resend failure, not a code
+/// error.
+sealed class VerificationResendException implements AuthFlowOutcome {
+  const VerificationResendException();
+}
+
+/// The Resend went nowhere: no connection, or GoTrue refused it for a reason
+/// other than its rate limit. The screen says so
+/// (`auth.verify_email.error_resend_failed`).
+class VerificationResendFailedException extends VerificationResendException {
+  const VerificationResendFailedException(this.cause);
+
+  final Object cause;
+
+  @override
+  String toString() => 'VerificationResendFailedException: $cause';
 }

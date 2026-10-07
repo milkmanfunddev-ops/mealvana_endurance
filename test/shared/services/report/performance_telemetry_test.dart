@@ -88,10 +88,7 @@ void main() {
       expect(transport.events, isEmpty);
       final tx = transport.transactions.single;
       expect(tx.transaction, 'startup.version_check');
-      expect(
-        tx.contexts.trace?.operation,
-        PerformanceTelemetry.spanOperation,
-      );
+      expect(tx.contexts.trace?.operation, PerformanceTelemetry.spanOperation);
       final measurement = tx.measurements['startup.version_check']!;
       expect(measurement.value, 9999);
       expect(measurement.unit, DurationSentryMeasurementUnit.milliSecond);
@@ -122,10 +119,7 @@ void main() {
       expect(first.tags?['severity'], 'degraded');
       expect(first.tags?['area'], 'performance');
       expect(first.fingerprint, ['slow-operation', 'startup.version_check']);
-      expect(
-        (first.contexts['diagnostic'] as Map?)?['duration_ms'],
-        10001,
-      );
+      expect((first.contexts['diagnostic'] as Map?)?['duration_ms'], 10001);
       // Every step still produced its span.
       expect(transport.transactions, hasLength(3));
     });
@@ -152,13 +146,84 @@ void main() {
     });
   });
 
+  group('time spent on the athlete is not the app being slow (08-009)', () {
+    Future<Breadcrumb> lastPerformanceCrumb() async {
+      late List<Breadcrumb> crumbs;
+      await Sentry.configureScope((scope) => crumbs = scope.breadcrumbs);
+      return crumbs.lastWhere((c) => c.category == 'performance');
+    }
+
+    test('an 18 s deferred.notifications with 15 s at the prompt sends no '
+        'event, and its breadcrumb shows the wait', () async {
+      final recording = RecordingReport();
+      PerformanceTelemetry.reportOverride = recording;
+
+      PerformanceTelemetry.recordDuration(
+        'deferred.notifications',
+        const Duration(seconds: 18),
+        userWait: () => const Duration(seconds: 15),
+      );
+      await settle();
+
+      expect(recording.degradeds, isEmpty);
+      final crumb = await lastPerformanceCrumb();
+      expect(crumb.data?['user_wait_ms'], 15000);
+      expect(crumb.data?['wall_ms'], 18000);
+      expect(crumb.data?['duration_ms'], 3000);
+      expect(crumb.level, SentryLevel.warning, reason: '3 s is still slow');
+    });
+
+    test('a 12 s step with no wait still sends one event', () async {
+      final recording = RecordingReport();
+      PerformanceTelemetry.reportOverride = recording;
+
+      PerformanceTelemetry.recordDuration(
+        'deferred.notifications',
+        const Duration(seconds: 12),
+        userWait: () => Duration.zero,
+      );
+      await settle();
+
+      expect(recording.degradeds, hasLength(1));
+      expect(recording.degradeds.single.extra?['duration_ms'], 12000);
+    });
+
+    test('a wait longer than the step floors the net time at zero', () async {
+      PerformanceTelemetry.recordDuration(
+        'deferred.notifications',
+        const Duration(seconds: 1),
+        userWait: () => const Duration(seconds: 2),
+      );
+      final crumb = await lastPerformanceCrumb();
+      expect(crumb.data?['duration_ms'], 0);
+      expect(crumb.level, SentryLevel.info);
+    });
+
+    test('measure reads the wait when the step ends', () async {
+      var waited = Duration.zero;
+      await PerformanceTelemetry.measure('deferred.notifications', () async {
+        waited = const Duration(milliseconds: 1);
+      }, userWait: () => waited);
+
+      final crumb = await lastPerformanceCrumb();
+      expect(crumb.data?['user_wait_ms'], 1);
+      expect(crumb.data, contains('wall_ms'));
+    });
+
+    test('a step measured without userWait carries no wait fields', () async {
+      PerformanceTelemetry.recordDuration(
+        'deferred.revenuecat',
+        const Duration(seconds: 3),
+      );
+      final crumb = await lastPerformanceCrumb();
+      expect(crumb.data, isNot(contains('user_wait_ms')));
+      expect(crumb.data?['duration_ms'], 3000);
+    });
+  });
+
   group('span emission', () {
     test('a step inside a bound transaction is a child span on it', () async {
-      final tx = Sentry.startTransaction(
-        '/',
-        'ui.load',
-        bindToScope: true,
-      );
+      final tx = Sentry.startTransaction('/', 'ui.load', bindToScope: true);
       await PerformanceTelemetry.measure(
         'startup.load_user',
         () async => 'user',
@@ -174,7 +239,9 @@ void main() {
       final sent = transport.transactions.single;
       expect(sent.transaction, '/');
       final steps = sent.spans
-          .where((s) => s.context.operation == PerformanceTelemetry.spanOperation)
+          .where(
+            (s) => s.context.operation == PerformanceTelemetry.spanOperation,
+          )
           .map((s) => s.context.description)
           .toList();
       expect(steps, containsAll(['startup.load_user', 'startup.sync']));

@@ -71,6 +71,11 @@ class _VerifyEmailScreenState extends ConsumerState<VerifyEmailScreen> {
   /// most likely came from the earlier email (121-002).
   bool _resent = false;
 
+  /// When the code being entered was sent: the signup sent it just before
+  /// this screen opened, and each successful Resend sends a new one. Its age
+  /// tells a wrong code from an expired one (01-002).
+  late DateTime _codeSentAt;
+
   /// Seconds until Resend becomes available again. Starts at the server's
   /// own gap between two emails (60 s, `smtp_max_frequency`) because a code
   /// was just sent by the signup itself; a shorter countdown let an enabled
@@ -81,6 +86,7 @@ class _VerifyEmailScreenState extends ConsumerState<VerifyEmailScreen> {
   @override
   void initState() {
     super.initState();
+    _codeSentAt = DateTime.now();
     _startResendCooldown();
   }
 
@@ -146,6 +152,7 @@ class _VerifyEmailScreenState extends ConsumerState<VerifyEmailScreen> {
             token: _codeCtrl.text,
             type: widget.otpType,
             pendingPassword: widget.pendingPassword,
+            codeSentAt: _codeSentAt,
           );
       if (!mounted) return;
       Navigator.of(context).pop(true);
@@ -155,18 +162,18 @@ class _VerifyEmailScreenState extends ConsumerState<VerifyEmailScreen> {
           .note(
             'Verification code rejected',
             area: 'auth',
-            data: {'type': widget.otpType.name},
+            data: {'type': widget.otpType.name, 'reason': e.reason.name},
           );
       if (!mounted) return;
       final content = ref.read(contentServiceProvider);
       setState(() {
         _verifying = false;
-        // After a Resend, GoTrue's one refusal most likely means the code
-        // from the earlier email (121-002): point at the newest one, never
-        // at Resend, which would send a third.
-        _error = _resent && e.isWrongOrExpired
+        // After a Resend, a refused young code most likely came from the
+        // earlier email (121-002): point at the newest one, never at Resend,
+        // which would send a third.
+        _error = _resent && e.reason == VerificationCodeRejection.wrong
             ? content.getValue(ContentKeys.verifyEmailCodeSuperseded)
-            : e.message;
+            : content.getValue(_rejectionKey(e.reason));
       });
     } catch (e, stackTrace) {
       await ref
@@ -178,12 +185,24 @@ class _VerifyEmailScreenState extends ConsumerState<VerifyEmailScreen> {
             message: 'Email OTP verification failed',
           );
       if (!mounted) return;
+      final content = ref.read(contentServiceProvider);
       setState(() {
         _verifying = false;
-        _error = 'Could not verify that code. Please try again.';
+        _error = content.getValue(ContentKeys.verifyEmailErrorGeneric);
       });
     }
   }
+
+  static String _rejectionKey(
+    VerificationCodeRejection reason,
+  ) => switch (reason) {
+    VerificationCodeRejection.wrong => ContentKeys.verifyEmailErrorWrongCode,
+    VerificationCodeRejection.expired => ContentKeys.verifyEmailErrorExpired,
+    VerificationCodeRejection.malformed =>
+      ContentKeys.verifyEmailErrorMalformed,
+    VerificationCodeRejection.tooManyTries =>
+      ContentKeys.verifyEmailErrorTooManyTries,
+  };
 
   Future<void> _resend() async {
     setState(() => _error = null);
@@ -191,9 +210,14 @@ class _VerifyEmailScreenState extends ConsumerState<VerifyEmailScreen> {
     try {
       await ref
           .read(emailAuthServiceProvider.notifier)
-          .resendVerificationCode(email: widget.email, type: widget.otpType);
+          .resendVerificationCode(
+            email: widget.email,
+            type: widget.otpType,
+            lastSentAt: _codeSentAt,
+          );
       if (!mounted) return;
       _resent = true;
+      _codeSentAt = DateTime.now();
       _startResendCooldown();
       MealvanaSnackbar.showSuccess(
         context,
@@ -213,16 +237,24 @@ class _VerifyEmailScreenState extends ConsumerState<VerifyEmailScreen> {
           );
       if (!mounted) return;
       _startResendCooldown(e.retryAfterSeconds);
-    } on InvalidVerificationCodeException catch (e) {
+    } on VerificationResendFailedException catch (e) {
+      // The service recorded why (a degraded event or a note); this is what
+      // the athlete was shown.
       await ref
           .read(reportProvider)
           .note(
-            'Verification code resend rejected',
+            'Verification code resend failed; told the athlete',
             area: 'auth',
-            data: {'type': widget.otpType.name},
+            data: {
+              'type': widget.otpType.name,
+              'cause_type': e.cause.runtimeType.toString(),
+            },
           );
       if (!mounted) return;
-      setState(() => _error = e.message);
+      setState(
+        () =>
+            _error = content.getValue(ContentKeys.verifyEmailErrorResendFailed),
+      );
     }
   }
 

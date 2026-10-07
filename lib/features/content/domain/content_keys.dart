@@ -17,6 +17,20 @@ class ContentKeys {
   static const String verifyEmailMaybeAccountHint =
       'auth.verify_email.maybe_account_hint';
   static const String verifyEmailLogIn = 'auth.verify_email.log_in';
+  // Verify your email's lines for a refused code and a failed Resend
+  // (develop-2026-10 ticket 21, 01-002 and 01-003): one per reason.
+  static const String verifyEmailErrorWrongCode =
+      'auth.verify_email.error_wrong_code';
+  static const String verifyEmailErrorExpired =
+      'auth.verify_email.error_expired';
+  static const String verifyEmailErrorMalformed =
+      'auth.verify_email.error_malformed';
+  static const String verifyEmailErrorTooManyTries =
+      'auth.verify_email.error_too_many_tries';
+  static const String verifyEmailErrorGeneric =
+      'auth.verify_email.error_generic';
+  static const String verifyEmailErrorResendFailed =
+      'auth.verify_email.error_resend_failed';
   // Enter Reset Code (124-004): the same countdown on the reset screen.
   static const String verifyCodeResendIn = 'auth.verify_code.resend_in';
   static const String verifyCodeResent = 'auth.verify_code.resent';

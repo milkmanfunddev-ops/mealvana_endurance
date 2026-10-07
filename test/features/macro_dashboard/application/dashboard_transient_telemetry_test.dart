@@ -1,3 +1,8 @@
+// A dashboard wait is an event only past its threshold (develop-2026-10
+// ticket 22, 01-006). After every signup the dashboard showed "computing"
+// for 756-877 ms and sent two warning events; that sequence now sends none.
+// Fake time: the test's fake timers fire the stuck timer, and the
+// telemetry's clock moves with them.
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mealvana_endurance/features/macro_dashboard/application/dashboard_transient_telemetry.dart';
 
@@ -5,18 +10,21 @@ import '../../../helpers/fakes/recording_report.dart';
 
 void main() {
   late RecordingReport report;
+  late DateTime fakeNow;
 
   setUp(() {
     DashboardTransientTelemetry.debugReset();
     report = RecordingReport();
     DashboardTransientTelemetry.reportOverride = report;
+    fakeNow = DateTime(2026, 10, 7, 6, 11);
+    DashboardTransientTelemetry.now = () => fakeNow;
   });
 
   tearDown(DashboardTransientTelemetry.debugReset);
 
   void observe({
     String userId = 'u1',
-    String dateKey = '2026-09-15',
+    String dateKey = '2026-10-07',
     required bool hasTargets,
     bool calculating = false,
     String? calculationError,
@@ -30,64 +38,92 @@ void main() {
     );
   }
 
-  List<RecordedReport> captured() => report.degradeds;
+  /// Moves the telemetry's clock and the fake timers together.
+  Future<void> wait(WidgetTester tester, Duration d) async {
+    fakeNow = fakeNow.add(d);
+    await tester.pump(d);
+  }
 
-  test('no-targets-while-computing fires one warning with reason=computing', () {
+  List<RecordedReport> events() => report.degradeds;
+
+  testWidgets('the observed signup sequence (computing, targets at 876 ms) '
+      'sends no event', (tester) async {
     observe(hasTargets: false, calculating: true);
+    await wait(tester, const Duration(milliseconds: 876));
+    observe(hasTargets: true);
+    await wait(tester, DashboardTransientTelemetry.transientThreshold);
 
-    expect(captured(), hasLength(1));
-    expect(captured().single.message, 'Dashboard shown without targets');
-    expect(captured().single.area, 'macro_dashboard');
-    expect(captured().single.tags?['reason'], 'computing');
-    expect(captured().single.extra?['reason'], 'computing');
+    expect(events(), isEmpty);
     expect(report.faults, isEmpty);
   });
 
-  test('provider rebuilds do not spam duplicate shown events', () {
+  testWidgets('computing stuck past the threshold sends one event when the '
+      'timer fires and one when it resolves', (tester) async {
+    observe(hasTargets: false, calculating: true);
+    await wait(tester, const Duration(seconds: 9));
+    expect(events(), isEmpty);
+
+    await wait(tester, const Duration(seconds: 1));
+    expect(events(), hasLength(1));
+    expect(events().single.message, 'Dashboard shown without targets');
+    expect(events().single.area, 'macro_dashboard');
+    expect(events().single.tags?['reason'], 'computing');
+    expect(events().single.extra?['open_ms'], 10000);
+
+    await wait(tester, const Duration(seconds: 5));
+    observe(hasTargets: true);
+    expect(events(), hasLength(2));
+    expect(events().last.message, 'Dashboard targets transient resolved');
+    expect(events().last.extra?['duration_ms'], 15000);
+  });
+
+  testWidgets('reason error is an event at once', (tester) async {
+    observe(hasTargets: false, calculationError: 'edge fn rejected input');
+
+    expect(events(), hasLength(1));
+    expect(events().single.tags?['reason'], 'error');
+    expect(
+      events().single.extra?['calculation_error'],
+      'edge fn rejected input',
+    );
+  });
+
+  testWidgets('provider rebuilds start one timer and send one stuck event', (
+    tester,
+  ) async {
     for (var i = 0; i < 5; i++) {
       observe(hasTargets: false, calculating: true);
     }
-    expect(captured(), hasLength(1));
+    await wait(tester, DashboardTransientTelemetry.transientThreshold);
+    expect(events(), hasLength(1));
+    DashboardTransientTelemetry.debugReset();
   });
 
-  test('targets arriving closes the episode with a duration', () {
-    observe(hasTargets: false, calculating: true);
-    observe(hasTargets: true);
-
-    expect(captured(), hasLength(2));
-    expect(captured().last.message, 'Dashboard targets transient resolved');
-    // Degraded (warning) on purpose: these are real findings and stay events
-    // (ticket 11); release beforeSend drops info-level events.
-    expect(captured().last.extra?['duration_ms'], isA<int>());
-    expect(captured().last.extra?['duration_ms'] as int, greaterThanOrEqualTo(0));
-  });
-
-  test('rendering with targets from the start reports nothing', () {
+  testWidgets('rendering with targets from the start reports nothing', (
+    tester,
+  ) async {
     observe(hasTargets: true);
     observe(hasTargets: true);
     expect(report.calls, isEmpty);
   });
 
-  test('error and empty states are bucketed by reason', () {
-    observe(hasTargets: false, calculationError: 'edge fn rejected input');
-    observe(dateKey: '2026-09-16', hasTargets: false);
-
-    expect(captured(), hasLength(2));
-    expect(captured().first.tags?['reason'], 'error');
-    expect(captured().first.extra?['calculation_error'], 'edge fn rejected input');
-    expect(captured().last.tags?['reason'], 'empty');
+  testWidgets('empty is a wait like computing', (tester) async {
+    observe(hasTargets: false);
+    await wait(tester, const Duration(seconds: 2));
+    observe(hasTargets: true);
+    expect(events(), isEmpty);
   });
 
-  test('episodes are independent per user and day', () {
+  testWidgets('episodes are independent per user and day', (tester) async {
     observe(userId: 'u1', hasTargets: false, calculating: true);
     observe(userId: 'u2', hasTargets: false, calculating: true);
+    await wait(tester, const Duration(seconds: 1));
     observe(userId: 'u1', hasTargets: true);
+    await wait(tester, DashboardTransientTelemetry.transientThreshold);
 
-    // u1 shown + u2 shown + u1 resolved; u2 still open.
-    expect(captured(), hasLength(3));
-    expect(
-      captured().where((c) => c.message == 'Dashboard targets transient resolved'),
-      hasLength(1),
-    );
+    // u1 resolved under the threshold; u2 stuck.
+    expect(events(), hasLength(1));
+    expect(events().single.message, 'Dashboard shown without targets');
+    DashboardTransientTelemetry.debugReset();
   });
 }

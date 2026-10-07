@@ -135,20 +135,15 @@ expectedFailureNeedles = <MapEntry<String, ExpectedFailure>>[
   MapEntry('invalid_credentials', ExpectedFailure.invalidCredentials),
   // 2026-10-06 (DEV-95, DEV-9P): a mistyped or expired 6-digit code, from the
   // email-verify and password-reset screens. The screen says so and offers
-  // Resend.
-  MapEntry(
-    'InvalidVerificationCodeException',
-    ExpectedFailure.invalidCredentials,
-  ),
+  // Resend. `InvalidVerificationCodeException` is no longer listed
+  // (develop-2026-10 ticket 21): it is an `AuthFlowOutcome`, which the
+  // Riverpod net turns into a breadcrumb and nothing reports.
   MapEntry('otp_expired', ExpectedFailure.invalidCredentials),
   // --- Control-flow signals from the auth flows (the UI routes on them) ---
-  // 2026-10-06 (DEV-8R, DEV-9N): signup or login before the email code was
-  // entered. The controller logs it as info, but the Riverpod net still
-  // reports the AsyncError it routes on, so the type has to be listed here.
-  MapEntry(
-    'EmailVerificationRequiredException',
-    ExpectedFailure.verificationPending,
-  ),
+  // 2026-10-06 (DEV-9N): login before the email code was entered.
+  // `EmailVerificationRequiredException` (DEV-8R) is no longer listed
+  // (develop-2026-10 ticket 21): the Riverpod net turns that `AuthFlowOutcome`
+  // into an `auth.flow` breadcrumb, so it never reaches `Report`.
   MapEntry('email_not_confirmed', ExpectedFailure.verificationPending),
   // 2026-10-06 (DEV-8D): the address or provider is already registered; the
   // signup screen offers "sign in instead".

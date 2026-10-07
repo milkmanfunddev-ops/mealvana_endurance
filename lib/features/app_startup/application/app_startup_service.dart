@@ -269,9 +269,16 @@ class AppStartupService {
   /// payload that launched the app. A step that fails now logs and the chain
   /// continues — these are all best-effort services, and none of them is a
   /// reason to abandon the others.
-  Future<void> _deferredStep(String name, Future<void> Function() body) async {
+  ///
+  /// [userWait] is the time inside the step spent on the athlete (the iOS
+  /// notification prompt), left out of the slow checks (08-009).
+  Future<void> _deferredStep(
+    String name,
+    Future<void> Function() body, {
+    Duration Function()? userWait,
+  }) async {
     try {
-      await PerformanceTelemetry.measure(name, body);
+      await PerformanceTelemetry.measure(name, body, userWait: userWait);
     } catch (e, stackTrace) {
       if (ref.mounted) {
         await _report.fault(
@@ -312,28 +319,37 @@ class AppStartupService {
         //
         // Every step is now fault-isolated too, so one failure can no longer
         // swallow the rest of the chain.
-        await _deferredStep('deferred.notifications', () async {
-          // The OneSignal app id must be in hand BEFORE initialize() runs —
-          // it used to arrive via configure() in deferred.analytics, two
-          // steps later, so the 1.29.0 "notifications FIRST" reorder left
-          // _initializeOneSignal() bailing on an empty id on every fresh
-          // install, fleet-wide (patch #3, 2026-10-03). Analytics consent is
-          // NOT a gate here: this is push registration, not tracking — the
-          // OS permission prompt is push's own consent. The analytics
-          // tracker still only attaches in deferred.analytics, after
-          // consent, so tap-event tracking is unchanged.
-          NotificationService.configureRemotePush(
-            oneSignalAppId: ref.read(appConfigProvider).oneSignalAppId,
-          );
-          // Ticket 138 (125-004): the OS's answer lands on the profile, local
-          // first, and follows later changes in iOS Settings on resume. Wired
-          // here, not in configure(), because configure() waits for
-          // analytics consent and storing the answer is not tracking.
-          NotificationService.configurePermissionAnswer(
-            _storeNotificationPermission,
-          );
-          await NotificationService.initialize();
-        });
+        // The iOS notification prompt waits on the athlete, not the app: its
+        // time is left out of this step's slow checks and shown as
+        // user_wait_ms (develop-2026-10 ticket 22, 08-009).
+        final promptWaitBefore = NotificationService.permissionPromptWait;
+        await _deferredStep(
+          'deferred.notifications',
+          () async {
+            // The OneSignal app id must be in hand BEFORE initialize() runs —
+            // it used to arrive via configure() in deferred.analytics, two
+            // steps later, so the 1.29.0 "notifications FIRST" reorder left
+            // _initializeOneSignal() bailing on an empty id on every fresh
+            // install, fleet-wide (patch #3, 2026-10-03). Analytics consent is
+            // NOT a gate here: this is push registration, not tracking — the
+            // OS permission prompt is push's own consent. The analytics
+            // tracker still only attaches in deferred.analytics, after
+            // consent, so tap-event tracking is unchanged.
+            NotificationService.configureRemotePush(
+              oneSignalAppId: ref.read(appConfigProvider).oneSignalAppId,
+            );
+            // Ticket 138 (125-004): the OS's answer lands on the profile, local
+            // first, and follows later changes in iOS Settings on resume. Wired
+            // here, not in configure(), because configure() waits for
+            // analytics consent and storing the answer is not tracking.
+            NotificationService.configurePermissionAnswer(
+              _storeNotificationPermission,
+            );
+            await NotificationService.initialize();
+          },
+          userWait: () =>
+              NotificationService.permissionPromptWait - promptWaitBefore,
+        );
 
         // 2. Initialize device info (safe after first frame)
         await _deferredStep(

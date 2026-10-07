@@ -250,6 +250,17 @@ void main() {
             energyBasis: 'pre_override',
           );
           final json = t.toJson();
+          // The wire string carries its offset (develop-2026-10 ticket 22,
+          // 01-004): a naive local ISO string read as UTC moved the row.
+          for (final key in ['created_at', 'updated_at']) {
+            expect(json[key], endsWith('Z'));
+            expect(
+              DateTime.parse(
+                json[key] as String,
+              ).isAtSameMomentAs(DateTime(2026, 8, 20)),
+              isTrue,
+            );
+          }
           expect(
             json['calculation_input'],
             isA<Map>(),

@@ -40,11 +40,20 @@ abstract final class PerformanceTelemetry {
 
   static Report get _report => reportOverride ?? SentryReport.global;
 
+  /// Times [action] as [operation].
+  ///
+  /// [userWait] is time inside the step spent waiting on the athlete, not
+  /// the app: the iOS notification prompt in `deferred.notifications`
+  /// (develop-2026-10 ticket 22, 08-009). The slow and ceiling checks use the
+  /// wall time minus it, floored at zero; the breadcrumb and span carry
+  /// `duration_ms` (net), `user_wait_ms` and `wall_ms`, so nothing is hidden.
+  /// Read once, when the step ends.
   static Future<T> measure<T>(
     String operation,
     Future<T> Function() action, {
     Map<String, dynamic> data = const {},
     Duration threshold = slowThreshold,
+    Duration Function()? userWait,
   }) async {
     // Opened before the work so the span's own clock is honest; the SDK
     // refuses a child that starts before its parent, which a back-dated
@@ -61,29 +70,45 @@ abstract final class PerformanceTelemetry {
         data: data,
         threshold: threshold,
         openSpan: span,
+        userWait: userWait,
       );
     }
   }
 
   /// For a duration measured elsewhere. The span is back-dated, clamped to
   /// the bound transaction's start; `duration_ms` carries the true value.
+  /// [userWait] as in [measure].
   static void recordDuration(
     String operation,
     Duration duration, {
     Map<String, dynamic> data = const {},
     Duration threshold = slowThreshold,
-  }) => _recordDuration(operation, duration, data: data, threshold: threshold);
+    Duration Function()? userWait,
+  }) => _recordDuration(
+    operation,
+    duration,
+    data: data,
+    threshold: threshold,
+    userWait: userWait,
+  );
 
   static void _recordDuration(
     String operation,
-    Duration duration, {
+    Duration wall, {
     required Map<String, dynamic> data,
     required Duration threshold,
     ISentrySpan? openSpan,
+    Duration Function()? userWait,
   }) {
+    final waited = userWait?.call() ?? Duration.zero;
+    final net = wall - waited;
+    // What the app itself took: the slow and ceiling checks read this.
+    final duration = net.isNegative ? Duration.zero : net;
     final payload = <String, dynamic>{
       'operation': operation,
       'duration_ms': duration.inMilliseconds,
+      if (userWait != null) 'user_wait_ms': waited.inMilliseconds,
+      if (userWait != null) 'wall_ms': wall.inMilliseconds,
       'process_uptime_ms': _processUptime.elapsedMilliseconds,
       ...data,
     };
@@ -98,7 +123,7 @@ abstract final class PerformanceTelemetry {
     );
 
     _finishSpan(
-      openSpan ?? _startSpan(operation, startedAt: _now().subtract(duration)),
+      openSpan ?? _startSpan(operation, startedAt: _now().subtract(wall)),
       operation,
       duration,
       payload,

@@ -12,6 +12,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:logger/logger.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 
+import 'package:mealvana_endurance/features/auth/domain/auth_exceptions.dart';
 import 'package:mealvana_endurance/shared/services/analytics/analytics_tracker.dart';
 import 'package:mealvana_endurance/shared/services/report/report_log.dart';
 import 'package:mealvana_endurance/shared/services/report/report.dart';
@@ -49,6 +50,21 @@ class SaveController extends AsyncNotifier<int> {
     state = const AsyncLoading();
     state = await AsyncValue.guard(() async {
       throw FormatException('bad payload');
+    });
+  }
+}
+
+/// A signup that needs its emailed code: the service throws the outcome
+/// inside `AsyncValue.guard` and writes it into state, as
+/// `EmailAuthService.signUpWithEmail` does (develop-2026-10 ticket 21).
+class SignupController extends AsyncNotifier<int> {
+  @override
+  Future<int> build() async => 0;
+
+  Future<void> signUp() async {
+    state = const AsyncLoading();
+    state = await AsyncValue.guard(() async {
+      throw const EmailVerificationRequiredException(userId: 'u1');
     });
   }
 }
@@ -390,5 +406,72 @@ void main() {
     expect(event.level, SentryLevel.warning);
     expect(event.tags, containsPair('riverpod_lifecycle', disposedMidBuildTag));
     expect(event.tags, containsPair('provider', 'allEventsProvider'));
+  });
+
+  group('an AuthFlowOutcome is the flow working, not a Fault (01-005)', () {
+    test('EmailVerificationRequiredException in a notifier\'s state is one '
+        'auth.flow breadcrumb and no event', () async {
+      final signupProvider = AsyncNotifierProvider<SignupController, int>(
+        SignupController.new,
+        name: 'emailAuthServiceProvider',
+      );
+      await container.read(signupProvider.future);
+
+      await container.read(signupProvider.notifier).signUp();
+      await flush();
+
+      expect(
+        container.read(signupProvider).error,
+        isA<EmailVerificationRequiredException>(),
+      );
+      expect(transport.events, isEmpty);
+      final flow = ofCategory(await breadcrumbs(), authFlowCategory);
+      expect(flow, hasLength(1));
+      expect(
+        flow.single.data,
+        containsPair('provider', 'emailAuthServiceProvider'),
+      );
+      expect(
+        flow.single.data,
+        containsPair('type', 'EmailVerificationRequiredException'),
+      );
+    });
+
+    test(
+      'the same outcome inside a ProviderException is a breadcrumb too',
+      () async {
+        final unobserved = ProviderContainer();
+        addTearDown(unobserved.dispose);
+        final upstream = Provider<int>(
+          (ref) => throw const EmailVerificationRequiredException(),
+          name: 'signupProvider',
+        );
+        late final ProviderException wrapper;
+        try {
+          unobserved.read(upstream);
+          fail('expected the failed provider to throw');
+        } on ProviderException catch (e) {
+          wrapper = e;
+        }
+
+        final downstream = Provider<int>(
+          (ref) => throw wrapper,
+          name: 'signupScreenProvider',
+        );
+        expect(
+          () => container.read(downstream),
+          throwsA(isA<ProviderException>()),
+        );
+        await flush();
+
+        expect(transport.events, isEmpty);
+        final flow = ofCategory(await breadcrumbs(), authFlowCategory);
+        expect(flow, hasLength(1));
+        expect(
+          flow.single.data,
+          containsPair('type', 'EmailVerificationRequiredException'),
+        );
+      },
+    );
   });
 }
