@@ -1,6 +1,6 @@
 # 26: Archive the route-only orphan screens
 
-**Status:** ready (round develop-2026-10, fix)
+**Status:** in-progress (wave 2b, 2026-10-07)
 **Labels:** fix, round:develop-2026-10, area:navigation
 **Branch:** `develop-next` (fix-wave worktree)
 **Blocked by:** 29 (runs first and alone; see Overlaps)

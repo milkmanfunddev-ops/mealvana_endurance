@@ -1,6 +1,6 @@
 # 21: Signup and verify-email fixes
 
-**Status:** ready (round develop-2026-10, fix)
+**Status:** in-progress (wave 2b, 2026-10-07)
 **Labels:** fix, round:develop-2026-10, area:auth
 **Branch:** `develop-next` (fix-wave worktree)
 **Blocked by:** 29 (the backport ticket runs first, alone, because its Touches cross every area).

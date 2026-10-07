@@ -6,6 +6,7 @@ One line per wave: number, base sha, tickets, start time, who led it.
 
 - wave 1 · base `1c254461` · tickets 01, 02, 08 · 2026-10-07T10:56Z · lead: Claude (Fable), test wave
 - wave 2 · base `a69b226b` · ticket 29 alone (sequential Opus agents by area in one worktree), then 21–28 · 2026-10-07T13:40Z · lead: Claude (Fable), fix wave
+- wave 2b · base (29 merged) · tickets 21+22 (one agent), 24, 26+27 (one agent), 28; then 23 after 26+27 merges · 2026-10-07 · lead: Claude (Fable), fix wave
 
 ## Rulings
 
