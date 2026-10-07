@@ -1,0 +1,83 @@
+Wed Oct  7 11:10:40 UTC 2026
+-- meal_logs today
+[
+    {
+        "id": "40600e48-f359-48f6-b59f-d49a5c473bee",
+        "log_date": "2026-10-07",
+        "slot": "breakfast",
+        "name": "Scrambled Eggs, Whole Wheat Toast with Butter, and Banana",
+        "source": "describe",
+        "items": [
+            {
+                "name": "Scrambled eggs (2 large eggs)",
+                "fat_g": 13.8,
+                "carb_g": 1.6,
+                "portion": "2 large eggs, scrambled",
+                "calories": 182,
+                "protein_g": 12.6,
+                "sodium_mg": 190
+            },
+            {
+                "name": "Whole wheat toast with butter",
+                "fat_g": 6,
+                "carb_g": 13,
+                "portion": "1 slice whole wheat bread + 1 tsp butter",
+                "calories": 117,
+                "protein_g": 3,
+                "sodium_mg": 180
+            },
+            {
+                "name": "Banana",
+                "fat_g": 0.3,
+                "carb_g": 27,
+                "portion": "1 medium banana (~118g)",
+                "calories": 105,
+                "protein_g": 1.3,
+                "sodium_mg": 1
+            }
+        ],
+        "calories": 404,
+        "carbs_g": "41.6",
+        "protein_g": "16.9",
+        "fat_g": "20.1",
+        "sodium_mg": "371.0",
+        "photo_path": null,
+        "notes": null,
+        "eaten_at": "2026-10-07 11:10:00+00",
+        "created_at": "2026-10-07 11:10:15.93897+00",
+        "updated_at": "2026-10-07 11:10:15.939748+00",
+        "is_deleted": false,
+        "servings": "1"
+    }
+]
+-- wallet
+[
+    {
+        "balance": 49897485,
+        "free_period": "2026-10",
+        "allowance": 3943862,
+        "allowance_monthly": 6000000,
+        "allowance_expires_at": "2026-10-15 19:18:12.98481+00",
+        "unit": "usd_micro",
+        "updated_at": "2026-10-07 11:08:38.918648+00"
+    }
+]
+-- ledger last hour
+[
+    {
+        "delta": -1,
+        "reason": "debit_usage",
+        "ref": "describe-meal",
+        "balance_after": 49897485,
+        "unit": "usd_micro",
+        "created_at": "2026-10-07 11:08:38.918648+00"
+    },
+    {
+        "delta": 50,
+        "reason": "grant_free",
+        "ref": "2026-10",
+        "balance_after": 49897486,
+        "unit": "usd_micro",
+        "created_at": "2026-10-07 11:07:55.979982+00"
+    }
+]

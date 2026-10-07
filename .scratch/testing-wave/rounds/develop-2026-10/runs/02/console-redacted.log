@@ -1,0 +1,635 @@
+2026-10-07 06:05:26.965774-0500 0x27ef90a  Default     0x0                  98127  0    Runner: (Flutter) flutter: The Dart VM service is listening on http://127.0.0.1:56904/4_hUwIFXWCE=/
+2026-10-07 06:05:26.987699-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) Plugin AppLinksIosPlugin uses deprecated application lifecycle events. Please contact plugin maintainers and request UIScene lifecycle support. This will be required in a future version of Flutter. See https://docs.flutter.dev/release/breaking-changes/uiscenedelegate#migration-guide-for-flutter-plugins
+2026-10-07 06:05:26.992614-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) Plugin FlutterWebAuth2Plugin uses deprecated application lifecycle events. Please contact plugin maintainers and request UIScene lifecycle support. This will be required in a future version of Flutter. See https://docs.flutter.dev/release/breaking-changes/uiscenedelegate#migration-guide-for-flutter-plugins
+2026-10-07 06:05:26.999095-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) Plugin FLTGoogleSignInPlugin uses deprecated application lifecycle events. Please contact plugin maintainers and request UIScene lifecycle support. This will be required in a future version of Flutter. See https://docs.flutter.dev/release/breaking-changes/uiscenedelegate#migration-guide-for-flutter-plugins
+2026-10-07 06:05:28.107918-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: -------------------------------------------------------------------------------
+2026-10-07 06:05:28.144497-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: supabase.supabase_flutter: INFO: ***** Supabase init completed *****
+2026-10-07 06:05:29.846897-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: [LAUNCH] plugin.initialize() starting (handler not yet attached)
+2026-10-07 06:05:29.868651-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: [LAUNCH] plugin.initialize() done (handler attached)
+2026-10-07 06:05:29.873914-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: [LAUNCH] launchDetails didNotificationLaunchApp=false payload=null
+2026-10-07 06:05:37.048649-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: [LAUNCH] push heal: permission=false optedIn=false (hydration wait 0ms)
+2026-10-07 06:05:37.778543-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: [LAUNCH] push heal: no action
+2026-10-07 06:05:44.278689-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] app_opened {device_id: CA0C129E-4841-44EC-B4F3-19B678A04B92, session_id: bb9d12b3-c285-4606-a82c-9d4ac02f927c, timestamp: 2026-10-07T06:05:44.040798}
+2026-10-07 06:06:00.440367-0500 0x27ef809  Default     0x5475e55            98127  0    Runner: (Flutter) 
+2026-10-07 06:06:09.206624-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: [LAUNCH] app resumed
+2026-10-07 06:06:09.215475-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: [LAUNCH] native ios_delegate_after_delay=AppDelegate
+2026-10-07 06:06:43.681451-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] welcome_login_tapped {}
+2026-10-07 06:06:43.722420-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] screen_viewed {screen_name: Post-Onboarding Auth, mode: login}
+2026-10-07 06:06:49.839913-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] screen_viewed {screen_name: Email Login}
+2026-10-07 06:07:15.957761-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] auth_flow_started {provider: email, source: post_onboarding_login}
+2026-10-07 06:07:16.875035-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] email_sign_in_success {user_id: 607f9dd5-6fa7-48ee-a628-720d4a0506a1, migrated_data: false}
+2026-10-07 06:07:19.184336-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] auth_flow_completed {provider: email, source: post_onboarding_login}
+2026-10-07 06:07:19.875640-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: \^[[38;5;208m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+2026-10-07 06:07:19.875709-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: \^[[38;5;208m│ Dashboard shown without targets\^[[0m
+2026-10-07 06:07:19.875775-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: \^[[38;5;208m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+2026-10-07 06:07:19.875839-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: \^[[38;5;208m│ #0   SentryReport._mirror (package:mealvana_endurance/shared/services/report/report.dart:595:22)\^[[0m
+2026-10-07 06:07:19.875889-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: \^[[38;5;208m│ #1   SentryReport._capture (package:mealvana_endurance/shared/services/report/report.dart:302:5)\^[[0m
+2026-10-07 06:07:19.875941-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: \^[[38;5;208m│ #2   SentryReport.degraded (package:mealvana_endurance/shared/services/report/report.dart:256:12)\^[[0m
+2026-10-07 06:07:19.876009-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: \^[[38;5;208m│ #3   DashboardTransientTelemetry._capture (package:mealvana_endurance/features/macro_dashboard/application/dashboard_transient_telemetry.dart:90:15)\^[[0m
+2026-10-07 06:07:19.876062-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: \^[[38;5;208m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+2026-10-07 06:07:19.876102-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: \^[[38;5;208m│ 06:07:19.872 (+0:01:51.725907)\^[[0m
+2026-10-07 06:07:19.876152-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: \^[[38;5;208m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+2026-10-07 06:07:19.876202-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: \^[[38;5;208m│ ⚠️ [macro_dashboard] Dashboard shown without targets\^[[0m
+2026-10-07 06:07:19.876242-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: \^[[38;5;208m│ ⚠️ Data: {date_key: 2026-10-07, reason: computing}\^[[0m
+2026-10-07 06:07:19.876290-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: \^[[38;5;208m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+2026-10-07 06:07:19.903582-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: DailyBaselineCalculator.sessionCost: unknown sport "other" — F4a zero-with-estimate-flag (session-demand.md F4a, RULED 2026-09-10)
+2026-10-07 06:07:19.922190-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: DailyBaselineCalculator.sessionCost: unknown sport "other" — F4a zero-with-estimate-flag (session-demand.md F4a, RULED 2026-09-10)
+2026-10-07 06:07:20.850083-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: \^[[38;5;208m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+2026-10-07 06:07:20.850156-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: \^[[38;5;208m│ Dashboard targets transient resolved\^[[0m
+2026-10-07 06:07:20.850224-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: \^[[38;5;208m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+2026-10-07 06:07:20.850268-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: \^[[38;5;208m│ #0   SentryReport._mirror (package:mealvana_endurance/shared/services/report/report.dart:595:22)\^[[0m
+2026-10-07 06:07:20.850314-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: \^[[38;5;208m│ #1   SentryReport._capture (package:mealvana_endurance/shared/services/report/report.dart:302:5)\^[[0m
+2026-10-07 06:07:20.850379-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: \^[[38;5;208m│ #2   SentryReport.degraded (package:mealvana_endurance/shared/services/report/report.dart:256:12)\^[[0m
+2026-10-07 06:07:20.850450-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: \^[[38;5;208m│ #3   DashboardTransientTelemetry._capture (package:mealvana_endurance/features/macro_dashboard/application/dashboard_transient_telemetry.dart:90:15)\^[[0m
+2026-10-07 06:07:20.850508-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: \^[[38;5;208m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+2026-10-07 06:07:20.850563-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: \^[[38;5;208m│ 06:07:20.849 (+0:01:52.703012)\^[[0m
+2026-10-07 06:07:20.850640-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: \^[[38;5;208m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+2026-10-07 06:07:20.850696-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: \^[[38;5;208m│ ⚠️ [macro_dashboard] Dashboard targets transient resolved\^[[0m
+2026-10-07 06:07:20.850738-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: \^[[38;5;208m│ ⚠️ Data: {date_key: 2026-10-07, duration_ms: 978}\^[[0m
+2026-10-07 06:07:20.850786-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: \^[[38;5;208m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+2026-10-07 06:07:20.856026-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: DailyBaselineCalculator.sessionCost: unknown sport "other" — F4a zero-with-estimate-flag (session-demand.md F4a, RULED 2026-09-10)
+2026-10-07 06:07:20.874430-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] error_reported {severity: degraded, area: macro_dashboard, exception_type: DashboardTargetsAnomaly, sentry_event_id: 1e940d46962b40b5bb3ad7c6e5ecb613}
+2026-10-07 06:07:20.910714-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: DailyBaselineCalculator.sessionCost: unknown sport "other" — F4a zero-with-estimate-flag (session-demand.md F4a, RULED 2026-09-10)
+2026-10-07 06:07:20.980340-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: 🔍 FS TRANSFORM DEBUG - Raw workout keys: [WorkoutKey, WorkoutURL, WorkoutDate, WorkoutTime, WorkoutCode, WorkoutTitle, WorkoutDescription, WorkoutTypeName, WorkoutSubTypeName, WorkoutCompleted, WorkoutRace, WorkoutIcon, PlannedTime, PlannedDistance, PlannedDistanceType, PlannedPace, PlannedPaceType, ActualTime, ActualDistanceMeters, HasStructuredWorkout, StructuredWorkoutURLs]
+2026-10-07 06:07:20.980397-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: 🔍 FS TRANSFORM DEBUG - Raw workout data:
+2026-10-07 06:07:20.980518-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    WorkoutKey: d90b65ef-d437-4fd8-af83-7ac5fe9bc184
+2026-10-07 06:07:20.980581-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    WorkoutURL: https://log.finalsurge.com/WorkoutDetails?s=f71d3644-6ae5-4910-b098-a019a515520e&id=d90b65ef-d437-4fd8-af83-7ac5fe9bc184
+2026-10-07 06:07:20.980629-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    WorkoutDate: 2026-10-07T00:00:00
+2026-10-07 06:07:20.980677-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    WorkoutDescription: At your discretion
+2026-10-07 06:07:20.980721-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    WorkoutTypeName: Swim
+2026-10-07 06:07:20.980768-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    WorkoutCompleted: false
+2026-10-07 06:07:20.980806-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    WorkoutRace: false
+2026-10-07 06:07:20.980851-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    WorkoutIcon: 3
+2026-10-07 06:07:20.980907-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    HasStructuredWorkout: false
+2026-10-07 06:07:20.980964-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    StructuredWorkoutURLs: {zwo: null, mrc: null, fit: null, json_garmin_v1: null, json_fs_v1: null}
+2026-10-07 06:07:20.981517-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: 🔍 FS DURATION DEBUG:
+2026-10-07 06:07:20.981558-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    PlannedTime raw value: null (type: Null)
+2026-10-07 06:07:20.981602-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    ActualTime raw value: null (type: Null)
+2026-10-07 06:07:20.983223-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: 🔍 FS PACE DEBUG: Using default pace for ActivityType.swimming
+2026-10-07 06:07:20.984865-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: 🏁 FS TRANSFORM RESULT:
+2026-10-07 06:07:20.984925-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    Title: Swim
+2026-10-07 06:07:20.984989-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    Type: ActivityType.swimming
+2026-10-07 06:07:20.985043-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    Raw PlannedDistance: null (null)
+2026-10-07 06:07:20.985090-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    Raw PlannedTime: null seconds
+2026-10-07 06:07:20.985130-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    Raw ActualDistanceMeters: null
+2026-10-07 06:07:20.985206-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    Raw ActualTime: null
+2026-10-07 06:07:20.985248-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    → Final distanceMiles: null
+2026-10-07 06:07:20.985285-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    → Final durationMinutes: 30
+2026-10-07 06:07:20.985320-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    → Final cyclingSpeedMph: null
+2026-10-07 06:07:20.985357-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    → Final pace: null min/mi
+2026-10-07 06:07:20.985399-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    → Notes: At your discretion
+2026-10-07 06:07:20.985743-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: 🔍 FS INTENSITY DEBUG - Checking for workout intensity hints
+2026-10-07 06:07:20.985834-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    ⚠️ No intensity distribution hints available
+2026-10-07 06:07:20.986280-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: 🔍 FS TRANSFORM DEBUG - Raw workout keys: [WorkoutKey, WorkoutURL, WorkoutDate, WorkoutTime, WorkoutCode, WorkoutTitle, WorkoutDescription, WorkoutTypeName, WorkoutSubTypeName, WorkoutCompleted, WorkoutRace, WorkoutIcon, PlannedTime, PlannedDistance, PlannedDistanceType, PlannedPace, PlannedPaceType, ActualTime, ActualDistanceMeters, HasStructuredWorkout, StructuredWorkoutURLs]
+2026-10-07 06:07:20.986328-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: 🔍 FS TRANSFORM DEBUG - Raw workout data:
+2026-10-07 06:07:20.986372-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    WorkoutKey: b38e13bd-b449-4bb5-b804-d31813301470
+2026-10-07 06:07:20.986411-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    WorkoutURL: https://log.finalsurge.com/WorkoutDetails?s=f71d3644-6ae5-4910-b098-a019a515520e&id=b38e13bd-b449-4bb5-b804-d31813301470
+2026-10-07 06:07:20.986447-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    WorkoutDate: 2026-10-07T00:00:00
+2026-10-07 06:07:20.986505-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    WorkoutDescription: At your discretion
+2026-10-07 06:07:20.986594-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    WorkoutTypeName: Bike
+2026-10-07 06:07:20.986633-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    WorkoutCompleted: false
+2026-10-07 06:07:20.986671-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    WorkoutRace: false
+2026-10-07 06:07:20.986727-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    WorkoutIcon: 2
+2026-10-07 06:07:20.986767-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    HasStructuredWorkout: false
+2026-10-07 06:07:20.986842-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    StructuredWorkoutURLs: {zwo: null, mrc: null, fit: null, json_garmin_v1: null, json_fs_v1: null}
+2026-10-07 06:07:20.986892-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: 🔍 FS DURATION DEBUG:
+2026-10-07 06:07:20.986944-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    PlannedTime raw value: null (type: Null)
+2026-10-07 06:07:20.987002-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    ActualTime raw value: null (type: Null)
+2026-10-07 06:07:20.987050-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: 🔍 FS DISTANCE DEBUG:
+2026-10-07 06:07:20.987102-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    PlannedDistance raw value: null (type: Null)
+2026-10-07 06:07:20.987134-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    PlannedDistanceType: null
+2026-10-07 06:07:20.987206-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    ActualDistanceMeters raw value: null (type: Null)
+2026-10-07 06:07:20.987752-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    All distance-related keys: (PlannedDistance, PlannedDistanceType, ActualDistanceMeters)
+2026-10-07 06:07:20.987802-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    PlannedDistance: null
+2026-10-07 06:07:20.987842-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    PlannedDistanceType: null
+2026-10-07 06:07:20.987887-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    ActualDistanceMeters: null
+2026-10-07 06:07:20.987929-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    ⚠️ No distance data available, using default for ActivityType.cycling
+2026-10-07 06:07:20.988061-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: 🔍 FS PACE DEBUG: Using default pace for ActivityType.cycling
+2026-10-07 06:07:20.988400-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: 🏁 FS TRANSFORM RESULT:
+2026-10-07 06:07:20.988446-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    Title: Bike
+2026-10-07 06:07:20.988483-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    Type: ActivityType.cycling
+2026-10-07 06:07:20.988533-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    Raw PlannedDistance: null (null)
+2026-10-07 06:07:20.988565-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    Raw PlannedTime: null seconds
+2026-10-07 06:07:20.988596-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    Raw ActualDistanceMeters: null
+2026-10-07 06:07:20.988632-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    Raw ActualTime: null
+2026-10-07 06:07:20.988675-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    → Final distanceMiles: 10.0
+2026-10-07 06:07:20.988717-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    → Final durationMinutes: 45
+2026-10-07 06:07:20.988755-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    → Final cyclingSpeedMph: null
+2026-10-07 06:07:20.988800-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    → Final pace: null min/mi
+2026-10-07 06:07:20.988844-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    → Notes: At your discretion
+2026-10-07 06:07:20.988885-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: 🔍 FS INTENSITY DEBUG - Checking for workout intensity hints
+2026-10-07 06:07:20.988926-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    ⚠️ No intensity distribution hints available
+2026-10-07 06:07:20.989033-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: 🔍 FS TRANSFORM DEBUG - Raw workout keys: [WorkoutKey, WorkoutURL, WorkoutDate, WorkoutTime, WorkoutCode, WorkoutTitle, WorkoutDescription, WorkoutTypeName, WorkoutSubTypeName, WorkoutCompleted, WorkoutRace, WorkoutIcon, PlannedTime, PlannedDistance, PlannedDistanceType, PlannedPace, PlannedPaceType, ActualTime, ActualDistanceMeters, HasStructuredWorkout, StructuredWorkoutURLs]
+2026-10-07 06:07:20.989075-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: 🔍 FS TRANSFORM DEBUG - Raw workout data:
+2026-10-07 06:07:20.989118-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    WorkoutKey: 2390cce4-3167-483f-90c5-981b10b43281
+2026-10-07 06:07:20.989160-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    WorkoutURL: https://log.finalsurge.com/WorkoutDetails?s=f71d3644-6ae5-4910-b098-a019a515520e&id=2390cce4-3167-483f-90c5-981b10b43281
+2026-10-07 06:07:20.989209-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    WorkoutDate: 2026-10-07T00:00:00
+2026-10-07 06:07:20.989255-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    WorkoutTitle: R-CORE Routine
+2026-10-07 06:07:20.989292-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    WorkoutTypeName: Strength Training
+2026-10-07 06:07:20.989326-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    WorkoutCompleted: false
+2026-10-07 06:07:20.989361-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    WorkoutRace: false
+2026-10-07 06:07:20.989398-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    WorkoutIcon: 5
+2026-10-07 06:07:20.989435-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    HasStructuredWorkout: false
+2026-10-07 06:07:20.989486-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    StructuredWorkoutURLs: {zwo: null, mrc: null, fit: null, json_garmin_v1: null, json_fs_v1: null}
+2026-10-07 06:07:20.989547-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: 🔍 FS DURATION DEBUG:
+2026-10-07 06:07:20.989586-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    PlannedTime raw value: null (type: Null)
+2026-10-07 06:07:20.989621-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    ActualTime raw value: null (type: Null)
+2026-10-07 06:07:20.989668-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: 🔍 FS DISTANCE DEBUG:
+2026-10-07 06:07:20.989711-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    PlannedDistance raw value: null (type: Null)
+2026-10-07 06:07:20.989754-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    PlannedDistanceType: null
+2026-10-07 06:07:20.989791-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    ActualDistanceMeters raw value: null (type: Null)
+2026-10-07 06:07:20.989847-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    All distance-related keys: (PlannedDistance, PlannedDistanceType, ActualDistanceMeters)
+2026-10-07 06:07:20.989880-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    PlannedDistance: null
+2026-10-07 06:07:20.989914-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    PlannedDistanceType: null
+2026-10-07 06:07:20.989949-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    ActualDistanceMeters: null
+2026-10-07 06:07:20.989989-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    ⚠️ No distance data available, using default for ActivityType.other
+2026-10-07 06:07:20.990290-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: 🔍 FS PACE DEBUG: Using default pace for ActivityType.other
+2026-10-07 06:07:20.990644-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: 🏁 FS TRANSFORM RESULT:
+2026-10-07 06:07:20.990682-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    Title: R-CORE Routine
+2026-10-07 06:07:20.990717-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    Type: ActivityType.other
+2026-10-07 06:07:20.990749-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    Raw PlannedDistance: null (null)
+2026-10-07 06:07:20.990787-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    Raw PlannedTime: null seconds
+2026-10-07 06:07:20.990816-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    Raw ActualDistanceMeters: null
+2026-10-07 06:07:20.990848-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    Raw ActualTime: null
+2026-10-07 06:07:20.990893-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    → Final distanceMiles: null
+2026-10-07 06:07:20.990931-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    → Final durationMinutes: null
+2026-10-07 06:07:20.990969-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    → Final cyclingSpeedMph: null
+2026-10-07 06:07:20.991005-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    → Final pace: null min/mi
+2026-10-07 06:07:20.991040-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    → Notes: null
+2026-10-07 06:07:20.991079-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: 🔍 FS INTENSITY DEBUG - Checking for workout intensity hints
+2026-10-07 06:07:21.003579-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    ⚠️ No intensity distribution hints available
+2026-10-07 06:07:21.003724-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: 🔍 FS TRANSFORM DEBUG - Raw workout keys: [WorkoutKey, WorkoutURL, WorkoutDate, WorkoutTime, WorkoutCode, WorkoutTitle, WorkoutDescription, WorkoutTypeName, WorkoutSubTypeName, WorkoutCompleted, WorkoutRace, WorkoutIcon, PlannedTime, PlannedDistance, PlannedDistanceType, PlannedPace, PlannedPaceType, ActualTime, ActualDistanceMeters, HasStructuredWorkout, StructuredWorkoutURLs]
+2026-10-07 06:07:21.003779-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: 🔍 FS TRANSFORM DEBUG - Raw workout data:
+2026-10-07 06:07:21.003829-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    WorkoutKey: fa33ff3c-d42f-4249-955a-ba3cb3e4786c
+2026-10-07 06:07:21.003905-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    WorkoutURL: https://log.finalsurge.com/WorkoutDetails?s=f71d3644-6ae5-4910-b098-a019a515520e&id=fa33ff3c-d42f-4249-955a-ba3cb3e4786c
+2026-10-07 06:07:21.003941-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    WorkoutDate: 2026-10-08T00:00:00
+2026-10-07 06:07:21.003985-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    WorkoutTitle: LT
+2026-10-07 06:07:21.004041-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    WorkoutDescription: • 2 @ easy 
+2026-10-07 06:07:21.004079-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    WorkoutTypeName: Run
+2026-10-07 06:07:21.004126-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    WorkoutCompleted: false
+2026-10-07 06:07:21.004174-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    WorkoutRace: false
+2026-10-07 06:07:21.004243-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    WorkoutIcon: 1
+2026-10-07 06:07:21.004361-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    PlannedDistance: 7.5
+2026-10-07 06:07:21.004403-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    PlannedDistanceType: mi
+2026-10-07 06:07:21.004464-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    HasStructuredWorkout: false
+2026-10-07 06:07:21.004514-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    StructuredWorkoutURLs: {zwo: null, mrc: null, fit: null, json_garmin_v1: null, json_fs_v1: null}
+2026-10-07 06:07:21.004594-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: 🔍 FS DURATION DEBUG:
+2026-10-07 06:07:21.004636-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    PlannedTime raw value: null (type: Null)
+2026-10-07 06:07:21.004678-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    ActualTime raw value: null (type: Null)
+2026-10-07 06:07:21.004714-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: 🔍 FS DISTANCE DEBUG:
+2026-10-07 06:07:21.004776-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    PlannedDistance raw value: 7.5 (type: double)
+2026-10-07 06:07:21.004810-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    PlannedDistanceType: mi
+2026-10-07 06:07:21.004873-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    ActualDistanceMeters raw value: null (type: Null)
+2026-10-07 06:07:21.004923-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    All distance-related keys: (PlannedDistance, PlannedDistanceType, ActualDistanceMeters)
+2026-10-07 06:07:21.004961-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    PlannedDistance: 7.5
+2026-10-07 06:07:21.005031-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    PlannedDistanceType: mi
+2026-10-07 06:07:21.005104-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    ActualDistanceMeters: null
+2026-10-07 06:07:21.005150-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    ✅ Using PlannedDistance: 7.5 mi
+2026-10-07 06:07:21.006096-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: 🔍 FS PACE DEBUG: Using pace from description: 7.333333333333333 min/mi
+2026-10-07 06:07:21.006482-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: 🏁 FS TRANSFORM RESULT:
+2026-10-07 06:07:21.006528-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    Title: LT
+2026-10-07 06:07:21.006571-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    Type: ActivityType.running
+2026-10-07 06:07:21.006613-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    Raw PlannedDistance: 7.5 (mi)
+2026-10-07 06:07:21.006648-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    Raw PlannedTime: null seconds
+2026-10-07 06:07:21.006683-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    Raw ActualDistanceMeters: null
+2026-10-07 06:07:21.006719-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    Raw ActualTime: null
+2026-10-07 06:07:21.006757-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    → Final distanceMiles: 7.5
+2026-10-07 06:07:21.006809-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    → Final durationMinutes: null
+2026-10-07 06:07:21.006846-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    → Final cyclingSpeedMph: null
+2026-10-07 06:07:21.006919-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    → Final pace: 7.333333333333333 min/mi
+2026-10-07 06:07:21.006992-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    → Notes: • 2 @ easy 
+2026-10-07 06:07:21.007068-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: 🔍 FS INTENSITY DEBUG - Checking for workout intensity hints
+2026-10-07 06:07:21.007274-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    ✅ Matched title "LT": IntensityDistribution(conversational: 30%, tempo: 60%, allOut: 10%)
+2026-10-07 06:07:21.007358-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: 🔍 FS TRANSFORM DEBUG - Raw workout keys: [WorkoutKey, WorkoutURL, WorkoutDate, WorkoutTime, WorkoutCode, WorkoutTitle, WorkoutDescription, WorkoutTypeName, WorkoutSubTypeName, WorkoutCompleted, WorkoutRace, WorkoutIcon, PlannedTime, PlannedDistance, PlannedDistanceType, PlannedPace, PlannedPaceType, ActualTime, ActualDistanceMeters, HasStructuredWorkout, StructuredWorkoutURLs]
+2026-10-07 06:07:21.007411-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: 🔍 FS TRANSFORM DEBUG - Raw workout data:
+2026-10-07 06:07:21.007450-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    WorkoutKey: 497b1425-a88e-44ce-9c41-0c742118459c
+2026-10-07 06:07:21.007485-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    WorkoutURL: https://log.finalsurge.com/WorkoutDetails?s=f71d3644-6ae5-4910-b098-a019a515520e&id=497b1425-a88e-44ce-9c41-0c742118459c
+2026-10-07 06:07:21.007519-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    WorkoutDate: 2026-10-08T00:00:00
+2026-10-07 06:07:21.007575-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    WorkoutTitle: Foam Rolling Routine
+2026-10-07 06:07:21.007649-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    WorkoutTypeName: Recovery/Rehab
+2026-10-07 06:07:21.007707-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    WorkoutCompleted: false
+2026-10-07 06:07:21.007742-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    WorkoutRace: false
+2026-10-07 06:07:21.007786-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    WorkoutIcon: 7
+2026-10-07 06:07:21.007846-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    HasStructuredWorkout: false
+2026-10-07 06:07:21.007914-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    StructuredWorkoutURLs: {zwo: null, mrc: null, fit: null, json_garmin_v1: null, json_fs_v1: null}
+2026-10-07 06:07:21.007990-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: 🔍 FS DURATION DEBUG:
+2026-10-07 06:07:21.008055-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    PlannedTime raw value: null (type: Null)
+2026-10-07 06:07:21.008110-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    ActualTime raw value: null (type: Null)
+2026-10-07 06:07:21.008150-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: 🔍 FS DISTANCE DEBUG:
+2026-10-07 06:07:21.008226-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    PlannedDistance raw value: null (type: Null)
+2026-10-07 06:07:21.008294-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    PlannedDistanceType: null
+2026-10-07 06:07:21.008364-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    ActualDistanceMeters raw value: null (type: Null)
+2026-10-07 06:07:21.008430-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    All distance-related keys: (PlannedDistance, PlannedDistanceType, ActualDistanceMeters)
+2026-10-07 06:07:21.008496-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    PlannedDistance: null
+2026-10-07 06:07:21.008548-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    PlannedDistanceType: null
+2026-10-07 06:07:21.008673-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    ActualDistanceMeters: null
+2026-10-07 06:07:21.008749-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    ⚠️ No distance data available, using default for ActivityType.other
+2026-10-07 06:07:21.008888-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: 🔍 FS PACE DEBUG: Using default pace for ActivityType.other
+2026-10-07 06:07:21.009200-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: 🏁 FS TRANSFORM RESULT:
+2026-10-07 06:07:21.009253-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    Title: Foam Rolling Routine
+2026-10-07 06:07:21.009436-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    Type: ActivityType.other
+2026-10-07 06:07:21.009478-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    Raw PlannedDistance: null (null)
+2026-10-07 06:07:21.009512-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    Raw PlannedTime: null seconds
+2026-10-07 06:07:21.009544-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    Raw ActualDistanceMeters: null
+2026-10-07 06:07:21.009576-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    Raw ActualTime: null
+2026-10-07 06:07:21.009609-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    → Final distanceMiles: null
+2026-10-07 06:07:21.009884-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    → Final durationMinutes: null
+2026-10-07 06:07:21.009920-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    → Final cyclingSpeedMph: null
+2026-10-07 06:07:21.010113-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    → Final pace: null min/mi
+2026-10-07 06:07:21.010182-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    → Notes: null
+2026-10-07 06:07:21.010391-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: 🔍 FS INTENSITY DEBUG - Checking for workout intensity hints
+2026-10-07 06:07:21.010443-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    ⚠️ No intensity distribution hints available
+2026-10-07 06:07:21.010538-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: 🔍 FS TRANSFORM DEBUG - Raw workout keys: [WorkoutKey, WorkoutURL, WorkoutDate, WorkoutTime, WorkoutCode, WorkoutTitle, WorkoutDescription, WorkoutTypeName, WorkoutSubTypeName, WorkoutCompleted, WorkoutRace, WorkoutIcon, PlannedTime, PlannedDistance, PlannedDistanceType, PlannedPace, PlannedPaceType, ActualTime, ActualDistanceMeters, HasStructuredWorkout, StructuredWorkoutURLs]
+2026-10-07 06:07:21.010690-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: 🔍 FS TRANSFORM DEBUG - Raw workout data:
+2026-10-07 06:07:21.010851-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    WorkoutKey: 8a9b03d1-eb9b-42e8-b316-5c7711103ec0
+2026-10-07 06:07:21.010917-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    WorkoutURL: https://log.finalsurge.com/WorkoutDetails?s=f71d3644-6ae5-4910-b098-a019a515520e&id=8a9b03d1-eb9b-42e8-b316-5c7711103ec0
+2026-10-07 06:07:21.010954-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    WorkoutDate: 2026-10-09T00:00:00
+2026-10-07 06:07:21.010988-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    WorkoutDescription: At your discretion
+2026-10-07 06:07:21.011694-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    WorkoutTypeName: Swim
+2026-10-07 06:07:21.011768-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    WorkoutCompleted: false
+2026-10-07 06:07:21.011924-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    WorkoutRace: false
+2026-10-07 06:07:21.012166-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    WorkoutIcon: 3
+2026-10-07 06:07:21.013036-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    HasStructuredWorkout: false
+2026-10-07 06:07:21.013215-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    StructuredWorkoutURLs: {zwo: null, mrc: null, fit: null, json_garmin_v1: null, json_fs_v1: null}
+2026-10-07 06:07:21.013343-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: 🔍 FS DURATION DEBUG:
+2026-10-07 06:07:21.013412-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    PlannedTime raw value: null (type: Null)
+2026-10-07 06:07:21.013475-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    ActualTime raw value: null (type: Null)
+2026-10-07 06:07:21.013699-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: 🔍 FS PACE DEBUG: Using default pace for ActivityType.swimming
+2026-10-07 06:07:21.014103-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: 🏁 FS TRANSFORM RESULT:
+2026-10-07 06:07:21.014160-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    Title: Swim
+2026-10-07 06:07:21.014213-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    Type: ActivityType.swimming
+2026-10-07 06:07:21.014254-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    Raw PlannedDistance: null (null)
+2026-10-07 06:07:21.014297-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    Raw PlannedTime: null seconds
+2026-10-07 06:07:21.014402-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    Raw ActualDistanceMeters: null
+2026-10-07 06:07:21.014457-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    Raw ActualTime: null
+2026-10-07 06:07:21.014529-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    → Final distanceMiles: null
+2026-10-07 06:07:21.014616-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    → Final durationMinutes: 30
+2026-10-07 06:07:21.014650-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    → Final cyclingSpeedMph: null
+2026-10-07 06:07:21.014738-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    → Final pace: null min/mi
+2026-10-07 06:07:21.014796-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    → Notes: At your discretion
+2026-10-07 06:07:21.014954-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: 🔍 FS INTENSITY DEBUG - Checking for workout intensity hints
+2026-10-07 06:07:21.015095-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    ⚠️ No intensity distribution hints available
+2026-10-07 06:07:21.015201-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: 🔍 FS TRANSFORM DEBUG - Raw workout keys: [WorkoutKey, WorkoutURL, WorkoutDate, WorkoutTime, WorkoutCode, WorkoutTitle, WorkoutDescription, WorkoutTypeName, WorkoutSubTypeName, WorkoutCompleted, WorkoutRace, WorkoutIcon, PlannedTime, PlannedDistance, PlannedDistanceType, PlannedPace, PlannedPaceType, ActualTime, ActualDistanceMeters, HasStructuredWorkout, StructuredWorkoutURLs]
+2026-10-07 06:07:21.015499-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: 🔍 FS TRANSFORM DEBUG - Raw workout data:
+2026-10-07 06:07:21.015580-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    WorkoutKey: 1f02a774-74e2-4946-87f7-416e5c38c3e1
+2026-10-07 06:07:21.015632-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    WorkoutURL: https://log.finalsurge.com/WorkoutDetails?s=f71d3644-6ae5-4910-b098-a019a515520e&id=1f02a774-74e2-4946-87f7-416e5c38c3e1
+2026-10-07 06:07:21.016138-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    WorkoutDate: 2026-10-09T00:00:00
+2026-10-07 06:07:21.016464-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    WorkoutTitle: R-CORE Routine
+2026-10-07 06:07:21.016566-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    WorkoutTypeName: Strength Training
+2026-10-07 06:07:21.016726-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    WorkoutCompleted: false
+2026-10-07 06:07:21.016914-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    WorkoutRace: false
+2026-10-07 06:07:21.016989-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    WorkoutIcon: 5
+2026-10-07 06:07:21.017118-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    HasStructuredWorkout: false
+2026-10-07 06:07:21.017193-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    StructuredWorkoutURLs: {zwo: null, mrc: null, fit: null, json_garmin_v1: null, json_fs_v1: null}
+2026-10-07 06:07:21.017538-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: 🔍 FS DURATION DEBUG:
+2026-10-07 06:07:21.017580-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    PlannedTime raw value: null (type: Null)
+2026-10-07 06:07:21.017896-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    ActualTime raw value: null (type: Null)
+2026-10-07 06:07:21.017958-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: 🔍 FS DISTANCE DEBUG:
+2026-10-07 06:07:21.018644-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    PlannedDistance raw value: null (type: Null)
+2026-10-07 06:07:21.018682-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    PlannedDistanceType: null
+2026-10-07 06:07:21.018829-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    ActualDistanceMeters raw value: null (type: Null)
+2026-10-07 06:07:21.019289-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    All distance-related keys: (PlannedDistance, PlannedDistanceType, ActualDistanceMeters)
+2026-10-07 06:07:21.019331-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    PlannedDistance: null
+2026-10-07 06:07:21.019425-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    PlannedDistanceType: null
+2026-10-07 06:07:21.019473-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    ActualDistanceMeters: null
+2026-10-07 06:07:21.019737-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    ⚠️ No distance data available, using default for ActivityType.other
+2026-10-07 06:07:21.020069-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: 🔍 FS PACE DEBUG: Using default pace for ActivityType.other
+2026-10-07 06:07:21.020733-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: 🏁 FS TRANSFORM RESULT:
+2026-10-07 06:07:21.020774-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    Title: R-CORE Routine
+2026-10-07 06:07:21.020833-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    Type: ActivityType.other
+2026-10-07 06:07:21.021509-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    Raw PlannedDistance: null (null)
+2026-10-07 06:07:21.022660-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    Raw PlannedTime: null seconds
+2026-10-07 06:07:21.022745-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    Raw ActualDistanceMeters: null
+2026-10-07 06:07:21.022827-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    Raw ActualTime: null
+2026-10-07 06:07:21.022909-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    → Final distanceMiles: null
+2026-10-07 06:07:21.022997-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    → Final durationMinutes: null
+2026-10-07 06:07:21.023318-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    → Final cyclingSpeedMph: null
+2026-10-07 06:07:21.023404-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    → Final pace: null min/mi
+2026-10-07 06:07:21.023549-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    → Notes: null
+2026-10-07 06:07:21.024394-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: 🔍 FS INTENSITY DEBUG - Checking for workout intensity hints
+2026-10-07 06:07:21.024495-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    ⚠️ No intensity distribution hints available
+2026-10-07 06:07:21.522471-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] error_reported {severity: degraded, area: macro_dashboard, exception_type: DashboardTargetsAnomaly, sentry_event_id: 2e93cceaff4c4bd78ef7f3ed47f5f2a6}
+2026-10-07 06:07:21.728514-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: 🔍 FS TRANSFORM DEBUG - Raw workout keys: [WorkoutKey, WorkoutURL, WorkoutDate, WorkoutTime, WorkoutCode, WorkoutTitle, WorkoutDescription, WorkoutTypeName, WorkoutSubTypeName, WorkoutCompleted, WorkoutRace, WorkoutIcon, PlannedTime, PlannedDistance, PlannedDistanceType, PlannedPace, PlannedPaceType, ActualTime, ActualDistanceMeters, HasStructuredWorkout, StructuredWorkoutURLs]
+2026-10-07 06:07:21.728633-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: 🔍 FS TRANSFORM DEBUG - Raw workout data:
+2026-10-07 06:07:21.728731-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    WorkoutKey: 2b6c7846-ef4f-4ee3-9208-8613fa6918c8
+2026-10-07 06:07:21.728805-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    WorkoutURL: https://log.finalsurge.com/WorkoutDetails?s=f71d3644-6ae5-4910-b098-a019a515520e&id=2b6c7846-ef4f-4ee3-9208-8613fa6918c8
+2026-10-07 06:07:21.728867-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    WorkoutDate: 2026-10-10T00:00:00
+2026-10-07 06:07:21.728941-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    WorkoutDescription: @ 8:45 - 9:38
+2026-10-07 06:07:21.729006-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    WorkoutTypeName: Run
+2026-10-07 06:07:21.729069-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    WorkoutSubTypeName: Long Run
+2026-10-07 06:07:21.729132-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    WorkoutCompleted: false
+2026-10-07 06:07:21.729202-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    WorkoutRace: false
+2026-10-07 06:07:21.729287-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    WorkoutIcon: 1
+2026-10-07 06:07:21.729404-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    PlannedDistance: 18.0
+2026-10-07 06:07:21.729491-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    PlannedDistanceType: mi
+2026-10-07 06:07:21.729554-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    HasStructuredWorkout: true
+2026-10-07 06:07:21.729672-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    StructuredWorkoutURLs: {fit: https://log.finalsurge.com/api/v1/DownloadWorkout?t=fit&s=f71d3644-6ae5-4910-b098-a019a515520e&id=2b6c7846-ef4f-4ee3-9208-8613fa6918c8, json_garmin_v1: https://log.finalsurge.com/api/v1/DownloadWorkout?t=garminv1&s=f71d3644-6ae5-4910-b098-a019a515520e&id=2b6c7846-ef4f-4ee3-9208-8613fa6918c8, json_fs_v1: https://log.finalsurge.com/api/v1/DownloadWorkout?t=fsv1&s=f71d3644-6ae5-4910-b098-a019a515520e&id=2b6c7846-ef4f-4ee3-9208-8613fa6918c8, zwo: null, mrc: null}
+2026-10-07 06:07:21.729791-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: 🔍 FS DURATION DEBUG:
+2026-10-07 06:07:21.729889-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    PlannedTime raw value: null (type: Null)
+2026-10-07 06:07:21.729959-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    ActualTime raw value: null (type: Null)
+2026-10-07 06:07:21.730032-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: 🔍 FS DISTANCE DEBUG:
+2026-10-07 06:07:21.730100-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    PlannedDistance raw value: 18.0 (type: double)
+2026-10-07 06:07:21.730164-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    PlannedDistanceType: mi
+2026-10-07 06:07:21.730229-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    ActualDistanceMeters raw value: null (type: Null)
+2026-10-07 06:07:21.730352-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    All distance-related keys: (PlannedDistance, PlannedDistanceType, ActualDistanceMeters)
+2026-10-07 06:07:21.730421-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    PlannedDistance: 18.0
+2026-10-07 06:07:21.730484-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    PlannedDistanceType: mi
+2026-10-07 06:07:21.730542-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    ActualDistanceMeters: null
+2026-10-07 06:07:21.730626-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    ✅ Using PlannedDistance: 18.0 mi
+2026-10-07 06:07:21.731087-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: 🔍 FS PACE DEBUG: Using pace from description: 9.191666666666666 min/mi
+2026-10-07 06:07:21.731835-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: 🏁 FS TRANSFORM RESULT:
+2026-10-07 06:07:21.731909-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    Title: Run - Long Run
+2026-10-07 06:07:21.732001-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    Type: ActivityType.running
+2026-10-07 06:07:21.732071-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    Raw PlannedDistance: 18.0 (mi)
+2026-10-07 06:07:21.732132-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    Raw PlannedTime: null seconds
+2026-10-07 06:07:21.732221-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    Raw ActualDistanceMeters: null
+2026-10-07 06:07:21.732302-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    Raw ActualTime: null
+2026-10-07 06:07:21.732370-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    → Final distanceMiles: 18.0
+2026-10-07 06:07:21.732450-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    → Final durationMinutes: null
+2026-10-07 06:07:21.732519-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    → Final cyclingSpeedMph: null
+2026-10-07 06:07:21.732589-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    → Final pace: 9.191666666666666 min/mi
+2026-10-07 06:07:21.732659-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    → Notes: null
+2026-10-07 06:07:21.734564-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: 🔍 FS INTENSITY DEBUG - Checking for workout intensity hints
+2026-10-07 06:07:21.734673-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    ✅ Matched subtype "Long Run": IntensityDistribution(conversational: 80%, tempo: 15%, allOut: 5%)
+2026-10-07 06:07:21.734807-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: 🔍 FS TRANSFORM DEBUG - Raw workout keys: [WorkoutKey, WorkoutURL, WorkoutDate, WorkoutTime, WorkoutCode, WorkoutTitle, WorkoutDescription, WorkoutTypeName, WorkoutSubTypeName, WorkoutCompleted, WorkoutRace, WorkoutIcon, PlannedTime, PlannedDistance, PlannedDistanceType, PlannedPace, PlannedPaceType, ActualTime, ActualDistanceMeters, HasStructuredWorkout, StructuredWorkoutURLs]
+2026-10-07 06:07:21.734876-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: 🔍 FS TRANSFORM DEBUG - Raw workout data:
+2026-10-07 06:07:21.734929-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    WorkoutKey: df73938c-e4f9-4fc4-af01-39b0b3372e79
+2026-10-07 06:07:21.734988-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    WorkoutURL: https://log.finalsurge.com/WorkoutDetails?s=f71d3644-6ae5-4910-b098-a019a515520e&id=df73938c-e4f9-4fc4-af01-39b0b3372e79
+2026-10-07 06:07:21.735028-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    WorkoutDate: 2026-10-10T00:00:00
+2026-10-07 06:07:21.735069-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    WorkoutTitle: Foam Rolling Routine
+2026-10-07 06:07:21.735115-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    WorkoutTypeName: Recovery/Rehab
+2026-10-07 06:07:21.735190-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    WorkoutCompleted: false
+2026-10-07 06:07:21.735228-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    WorkoutRace: false
+2026-10-07 06:07:21.735267-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    WorkoutIcon: 7
+2026-10-07 06:07:21.735304-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    HasStructuredWorkout: false
+2026-10-07 06:07:21.735362-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    StructuredWorkoutURLs: {zwo: null, mrc: null, fit: null, json_garmin_v1: null, json_fs_v1: null}
+2026-10-07 06:07:21.735414-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: 🔍 FS DURATION DEBUG:
+2026-10-07 06:07:21.735459-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    PlannedTime raw value: null (type: Null)
+2026-10-07 06:07:21.735511-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    ActualTime raw value: null (type: Null)
+2026-10-07 06:07:21.735552-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: 🔍 FS DISTANCE DEBUG:
+2026-10-07 06:07:21.735593-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    PlannedDistance raw value: null (type: Null)
+2026-10-07 06:07:21.735631-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    PlannedDistanceType: null
+2026-10-07 06:07:21.735673-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    ActualDistanceMeters raw value: null (type: Null)
+2026-10-07 06:07:21.735731-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    All distance-related keys: (PlannedDistance, PlannedDistanceType, ActualDistanceMeters)
+2026-10-07 06:07:21.735772-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    PlannedDistance: null
+2026-10-07 06:07:21.735812-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    PlannedDistanceType: null
+2026-10-07 06:07:21.735857-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    ActualDistanceMeters: null
+2026-10-07 06:07:21.735901-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    ⚠️ No distance data available, using default for ActivityType.other
+2026-10-07 06:07:21.736135-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: 🔍 FS PACE DEBUG: Using default pace for ActivityType.other
+2026-10-07 06:07:21.736480-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: 🏁 FS TRANSFORM RESULT:
+2026-10-07 06:07:21.736537-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    Title: Foam Rolling Routine
+2026-10-07 06:07:21.736578-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    Type: ActivityType.other
+2026-10-07 06:07:21.736623-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    Raw PlannedDistance: null (null)
+2026-10-07 06:07:21.736667-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    Raw PlannedTime: null seconds
+2026-10-07 06:07:21.736709-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    Raw ActualDistanceMeters: null
+2026-10-07 06:07:21.736750-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    Raw ActualTime: null
+2026-10-07 06:07:21.736787-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    → Final distanceMiles: null
+2026-10-07 06:07:21.736822-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    → Final durationMinutes: null
+2026-10-07 06:07:21.736857-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    → Final cyclingSpeedMph: null
+2026-10-07 06:07:21.736894-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    → Final pace: null min/mi
+2026-10-07 06:07:21.736936-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    → Notes: null
+2026-10-07 06:07:21.737011-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: 🔍 FS INTENSITY DEBUG - Checking for workout intensity hints
+2026-10-07 06:07:21.737059-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    ⚠️ No intensity distribution hints available
+2026-10-07 06:07:21.737140-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: 🔍 FS TRANSFORM DEBUG - Raw workout keys: [WorkoutKey, WorkoutURL, WorkoutDate, WorkoutTime, WorkoutCode, WorkoutTitle, WorkoutDescription, WorkoutTypeName, WorkoutSubTypeName, WorkoutCompleted, WorkoutRace, WorkoutIcon, PlannedTime, PlannedDistance, PlannedDistanceType, PlannedPace, PlannedPaceType, ActualTime, ActualDistanceMeters, HasStructuredWorkout, StructuredWorkoutURLs]
+2026-10-07 06:07:21.737190-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: 🔍 FS TRANSFORM DEBUG - Raw workout data:
+2026-10-07 06:07:21.737233-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    WorkoutKey: 62c18e23-0bce-47ff-b5fa-7055990ba9f9
+2026-10-07 06:07:21.737269-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    WorkoutURL: https://log.finalsurge.com/WorkoutDetails?s=f71d3644-6ae5-4910-b098-a019a515520e&id=62c18e23-0bce-47ff-b5fa-7055990ba9f9
+2026-10-07 06:07:21.737304-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    WorkoutDate: 2026-10-11T00:00:00
+2026-10-07 06:07:21.737351-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    WorkoutDescription: At your discretion.
+2026-10-07 06:07:21.737394-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    WorkoutTypeName: Bike
+2026-10-07 06:07:21.737431-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    WorkoutSubTypeName: Long Ride
+2026-10-07 06:07:21.737467-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    WorkoutCompleted: false
+2026-10-07 06:07:21.737502-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    WorkoutRace: false
+2026-10-07 06:07:21.737538-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    WorkoutIcon: 2
+2026-10-07 06:07:21.737574-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    HasStructuredWorkout: false
+2026-10-07 06:07:21.737623-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    StructuredWorkoutURLs: {zwo: null, mrc: null, fit: null, json_garmin_v1: null, json_fs_v1: null}
+2026-10-07 06:07:21.737668-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: 🔍 FS DURATION DEBUG:
+2026-10-07 06:07:21.737711-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    PlannedTime raw value: null (type: Null)
+2026-10-07 06:07:21.737748-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    ActualTime raw value: null (type: Null)
+2026-10-07 06:07:21.737792-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: 🔍 FS DISTANCE DEBUG:
+2026-10-07 06:07:21.737834-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    PlannedDistance raw value: null (type: Null)
+2026-10-07 06:07:21.737869-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    PlannedDistanceType: null
+2026-10-07 06:07:21.737905-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    ActualDistanceMeters raw value: null (type: Null)
+2026-10-07 06:07:21.737959-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    All distance-related keys: (PlannedDistance, PlannedDistanceType, ActualDistanceMeters)
+2026-10-07 06:07:21.738002-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    PlannedDistance: null
+2026-10-07 06:07:21.738038-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    PlannedDistanceType: null
+2026-10-07 06:07:21.738075-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    ActualDistanceMeters: null
+2026-10-07 06:07:21.738118-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    ⚠️ No distance data available, using default for ActivityType.cycling
+2026-10-07 06:07:21.738248-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: 🔍 FS PACE DEBUG: Using default pace for ActivityType.cycling
+2026-10-07 06:07:21.738653-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: 🏁 FS TRANSFORM RESULT:
+2026-10-07 06:07:21.738693-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    Title: Bike - Long Ride
+2026-10-07 06:07:21.738731-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    Type: ActivityType.cycling
+2026-10-07 06:07:21.738772-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    Raw PlannedDistance: null (null)
+2026-10-07 06:07:21.738812-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    Raw PlannedTime: null seconds
+2026-10-07 06:07:21.738871-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    Raw ActualDistanceMeters: null
+2026-10-07 06:07:21.738908-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    Raw ActualTime: null
+2026-10-07 06:07:21.738955-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    → Final distanceMiles: 10.0
+2026-10-07 06:07:21.738996-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    → Final durationMinutes: 45
+2026-10-07 06:07:21.739038-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    → Final cyclingSpeedMph: null
+2026-10-07 06:07:21.739083-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    → Final pace: null min/mi
+2026-10-07 06:07:21.739142-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    → Notes: At your discretion.
+2026-10-07 06:07:21.739180-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: 🔍 FS INTENSITY DEBUG - Checking for workout intensity hints
+2026-10-07 06:07:21.739281-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    ✅ Matched subtype "Long Ride": IntensityDistribution(conversational: 80%, tempo: 15%, allOut: 5%)
+2026-10-07 06:07:21.739354-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: 🔍 FS TRANSFORM DEBUG - Raw workout keys: [WorkoutKey, WorkoutURL, WorkoutDate, WorkoutTime, WorkoutCode, WorkoutTitle, WorkoutDescription, WorkoutTypeName, WorkoutSubTypeName, WorkoutCompleted, WorkoutRace, WorkoutIcon, PlannedTime, PlannedDistance, PlannedDistanceType, PlannedPace, PlannedPaceType, ActualTime, ActualDistanceMeters, HasStructuredWorkout, StructuredWorkoutURLs]
+2026-10-07 06:07:21.739397-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: 🔍 FS TRANSFORM DEBUG - Raw workout data:
+2026-10-07 06:07:21.739436-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    WorkoutKey: 6d81c2e6-4a5d-4072-89bf-1198c1502643
+2026-10-07 06:07:21.739476-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    WorkoutURL: https://log.finalsurge.com/WorkoutDetails?s=f71d3644-6ae5-4910-b098-a019a515520e&id=6d81c2e6-4a5d-4072-89bf-1198c1502643
+2026-10-07 06:07:21.739560-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    WorkoutDate: 2026-10-11T00:00:00
+2026-10-07 06:07:21.739596-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    WorkoutTitle: Foam Rolling Routine
+2026-10-07 06:07:21.739629-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    WorkoutTypeName: Recovery/Rehab
+2026-10-07 06:07:21.739670-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    WorkoutCompleted: false
+2026-10-07 06:07:21.739702-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    WorkoutRace: false
+2026-10-07 06:07:21.739755-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    WorkoutIcon: 7
+2026-10-07 06:07:21.739825-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    HasStructuredWorkout: false
+2026-10-07 06:07:21.739876-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    StructuredWorkoutURLs: {zwo: null, mrc: null, fit: null, json_garmin_v1: null, json_fs_v1: null}
+2026-10-07 06:07:21.739924-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: 🔍 FS DURATION DEBUG:
+2026-10-07 06:07:21.739963-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    PlannedTime raw value: null (type: Null)
+2026-10-07 06:07:21.739997-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    ActualTime raw value: null (type: Null)
+2026-10-07 06:07:21.740048-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: 🔍 FS DISTANCE DEBUG:
+2026-10-07 06:07:21.740087-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    PlannedDistance raw value: null (type: Null)
+2026-10-07 06:07:21.740127-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    PlannedDistanceType: null
+2026-10-07 06:07:21.740167-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    ActualDistanceMeters raw value: null (type: Null)
+2026-10-07 06:07:21.740222-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    All distance-related keys: (PlannedDistance, PlannedDistanceType, ActualDistanceMeters)
+2026-10-07 06:07:21.740264-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    PlannedDistance: null
+2026-10-07 06:07:21.740303-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    PlannedDistanceType: null
+2026-10-07 06:07:21.740341-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    ActualDistanceMeters: null
+2026-10-07 06:07:21.740435-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    ⚠️ No distance data available, using default for ActivityType.other
+2026-10-07 06:07:21.740584-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: 🔍 FS PACE DEBUG: Using default pace for ActivityType.other
+2026-10-07 06:07:21.740917-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: 🏁 FS TRANSFORM RESULT:
+2026-10-07 06:07:21.740956-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    Title: Foam Rolling Routine
+2026-10-07 06:07:21.740988-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    Type: ActivityType.other
+2026-10-07 06:07:21.741027-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    Raw PlannedDistance: null (null)
+2026-10-07 06:07:21.741064-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    Raw PlannedTime: null seconds
+2026-10-07 06:07:21.741096-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    Raw ActualDistanceMeters: null
+2026-10-07 06:07:21.741131-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    Raw ActualTime: null
+2026-10-07 06:07:21.741172-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    → Final distanceMiles: null
+2026-10-07 06:07:21.741208-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    → Final durationMinutes: null
+2026-10-07 06:07:21.741243-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    → Final cyclingSpeedMph: null
+2026-10-07 06:07:21.741278-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    → Final pace: null min/mi
+2026-10-07 06:07:21.741316-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    → Notes: null
+2026-10-07 06:07:21.741360-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: 🔍 FS INTENSITY DEBUG - Checking for workout intensity hints
+2026-10-07 06:07:21.741411-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    ⚠️ No intensity distribution hints available
+2026-10-07 06:07:21.784141-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    ✅ UNCHANGED: Swim
+2026-10-07 06:07:21.784296-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    ✅ UNCHANGED: Bike
+2026-10-07 06:07:21.784398-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    ✅ UNCHANGED: R-CORE Routine
+2026-10-07 06:07:21.784756-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    🔄 UPDATED (minor): LT
+2026-10-07 06:07:21.784829-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    ✅ UNCHANGED: Foam Rolling Routine
+2026-10-07 06:07:21.784900-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    ✅ UNCHANGED: Swim
+2026-10-07 06:07:21.784977-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    ✅ UNCHANGED: R-CORE Routine
+2026-10-07 06:07:21.785045-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    🔄 UPDATED (minor): Run - Long Run
+2026-10-07 06:07:21.785108-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    ✅ UNCHANGED: Foam Rolling Routine
+2026-10-07 06:07:21.785169-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    ✅ UNCHANGED: Bike - Long Ride
+2026-10-07 06:07:21.785242-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    ✅ UNCHANGED: Foam Rolling Routine
+2026-10-07 06:07:21.808627-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: DailyBaselineCalculator.sessionCost: unknown sport "other" — F4a zero-with-estimate-flag (session-demand.md F4a, RULED 2026-09-10)
+2026-10-07 06:07:21.824760-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: DailyBaselineCalculator.sessionCost: unknown sport "other" — F4a zero-with-estimate-flag (session-demand.md F4a, RULED 2026-09-10)
+2026-10-07 06:07:21.903460-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: DailyBaselineCalculator.sessionCost: unknown sport "other" — F4a zero-with-estimate-flag (session-demand.md F4a, RULED 2026-09-10)
+2026-10-07 06:07:21.943413-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: DailyBaselineCalculator.sessionCost: unknown sport "other" — F4a zero-with-estimate-flag (session-demand.md F4a, RULED 2026-09-10)
+2026-10-07 06:07:22.021522-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: 🔑 ConnectTrainingController: Using real user ID: 607f9dd5-6fa7-48ee-a628-720d4a0506a1
+2026-10-07 06:07:22.021592-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    (user profile exists: true, onboardingCompleted: true)
+2026-10-07 06:07:22.021643-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    (auth user: 607f9dd5-6fa7-48ee-a628-720d4a0506a1, resolved user: 607f9dd5-6fa7-48ee-a628-720d4a0506a1)
+2026-10-07 06:07:22.038412-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: 🔑 Token refresh URL: https://oauth.sandbox.trainingpeaks.com/oauth/token
+2026-10-07 06:07:22.038515-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    Client ID: mealvana
+2026-10-07 06:07:22.271770-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: \^[[38;5;208m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+2026-10-07 06:07:22.271881-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: \^[[38;5;208m│ TrainingPeaksApiException: Token refresh failed (status: 400)\^[[0m
+2026-10-07 06:07:22.271949-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: \^[[38;5;208m│ Body: {"error":"invalid_grant"}\^[[0m
+2026-10-07 06:07:22.272031-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: \^[[38;5;208m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+2026-10-07 06:07:22.272108-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: \^[[38;5;208m│ #0   TrainingPeaksApiClient.refreshToken (package:mealvana_endurance/features/integrations/data/training_peaks_api_client.dart:128:7)\^[[0m
+2026-10-07 06:07:22.272178-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: \^[[38;5;208m│ #1   <asynchronous suspension>\^[[0m
+2026-10-07 06:07:22.272232-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: \^[[38;5;208m│ #2   TrainingPeaksSyncService._refreshToken (package:mealvana_endurance/features/integrations/application/training_peaks_sync_service.dart:915:29)\^[[0m
+2026-10-07 06:07:22.272288-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: \^[[38;5;208m│ #3   <asynchronous suspension>\^[[0m
+2026-10-07 06:07:22.272339-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: \^[[38;5;208m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+2026-10-07 06:07:22.272380-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: \^[[38;5;208m│ 06:07:22.271 (+0:01:54.124521)\^[[0m
+2026-10-07 06:07:22.272436-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: \^[[38;5;208m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+2026-10-07 06:07:22.272486-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: \^[[38;5;208m│ ⚠️ [training_peaks] TrainingPeaks token refresh failed; reconnect required\^[[0m
+2026-10-07 06:07:22.272539-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: \^[[38;5;208m│ ⚠️ Data: {statusCode: 400, responseBody: {"error":"invalid_grant"}}\^[[0m
+2026-10-07 06:07:22.272591-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: \^[[38;5;208m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+2026-10-07 06:07:22.281627-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] error_reported {severity: degraded, area: training_peaks, exception_type: TrainingPeaksApiException, sentry_event_id: 2dfc8608318a41e5b588f79067608e24}
+2026-10-07 06:07:22.283839-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: 🔑 Token refresh URL: https://oauth.sandbox.trainingpeaks.com/oauth/token
+2026-10-07 06:07:22.283888-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    Client ID: mealvana
+2026-10-07 06:07:22.363589-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: \^[[38;5;208m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+2026-10-07 06:07:22.363666-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: \^[[38;5;208m│ TrainingPeaksApiException: Token refresh failed (status: 400)\^[[0m
+2026-10-07 06:07:22.363714-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: \^[[38;5;208m│ Body: {"error":"invalid_grant"}\^[[0m
+2026-10-07 06:07:22.363783-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: \^[[38;5;208m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+2026-10-07 06:07:22.363834-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: \^[[38;5;208m│ #0   TrainingPeaksApiClient.refreshToken (package:mealvana_endurance/features/integrations/data/training_peaks_api_client.dart:128:7)\^[[0m
+2026-10-07 06:07:22.363876-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: \^[[38;5;208m│ #1   <asynchronous suspension>\^[[0m
+2026-10-07 06:07:22.363925-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: \^[[38;5;208m│ #2   TrainingPeaksSyncService._refreshToken (package:mealvana_endurance/features/integrations/application/training_peaks_sync_service.dart:915:29)\^[[0m
+2026-10-07 06:07:22.363977-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: \^[[38;5;208m│ #3   <asynchronous suspension>\^[[0m
+2026-10-07 06:07:22.364056-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: \^[[38;5;208m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+2026-10-07 06:07:22.364100-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: \^[[38;5;208m│ 06:07:22.363 (+0:01:54.216463)\^[[0m
+2026-10-07 06:07:22.364170-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: \^[[38;5;208m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+2026-10-07 06:07:22.364214-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: \^[[38;5;208m│ ⚠️ [training_peaks] TrainingPeaks token refresh failed; reconnect required\^[[0m
+2026-10-07 06:07:22.364271-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: \^[[38;5;208m│ ⚠️ Data: {statusCode: 400, responseBody: {"error":"invalid_grant"}}\^[[0m
+2026-10-07 06:07:22.364322-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: \^[[38;5;208m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+2026-10-07 06:07:22.371192-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] error_reported {severity: degraded, area: training_peaks, exception_type: TrainingPeaksApiException, sentry_event_id: 71baf910470144949ca415fc6442c463}
+2026-10-07 06:07:22.383766-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: 🔑 [vdot] AppConfig creds at client build: client_id="mealvana" (len 8), client_secret len 64, authBase=https://app.vdoto2.com
+2026-10-07 06:07:22.387197-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: 🔑 ConnectTrainingController: Using real user ID: 607f9dd5-6fa7-48ee-a628-720d4a0506a1
+2026-10-07 06:07:22.387292-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    (user profile exists: true, onboardingCompleted: true)
+2026-10-07 06:07:22.387354-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter:    (auth user: 607f9dd5-6fa7-48ee-a628-720d4a0506a1, resolved user: 607f9dd5-6fa7-48ee-a628-720d4a0506a1)
+2026-10-07 06:07:22.643588-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: \^[[38;5;208m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+2026-10-07 06:07:22.643709-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: \^[[38;5;208m│ TokenRefreshException[vdot]: Refresh token expired or invalid. Please reconnect your account. (requiresReauth: true)\^[[0m
+2026-10-07 06:07:22.643803-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: \^[[38;5;208m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+2026-10-07 06:07:22.643899-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: \^[[38;5;208m│ #0   HttpRetryClient.handleRefreshResponse (package:mealvana_endurance/features/integrations/data/http_retry_client.dart:235:7)\^[[0m
+2026-10-07 06:07:22.643975-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: \^[[38;5;208m│ #1   VdotApiClient.refreshAccessToken (package:mealvana_endurance/features/integrations/data/vdot_api_client.dart:206:23)\^[[0m
+2026-10-07 06:07:22.644045-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: \^[[38;5;208m│ #2   <asynchronous suspension>\^[[0m
+2026-10-07 06:07:22.644156-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: \^[[38;5;208m│ #3   VdotSyncService._refreshToken (package:mealvana_endurance/features/integrations/application/vdot_sync_service.dart:291:27)\^[[0m
+2026-10-07 06:07:22.644264-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: \^[[38;5;208m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+2026-10-07 06:07:22.644344-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: \^[[38;5;208m│ 06:07:22.642 (+0:01:54.496221)\^[[0m
+2026-10-07 06:07:22.644428-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: \^[[38;5;208m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+2026-10-07 06:07:22.644495-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: \^[[38;5;208m│ ⚠️ [vdot] V.O2 token refresh failed\^[[0m
+2026-10-07 06:07:22.644574-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: \^[[38;5;208m│ ⚠️ Data: {requiresReauth: true}\^[[0m
+2026-10-07 06:07:22.644674-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: \^[[38;5;208m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+2026-10-07 06:07:22.658343-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] error_reported {severity: degraded, area: vdot, exception_type: TokenRefreshException, sentry_event_id: b6d854412cc64774802860ff53f5e8f5}
+2026-10-07 06:07:22.981843-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: DailyBaselineCalculator.sessionCost: unknown sport "other" — F4a zero-with-estimate-flag (session-demand.md F4a, RULED 2026-09-10)
+2026-10-07 06:07:23.545075-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: DailyBaselineCalculator.sessionCost: unknown sport "other" — F4a zero-with-estimate-flag (session-demand.md F4a, RULED 2026-09-10)
+2026-10-07 06:07:54.310709-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] log_meal_opened {source: macro_dashboard, log_date: 2026-10-07, is_today: true}
+2026-10-07 06:07:54.311133-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] diary_opened {source: macro_dashboard, log_date: 2026-10-07, is_today: true}
+2026-10-07 06:08:31.360356-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] meal_ai_action_tapped {method: text, has_text: true}
+2026-10-07 06:08:31.361259-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] meal_ai_started {method: text, has_text: true}
+2026-10-07 06:08:38.880338-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] meal_ai_completed {method: text, has_text: true, latency_ms: 7517, input_tokens: 1347, output_tokens: 305, total_tokens: 1652, model: anthropic/claude-sonnet-4.6, cost_usd: 0.008616, confidence: medium, item_count: 3}
+2026-10-07 06:08:39.435500-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] diary_closed {duration_sec: 45, items_logged: 0, log_date: 2026-10-07}
+2026-10-07 06:10:16.006163-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] meal_logged {slot: breakfast, source: describe, method: describe, log_date: 2026-10-07}
+2026-10-07 06:10:16.425134-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: DailyBaselineCalculator.sessionCost: unknown sport "other" — F4a zero-with-estimate-flag (session-demand.md F4a, RULED 2026-09-10)
+2026-10-07 06:10:17.292807-0500 0x27ef809  Default     0x0                  98127  0    Runner: (Flutter) flutter: DailyBaselineCalculator.sessionCost: unknown sport "other" — F4a zero-with-estimate-flag (session-demand.md F4a, RULED 2026-09-10)
+2026-10-07 06:11:06.825415-0500 0x27f56e7  Default     0x0                  1408   0    Runner: (Flutter) Plugin AppLinksIosPlugin uses deprecated application lifecycle events. Please contact plugin maintainers and request UIScene lifecycle support. This will be required in a future version of Flutter. See https://docs.flutter.dev/release/breaking-changes/uiscenedelegate#migration-guide-for-flutter-plugins
+2026-10-07 06:11:06.834734-0500 0x27f56e7  Default     0x0                  1408   0    Runner: (Flutter) Plugin FlutterWebAuth2Plugin uses deprecated application lifecycle events. Please contact plugin maintainers and request UIScene lifecycle support. This will be required in a future version of Flutter. See https://docs.flutter.dev/release/breaking-changes/uiscenedelegate#migration-guide-for-flutter-plugins
+2026-10-07 06:11:06.844924-0500 0x27f56e7  Default     0x0                  1408   0    Runner: (Flutter) Plugin FLTGoogleSignInPlugin uses deprecated application lifecycle events. Please contact plugin maintainers and request UIScene lifecycle support. This will be required in a future version of Flutter. See https://docs.flutter.dev/release/breaking-changes/uiscenedelegate#migration-guide-for-flutter-plugins
+2026-10-07 06:11:07.094532-0500 0x27f5752  Default     0x0                  1408   0    Runner: (Flutter) flutter: The Dart VM service is listening on http://127.0.0.1:58550/bKWwuZcg3s8=/
+2026-10-07 06:11:09.613135-0500 0x27f56e7  Default     0x0                  1408   0    Runner: (Flutter) flutter: -------------------------------------------------------------------------------
+2026-10-07 06:11:09.667921-0500 0x27f56e7  Default     0x0                  1408   0    Runner: (Flutter) flutter: supabase.supabase_flutter: INFO: ***** Supabase init completed *****
+2026-10-07 06:11:11.256942-0500 0x27f56e7  Default     0x0                  1408   0    Runner: (Flutter) flutter: [LAUNCH] nudge sweep activities=7 estimated=1 longCandidates=0
+2026-10-07 06:11:11.258416-0500 0x27f56e7  Default     0x0                  1408   0    Runner: (Flutter) flutter: [LAUNCH] nudge evaluate candidates=0 fastFire=false
+2026-10-07 06:11:11.615975-0500 0x27f56e7  Default     0x0                  1408   0    Runner: (Flutter) flutter: [LAUNCH] plugin.initialize() starting (handler not yet attached)
+2026-10-07 06:11:11.633253-0500 0x27f56e7  Default     0x0                  1408   0    Runner: (Flutter) flutter: [LAUNCH] plugin.initialize() done (handler attached)
+2026-10-07 06:11:11.972834-0500 0x27f56e7  Default     0x0                  1408   0    Runner: (Flutter) flutter: [LAUNCH] launchDetails didNotificationLaunchApp=false payload=null
+2026-10-07 06:11:12.857056-0500 0x27f56e7  Default     0x0                  1408   0    Runner: (Flutter) flutter: 🔑 ConnectTrainingController: Using real user ID: 607f9dd5-6fa7-48ee-a628-720d4a0506a1
+2026-10-07 06:11:12.857119-0500 0x27f56e7  Default     0x0                  1408   0    Runner: (Flutter) flutter:    (user profile exists: true, onboardingCompleted: true)
+2026-10-07 06:11:12.857160-0500 0x27f56e7  Default     0x0                  1408   0    Runner: (Flutter) flutter:    (auth user: 607f9dd5-6fa7-48ee-a628-720d4a0506a1, resolved user: 607f9dd5-6fa7-48ee-a628-720d4a0506a1)
+2026-10-07 06:11:12.858250-0500 0x27f56e7  Default     0x0                  1408   0    Runner: (Flutter) flutter: 🔑 Token refresh URL: https://oauth.sandbox.trainingpeaks.com/oauth/token
+2026-10-07 06:11:12.858321-0500 0x27f56e7  Default     0x0                  1408   0    Runner: (Flutter) flutter:    Client ID: mealvana
+2026-10-07 06:11:12.887064-0500 0x27f56e7  Default     0x0                  1408   0    Runner: (Flutter) flutter: 🔑 [vdot] AppConfig creds at client build: client_id="mealvana" (len 8), client_secret len 64, authBase=https://app.vdoto2.com
+2026-10-07 06:11:12.894880-0500 0x27f56e7  Default     0x0                  1408   0    Runner: (Flutter) flutter: DailyBaselineCalculator.sessionCost: unknown sport "other" — F4a zero-with-estimate-flag (session-demand.md F4a, RULED 2026-09-10)
+2026-10-07 06:11:12.902062-0500 0x27f56e7  Default     0x0                  1408   0    Runner: (Flutter) flutter: DailyBaselineCalculator.sessionCost: unknown sport "other" — F4a zero-with-estimate-flag (session-demand.md F4a, RULED 2026-09-10)
+2026-10-07 06:11:12.907103-0500 0x27f56e7  Default     0x0                  1408   0    Runner: (Flutter) flutter: 🔑 ConnectTrainingController: Using real user ID: 607f9dd5-6fa7-48ee-a628-720d4a0506a1
+2026-10-07 06:11:12.907159-0500 0x27f56e7  Default     0x0                  1408   0    Runner: (Flutter) flutter:    (user profile exists: true, onboardingCompleted: true)
+2026-10-07 06:11:12.907212-0500 0x27f56e7  Default     0x0                  1408   0    Runner: (Flutter) flutter:    (auth user: 607f9dd5-6fa7-48ee-a628-720d4a0506a1, resolved user: 607f9dd5-6fa7-48ee-a628-720d4a0506a1)
+2026-10-07 06:11:12.922466-0500 0x27f56e7  Default     0x0                  1408   0    Runner: (Flutter) flutter: DailyBaselineCalculator.sessionCost: unknown sport "other" — F4a zero-with-estimate-flag (session-demand.md F4a, RULED 2026-09-10)
+2026-10-07 06:11:13.414904-0500 0x27f56e7  Default     0x0                  1408   0    Runner: (Flutter) flutter: \^[[38;5;208m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+2026-10-07 06:11:13.414983-0500 0x27f56e7  Default     0x0                  1408   0    Runner: (Flutter) flutter: \^[[38;5;208m│ TrainingPeaksApiException: Token refresh failed (status: 400)\^[[0m
+2026-10-07 06:11:13.415060-0500 0x27f56e7  Default     0x0                  1408   0    Runner: (Flutter) flutter: \^[[38;5;208m│ Body: {"error":"invalid_grant"}\^[[0m
+2026-10-07 06:11:13.415133-0500 0x27f56e7  Default     0x0                  1408   0    Runner: (Flutter) flutter: \^[[38;5;208m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+2026-10-07 06:11:13.415201-0500 0x27f56e7  Default     0x0                  1408   0    Runner: (Flutter) flutter: \^[[38;5;208m│ #0   TrainingPeaksApiClient.refreshToken (package:mealvana_endurance/features/integrations/data/training_peaks_api_client.dart:128:7)\^[[0m
+2026-10-07 06:11:13.415258-0500 0x27f56e7  Default     0x0                  1408   0    Runner: (Flutter) flutter: \^[[38;5;208m│ #1   <asynchronous suspension>\^[[0m
+2026-10-07 06:11:13.415311-0500 0x27f56e7  Default     0x0                  1408   0    Runner: (Flutter) flutter: \^[[38;5;208m│ #2   TrainingPeaksSyncService._refreshToken (package:mealvana_endurance/features/integrations/application/training_peaks_sync_service.dart:915:29)\^[[0m
+2026-10-07 06:11:13.415364-0500 0x27f56e7  Default     0x0                  1408   0    Runner: (Flutter) flutter: \^[[38;5;208m│ #3   <asynchronous suspension>\^[[0m
+2026-10-07 06:11:13.415550-0500 0x27f56e7  Default     0x0                  1408   0    Runner: (Flutter) flutter: \^[[38;5;208m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+2026-10-07 06:11:13.415656-0500 0x27f56e7  Default     0x0                  1408   0    Runner: (Flutter) flutter: \^[[38;5;208m│ 06:11:13.412 (+0:00:03.741439)\^[[0m
+2026-10-07 06:11:13.415753-0500 0x27f56e7  Default     0x0                  1408   0    Runner: (Flutter) flutter: \^[[38;5;208m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+2026-10-07 06:11:13.415795-0500 0x27f56e7  Default     0x0                  1408   0    Runner: (Flutter) flutter: \^[[38;5;208m│ ⚠️ [training_peaks] TrainingPeaks token refresh failed; reconnect required\^[[0m
+2026-10-07 06:11:13.415837-0500 0x27f56e7  Default     0x0                  1408   0    Runner: (Flutter) flutter: \^[[38;5;208m│ ⚠️ Data: {statusCode: 400, responseBody: {"error":"invalid_grant"}}\^[[0m
+2026-10-07 06:11:13.415891-0500 0x27f56e7  Default     0x0                  1408   0    Runner: (Flutter) flutter: \^[[38;5;208m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+2026-10-07 06:11:13.486459-0500 0x27f56e7  Default     0x0                  1408   0    Runner: (Flutter) flutter: \^[[38;5;208m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+2026-10-07 06:11:13.486537-0500 0x27f56e7  Default     0x0                  1408   0    Runner: (Flutter) flutter: \^[[38;5;208m│ TokenRefreshException[vdot]: Refresh token expired or invalid. Please reconnect your account. (requiresReauth: true)\^[[0m
+2026-10-07 06:11:13.486620-0500 0x27f56e7  Default     0x0                  1408   0    Runner: (Flutter) flutter: \^[[38;5;208m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+2026-10-07 06:11:13.486687-0500 0x27f56e7  Default     0x0                  1408   0    Runner: (Flutter) flutter: \^[[38;5;208m│ #0   HttpRetryClient.handleRefreshResponse (package:mealvana_endurance/features/integrations/data/http_retry_client.dart:235:7)\^[[0m
+2026-10-07 06:11:13.486737-0500 0x27f56e7  Default     0x0                  1408   0    Runner: (Flutter) flutter: \^[[38;5;208m│ #1   VdotApiClient.refreshAccessToken (package:mealvana_endurance/features/integrations/data/vdot_api_client.dart:206:23)\^[[0m
+2026-10-07 06:11:13.486784-0500 0x27f56e7  Default     0x0                  1408   0    Runner: (Flutter) flutter: \^[[38;5;208m│ #2   <asynchronous suspension>\^[[0m
+2026-10-07 06:11:13.486827-0500 0x27f56e7  Default     0x0                  1408   0    Runner: (Flutter) flutter: \^[[38;5;208m│ #3   VdotSyncService._refreshToken (package:mealvana_endurance/features/integrations/application/vdot_sync_service.dart:291:27)\^[[0m
+2026-10-07 06:11:13.486908-0500 0x27f56e7  Default     0x0                  1408   0    Runner: (Flutter) flutter: \^[[38;5;208m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+2026-10-07 06:11:13.487200-0500 0x27f56e7  Default     0x0                  1408   0    Runner: (Flutter) flutter: \^[[38;5;208m│ 06:11:13.485 (+0:00:03.815036)\^[[0m
+2026-10-07 06:11:13.487324-0500 0x27f56e7  Default     0x0                  1408   0    Runner: (Flutter) flutter: \^[[38;5;208m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+2026-10-07 06:11:13.487430-0500 0x27f56e7  Default     0x0                  1408   0    Runner: (Flutter) flutter: \^[[38;5;208m│ ⚠️ [vdot] V.O2 token refresh failed\^[[0m
+2026-10-07 06:11:13.487512-0500 0x27f56e7  Default     0x0                  1408   0    Runner: (Flutter) flutter: \^[[38;5;208m│ ⚠️ Data: {requiresReauth: true}\^[[0m
+2026-10-07 06:11:13.487619-0500 0x27f56e7  Default     0x0                  1408   0    Runner: (Flutter) flutter: \^[[38;5;208m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+2026-10-07 06:11:13.545642-0500 0x27f56e7  Default     0x0                  1408   0    Runner: (Flutter) flutter: 📊 [ANALYTICS] error_reported {severity: degraded, area: training_peaks, exception_type: TrainingPeaksApiException, sentry_event_id: d591aa2c95d648a7b64f4b36b94462e7}
+2026-10-07 06:11:13.550550-0500 0x27f56e7  Default     0x0                  1408   0    Runner: (Flutter) flutter: 🔑 Token refresh URL: https://oauth.sandbox.trainingpeaks.com/oauth/token
+2026-10-07 06:11:13.550618-0500 0x27f56e7  Default     0x0                  1408   0    Runner: (Flutter) flutter:    Client ID: mealvana
+2026-10-07 06:11:13.585807-0500 0x27f56e7  Default     0x0                  1408   0    Runner: (Flutter) flutter: 📊 [ANALYTICS] error_reported {severity: degraded, area: vdot, exception_type: TokenRefreshException, sentry_event_id: c388779a008e4d72b4c6ccf3c60e2836}
+2026-10-07 06:11:13.633343-0500 0x27f56e7  Default     0x0                  1408   0    Runner: (Flutter) flutter: \^[[38;5;208m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+2026-10-07 06:11:13.633412-0500 0x27f56e7  Default     0x0                  1408   0    Runner: (Flutter) flutter: \^[[38;5;208m│ TrainingPeaksApiException: Token refresh failed (status: 400)\^[[0m
+2026-10-07 06:11:13.633474-0500 0x27f56e7  Default     0x0                  1408   0    Runner: (Flutter) flutter: \^[[38;5;208m│ Body: {"error":"invalid_grant"}\^[[0m
+2026-10-07 06:11:13.633547-0500 0x27f56e7  Default     0x0                  1408   0    Runner: (Flutter) flutter: \^[[38;5;208m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+2026-10-07 06:11:13.633596-0500 0x27f56e7  Default     0x0                  1408   0    Runner: (Flutter) flutter: \^[[38;5;208m│ #0   TrainingPeaksApiClient.refreshToken (package:mealvana_endurance/features/integrations/data/training_peaks_api_client.dart:128:7)\^[[0m
+2026-10-07 06:11:13.633651-0500 0x27f56e7  Default     0x0                  1408   0    Runner: (Flutter) flutter: \^[[38;5;208m│ #1   <asynchronous suspension>\^[[0m
+2026-10-07 06:11:13.633694-0500 0x27f56e7  Default     0x0                  1408   0    Runner: (Flutter) flutter: \^[[38;5;208m│ #2   TrainingPeaksSyncService._refreshToken (package:mealvana_endurance/features/integrations/application/training_peaks_sync_service.dart:915:29)\^[[0m
+2026-10-07 06:11:13.633753-0500 0x27f56e7  Default     0x0                  1408   0    Runner: (Flutter) flutter: \^[[38;5;208m│ #3   <asynchronous suspension>\^[[0m
+2026-10-07 06:11:13.633800-0500 0x27f56e7  Default     0x0                  1408   0    Runner: (Flutter) flutter: \^[[38;5;208m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+2026-10-07 06:11:13.633856-0500 0x27f56e7  Default     0x0                  1408   0    Runner: (Flutter) flutter: \^[[38;5;208m│ 06:11:13.632 (+0:00:03.961959)\^[[0m
+2026-10-07 06:11:13.633932-0500 0x27f56e7  Default     0x0                  1408   0    Runner: (Flutter) flutter: \^[[38;5;208m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+2026-10-07 06:11:13.633974-0500 0x27f56e7  Default     0x0                  1408   0    Runner: (Flutter) flutter: \^[[38;5;208m│ ⚠️ [training_peaks] TrainingPeaks token refresh failed; reconnect required\^[[0m
+2026-10-07 06:11:13.634018-0500 0x27f56e7  Default     0x0                  1408   0    Runner: (Flutter) flutter: \^[[38;5;208m│ ⚠️ Data: {statusCode: 400, responseBody: {"error":"invalid_grant"}}\^[[0m
+2026-10-07 06:11:13.634093-0500 0x27f56e7  Default     0x0                  1408   0    Runner: (Flutter) flutter: \^[[38;5;208m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+2026-10-07 06:11:13.639841-0500 0x27f56e7  Default     0x0                  1408   0    Runner: (Flutter) flutter: 📊 [ANALYTICS] error_reported {severity: degraded, area: training_peaks, exception_type: TrainingPeaksApiException, sentry_event_id: 2f3efa0892e04025aeeff7f22bb71c50}
+2026-10-07 06:11:13.781922-0500 0x27f56e7  Default     0x0                  1408   0    Runner: (Flutter) flutter: DailyBaselineCalculator.sessionCost: unknown sport "other" — F4a zero-with-estimate-flag (session-demand.md F4a, RULED 2026-09-10)
+2026-10-07 06:11:14.027744-0500 0x27f56e7  Default     0x0                  1408   0    Runner: (Flutter) flutter: DailyBaselineCalculator.sessionCost: unknown sport "other" — F4a zero-with-estimate-flag (session-demand.md F4a, RULED 2026-09-10)
+2026-10-07 06:11:19.563356-0500 0x27f56e7  Default     0x0                  1408   0    Runner: (Flutter) flutter: [LAUNCH] push heal: permission=false optedIn=false (hydration wait 0ms)
+2026-10-07 06:11:19.565245-0500 0x27f56e7  Default     0x0                  1408   0    Runner: (Flutter) flutter: [LAUNCH] push heal: no action
+2026-10-07 06:11:19.617180-0500 0x27f56e7  Default     0x0                  1408   0    Runner: (Flutter) flutter: 📊 [ANALYTICS] app_opened {device_id: CA0C129E-4841-44EC-B4F3-19B678A04B92, session_id: 60b7f8d1-1a9c-4498-952a-e6e18a7d95e1, timestamp: 2026-10-07T06:11:19.616868}
+2026-10-07 06:11:19.990220-0500 0x27f56e7  Default     0x543d8d9            1408   0    Runner: (Flutter) flutter: [LAUNCH] app resumed
+2026-10-07 06:11:20.062824-0500 0x27f56e7  Default     0x0                  1408   0    Runner: (Flutter) flutter: [LAUNCH] nudge sweep activities=7 estimated=1 longCandidates=0
+2026-10-07 06:11:20.063289-0500 0x27f56e7  Default     0x0                  1408   0    Runner: (Flutter) flutter: [LAUNCH] nudge evaluate candidates=0 fastFire=false
+2026-10-07 06:11:20.133812-0500 0x27f56e7  Default     0x0                  1408   0    Runner: (Flutter) flutter: 📊 [ANALYTICS] notif_scheduled {cta: carb_load, cta_transport: local, event_id: a7e76d6c-bbf7-4d29-bebc-59a42c462b0d, days_before: 3, fire_at: 2026-11-20T06:00:00.000, notifications_enabled: false}
+2026-10-07 06:11:20.135982-0500 0x27f56e7  Default     0x0                  1408   0    Runner: (Flutter) flutter: 📊 [ANALYTICS] notif_scheduled {cta: carb_load, cta_transport: local, event_id: a7e76d6c-bbf7-4d29-bebc-59a42c462b0d, days_before: 2, fire_at: 2026-11-21T06:00:00.000, notifications_enabled: false}
+2026-10-07 06:11:20.138988-0500 0x27f56e7  Default     0x0                  1408   0    Runner: (Flutter) flutter: 📊 [ANALYTICS] notif_scheduled {cta: carb_load, cta_transport: local, event_id: a7e76d6c-bbf7-4d29-bebc-59a42c462b0d, days_before: 1, fire_at: 2026-11-22T06:00:00.000, notifications_enabled: false}
+2026-10-07 06:11:51.893183-0500 0x27f56e7  Default     0x0                  1408   0    Runner: (Flutter) flutter: 📊 [ANALYTICS] log_meal_opened {source: macro_dashboard, log_date: 2026-10-07, is_today: true}
+2026-10-07 06:11:51.893547-0500 0x27f56e7  Default     0x0                  1408   0    Runner: (Flutter) flutter: 📊 [ANALYTICS] diary_opened {source: macro_dashboard, log_date: 2026-10-07, is_today: true}
+2026-10-07 06:12:06.848537-0500 0x27f56e7  Default     0x0                  1408   0    Runner: (Flutter) flutter: 📊 [ANALYTICS] diary_closed {duration_sec: 14, items_logged: 0, log_date: 2026-10-07}

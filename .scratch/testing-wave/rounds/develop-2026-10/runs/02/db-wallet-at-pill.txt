@@ -1,0 +1,21 @@
+Wed Oct  7 11:08:06 UTC 2026
+[
+    {
+        "balance": 49897486,
+        "free_period": "2026-10",
+        "allowance": 3943863,
+        "allowance_monthly": 6000000,
+        "unit": "usd_micro",
+        "updated_at": "2026-10-07 11:07:55.979982+00"
+    }
+]
+[
+    {
+        "delta": 50,
+        "reason": "grant_free",
+        "ref": "2026-10",
+        "balance_after": 49897486,
+        "unit": "usd_micro",
+        "created_at": "2026-10-07 11:07:55.979982+00"
+    }
+]
