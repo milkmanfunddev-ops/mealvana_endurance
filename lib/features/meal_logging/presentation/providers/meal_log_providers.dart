@@ -6,9 +6,11 @@ import '../../../../features/activities/data/activities_repository.dart';
 import '../../../../features/activities/domain/activity.dart';
 import '../../../../features/auth/data/user_repository.dart';
 import '../../../../features/nutrition_plan/domain/fuel_log_data.dart';
+import '../../../../shared/data/syncable_repository.dart';
 import '../../../../shared/services/app_external_deps.dart';
 import '../../../../shared/services/report/report.dart';
 import '../../../../shared/services/supabase/supabase_client_provider.dart';
+import '../../../../shared/services/sync/sync_coordinator.dart';
 import '../../application/meal_logging_service.dart';
 import '../../data/meal_log_repository.dart';
 import '../../data/saved_meals_repository.dart';
@@ -35,6 +37,47 @@ MealLoggingService mealLoggingService(Ref ref) {
 }
 
 // ============================================================================
+// Repository-level sync, where the data is read
+// ============================================================================
+
+/// Ask the coordinator for a fresh copy of [repository]'s table (a no-op
+/// while the last sync is under an hour old; dedupes with a sync already in
+/// flight). Best-effort: a failure is logged and the reader keeps the local
+/// table.
+///
+/// The timeline, Log a Meal's Recent tab and the Daily Macros bars read
+/// `meal_logs` and `saved_meals` straight from Drift; before this, nothing on
+/// the way to them asked for a sync, so a returning athlete on a new phone
+/// saw an empty day until the Food tab (whose plan sync depends on both
+/// tables) happened to open (testing-wave 10-001, 26-001).
+Future<void> _ensureSynced(
+  SyncCoordinator sync,
+  Report report,
+  SyncableRepository repository,
+  String userId,
+) async {
+  try {
+    await sync.ensureSynced(
+      repository.repositoryKey,
+      userId,
+      repository: repository,
+    );
+  } catch (e, st) {
+    // The reader keeps the local table; the failed ask is still worth
+    // seeing (D9).
+    unawaited(
+      report.degraded(
+        e,
+        stackTrace: st,
+        area: 'sync',
+        message: '${repository.repositoryKey} ensureSynced failed (non-fatal)',
+        extra: {'repository': repository.repositoryKey},
+      ),
+    );
+  }
+}
+
+// ============================================================================
 // Stream providers — meal logs for a specific date
 // ============================================================================
 
@@ -43,7 +86,9 @@ MealLoggingService mealLoggingService(Ref ref) {
 ///
 /// Automatically re-emits whenever the underlying Drift table changes, so the
 /// Daily Macros tab always reflects the latest local state (including entries
-/// written while offline).
+/// written while offline). Kicks a `meal_logs` sync in the background on
+/// build (never blocks on the network): the local table answers first and
+/// the server's rows re-emit through the same stream when they land.
 ///
 /// Returns an empty list when there is no authenticated user (no throws —
 /// callers handle the empty-state UI).
@@ -52,6 +97,8 @@ Stream<List<MealLog>> mealLogsForDate(Ref ref, String date) async* {
   // Read before the first await: the day can change (and this family member
   // be disposed) while the user loads (Sentry MEALVANA-ENDURANCE-DEV-8J).
   final repo = ref.read(mealLogRepositoryProvider);
+  final sync = ref.read(syncCoordinatorProvider.notifier);
+  final report = ref.read(reportProvider);
   final userRepo = await ref.read(userRepositoryProvider.future);
   final user = await userRepo.getCurrentUser();
   final userId = user?.id;
@@ -60,6 +107,7 @@ Stream<List<MealLog>> mealLogsForDate(Ref ref, String date) async* {
     return;
   }
 
+  unawaited(_ensureSynced(sync, report, repo, userId));
   yield* repo.watchLogsForDate(userId, date);
 }
 
@@ -166,15 +214,21 @@ Stream<ConsumedTotals> consumedTotalsForDate(Ref ref, String date) async* {
 /// Most recent 25 distinct meal names for the current user.
 ///
 /// Used by the "Recent" section of the meal picker. Rebuilds on invalidation
-/// (not a stream — recents don't need real-time updates within a session).
+/// (not a stream — recents don't need real-time updates within a session),
+/// so the `meal_logs` sync is awaited here, not kicked: a one-shot read has
+/// no later emission to carry the server's rows. The Recent tab shows its
+/// spinner meanwhile; a sync that fails answers from the local table.
 @riverpod
 Future<List<MealLog>> recentMeals(Ref ref) async {
   final repo = ref.read(mealLogRepositoryProvider);
+  final sync = ref.read(syncCoordinatorProvider.notifier);
+  final report = ref.read(reportProvider);
   final userRepo = await ref.read(userRepositoryProvider.future);
   final user = await userRepo.getCurrentUser();
   final userId = user?.id;
   if (userId == null) return const [];
 
+  await _ensureSynced(sync, report, repo, userId);
   return repo.getRecentLogs(userId);
 }
 
@@ -185,10 +239,13 @@ Future<List<MealLog>> recentMeals(Ref ref) async {
 /// Streams all non-deleted saved meals for the current user, ordered by
 /// [SavedMeal.lastUsedAt] descending.
 ///
-/// Used by the "My Meals" section of the meal picker.
+/// Used by the "My Meals" section of the meal picker. Kicks a `saved_meals`
+/// sync in the background on build, like [mealLogsForDate].
 @riverpod
 Stream<List<SavedMeal>> savedMeals(Ref ref) async* {
   final repo = ref.read(savedMealsRepositoryProvider);
+  final sync = ref.read(syncCoordinatorProvider.notifier);
+  final report = ref.read(reportProvider);
   final userRepo = await ref.read(userRepositoryProvider.future);
   final user = await userRepo.getCurrentUser();
   final userId = user?.id;
@@ -197,6 +254,7 @@ Stream<List<SavedMeal>> savedMeals(Ref ref) async* {
     return;
   }
 
+  unawaited(_ensureSynced(sync, report, repo, userId));
   yield* repo.watchSavedMeals(userId);
 }
 
