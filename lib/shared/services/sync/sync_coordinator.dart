@@ -74,8 +74,20 @@ class SyncCoordinator extends _$SyncCoordinator {
   /// Track consecutive failure count per repository (for rate limiting)
   final Map<String, int> _failureCount = {};
 
+  /// Repositories whose last upload failed while their pull went ahead.
+  ///
+  /// The pull stamps the repository fresh, so without this the rejected rows
+  /// would wait out the whole staleness window before their next upload try.
+  /// A repository in this set skips the staleness check (the failure cooldown
+  /// still applies), so its upload is retried at the same rate as before.
+  final Set<String> _uploadRetryOwed = {};
+
   /// Cooldown period after a sync failure before retrying
   static const _failureCooldown = Duration(minutes: 2);
+
+  /// Clock for the failure cooldown, replaceable in tests.
+  @visibleForTesting
+  DateTime Function() now = DateTime.now;
 
   /// Sync lock to prevent concurrent syncs
   bool _syncInProgress = false;
@@ -162,6 +174,7 @@ class SyncCoordinator extends _$SyncCoordinator {
     final completer = Completer<void>();
     _inFlightSyncs[repoKey] = completer.future;
     var markedSyncing = false;
+    var failureRecorded = false;
 
     try {
       // 2. Rate limiting - skip if recently failed (cooldown period)
@@ -178,8 +191,10 @@ class SyncCoordinator extends _$SyncCoordinator {
         return;
       }
 
-      // 3. Check if data is stale - if fresh, return immediately
-      if (!await _isStale(repoKey, repository)) {
+      // 3. Check if data is stale - if fresh, return immediately (unless an
+      // earlier upload failed and is owed a retry)
+      if (!_uploadRetryOwed.contains(repoKey) &&
+          !await _isStale(repoKey, repository)) {
         _report.debug(
           'Skipping sync - data is fresh',
           area: 'sync',
@@ -205,9 +220,16 @@ class SyncCoordinator extends _$SyncCoordinator {
       }
 
       // 6. Upload dirty records (if repository provided)
+      //
+      // A failed upload does not stop the pull (Finding 86-012): one row the
+      // server always rejects used to throw here, so this repository and
+      // every repository depending on it never downloaded again. The rows
+      // stay `needs_upload` (every syncFromRemote keeps dirty rows), the
+      // failure is logged and rate-limited, and the upload is retried on the
+      // next ensureSynced after the cooldown.
       if (repository != null) {
-        final uploadResult = await repository.uploadDirtyRecords(userId);
-        if (uploadResult.deferred) {
+        final upload = await _uploadDirty(repoKey, userId, repository);
+        if (upload.deferred) {
           // Not a failure (DEV-A2): the rows belong to a user other than the
           // session, and the repository already left a promoted sync Note.
           // Download nothing the session cannot read, arm no cooldown, and
@@ -215,13 +237,28 @@ class SyncCoordinator extends _$SyncCoordinator {
           _report.debug(
             'Sync stopped: upload deferred',
             area: 'sync',
-            data: {'repoKey': repoKey, 'reason': uploadResult.error},
+            data: {'repoKey': repoKey, 'reason': upload.reason},
           );
           return;
         }
-        if (uploadResult.failed) {
-          throw StateError(
-            'Upload failed for $repoKey: ${uploadResult.error ?? 'unknown error'}',
+        final uploadFailure = upload.failure;
+        if (uploadFailure != null) {
+          failureRecorded = true;
+          _recordFailure(repoKey);
+          _uploadRetryOwed.add(repoKey);
+          await _report.fault(
+            uploadFailure.error,
+            stackTrace: uploadFailure.stackTrace,
+            area: 'sync',
+            message:
+                'Dirty record upload failed - pulling anyway, rows kept for retry',
+            tags: {'repo': repoKey},
+            extra: {
+              'repoKey': repoKey,
+              'userId': userId,
+              'error': uploadFailure.error.toString(),
+              'failureCount': _failureCount[repoKey] ?? 1,
+            },
           );
         }
       }
@@ -231,8 +268,16 @@ class SyncCoordinator extends _$SyncCoordinator {
         await repository.syncFromRemote(userId);
       }
 
-      // 8. Update timestamp and clear failure tracking on success
+      // 8. Update timestamp; clear failure tracking only if the upload landed
       _lastSyncTimes[repoKey] = DateTime.now();
+      if (failureRecorded) {
+        _report.info(
+          'Repository pulled; its upload is still pending',
+          area: 'sync',
+          data: {'repoKey': repoKey},
+        );
+        return;
+      }
       _clearFailureTracking(repoKey);
 
       _report.info(
@@ -241,8 +286,8 @@ class SyncCoordinator extends _$SyncCoordinator {
         data: {'repoKey': repoKey},
       );
     } catch (e, stackTrace) {
-      // Record failure for rate limiting
-      _recordFailure(repoKey);
+      // Record failure for rate limiting (once per attempt)
+      if (!failureRecorded) _recordFailure(repoKey);
 
       // Best-effort sync: the caller carries on with local data, so this
       // Fault is the only record. Expected failures (offline, expired
@@ -267,6 +312,47 @@ class SyncCoordinator extends _$SyncCoordinator {
       if (!completer.isCompleted) {
         completer.complete();
       }
+    }
+  }
+
+  /// Runs [repository]'s upload. `deferred` when the repository held its
+  /// rows back for another user (DEV-A2); otherwise `failure` says why the
+  /// upload failed, or is null when it succeeded. A thrown error counts the
+  /// same as an `UploadResult.failed()`.
+  Future<
+    ({
+      bool deferred,
+      String? reason,
+      ({Object error, StackTrace stackTrace})? failure,
+    })
+  >
+  _uploadDirty(
+    String repoKey,
+    String userId,
+    SyncableRepository repository,
+  ) async {
+    try {
+      final result = await repository.uploadDirtyRecords(userId);
+      if (result.deferred) {
+        return (deferred: true, reason: result.error, failure: null);
+      }
+      if (!result.failed) return (deferred: false, reason: null, failure: null);
+      return (
+        deferred: false,
+        reason: result.error,
+        failure: (
+          error: StateError(
+            'Upload failed for $repoKey: ${result.error ?? 'unknown error'}',
+          ),
+          stackTrace: StackTrace.current,
+        ),
+      );
+    } catch (e, stackTrace) {
+      return (
+        deferred: false,
+        reason: null,
+        failure: (error: e, stackTrace: stackTrace),
+      );
     }
   }
 
@@ -399,7 +485,7 @@ class SyncCoordinator extends _$SyncCoordinator {
     final lastFailure = _lastFailedAttempt[repoKey];
     if (lastFailure == null) return false;
 
-    final timeSinceFailure = DateTime.now().difference(lastFailure);
+    final timeSinceFailure = now().difference(lastFailure);
     return timeSinceFailure < _failureCooldown;
   }
 
@@ -408,7 +494,7 @@ class SyncCoordinator extends _$SyncCoordinator {
     final lastFailure = _lastFailedAttempt[repoKey];
     if (lastFailure == null) return 'none';
 
-    final elapsed = DateTime.now().difference(lastFailure);
+    final elapsed = now().difference(lastFailure);
     final remaining = _failureCooldown - elapsed;
     if (remaining.isNegative) return 'none';
 
@@ -417,7 +503,7 @@ class SyncCoordinator extends _$SyncCoordinator {
 
   /// Record a sync failure for rate limiting.
   void _recordFailure(String repoKey) {
-    _lastFailedAttempt[repoKey] = DateTime.now();
+    _lastFailedAttempt[repoKey] = now();
     _failureCount[repoKey] = (_failureCount[repoKey] ?? 0) + 1;
   }
 
@@ -425,6 +511,7 @@ class SyncCoordinator extends _$SyncCoordinator {
   void _clearFailureTracking(String repoKey) {
     _lastFailedAttempt.remove(repoKey);
     _failureCount.remove(repoKey);
+    _uploadRetryOwed.remove(repoKey);
   }
 
   /// Single entry point for ALL sync operations (LEGACY - kept for backwards compatibility)
@@ -669,6 +756,7 @@ class SyncCoordinator extends _$SyncCoordinator {
     _lastSyncTimes.clear();
     _lastFailedAttempt.clear();
     _failureCount.clear();
+    _uploadRetryOwed.clear();
     _lastSyncTime = null;
     _syncInProgress = false;
     final abandoned = _activeSync;
