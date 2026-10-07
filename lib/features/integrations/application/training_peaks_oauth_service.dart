@@ -254,16 +254,10 @@ class TrainingPeaksOAuthService {
         e,
         stackTrace: st,
         area: _area,
-        message: 'TrainingPeaks token refresh failed; reconnect required',
+        message: 'TrainingPeaks token refresh failed',
         extra: e.reportExtra,
       );
-      // Mark integration as needing re-auth
-      await _repository.updateSyncStatus(
-        userId,
-        'training_peaks',
-        status: 'error',
-        error: 'Token refresh failed. Please reconnect.',
-      );
+      await _recordRefreshFailure(userId, e);
       return null;
     }
   }
@@ -305,17 +299,30 @@ class TrainingPeaksOAuthService {
         e,
         stackTrace: st,
         area: _area,
-        message: 'TrainingPeaks token force-refresh failed; reconnect required',
+        message: 'TrainingPeaks token force-refresh failed',
         extra: e.reportExtra,
       );
-      await _repository.updateSyncStatus(
-        userId,
-        'training_peaks',
-        status: 'error',
-        error: 'Token refresh failed. Please reconnect.',
-      );
+      await _recordRefreshFailure(userId, e);
       return null;
     }
+  }
+
+  /// Ticket 64 (Finding 21-004): a refresh TP refuses for good (400/401)
+  /// marks the connection as needing a sign-in again, which Settings shows
+  /// with a Reconnect action. A transient failure stays an ordinary error.
+  Future<void> _recordRefreshFailure(
+    String userId,
+    TrainingPeaksApiException e,
+  ) {
+    final forGood = isRefreshRefusedForGood(e.statusCode);
+    return _repository.updateSyncStatus(
+      userId,
+      'training_peaks',
+      status: forGood ? requiresReauthStatus : 'error',
+      error: forGood
+          ? 'Token refresh refused. Please reconnect.'
+          : 'Token refresh failed (status: ${e.statusCode}).',
+    );
   }
 
   /// Get a valid access token, refreshing if needed

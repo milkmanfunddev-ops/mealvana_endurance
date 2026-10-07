@@ -12,6 +12,7 @@ import '../data/provider_raw_payloads_repository.dart';
 import '../data/training_peaks_api_client.dart';
 import '../domain/athlete_zones.dart';
 import '../domain/integration.dart';
+import '../domain/integration_exceptions.dart';
 import '../domain/sync_change_result.dart';
 import 'change_detection_service.dart';
 import 'training_peaks_transformer.dart';
@@ -131,6 +132,7 @@ class TrainingPeaksSyncService {
     // 2. Ensure we have a valid token (refreshes if needed)
     // IMPORTANT: Use the integration object directly to avoid race conditions
     // during onboarding when the DB write may not be fully committed yet
+    final stored = integration;
     try {
       integration = await _ensureValidToken(integration);
     } on TrainingPeaksTokenExpiredException {
@@ -140,9 +142,11 @@ class TrainingPeaksSyncService {
         area: _area,
       );
       return TrainingPeaksSyncResult.tokenExpired();
+    } on TrainingPeaksApiException catch (e) {
+      await _recordRefreshFailed(userId, e);
+      return TrainingPeaksSyncResult.error(e.toString());
     }
-
-    final accessToken = integration.accessToken;
+    final freshToken = !identical(integration, stored);
 
     _r.debug('TrainingPeaks workout sync started', area: _area);
 
@@ -179,10 +183,14 @@ class TrainingPeaksSyncService {
           : (numDays > _maxWorkoutDays ? _maxWorkoutDays : numDays);
 
       // 4. Fetch workouts from TrainingPeaks API
-      final workoutsJson = await _apiClient.getUpcomingWorkouts(
-        accessToken,
-        days: effectiveDays,
-        includeDescription: true,
+      final workoutsJson = await _callWithToken(
+        integration,
+        freshToken: freshToken,
+        (token) => _apiClient.getUpcomingWorkouts(
+          token,
+          days: effectiveDays,
+          includeDescription: true,
+        ),
       );
 
       _captureRawPayloads(userId, workoutsJson);
@@ -330,18 +338,13 @@ class TrainingPeaksSyncService {
         changeResult: changeResult,
       );
     } on TrainingPeaksTokenExpiredException catch (e, st) {
-      // Token expired mid-request although the pre-flight refresh passed.
+      // TP refused the token mid-sync; _callWithToken or _refreshToken has
+      // already marked the connection requires_reauth (ticket 76).
       await _r.degraded(
         e,
         stackTrace: st,
         area: _area,
         message: 'TrainingPeaks token expired mid-sync; reconnect required',
-      );
-      await _integrationsRepository.updateSyncStatus(
-        userId,
-        'training_peaks',
-        status: 'error',
-        error: 'Token expired. Please reconnect.',
       );
       return TrainingPeaksSyncResult.tokenExpired();
     } catch (e, st) {
@@ -391,6 +394,7 @@ class TrainingPeaksSyncService {
 
     // Ensure we have a valid token (refreshes if needed)
     // Use the integration object directly to avoid race conditions
+    final stored = integration;
     try {
       integration = await _ensureValidToken(integration);
     } on TrainingPeaksTokenExpiredException {
@@ -399,9 +403,11 @@ class TrainingPeaksSyncService {
         area: _area,
       );
       return TrainingPeaksSyncResult.tokenExpired();
+    } on TrainingPeaksApiException catch (e) {
+      await _recordRefreshFailed(userId, e);
+      return TrainingPeaksSyncResult.error(e.toString());
     }
-
-    final accessToken = integration.accessToken;
+    final freshToken = !identical(integration, stored);
 
     // Fetch athlete zones if stale (non-blocking)
     AthleteZones? athleteZones;
@@ -418,11 +424,15 @@ class TrainingPeaksSyncService {
 
     try {
       // Fetch workouts from TrainingPeaks API
-      final workoutsJson = await _apiClient.getWorkouts(
-        accessToken,
-        startDate: startDate,
-        endDate: endDate,
-        includeDescription: true,
+      final workoutsJson = await _callWithToken(
+        integration,
+        freshToken: freshToken,
+        (token) => _apiClient.getWorkouts(
+          token,
+          startDate: startDate,
+          endDate: endDate,
+          includeDescription: true,
+        ),
       );
 
       _captureRawPayloads(userId, workoutsJson);
@@ -538,17 +548,12 @@ class TrainingPeaksSyncService {
         changeResult: changeResult,
       );
     } on TrainingPeaksTokenExpiredException catch (e, st) {
+      // Already marked requires_reauth (see syncWorkouts).
       await _r.degraded(
         e,
         stackTrace: st,
         area: _area,
         message: 'TrainingPeaks token expired mid date-range sync',
-      );
-      await _integrationsRepository.updateSyncStatus(
-        userId,
-        'training_peaks',
-        status: 'error',
-        error: 'Token expired. Please reconnect.',
       );
       return TrainingPeaksSyncResult.tokenExpired();
     } catch (e, st) {
@@ -591,6 +596,7 @@ class TrainingPeaksSyncService {
 
     // Ensure we have a valid token (refreshes if needed)
     // Use the integration object directly to avoid race conditions
+    final stored = integration;
     try {
       integration = await _ensureValidToken(integration);
     } on TrainingPeaksTokenExpiredException {
@@ -599,9 +605,11 @@ class TrainingPeaksSyncService {
         area: _area,
       );
       return TrainingPeaksEventSyncResult.tokenExpired();
+    } on TrainingPeaksApiException catch (e) {
+      await _recordRefreshFailed(userId, e);
+      return TrainingPeaksEventSyncResult.error(e.toString());
     }
-
-    final accessToken = integration.accessToken;
+    final freshToken = !identical(integration, stored);
 
     _r.debug(
       'TrainingPeaks event sync started',
@@ -610,9 +618,10 @@ class TrainingPeaksSyncService {
     );
 
     try {
-      final eventsJson = await _apiClient.getEventsInRange(
-        accessToken,
-        days: days,
+      final eventsJson = await _callWithToken(
+        integration,
+        freshToken: freshToken,
+        (token) => _apiClient.getEventsInRange(token, days: days),
       );
 
       if (eventsJson.isEmpty) {
@@ -668,6 +677,7 @@ class TrainingPeaksSyncService {
 
     // Ensure we have a valid token (refreshes if needed)
     // Use the integration object directly to avoid race conditions
+    final stored = integration;
     try {
       integration = await _ensureValidToken(integration);
     } on TrainingPeaksTokenExpiredException {
@@ -676,14 +686,20 @@ class TrainingPeaksSyncService {
         area: _area,
       );
       return TrainingPeaksEventSyncResult.tokenExpired();
+    } on TrainingPeaksApiException catch (e) {
+      await _recordRefreshFailed(userId, e);
+      return TrainingPeaksEventSyncResult.error(e.toString());
     }
-
-    final accessToken = integration.accessToken;
+    final freshToken = !identical(integration, stored);
 
     _r.debug('TrainingPeaks next-event sync started', area: _area);
 
     try {
-      final eventJson = await _apiClient.getNextEvent(accessToken);
+      final eventJson = await _callWithToken(
+        integration,
+        freshToken: freshToken,
+        _apiClient.getNextEvent,
+      );
 
       if (eventJson == null) {
         _r.debug('TrainingPeaks next-event sync: none upcoming', area: _area);
@@ -906,6 +922,7 @@ class TrainingPeaksSyncService {
         message:
             'TrainingPeaks integration has no refresh token; reconnect required',
       );
+      await _markNeedsReconnect(integration.userId);
       throw expired;
     }
 
@@ -944,18 +961,71 @@ class TrainingPeaksSyncService {
 
       return updatedIntegration;
     } on TrainingPeaksApiException catch (e, st) {
+      // Ticket 64 (Finding 21-004): TP refusing the refresh token is final —
+      // record it on the row so the connection shows as needing a sign-in
+      // again. A transient failure (outage, rate limit) stays an ordinary
+      // error: the next sync may well succeed.
+      final forGood = isRefreshRefusedForGood(e.statusCode);
       // Expected when TP has revoked the refresh token; callers turn the
-      // rethrown TokenExpired into a `tokenExpired` result.
+      // rethrown TokenExpired into a `tokenExpired` result, and a transient
+      // failure into an `error` result.
       await _r.degraded(
         e,
         stackTrace: st,
         area: _area,
-        message: 'TrainingPeaks token refresh failed; reconnect required',
+        message: forGood
+            ? 'TrainingPeaks token refresh failed; reconnect required'
+            : 'TrainingPeaks token refresh failed; transient, will retry',
         extra: e.reportExtra,
       );
+      if (!forGood) rethrow;
+      await _markNeedsReconnect(integration.userId);
       throw const TrainingPeaksTokenExpiredException();
     }
   }
+
+  /// Ticket 76 (Finding 64-001): runs a TP data call with the connection's
+  /// access token. A 401 on a token this sync has not refreshed gets one
+  /// refresh and one retry; a 401 on a fresh token means TP refuses the
+  /// connection, so it is marked as needing reconnection and
+  /// [TrainingPeaksTokenExpiredException] is thrown. Other failures pass
+  /// through unchanged and stay ordinary errors.
+  Future<T> _callWithToken<T>(
+    IntegrationModel integration,
+    Future<T> Function(String accessToken) call, {
+    required bool freshToken,
+  }) async {
+    try {
+      return await call(integration.accessToken);
+    } on TokenExpiredException {
+      if (freshToken) {
+        await _markNeedsReconnect(integration.userId);
+        throw const TrainingPeaksTokenExpiredException();
+      }
+    }
+    final refreshed = await _refreshToken(integration);
+    return _callWithToken(refreshed, call, freshToken: true);
+  }
+
+  /// A refresh that failed without TP refusing it (outage, rate limit, no
+  /// network): an ordinary error the next sync may clear.
+  Future<void> _recordRefreshFailed(
+    String userId,
+    TrainingPeaksApiException e,
+  ) => _integrationsRepository.updateSyncStatus(
+    userId,
+    'training_peaks',
+    status: 'error',
+    error: e.toString(),
+  );
+
+  Future<void> _markNeedsReconnect(String userId) =>
+      _integrationsRepository.updateSyncStatus(
+        userId,
+        'training_peaks',
+        status: requiresReauthStatus,
+        error: 'Token refresh refused. Please reconnect.',
+      );
 
   /// Dedupe remote workouts so sync remains idempotent even when provider APIs
   /// return repeated records in a single payload.

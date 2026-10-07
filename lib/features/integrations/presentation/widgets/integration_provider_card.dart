@@ -34,7 +34,28 @@ class IntegrationProviderCard extends StatelessWidget {
     this.specStyle = false,
     this.windowCaption,
     this.footer,
+    this.needsReconnect = false,
+    this.reconnectLabel,
+    this.reconnectNote,
   });
+
+  /// The provider refused the token refresh for good (ticket 64): the card
+  /// offers [reconnectLabel] in place of Sync, runs [onConnect] on tap (a
+  /// fresh OAuth), keeps long-press → [onDisconnect], and shows
+  /// [reconnectNote] under the logo. Never styled as a working connection.
+  final bool needsReconnect;
+
+  /// Label for the Reconnect action (from the content system).
+  final String? reconnectLabel;
+
+  /// Line under the logo explaining the reconnect (from the content system).
+  final String? reconnectNote;
+
+  /// Connected and working — the success border, sync action and footer.
+  bool get _isWorking => isConnected && !needsReconnect;
+
+  String? get _statusLine =>
+      statusText ?? (needsReconnect ? reconnectNote : null);
 
   /// Provider name (used for placeholder if no logo, not displayed as text)
   final String name;
@@ -127,8 +148,8 @@ class IntegrationProviderCard extends StatelessWidget {
       // settles at 70 — but its Sync pill is intrinsically taller than the
       // Connect pill, so it keeps a minimum rather than a hard height and
       // can never clip.
-      height: specStyle && !isConnected && statusText == null ? 70 : null,
-      constraints: specStyle && (isConnected || statusText != null)
+      height: specStyle && !isConnected && _statusLine == null ? 70 : null,
+      constraints: specStyle && (isConnected || _statusLine != null)
           ? const BoxConstraints(minHeight: 70)
           : null,
       decoration: specStyle
@@ -137,14 +158,14 @@ class IntegrationProviderCard extends StatelessWidget {
               borderRadius: BorderRadius.circular(OnbTokens.rCard),
               // Connected keeps its existing success signal; the spec only
               // defines the unconnected row chrome.
-              border: isConnected
+              border: _isWorking
                   ? Border.all(color: AppColors.success, width: 2)
                   : Border.all(color: OnbTokens.creamA(0.12)),
             )
           : BoxDecoration(
               color: cardColor,
               borderRadius: BorderRadius.circular(12),
-              border: isConnected
+              border: _isWorking
                   ? Border.all(color: AppColors.success, width: 2)
                   : null,
             ),
@@ -211,10 +232,10 @@ class IntegrationProviderCard extends StatelessWidget {
             ],
           ),
 
-          if (statusText != null) ...[
+          if (_statusLine != null) ...[
             const SizedBox(height: AppSpacing.xs),
             Text(
-              statusText!,
+              _statusLine!,
               style: AppTextStyles.bodySmall.copyWith(
                 color: secondaryText,
                 fontStyle: FontStyle.italic,
@@ -234,7 +255,7 @@ class IntegrationProviderCard extends StatelessWidget {
             _buildConnectionInfo(context),
           ],
 
-          if (!specStyle && isConnected && footer != null) ...[
+          if (!specStyle && _isWorking && footer != null) ...[
             const SizedBox(height: AppSpacing.sm),
             footer!,
           ],
@@ -329,6 +350,16 @@ class IntegrationProviderCard extends StatelessWidget {
             ),
           ],
         ],
+      );
+    }
+
+    // Refresh refused for good - offer a fresh sign-in, not Sync
+    if (needsReconnect) {
+      return _ConnectButton(
+        onConnect: onConnect,
+        onLongPress: onDisconnect,
+        specStyle: specStyle,
+        label: reconnectLabel,
       );
     }
 
@@ -495,14 +526,24 @@ class _SyncButton extends StatelessWidget {
       ),
     );
   }
-
 }
 
 /// Connect button for unconnected providers
 class _ConnectButton extends StatelessWidget {
-  const _ConnectButton({this.onConnect, this.specStyle = false});
+  const _ConnectButton({
+    this.onConnect,
+    this.onLongPress,
+    this.specStyle = false,
+    this.label,
+  });
 
   final VoidCallback? onConnect;
+
+  /// Reconnect mode keeps the connected card's long-press → disconnect.
+  final VoidCallback? onLongPress;
+
+  /// Overrides 'Connect' (the Reconnect label).
+  final String? label;
 
   /// Spec pill: bg #dc2597, radius 100, padding 9/20, Sansita 700 14 cream.
   final bool specStyle;
@@ -512,15 +553,16 @@ class _ConnectButton extends StatelessWidget {
     if (specStyle) {
       return GestureDetector(
         onTap: onConnect,
+        onLongPress: onLongPress,
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 9, horizontal: 20),
           decoration: BoxDecoration(
             color: const Color(0xFFDC2597),
             borderRadius: BorderRadius.circular(OnbTokens.rPill),
           ),
-          child: const Text(
-            'Connect',
-            style: TextStyle(
+          child: Text(
+            label ?? 'Connect',
+            style: const TextStyle(
               fontFamily: OnbTokens.fontDisplay,
               fontWeight: FontWeight.w700,
               fontSize: 14,
@@ -533,6 +575,7 @@ class _ConnectButton extends StatelessWidget {
 
     return GestureDetector(
       onTap: onConnect,
+      onLongPress: onLongPress,
       child: Container(
         padding: const EdgeInsets.symmetric(
           horizontal: AppSpacing.md,
@@ -543,7 +586,7 @@ class _ConnectButton extends StatelessWidget {
           borderRadius: BorderRadius.circular(20),
         ),
         child: Text(
-          'Connect',
+          label ?? 'Connect',
           style: AppTextStyles.buttonPrimary.copyWith(
             color: AppColors.textDark,
           ),
@@ -600,7 +643,6 @@ class _ConnectedBadge extends StatelessWidget {
       child: badge,
     );
   }
-
 }
 
 /// Notify Me button for coming soon providers

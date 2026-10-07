@@ -1,3 +1,17 @@
+/// The `last_sync_status` value marking a connection the athlete must sign
+/// in to again: the provider refused the token refresh for good. Allowed by
+/// the `integrations_last_sync_status_check` constraint (server and Drift).
+/// A reconnect writes `pending` and a successful sync writes `success`, so
+/// either clears it.
+const requiresReauthStatus = 'requires_reauth';
+
+/// True when a token-refresh failure with [statusCode] means the provider
+/// has refused the refresh token for good (OAuth `invalid_grant` answers
+/// 400, a revoked client 401). Anything else (5xx, 429, no status) is
+/// transient and must not ask the athlete to reconnect.
+bool isRefreshRefusedForGood(int? statusCode) =>
+    statusCode == 400 || statusCode == 401;
+
 /// Domain model for external training platform integrations
 ///
 /// This represents an OAuth connection to a provider like Final Surge,
@@ -68,10 +82,15 @@ class IntegrationModel {
   final String? athleteMetricsJson;
   final bool isActive;
   final DateTime? lastSyncAt;
-  final String? lastSyncStatus; // 'success', 'error', 'pending'
+  final String?
+  lastSyncStatus; // 'success', 'error', 'pending', 'requires_reauth'
   final String? lastSyncError;
   final DateTime? createdAt;
   final DateTime? updatedAt;
+
+  /// The provider refused the token refresh for good: the connection stays
+  /// listed but must be signed in to again (see [requiresReauthStatus]).
+  bool get needsReconnect => lastSyncStatus == requiresReauthStatus;
 
   /// Check if the access token has expired
   bool get isTokenExpired {

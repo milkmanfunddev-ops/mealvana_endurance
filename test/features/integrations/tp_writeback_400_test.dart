@@ -292,63 +292,66 @@ void main() {
   });
 
   group('DEV-AA / DEV-AD: token refresh 400 (invalid_grant)', () {
-    test('is Degraded with the response body, and parks the integration in '
-        'error so the manual sync shows the reconnect message', () async {
-      final report = RecordingReport();
-      final repo = MockIntegrationsRepository();
-      when(() => repo.getIntegration('u1', 'training_peaks')).thenAnswer(
-        (_) async => IntegrationModel(
-          userId: 'u1',
-          provider: 'training_peaks',
-          accessToken: 'old',
-          refreshToken: 'dead-refresh',
-          tokenExpiresAt: DateTime.now().subtract(const Duration(hours: 1)),
-          providerAthleteId: '54321',
-        ),
-      );
-      when(
-        () => repo.updateSyncStatus(
-          any(),
-          any(),
-          status: any(named: 'status'),
-          error: any(named: 'error'),
-        ),
-      ).thenAnswer((_) async {});
-      final api = TrainingPeaksApiClient(
-        clientId: 'mealvana',
-        clientSecret: 'secret',
-        appVersion: '1.29.0',
-        retryConfig: _noRetry,
-        report: report,
-        httpClient: MockClient((req) async {
-          if (req.url.path == '/oauth/token') {
-            return http.Response('{"error":"invalid_grant"}', 400);
-          }
-          return http.Response('unexpected', 599);
-        }),
-      );
-      final oauth = TrainingPeaksOAuthService(
-        apiClient: api,
-        repository: repo,
-        clientId: 'mealvana',
-        report: report,
-      );
+    test(
+      'is Degraded with the response body, and parks the integration in '
+      'requires_reauth so Connected Apps shows Reconnect (ticket 64)',
+      () async {
+        final report = RecordingReport();
+        final repo = MockIntegrationsRepository();
+        when(() => repo.getIntegration('u1', 'training_peaks')).thenAnswer(
+          (_) async => IntegrationModel(
+            userId: 'u1',
+            provider: 'training_peaks',
+            accessToken: 'old',
+            refreshToken: 'dead-refresh',
+            tokenExpiresAt: DateTime.now().subtract(const Duration(hours: 1)),
+            providerAthleteId: '54321',
+          ),
+        );
+        when(
+          () => repo.updateSyncStatus(
+            any(),
+            any(),
+            status: any(named: 'status'),
+            error: any(named: 'error'),
+          ),
+        ).thenAnswer((_) async {});
+        final api = TrainingPeaksApiClient(
+          clientId: 'mealvana',
+          clientSecret: 'secret',
+          appVersion: '1.29.0',
+          retryConfig: _noRetry,
+          report: report,
+          httpClient: MockClient((req) async {
+            if (req.url.path == '/oauth/token') {
+              return http.Response('{"error":"invalid_grant"}', 400);
+            }
+            return http.Response('unexpected', 599);
+          }),
+        );
+        final oauth = TrainingPeaksOAuthService(
+          apiClient: api,
+          repository: repo,
+          clientId: 'mealvana',
+          report: report,
+        );
 
-      final token = await oauth.getValidAccessToken('u1');
+        final token = await oauth.getValidAccessToken('u1');
 
-      expect(token, isNull);
-      expect(report.faults, isEmpty);
-      final extra = report.degradeds.single.extra!;
-      expect(extra['statusCode'], 400);
-      expect(extra['responseBody'], '{"error":"invalid_grant"}');
-      verify(
-        () => repo.updateSyncStatus(
-          'u1',
-          'training_peaks',
-          status: 'error',
-          error: any(named: 'error'),
-        ),
-      ).called(1);
-    });
+        expect(token, isNull);
+        expect(report.faults, isEmpty);
+        final extra = report.degradeds.single.extra!;
+        expect(extra['statusCode'], 400);
+        expect(extra['responseBody'], '{"error":"invalid_grant"}');
+        verify(
+          () => repo.updateSyncStatus(
+            'u1',
+            'training_peaks',
+            status: requiresReauthStatus,
+            error: any(named: 'error'),
+          ),
+        ).called(1);
+      },
+    );
   });
 }
