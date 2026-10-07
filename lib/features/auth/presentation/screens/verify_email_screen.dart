@@ -204,6 +204,13 @@ class _VerifyEmailScreenState extends ConsumerState<VerifyEmailScreen> {
     } on ResendRateLimitedException catch (e) {
       // The server's gap has not passed (121-001): count down what it asked
       // for, and say nothing else.
+      await ref
+          .read(reportProvider)
+          .note(
+            'Verification code resend rate limited',
+            area: 'auth',
+            data: {'retry_after_s': e.retryAfterSeconds},
+          );
       if (!mounted) return;
       _startResendCooldown(e.retryAfterSeconds);
     } on InvalidVerificationCodeException catch (e) {

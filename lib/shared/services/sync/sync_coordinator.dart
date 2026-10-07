@@ -184,8 +184,16 @@ class SyncCoordinator extends _$SyncCoordinator {
             .listen((online) {
               if (online) unawaited(retryOwedUploads());
             }, onError: (_) {});
-      } catch (_) {
+      } catch (e) {
         // No connectivity plugin (tests, web): the other triggers remain.
+        // D9: a skipped sync step, so it is written down.
+        unawaited(
+          _report.note(
+            'Owed upload retry: connectivity not watched',
+            area: 'sync',
+            data: {'error': e.toString()},
+          ),
+        );
       }
     }
     if (_resume == null) {
@@ -193,8 +201,16 @@ class SyncCoordinator extends _$SyncCoordinator {
         _resume = AppLifecycleListener(
           onResume: () => unawaited(retryOwedUploads()),
         );
-      } catch (_) {
+      } catch (e) {
         // No widgets binding: the other triggers remain.
+        // D9: a skipped sync step, so it is written down.
+        unawaited(
+          _report.note(
+            'Owed upload retry: app resume not watched',
+            area: 'sync',
+            data: {'error': e.toString()},
+          ),
+        );
       }
     }
   }

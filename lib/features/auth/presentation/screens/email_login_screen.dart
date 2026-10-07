@@ -151,10 +151,16 @@ class _EmailLoginScreenState extends ConsumerState<EmailLoginScreen> {
   /// login, which the startup flow routes to onboarding if it has no profile.
   Future<void> _finishVerifying(String email) async {
     final emailAuth = ref.read(emailAuthServiceProvider.notifier);
+    final report = ref.read(reportProvider);
     try {
       await emailAuth.resendVerificationCode(email: email);
-    } catch (_) {
+    } catch (e) {
       // A recent code may still be in the inbox; the screen can Resend.
+      await report.note(
+        'Verification code send before Verify failed; Resend remains',
+        area: 'auth',
+        data: {'error': e.toString()},
+      );
     }
     if (!mounted) return;
     final verified = await Navigator.of(context).push<bool>(

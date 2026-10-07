@@ -1,7 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../../../../shared/services/app_external_deps.dart';
+import '../../../../shared/services/report/report.dart';
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../../content/application/content_service.dart';
 import '../../../content/domain/content_keys.dart';
@@ -52,14 +55,24 @@ class _ComingSoonSectionWidgetState
             ComingSoonSectionWidget.notifyEvent,
             properties: {'card': widget.title},
           );
-    } catch (_) {
+    } catch (e, stackTrace) {
       // Analytics never blocks the confirmation.
+      unawaited(
+        ref
+            .read(reportProvider)
+            .degraded(
+              e,
+              stackTrace: stackTrace,
+              area: 'education',
+              message: 'Learn Notify Me analytics event failed',
+            ),
+      );
     }
     MealvanaSnackbar.showSuccess(
       context,
-      ref.read(contentServiceProvider).getValue(
-        ContentKeys.learnNotifyMeConfirm,
-      ),
+      ref
+          .read(contentServiceProvider)
+          .getValue(ContentKeys.learnNotifyMeConfirm),
     );
   }
 
