@@ -59,7 +59,9 @@ class CoachInsightController extends _$CoachInsightController {
   /// ```
   ///
   /// TODO: adopt the same [InsufficientCreditsException] catch pattern in:
-  ///  - `ai_coach_chat_repository.dart` (jade-chat edge function, HTTP 402)
+  ///  - `lib/features/_archived/ai_coach/data/ai_coach_chat_repository.dart`
+  ///    (jade-chat edge function, HTTP 402; archived 2026-10-07, so only if
+  ///    it is restored)
   ///  - describe-meal client (describe-meal edge function, HTTP 402)
   ///  - analyze-meal-photo client (analyze-meal-photo edge function, HTTP 402)
   Future<void> generate(

@@ -1,12 +1,16 @@
 /**
  * Per-user AI token usage ledger.
  *
- * Every AI model invocation (jade-chat, describe-meal, analyze-meal-photo,
- * ai-coach) writes one row to `public.ai_usage` via the service role. This is
- * the canonical, prod-safe, server-side record of how many tokens each user
- * consumes — it cannot be spoofed by the client (unlike Mixpanel events) and it
- * exists in BOTH dev and prod (the older `jade_calls` table is dev-only and only
- * covers the AI coach functions).
+ * Every AI model invocation (describe-meal, analyze-meal-photo, ai-coach, and
+ * jade-chat while it was live) writes one row to `public.ai_usage` via the
+ * service role. This is the canonical, prod-safe, server-side record of how
+ * many tokens each user consumes — it cannot be spoofed by the client (unlike
+ * Mixpanel events) and it exists in BOTH dev and prod.
+ *
+ * History: the older `jade_calls` table is dev-only. jade-chat (the Jade AI
+ * coach chat) was archived on the client on 2026-10-07 (round develop-2026-10)
+ * and its source moved to `supabase/functions/_archived/jade-chat/`; no
+ * function on the meal path writes `jade_calls` any more.
  *
  * Today this is a "track now, throttle later" ledger: nothing reads it back to
  * enforce limits yet. A future per-user throttle/cutoff queries this table
@@ -24,7 +28,7 @@ import { captureEdgeError } from "../sentry.ts";
 export interface AiUsageRow {
   /** auth.users id of the caller. */
   userId: string;
-  /** 'jade-chat' | 'describe-meal' | 'analyze-meal-photo' | 'ai-coach' */
+  /** 'describe-meal' | 'analyze-meal-photo' | 'ai-coach' (and the archived 'jade-chat') */
   functionName: string;
   /** provider/model string actually used (e.g. anthropic/claude-haiku-4.5). */
   model: string;

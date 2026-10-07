@@ -16,7 +16,7 @@ import '../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../../ai_credits/domain/insufficient_credits_exception.dart';
 import '../../../ai_credits/presentation/insufficient_credits_paywall.dart';
 import '../../../ai_credits/presentation/widgets/token_pill.dart';
-import '../../../ai_coach/presentation/widgets/ai_thinking_status.dart';
+import '../../../../shared/widgets/ai_thinking_status.dart';
 import '../../application/meal_ai_service.dart';
 import '../../domain/meal_analysis_result.dart';
 import '../../domain/meal_component.dart';
@@ -36,7 +36,8 @@ import '../widgets/slot_chip_selector.dart' show OptionalSlotChipSelector;
 ///
 /// When the log has components the editor shows a per-component list
 /// ([MealComponentEditor]). When it has no components (quick-manual entry) it
-/// shows the simple macro fields, matching [ManualLogScreen].
+/// shows the simple macro fields, matching `ManualLogForm` (the quick-log
+/// Manual tab).
 ///
 /// On save the controller calls [MealLogController.updateLog], which goes
 /// through [MealLoggingService.updateLog] (recomputes totals from components

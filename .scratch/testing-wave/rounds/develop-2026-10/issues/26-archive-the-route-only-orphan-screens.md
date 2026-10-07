@@ -168,12 +168,12 @@ two archived screens' imports alone. 24 (`edit_meal_log_screen.dart`, a comment 
 `coming_soon_section_widget.dart`, `macro_dashboard_screen.dart`; `meal_weather_ai_coach_content_test.dart`). 29 runs
 first. Re-read line numbers after it lands.
 
-- [ ] For every class above, `grep -rnw <Class> lib test integration_test` returns no constructor or import
+- [x] For every class above, `grep -rnw <Class> lib test integration_test` returns no constructor or import
       outside `lib/features/_archived/`, except `MacroDashboardScreen`, which stays.
-- [ ] `grep -nE "path: '/(pro|settings/sport-settings|settings/food-preferences-consolidated|settings/food-preferences/add-food|meal-log/(manual|photo|describe|recent-saved|recipe))'" lib/shared/core/app_router.dart`
+- [x] `grep -nE "path: '/(pro|settings/sport-settings|settings/food-preferences-consolidated|settings/food-preferences/add-food|meal-log/(manual|photo|describe|recent-saved|recipe))'" lib/shared/core/app_router.dart`
       shows each only on a commented-out line, under its `ARCHIVED 2026-10-07` note.
-- [ ] `flutter analyze` clean.
-- [ ] The edited test files and `quick_log_confirm_sheet_eaten_at_test.dart` are green. The lead runs the full
+- [x] `flutter analyze` clean.
+- [x] The edited test files and `quick_log_confirm_sheet_eaten_at_test.dart` are green. The lead runs the full
       suite after merge (fix-wave rule).
 - [ ] Optional retest (ticket 32 or the wave lead): deep-link `/pro` and `/meal-log/manual`. Each lands on
       "Page Not Found".

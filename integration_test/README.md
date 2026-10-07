@@ -70,10 +70,11 @@ Mac mini M1 self-hosted runner on every push and PR:
   *after* `unit-web-deno`: the box has 8 GB of RAM and cannot do both at once
   without starving the runner agent into a "lost communication" failure.
 
-Three flows are deliberately excluded from that job: `google_login_flow_test`
-(interactive OAuth consent), `onboarding_signup_flow_test` (needs a clean
-install with no session), and `jade_chat_flow_test` (bills real LLM tokens and
-is non-deterministic). Run those by hand against a freshly-erased simulator.
+Two flows are deliberately excluded from that job: `google_login_flow_test`
+(interactive OAuth consent) and `onboarding_signup_flow_test` (needs a clean
+install with no session). Run those by hand against a freshly-erased simulator.
+The Jade chat flow (`ai_coach_chat_flow_test`, billed real LLM tokens) was
+archived with Jade on 2026-10-07 and lives in `_archived/integration_test/flows/`.
 
 ## CI (Codemagic, mac_mini_m2)
 
@@ -111,7 +112,6 @@ Two workflows in `codemagic.yaml` run these on Apple-silicon Mac runners:
 | `flows/settings_persist_flow_test.dart` | Settings persistence |
 | `flows/settings_sweep_flow_test.dart` | Settings screen sweep |
 | `flows/learn_flow_test.dart` | Learn tab |
-| `flows/jade_chat_flow_test.dart` | Jade chat (LLM — excluded from the M1 job) |
 
 Helpers live in `helpers/` (`flow_launcher.dart`, `test_config.dart`,
 `test_helpers.dart`, `onboarding_helper.dart`, `database_verification.dart`).
@@ -147,9 +147,9 @@ timeout to "fix" a flake just makes the next real failure more expensive —
 bound the individual `waitUntilVisible` instead, which fails fast and says
 which finder gave up.
 
-The three flows excluded from the M1 job keep longer timeouts, because they
-genuinely wait on humans or LLMs: `google_login` (8 min), `onboarding_signup`
-(12 min), `jade_chat` (6 min).
+The two flows excluded from the M1 job keep longer timeouts, because they
+genuinely wait on humans: `google_login` (8 min), `onboarding_signup`
+(12 min).
 
 ## Troubleshooting
 

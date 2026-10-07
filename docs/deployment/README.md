@@ -71,7 +71,7 @@ supabase functions list --project-ref wvmvsodrvbkxfydabqed
 - `create-user`
 - `delete-user`
 - `describe-meal` (Mealvana AI AI — text description → meal analysis, via `meal_ai_service.dart`)
-- `jade-chat` (Mealvana AI AI — streaming conversation coach, Daily Macros tab; body: `{message, conversation_id?, timezone?, location?}`; response: NDJSON stream (`Content-Type: application/x-ndjson`) + header `x-conversation-id`; events: `{"type":"text","delta":"..."}`, `{"type":"ui","part":{...}}`, `{"type":"done"}`, `{"type":"error","message":"..."}`; UI part kinds: `meal_cards` (1–4 meal suggestion cards), `choices` (tappable option buttons); assistant metadata persisted as `jade_messages.metadata.ui_parts`)
+- `jade-chat` (Mealvana AI AI — streaming conversation coach, Daily Macros tab; body: `{message, conversation_id?, timezone?, location?}`; response: NDJSON stream (`Content-Type: application/x-ndjson`) + header `x-conversation-id`; events: `{"type":"text","delta":"..."}`, `{"type":"ui","part":{...}}`, `{"type":"done"}`, `{"type":"error","message":"..."}`; UI part kinds: `meal_cards` (1–4 meal suggestion cards), `choices` (tappable option buttons); assistant metadata persisted as `jade_messages.metadata.ui_parts`) (no app caller since 2026-10-07, client archived in round develop-2026-10; source moved to `supabase/functions/_archived/jade-chat/`, still deployed on dev)
 - `generate-macros-v4`
 - `generate-nutrition-plan` (V1 — legacy LLM pathway only, via `llm_nutrition_plan_service.dart`)
 - `generate-nutrition-plan-v3` (V3 — main production flow, via `nutrition_plan_service.dart`)

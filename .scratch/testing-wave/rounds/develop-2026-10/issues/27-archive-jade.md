@@ -144,15 +144,15 @@ _archived/integration_test/flows/; integration_test/README.md; docs/deployment/R
 one import line here). 29 (`app_router.dart`, `log_meal_screen.dart`, `edit_meal_log_screen.dart`,
 `meal_weather_ai_coach_content_test.dart`). 29 runs first. Re-read line numbers after it lands.
 
-- [ ] `grep -rn "features/ai_coach/" lib test integration_test` returns nothing outside `lib/features/_archived/`.
+- [x] `grep -rn "features/ai_coach/" lib test integration_test` returns nothing outside `lib/features/_archived/`.
       `grep -rn "jade_calls\|JADE_MODEL" supabase/functions --include=*.ts` hits only `jade-chat/` and the
       usage.ts history comment.
-- [ ] Deno: `deno test --allow-all --allow-sys supabase/functions/describe-meal supabase/functions/analyze-meal-photo`
+- [x] Deno: `deno test --allow-all --allow-sys supabase/functions/describe-meal supabase/functions/analyze-meal-photo`
       green. Add one assertion to each `index.test.ts` that the function source no longer contains
       `"jade_calls"` (a source read, like the existing env-wiring checks at `:301` and `:359`).
-- [ ] `flutter analyze` clean. Codegen is not needed: no annotation changes, and the `.g.dart` files move with
+- [x] `flutter analyze` clean. Codegen is not needed: no annotation changes, and the `.g.dart` files move with
       their parts.
-- [ ] `test/shared/ci_config_contract_test.dart`, the edited seeded and smoke files, and
+- [x] `test/shared/ci_config_contract_test.dart`, the edited seeded and smoke files, and
       `test/features/meal_logging/` green.
 - [ ] Wave lead: deploy describe-meal and analyze-meal-photo to dev, then one Describe call (ticket 31's
       retest). `query_logs` (ticket 25's SQL) shows no "Failed to log ai usage" line, and `ai_usage` has the row.

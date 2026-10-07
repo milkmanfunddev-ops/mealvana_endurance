@@ -1,21 +1,22 @@
 // Screen smoke suite — auth screens + miscellaneous feature screens.
 //
-// Coverage: 13 screens (EmailLoginScreen, EmailSignupScreen,
+// Coverage: 10 screens (EmailLoginScreen, EmailSignupScreen,
 // ForgotPasswordScreen, VerifyResetCodeScreen, SetNewPasswordScreen,
-// ActivitiesListScreen, AiCoachChatScreen,
-// RecipesScreen, ShareNutritionPlanScreen,
+// ActivitiesListScreen,
 // SurveyScreen, VideoPlayerScreen, FoodDetailScreen, BarcodeScannerScreen).
 //
 // NOTE: CalendarMonthScreen was a dead mock-data screen (0 nav references).
 // Deleted 2026-07-01; its smoke test group removed from this file.
+// RecipesScreen and ShareNutritionPlanScreen were archived 2026-10-07 (round
+// develop-2026-10, ticket 26); their smoke groups were removed, as was
+// AiCoachChatScreen's when Jade was archived (ticket 27).
 //
 // Auth screens read contentServiceProvider (synchronous Provider) and the
 // auth controllers (AsyncNotifier<void> that returns synchronously), so
 // pumpAndSettle is safe for them.
 //
-// Screens that kick off async work in initState / build (ActivitiesListScreen,
-// AiCoachChatScreen, RecipesScreen) use settle:false so the test doesn't time out
-// on a never-resolving Future.
+// Screens that kick off async work in initState / build (ActivitiesListScreen)
+// use settle:false so the test doesn't time out on a never-resolving Future.
 //
 // FINDING: SurveyScreen has a broken relative import
 // (`../../../../../../../../../shared/widgets/kyle_design/kyle_design.dart` —
@@ -43,18 +44,6 @@ import 'package:mealvana_endurance/features/auth/presentation/providers/post_onb
 import 'package:mealvana_endurance/features/auth/presentation/providers/password_recovery_controller.dart';
 
 // Activities list screen
-
-// Mealvana AI chat screen + controller override
-import 'package:mealvana_endurance/features/ai_coach/presentation/screens/ai_coach_chat_screen.dart';
-import 'package:mealvana_endurance/features/ai_coach/presentation/providers/ai_coach_chat_controller.dart';
-
-// Recipes screen
-import 'package:mealvana_endurance/features/recipes/presentation/screens/recipes_screen.dart';
-
-// Share nutrition plan screen
-import 'package:mealvana_endurance/features/sharing/presentation/screens/share_nutrition_plan_screen.dart';
-import 'package:mealvana_endurance/features/sharing/presentation/providers/share_form_controller.dart';
-import 'package:mealvana_endurance/features/nutrition_plan/domain/nutrition_plan.dart';
 
 // Survey screen
 
@@ -88,49 +77,6 @@ class _FakePasswordRecoveryController extends PasswordRecoveryController {
   FutureOr<void> build() {
     // Synchronous return — no Supabase call.
   }
-}
-
-/// Fake AiCoachChatController that returns an empty state synchronously so the
-/// screen can lay out without hitting the Drift DB.
-class _FakeAiCoachChatController extends AiCoachChatController {
-  @override
-  FutureOr<AiCoachChatState> build() {
-    // Return synchronously — avoids DB access.
-    return const AiCoachChatState();
-  }
-
-  /// The screen fires this from a post-frame callback. The real one reaches
-  /// the repository, which reaches Supabase — uninitialised in a widget test.
-  @override
-  Future<void> loadOpener() async {}
-}
-
-/// Fake ShareFormController seeded with an empty state. The controller is a
-/// family provider (keyed by NutritionPlan), so we override with a concrete
-/// sub-class.
-class _FakeShareFormController extends ShareFormController {
-  @override
-  FutureOr<ShareFormState> build(NutritionPlan nutritionPlan) {
-    return const ShareFormState(
-      recipientEmail: '',
-      senderName: 'Test User',
-      subject: 'My Nutrition Plan',
-      comments: '',
-    );
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-/// Minimal NutritionPlan for passing to screens that require one.
-NutritionPlan _minimalPlan() {
-  return const NutritionPlan(
-    id: 'smoke-plan-id',
-    name: 'Smoke Test Plan',
-    sections: [],
-  );
 }
 
 // ---------------------------------------------------------------------------
@@ -209,50 +155,6 @@ void main() {
   // ActivitiesListScreen smoke removed with the screen itself — orphaned
   // since the home-shell switchover, deleted by carb-loading@v1's dead-code
   // retirement (commit 09f8cce7).
-
-  group('Mealvana AI chat screen smoke test', () {
-    testWidgets('AiCoachChatScreen builds (seeded empty state)', (
-      tester,
-    ) async {
-      await smokeScreen(
-        tester,
-        const AiCoachChatScreen(),
-        overrides: [
-          aiCoachChatControllerProvider.overrideWith(
-            _FakeAiCoachChatController.new,
-          ),
-        ],
-        // Settle is fine because the fake build() returns synchronously.
-        settle: true,
-      );
-    });
-  });
-
-  group('Recipes screen smoke test', () {
-    // RecipesScreen calls recipeService.ensureSynced() in initState, which
-    // would require a live Supabase session. settle:false lets the loading
-    // state lay out without the async work ever resolving.
-    testWidgets('RecipesScreen builds (loading state)', (tester) async {
-      await smokeScreen(tester, const RecipesScreen(), settle: false);
-    });
-  });
-
-  group('Share Nutrition Plan screen smoke test', () {
-    testWidgets('ShareNutritionPlanScreen renders without overflow', (
-      tester,
-    ) async {
-      final plan = _minimalPlan();
-      await smokeScreen(
-        tester,
-        ShareNutritionPlanScreen(nutritionPlan: plan),
-        overrides: [
-          shareFormControllerProvider(
-            plan,
-          ).overrideWith(_FakeShareFormController.new),
-        ],
-      );
-    });
-  });
 
   group('Video player screen smoke test', () {
     // VideoPlayerScreen calls VideoPlayerController.networkUrl().initialize()

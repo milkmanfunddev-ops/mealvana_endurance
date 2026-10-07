@@ -134,7 +134,7 @@ serve(withSentry("describe-meal", async (req: Request) => {
         `length: ${description.length} chars, model: ${DESCRIBE_MEAL_MODEL}`,
     );
 
-    // ── Service-role client (reused for credits + jade_calls/ai_usage logging) ─
+    // ── Service-role client (reused for credits + ai_usage logging) ─
     const serviceClient = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
     // ── Credit check ─────────────────────────────────────────────────────────
@@ -201,33 +201,12 @@ Return your answer as structured JSON matching the requested schema.`,
     const usage = result.usage;
     const costUsd = gatewayCostUsd(result.providerMetadata);
 
-    // Log usage to jade_calls (fire-and-forget)
-    // Register with waitUntil so the insert survives isolate shutdown
-    // after the response is returned.
-    // deno-lint-ignore no-explicit-any
-    (globalThis as any).EdgeRuntime?.waitUntil?.(
-      serviceClient
-        .from("jade_calls")
-        .insert({
-          user_id: user.id,
-          conversation_id: null,
-          function_name: "describe-meal",
-          model: DESCRIBE_MEAL_MODEL,
-          input_tokens: usage?.inputTokens ?? 0,
-          output_tokens: usage?.outputTokens ?? 0,
-        })
-        .then(({ error: logError }) => {
-          if (logError) {
-            captureEdgeError(logError, {
-              message: "[describe-meal] Failed to log ai usage",
-              level: "warning",
-              extra: { userId: user.id },
-            });
-          }
-        }),
-    );
-    // Also record in the canonical, prod-safe ai_usage ledger (used for
-    // per-user token visibility + future throttling).
+    // Record usage in the ai_usage ledger (prod-safe; per-user token
+    // visibility + future throttling). Fire-and-forget, registered with
+    // waitUntil so the insert survives isolate shutdown. (A duplicate insert
+    // into the old dev-only Jade call-log table was removed in round
+    // develop-2026-10, ticket 27: it failed on prod, where that table does
+    // not exist.)
     // deno-lint-ignore no-explicit-any
     (globalThis as any).EdgeRuntime?.waitUntil?.(
       logAiUsage(serviceClient, {

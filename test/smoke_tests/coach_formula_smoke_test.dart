@@ -1,9 +1,10 @@
 // Smoke test suite — coach mode + formula kit screens.
 //
 // Coverage:
-//   Coach mode (8 screens): CoachPortalScreen, CoachRegistrationScreen,
+//   Coach mode (6 screens): CoachPortalScreen, CoachRegistrationScreen,
 //     CoachDirectoryScreen, MyCoachesScreen, AthleteFeedbackScreen,
-//     CoachChatScreen, CoachDashboardScreen, AthleteDetailScreen
+//     CoachChatScreen (CoachDashboardScreen and AthleteDetailScreen were
+//     archived 2026-10-07, round develop-2026-10 ticket 26)
 //   Formula Kit (3 screens): FormulaLibraryScreen, FormulaDetailScreen,
 //     FormulaEditorScreen
 //
@@ -26,8 +27,6 @@ import 'package:mealvana_endurance/features/coach_mode/presentation/screens/coac
 import 'package:mealvana_endurance/features/coach_mode/presentation/screens/my_coaches_screen.dart';
 import 'package:mealvana_endurance/features/coach_mode/presentation/screens/athlete_feedback_screen.dart';
 import 'package:mealvana_endurance/features/coach_mode/presentation/screens/coach_chat_screen.dart';
-import 'package:mealvana_endurance/features/coach_mode/presentation/screens/coach_dashboard_screen.dart';
-import 'package:mealvana_endurance/features/coach_mode/presentation/screens/athlete_detail_screen.dart';
 
 // Coach mode providers / domain
 import 'package:mealvana_endurance/features/coach_mode/presentation/providers/coach_portal_controller.dart';
@@ -37,13 +36,8 @@ import 'package:mealvana_endurance/features/coach_mode/presentation/providers/co
 import 'package:mealvana_endurance/features/coach_mode/presentation/providers/my_coaches_controller.dart';
 import 'package:mealvana_endurance/features/coach_mode/presentation/providers/athlete_feedback_controller.dart';
 import 'package:mealvana_endurance/features/coach_mode/presentation/providers/coach_chat_controller.dart';
-import 'package:mealvana_endurance/features/coach_mode/presentation/providers/athlete_detail_controller.dart';
 import 'package:mealvana_endurance/features/coach_mode/domain/coach_athlete_relationship.dart';
 import 'package:mealvana_endurance/features/coach_mode/domain/coach_chat_state.dart';
-
-// Calendar provider (used inside AthleteDetailScreen → activities tab)
-import 'package:mealvana_endurance/features/calendar/presentation/providers/calendar_view_provider.dart';
-import 'package:mealvana_endurance/features/calendar/presentation/widgets/calendar_view_toggle.dart';
 
 // Formula kit screens
 import 'package:mealvana_endurance/features/formula_kit/presentation/screens/formula_library_screen.dart';
@@ -105,17 +99,6 @@ late final _emptyChatState = CoachChatState(
   currentUserId: 'coach-user-001',
   messages: const [],
   pendingMessages: const [],
-);
-
-// AthleteDetail: minimal state (no profile / events / activities).
-late final _emptyAthleteDetailState = AthleteDetailState(
-  relationship: _testRelationship,
-  athleteProfile: null,
-  events: const [],
-  carbLoadingPlans: const [],
-  carbLoadingDays: const [],
-  activities: const [],
-  messages: const [],
 );
 
 // FormulaLibrary: all lists empty → empty-state views.
@@ -231,44 +214,6 @@ void main() {
             'rel-test-001',
           ).overrideWith(_EmptyChatControllerFactory.new),
         ],
-      );
-    });
-
-    // CoachDashboardScreen: seeded empty (isCoach = false) → "Become a Coach"
-    // static view with a FilledButton.
-    testWidgets('CoachDashboardScreen renders without overflow', (
-      tester,
-    ) async {
-      await smokeScreen(
-        tester,
-        const CoachDashboardScreen(),
-        overrides: [
-          coachDashboardControllerProvider.overrideWith(
-            _EmptyDashboardController.new,
-          ),
-        ],
-      );
-    });
-
-    // AthleteDetailScreen: family provider keyed on relationshipId. Seeds
-    // minimal state (no activities, no profile). Also seeds calendarViewProvider
-    // (sync) so the activities tab renders the week-view calendar header.
-    // settle:false to avoid timeouts from DefaultTabController animation.
-    testWidgets('AthleteDetailScreen builds without crashing', (tester) async {
-      await smokeScreen(
-        tester,
-        const AthleteDetailScreen(relationshipId: 'rel-test-001'),
-        overrides: [
-          athleteDetailControllerProvider(
-            'rel-test-001',
-          ).overrideWith(_MinimalAthleteDetailControllerFactory.new),
-          calendarViewProvider.overrideWith(CalendarViewNotifier.new),
-        ],
-        // FINDING: AthleteDetailScreen embeds DefaultTabController +
-        // CalendarWeekViewKyle. The calendar widget has internal async setup;
-        // settle:false prevents a timeout while still verifying the screen
-        // builds without throwing.
-        settle: false,
       );
     });
 
@@ -426,16 +371,6 @@ class _EmptyChatControllerFactory extends CoachChatController {
 
   @override
   void clearError() {}
-}
-
-/// Athlete detail (family) — returns minimal seeded state immediately.
-class _MinimalAthleteDetailControllerFactory extends AthleteDetailController {
-  @override
-  FutureOr<AthleteDetailState> build(String relationshipId) =>
-      _emptyAthleteDetailState;
-
-  @override
-  Future<void> refresh() async {}
 }
 
 /// Formula library — returns empty library state immediately.
