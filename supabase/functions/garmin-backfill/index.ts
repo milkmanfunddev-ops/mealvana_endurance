@@ -37,17 +37,15 @@ import {
   classifyBackfillFailure,
   RATE_LIMIT_RETRY_AFTER_SECONDS,
 } from './outcome.ts';
+import {
+  ensureFreshGarminToken,
+  isGarminTokenInactive,
+  markGarminRequiresReauth,
+} from '../_shared/garmin/token.ts';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? '';
 const SUPABASE_SERVICE_ROLE_KEY =
   Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
-const GARMIN_CLIENT_ID = Deno.env.get('GARMIN_CLIENT_ID') ?? '';
-const GARMIN_CLIENT_SECRET = Deno.env.get('GARMIN_CLIENT_SECRET') ?? '';
-const GARMIN_TOKEN_URL =
-  'https://diauth.garmin.com/di-oauth2-service/oauth/token';
-// Refresh slightly ahead of expiry so an in-flight backfill never races a
-// token that dies mid-request.
-const TOKEN_REFRESH_SKEW_MS = 5 * 60 * 1000;
 
 /**
  * Maps our internal summary-type identifiers to Garmin's backfill path
@@ -131,110 +129,8 @@ async function requireUser(req: Request) {
   return { user, response: null };
 }
 
-/**
- * Returns a valid Garmin access token, refreshing it via the refresh_token
- * grant when the stored one is expired (or about to expire). Garmin's backfill
- * endpoint rejects a stale token with "Token is not active", so without this
- * every backfill after the access token's lifetime fails.
- *
- * Q-INT8 (RULED 2026-09-10): `integrations` is the SOLE token custodian —
- * tokens are read from and refreshed back to the integrations row; the
- * garmin_user_mappings copies are stripped by migration 20260911160000 and
- * never written again.
- *
- * Falls back to the existing token (and lets Garmin surface the error) when we
- * have no refresh_token or the refresh call itself fails — this never throws,
- * so a refresh hiccup degrades gracefully instead of breaking the whole call.
- */
-async function ensureFreshGarminToken(
-  // deno-lint-ignore no-explicit-any
-  supabase: any,
-  mapping: {
-    access_token: string;
-    refresh_token: string | null;
-    token_expires_at: string | null;
-  },
-  userId: string,
-): Promise<string> {
-  const expiresAtMs = mapping.token_expires_at
-    ? Date.parse(mapping.token_expires_at)
-    : 0;
-  const stillValid = expiresAtMs > 0 &&
-    expiresAtMs - TOKEN_REFRESH_SKEW_MS > Date.now();
-  if (stillValid) return mapping.access_token;
-
-  if (!mapping.refresh_token) {
-    console.warn(
-      '[garmin-backfill] Token expired with no refresh_token; using stale token',
-    );
-    return mapping.access_token;
-  }
-
-  try {
-    const resp = await fetch(GARMIN_TOKEN_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({
-        grant_type: 'refresh_token',
-        refresh_token: mapping.refresh_token,
-        client_id: GARMIN_CLIENT_ID,
-        client_secret: GARMIN_CLIENT_SECRET,
-      }),
-    });
-
-    if (!resp.ok) {
-      const text = await resp.text();
-      captureEdgeMessage('[garmin-backfill] Token refresh failed', {
-        level: 'warning',
-        extra: { userId, status: resp.status, body: text.slice(0, 500) },
-      });
-      return mapping.access_token;
-    }
-
-    const json = await resp.json();
-    const newAccessToken = json.access_token as string | undefined;
-    if (!newAccessToken) {
-      captureEdgeMessage('[garmin-backfill] Token refresh missing access_token', {
-        level: 'warning',
-        extra: { userId },
-      });
-      return mapping.access_token;
-    }
-    const newRefreshToken =
-      (json.refresh_token as string | undefined) ?? mapping.refresh_token;
-    const expiresInSec = (json.expires_in as number | undefined) ?? 3600;
-    const newExpiresAt = new Date(Date.now() + expiresInSec * 1000)
-      .toISOString();
-
-    const { error: updateErr } = await supabase
-      .from('integrations')
-      .update({
-        access_token: newAccessToken,
-        refresh_token: newRefreshToken,
-        token_expires_at: newExpiresAt,
-        updated_at: new Date().toISOString(),
-      })
-      .eq('user_id', userId)
-      .eq('provider', 'garmin');
-
-    if (updateErr) {
-      captureEdgeError(updateErr, {
-        message: '[garmin-backfill] Failed to persist refreshed token',
-        level: 'warning',
-        extra: { userId },
-      });
-    }
-
-    return newAccessToken;
-  } catch (err) {
-    captureEdgeError(err, {
-      message: '[garmin-backfill] Token refresh error',
-      level: 'warning',
-      extra: { userId },
-    });
-    return mapping.access_token;
-  }
-}
+// Token refresh lives in _shared/garmin/token.ts (ticket 138): the same
+// helper serves the mapping delete and delete-user's Garmin deregistration.
 
 // Initialise Sentry once per cold-start. No-op when SENTRY_DSN is not set.
 initSentry();
@@ -312,6 +208,7 @@ serve(withSentry('garmin-backfill', async (req: Request) => {
       supabase,
       mapping,
       user.id,
+      { logPrefix: '[garmin-backfill]' },
     );
 
     // Garmin's backfill takes a window in UNIX seconds. We request whole-day
@@ -322,6 +219,9 @@ serve(withSentry('garmin-backfill', async (req: Request) => {
 
     const queued: Record<string, number> = {};
     const errors: Record<string, string> = {};
+    // Finding 118-016: Garmin's "Token is not active" means the athlete has
+    // to sign in again, not that Garmin is busy.
+    let tokenInactive = false;
 
     for (const summaryType of summaryTypes) {
       const path = GARMIN_BACKFILL_PATH[summaryType];
@@ -351,6 +251,7 @@ serve(withSentry('garmin-backfill', async (req: Request) => {
         if (!resp.ok) {
           const text = await resp.text();
           errors[summaryType] = text.slice(0, 500);
+          if (isGarminTokenInactive(resp.status, text)) tokenInactive = true;
           captureEdgeMessage(`[garmin-backfill] ${summaryType} backfill rejected`, {
             level: 'warning',
             extra: {
@@ -377,12 +278,23 @@ serve(withSentry('garmin-backfill', async (req: Request) => {
     // A dead token, a Garmin throttle and a Garmin outage each get their own
     // answer (ticket 19); only the outage stays a 502. See outcome.ts.
     const failure = classifyBackfillFailure(queued);
+    const needsReauth = tokenInactive ||
+      failure?.code === 'garmin_reauth_required';
+    if (needsReauth) {
+      // Ticket 138 (Finding 118-016): mark the row so Connected Apps shows
+      // Reconnect (as ticket 64 does for TrainingPeaks and V.O2). The answer
+      // keeps ticket 19's 409 `garmin_reauth_required` shape, which the app
+      // reads, and says requires_reauth so the phone's row can follow.
+      await markGarminRequiresReauth(supabase, user.id, '[garmin-backfill]');
+    }
     if (failure) {
       const response = errorResponse(
         failure.message,
         failure.status,
         JSON.stringify(errors),
-        { code: failure.code },
+        needsReauth
+          ? { code: failure.code, requires_reauth: true }
+          : { code: failure.code },
       );
       if (failure.code === 'garmin_rate_limited') {
         response.headers.set(

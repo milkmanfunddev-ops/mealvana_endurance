@@ -667,6 +667,51 @@ describe('garmin-push Edge Function', () => {
 });
 
 // ============================================================================
+// Every failed record is logged (testing-wave 65 / Finding 18-012)
+// ============================================================================
+
+/**
+ * Finding 18-012: "epochs processed 0, errors 45" with no cause in the log.
+ * The epoch and stress loops bumped `stats.errors++` silently on a missing
+ * user mapping and on an upsert error. `processPushBody` cannot be imported
+ * (index.ts calls serve() at module load), so this guards the source: every
+ * `stats.errors++` in index.ts must sit within a few lines after a
+ * `logGarminRecordFailure(` call, so no failure branch goes back to silence.
+ */
+describe('garmin-push failure logging', () => {
+  const source = Deno.readTextFileSync(
+    new URL('./index.ts', import.meta.url),
+  );
+  const lines = source.split('\n');
+  const LOOKBACK = 12;
+
+  it('logs every stats.errors++ through logGarminRecordFailure', () => {
+    const silent: number[] = [];
+    lines.forEach((line, i) => {
+      if (!line.includes('stats.errors++')) return;
+      const window = lines.slice(Math.max(0, i - LOOKBACK), i).join('\n');
+      if (!/logGarmin(RecordFailure|MappingMiss)\(/.test(window)) {
+        silent.push(i + 1);
+      }
+    });
+    assertEquals(
+      silent,
+      [],
+      `stats.errors++ without a logGarminRecordFailure/logGarminMappingMiss within ${LOOKBACK} lines at index.ts:${silent.join(',')}`,
+    );
+  });
+
+  it('never passes the Garmin access token or a whole record to the failure log', () => {
+    const calls = source.match(/logGarmin(?:RecordFailure|MappingMiss)\([\s\S]*?\);/g) ?? [];
+    assertEquals(calls.length > 0, true, 'no failure-log calls found');
+    for (const call of calls) {
+      assertEquals(call.includes('userAccessToken'), false, call);
+      assertEquals(/\b(payload|record|data):/.test(call), false, call);
+    }
+  });
+});
+
+// ============================================================================
 // Endurance Sport Allowlist
 // ============================================================================
 

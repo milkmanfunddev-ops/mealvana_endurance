@@ -1,11 +1,13 @@
 /**
  * Unit Tests for delete-user Edge Function
  *
- * Tests auth enforcement, cascade-delete sequencing, idempotency, and error
- * handling with a fake Supabase client (no live DB or Supabase auth required).
+ * Tests auth enforcement, cascade-delete sequencing, idempotency, error
+ * handling and the RevenueCat customer delete (02-005, ticket 95), driving the
+ * real handler (handler.ts) with a fake Supabase client and a fake RevenueCat
+ * client (no live DB, Supabase auth or RevenueCat required).
  *
  * Run with:
- *   deno test --allow-env supabase/functions/delete-user/index.test.ts
+ *   deno test --allow-env --allow-sys supabase/functions/delete-user/index.test.ts
  */
 
 import {
@@ -14,9 +16,11 @@ import {
   assert,
 } from 'https://deno.land/std@0.168.0/testing/asserts.ts';
 import { describe, it } from 'https://deno.land/std@0.168.0/testing/bdd.ts';
+import { makeDeleteUserHandler } from './handler.ts';
+import { RevenueCatError, type RevenueCatClient } from '../_shared/revenuecat/client.ts';
 
 // ---------------------------------------------------------------------------
-// Inline handler — mirrors delete-user/index.ts logic with injected clients
+// Fakes: the user's JWT client, the service-role client, RevenueCat
 // ---------------------------------------------------------------------------
 
 interface FakeUser {
@@ -82,73 +86,45 @@ function buildDeleteClients(config: DeleteUserConfig = {}) {
   return { userClient, adminClient, deleteCalls };
 }
 
-/**
- * Pure handler — extracted from delete-user/index.ts logic.
- * The real function calls createClient(url, anonKey, {Authorization}) and
- * createClient(url, serviceKey). Here we inject both clients directly.
- */
-async function handleDeleteUser(
+/** A RevenueCat client that records customer deletes (develop's client has no other call). */
+function fakeRevenueCat(fail?: Error) {
+  const deleted: string[] = [];
+  const rc: RevenueCatClient = {
+    deleteCustomer: (id: string) => {
+      if (fail) return Promise.reject(fail);
+      deleted.push(id);
+      return Promise.resolve();
+    },
+  };
+  return { rc, deleted };
+}
+
+/** Run the real handler (handler.ts) with the fakes injected. */
+function handleDeleteUser(
   req: Request,
   // deno-lint-ignore no-explicit-any
   userClient: any,
   // deno-lint-ignore no-explicit-any
   adminClient: any,
+  revenueCat: () => RevenueCatClient = () => fakeRevenueCat().rc,
 ): Promise<Response> {
-  const corsHeaders = {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  };
+  return makeDeleteUserHandler({
+    userClient: () => userClient,
+    admin: () => adminClient,
+    revenueCat,
+  })(req);
+}
 
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders });
+/** Capture console.error while [fn] runs. */
+async function capturingErrors<T>(fn: () => Promise<T>): Promise<{ result: T; logged: string[] }> {
+  const logged: string[] = [];
+  const original = console.error;
+  console.error = (...args: unknown[]) => logged.push(args.map(String).join(' '));
+  try {
+    return { result: await fn(), logged };
+  } finally {
+    console.error = original;
   }
-
-  const authHeader = req.headers.get('Authorization');
-  if (!authHeader) {
-    return new Response(
-      JSON.stringify({ success: false, message: 'Missing authorization header' }),
-      { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
-    );
-  }
-
-  const { data: { user }, error: userError } = await userClient.auth.getUser();
-  if (userError || !user) {
-    return new Response(
-      JSON.stringify({ success: false, message: 'Invalid or expired authentication token' }),
-      { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
-    );
-  }
-
-  const userId = user.id;
-
-  // Step 1: Delete from public.users (CASCADE)
-  const { error: publicDeleteError } = await adminClient
-    .from('users')
-    .delete()
-    .eq('id', userId);
-
-  if (publicDeleteError) {
-    // Production continues anyway — we log but don't fail
-    console.error('Error deleting from public.users:', publicDeleteError);
-  }
-
-  // Step 2: Delete from auth.users
-  const { error: authDeleteError } = await adminClient.auth.admin.deleteUser(userId);
-
-  if (authDeleteError) {
-    return new Response(
-      JSON.stringify({
-        success: false,
-        message: `Failed to delete auth account: ${authDeleteError.message}`,
-      }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
-    );
-  }
-
-  return new Response(
-    JSON.stringify({ success: true, message: 'Account deleted successfully', deleted_user_id: userId }),
-    { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
-  );
 }
 
 // ---------------------------------------------------------------------------
@@ -295,6 +271,60 @@ describe('delete-user — error handling', () => {
   });
 });
 
+describe('delete-user — the RevenueCat customer goes too (02-005, ticket 95)', () => {
+  it("deletes the account's RevenueCat customer by the Supabase user id", async () => {
+    const { userClient, adminClient } = buildDeleteClients({ authUser: { id: 'user-rc-1' } });
+    const { rc, deleted } = fakeRevenueCat();
+    const res = await handleDeleteUser(makeRequest(), userClient, adminClient, () => rc);
+    assertEquals(res.status, 200);
+    assertEquals(deleted, ['user-rc-1']);
+  });
+
+  it('deletes the customer only after the auth account is gone', async () => {
+    const { userClient, adminClient } = buildDeleteClients({
+      authDeleteError: { message: 'UID does not exist' },
+    });
+    const { rc, deleted } = fakeRevenueCat();
+    const res = await handleDeleteUser(makeRequest(), userClient, adminClient, () => rc);
+    assertEquals(res.status, 500);
+    assertEquals(deleted, [], 'a failed delete keeps the RevenueCat customer');
+  });
+
+  it('a RevenueCat error still deletes the account, and is logged with the user id', async () => {
+    const { userClient, adminClient, deleteCalls } = buildDeleteClients({ authUser: { id: 'user-rc-2' } });
+    const { rc } = fakeRevenueCat(new RevenueCatError('RevenueCat DELETE → 503: down', 503));
+    const { result: res, logged } = await capturingErrors(() =>
+      handleDeleteUser(makeRequest(), userClient, adminClient, () => rc)
+    );
+    assertEquals(res.status, 200);
+    assertEquals((await res.json()).success, true);
+    assertEquals(deleteCalls.map((c) => c.table), ['users', 'auth.users']);
+    assert(
+      logged.some((l) => l.includes('user-rc-2') && l.includes('RevenueCat')),
+      `logged: ${logged.join(' | ')}`,
+    );
+  });
+
+  it('a RevenueCat key that is not set still deletes the account, and is logged with the user id', async () => {
+    const { userClient, adminClient } = buildDeleteClients({ authUser: { id: 'user-rc-3' } });
+    const { result: res, logged } = await capturingErrors(() =>
+      handleDeleteUser(makeRequest(), userClient, adminClient, () => {
+        throw new RevenueCatError('RevenueCat secret key not set');
+      })
+    );
+    assertEquals(res.status, 200);
+    assert(logged.some((l) => l.includes('user-rc-3')), `logged: ${logged.join(' | ')}`);
+  });
+
+  it('no Authorization header never reaches RevenueCat', async () => {
+    const { userClient, adminClient } = buildDeleteClients();
+    const { rc, deleted } = fakeRevenueCat();
+    const req = new Request('https://example.com/delete-user', { method: 'DELETE' });
+    await handleDeleteUser(req, userClient, adminClient, () => rc);
+    assertEquals(deleted, []);
+  });
+});
+
 describe('delete-user — architecture note (live-integration needed)', () => {
   it('NOTE: cascade orphan verification requires live DB', () => {
     // The delete-user function relies entirely on PostgreSQL CASCADE DELETE to
@@ -310,5 +340,80 @@ describe('delete-user — architecture note (live-integration needed)', () => {
     //
     // This is a live-integration concern, not unit-testable here.
     assert(true, 'Placeholder — see comment above');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Ticket 138 (Finding 121-010): the Garmin registration is deleted at Garmin
+// before the rows that hold its token go, and a Garmin failure never blocks.
+// ---------------------------------------------------------------------------
+
+describe('delete-user — Garmin deregistration', () => {
+  function handleWithGarmin(
+    // deno-lint-ignore no-explicit-any
+    userClient: any,
+    // deno-lint-ignore no-explicit-any
+    adminClient: any,
+    // deno-lint-ignore no-explicit-any
+    deregisterGarmin: (admin: any, userId: string) => Promise<'deregistered' | 'no_token' | 'failed'>,
+  ) {
+    return makeDeleteUserHandler({
+      userClient: () => userClient,
+      admin: () => adminClient,
+      revenueCat: () => fakeRevenueCat().rc,
+      deregisterGarmin,
+    })(makeRequest());
+  }
+
+  it('deregisters at Garmin before public.users is deleted', async () => {
+    const { userClient, adminClient, deleteCalls } = buildDeleteClients();
+    const order: string[] = [];
+    // deno-lint-ignore no-explicit-any
+    const wrapped: any = {
+      ...adminClient,
+      from: (table: string) => {
+        order.push(`delete:${table}`);
+        return adminClient.from(table);
+      },
+    };
+
+    const res = await handleWithGarmin(userClient, wrapped, (_admin, userId) => {
+      order.push(`garmin:${userId}`);
+      return Promise.resolve('deregistered' as const);
+    });
+
+    assertEquals(res.status, 200);
+    assertEquals(order[0], 'garmin:user-uuid-456');
+    assertEquals(order[1], 'delete:users');
+    assertEquals(deleteCalls.map((c) => c.table), ['users', 'auth.users']);
+  });
+
+  it('a Garmin failure is logged and the delete still completes', async () => {
+    const { userClient, adminClient, deleteCalls } = buildDeleteClients();
+    const { result: res, logged } = await capturingErrors(() =>
+      handleWithGarmin(userClient, adminClient, () => Promise.resolve('failed' as const))
+    );
+
+    assertEquals(res.status, 200);
+    assertEquals(deleteCalls.map((c) => c.table), ['users', 'auth.users']);
+    assert(logged.some((l) => l.includes('Garmin deregistration failed') && l.includes('user-uuid-456')));
+  });
+
+  it('a Garmin helper that throws never blocks the delete', async () => {
+    const { userClient, adminClient, deleteCalls } = buildDeleteClients();
+    const { result: res, logged } = await capturingErrors(() =>
+      handleWithGarmin(userClient, adminClient, () => Promise.reject(new Error('network down')))
+    );
+
+    assertEquals(res.status, 200);
+    assertEquals(deleteCalls.length, 2);
+    assert(logged.some((l) => l.includes('network down')));
+  });
+
+  it('an account without Garmin deletes as before', async () => {
+    const { userClient, adminClient, deleteCalls } = buildDeleteClients();
+    const res = await handleWithGarmin(userClient, adminClient, () => Promise.resolve('no_token' as const));
+    assertEquals(res.status, 200);
+    assertEquals(deleteCalls.length, 2);
   });
 });
