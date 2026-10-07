@@ -390,13 +390,19 @@ garmin-push, garmin-ping, garmin-deregistration; generate-nutrition-plan-v3, gen
 inputs and outputs: overwrite in place (playbook §6). Prod: the `meal_logs.servings` migration and the
 `app_config` bump are owed at cutover, at Xuan's direction.
 
-- [ ] Each item lands with the test(s) it names, ported from mealplanning. `flutter test` on those files is
+- [x] Each item lands with the test(s) it names, ported from mealplanning. `flutter test` on those files is
       green, and codegen ran after the Riverpod and Drift changes (items 5, 7, 13, 21, 25, 30, 31).
-- [ ] Deno: `deno test --allow-all --allow-sys supabase/functions/_shared/garmin supabase/functions/_shared/nutrition supabase/functions/delete-user supabase/functions/garmin-push supabase/functions/garmin-user-mapping supabase/functions/discard-signup`
+- [x] Deno: `deno test --allow-all --allow-sys supabase/functions/_shared/garmin supabase/functions/_shared/nutrition supabase/functions/delete-user supabase/functions/garmin-push supabase/functions/garmin-user-mapping supabase/functions/discard-signup`
       is green. The fuelling vectors in `docs/ssot/vectors/` are green (items 15, 30).
+      (Ran with `--allow-all` alone, since Deno rejects it with `--allow-sys`: 225 passed, 0 failed.
+      Vectors: run-algorithm-tests.sh 100/100 after item 30. See `runs/29/notes.md`.)
 - [ ] `grep -rniE "vana|paywall|subscription|kroger|shopping|meal_plan|redeem|is_admin" $(git diff --name-only f2e8576e)`
       shows nothing new beyond what HEAD already had.
+      (Open, for the lead: 18 new hits after the `mealvana` package name. All are comments about what
+      stayed behind, OneSignal's push `subscription`, or Dart's `StreamSubscription`. The one real
+      leftover was fixed. List in `runs/29/notes.md`.)
 - [ ] `flutter analyze` is clean. `/security-review` is run on discard-signup and delete-user.
+      (analyze: 0 errors, no issue new since `ab437b7d`. `/security-review` has not been run; the lead owes it.)
       `/design-sync` is owed for items 17, 30 and 32 (Lee runs it).
-- [ ] The commit body lists each item's mealplanning sha and its verdict (clean / near-clean / hand), and every
+- [x] The commit body lists each item's mealplanning sha and its verdict (clean / near-clean / hand), and every
       item skipped with its reason.
