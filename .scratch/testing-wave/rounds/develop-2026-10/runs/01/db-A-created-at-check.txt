@@ -1,0 +1,4 @@
+[{"column_name":"created_at","data_type":"timestamp with time zone","column_default":"now()"},{"column_name":"updated_at","data_type":"timestamp with time zone","column_default":"now()"}]
+[{"created_at":"2026-10-07 01:11:03+00","updated_at":"2026-10-07 11:11:05.640645+00","db_now":"2026-10-07 11:11:36.977618+00"}]
+[{"created_at":"2026-10-07 11:11:04+00"}]
+[{"n":7,"first_created":"2026-10-07 06:11:07.575957+00"}]
