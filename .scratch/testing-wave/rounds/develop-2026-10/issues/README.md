@@ -33,8 +33,21 @@ code, unverified": the screen decides.
 | 18 | The Sentry probes reach the dev project from this round's build | new (Sentry 15) | test@test.com | probe issues handed to the lead to resolve |
 | 19 | Coach mode: the portal at phone width, pairing, and writes that wait for the server | new (Sentry 24a) | test@test.com + new | web half only if the lead runs a web build |
 | 20 | (reserved: the Sentry leftovers ticket, written separately) | spec § 4 | — | — |
+| 21 | Signup and verify-email fixes | fix: 01-002, 01-003, 01-005, 01-009 | — | after 29 |
+| 22 | Timestamps and startup telemetry | fix: 01-004, 01-006, 08-009 | — | after 29; not with 21 |
+| 23 | AI credits work as intended on develop | fix: 02-001, 02-002 | — | after 29; dev-only wallet SQL by the lead (breaks mealplanning's Vana on dev until Phase B: Lee's call) |
+| 24 | Meal review saves the note and keeps quantity separate | fix: 02-003, 02-005 | — | after 29 |
+| 25 | Edge logs through the Supabase MCP; delete edge_logs.sh | fix: 02-004, 01-013 | — | no overlap |
+| 26 | Archive the route-only orphan screens | fix: 08-003/004/005/010/011/012/014 | — | after 29; with or before 27 |
+| 27 | Archive Jade | fix: 08-001, 08-002, 08-006 | — | after 29 and 26 |
+| 28 | Guards: launch trail and events padding | fix: 08-007, 01-011, 08-008 | — | after 29 (08-008 may land in 29) |
+| 29 | Backport the mealplanning round's shared fixes | fix: 08-025 + ~27 BUGS rows + 67 ticket items | — | **runs first and alone**; ~45 commits, sequential agents by area |
+| 30 | Retest: auth and account | 01-007, 01-010, 01-014..018 + 21/22 retests | new | wave 3, 13 checks (30a/30b) |
+| 31 | Retest: meal logging | 02-006..012 + 24 retests | test@test.com | wave 3, 3 spends |
+| 32 | Retest: startup, tabs and deep links | 08-016..023 + 26/27/28/22 retests | test@test.com | wave 3, 13 checks |
+| 33 | Retest: cross-device and leftovers | 08-024, 01-012 | test@test.com + new | wave 3, two simulators |
 
-Ordering: 10 after 09; 14 after 13. Tickets 02–07, 09, 10 and 18 share test@test.com; their prompts
+Ordering: 10 after 09; 14 after 13. Fix wave (2026-10-07 triage): 29 alone first, then 21–28 by their Overlaps lines; wave 3 = 30–33 plus the untouched test tickets 03–07, 09–19. Tickets 02–07, 09, 10 and 18 share test@test.com; their prompts
 must say which rows each one writes (runbook, "The wave lead's routine", step 5).
 
 ## Dropped from the source set
