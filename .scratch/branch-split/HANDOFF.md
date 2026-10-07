@@ -4,7 +4,7 @@ Spec: `spec.md`. Research: `STRATEGY.md`. Written by the Phase A session, 2026-1
 
 ## Status
 
-**Phase A done; testing round may start on `develop-next`** — code tip `1574cd93`, branch tip = this docs commit on top (`git rev-parse develop-next`); = `sentry-next` after the
+**Phase A done; round-up started on `develop-next`** — testing-wave system + 20 round tickets + Sentry leftovers landed (`d9ea11a5`, `03b23ce4`, `ce1a1527`; suite green, dev Sentry unresolved = DEV-7D only). Waves not yet run: `/testing-wave develop-2026-10`. Round-up NOT yet green. — code tip `1574cd93`, branch tip = this docs commit on top (`git rev-parse develop-next`); = `sentry-next` after the
 fast-forward). Nothing pushed. Xuan informed: **NO** (Lee does this before Phase B's force push).
 Phase B (`mealplanning-next`) not started.
 

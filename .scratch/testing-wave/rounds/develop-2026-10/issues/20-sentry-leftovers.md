@@ -1,6 +1,6 @@
 # 20: Sentry leftovers, every open issue with a cause and an action
 
-**Status:** code committed on develop-next (`03b23ce4`, review fixes follow); Sentry resolutions by the lead after the commit
+**Status:** done 2026-10-06: code in `03b23ce4` + `ce1a1527`; all 48 Sentry actions applied (dev project unresolved = DEV-7D only; prod = BP, B7, C2). Retests: tickets 13/14 (A2, 9B), 16 (99), 18 (probes).
 **Labels:** fix, round:develop-2026-10, area:sentry
 **Branch:** `develop-next`
 **Source:** `.scratch/develop-roundup/spec.md` § 4
