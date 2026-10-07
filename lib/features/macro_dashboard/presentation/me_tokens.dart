@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 
+import '../../../theme/kyle_design/me_surface_tokens.dart';
+
+export '../../../theme/kyle_design/me_surface_tokens.dart' show MeSurfaceTokens;
+
 /// Design SSOT tokens — docs/ssot/spec/design/tokens.md (RATIFIED v1).
 ///
 /// The named palette and its MEANING contracts. Code references tokens,
@@ -7,12 +11,16 @@ import 'package:flutter/material.dart';
 /// this mirror of it). A component using [electrolyte] for a non-burn
 /// element, or [dragonfruit] for a non-destructive one, fails conformance
 /// even if it "looks right".
+///
+/// The ground/ink pair (`blackberry` / `cream` in the table) follows the
+/// app theme: read it with [of] (Finding 119-003). Only the accents below
+/// are theme-invariant statics.
 abstract final class MeTokens {
-  /// Ground; card fills derive from it.
-  static const Color blackberry = Color.fromRGBO(56, 22, 51, 1);
-
-  /// Primary text.
-  static const Color cream = Color.fromRGBO(248, 246, 235, 1);
+  /// The surface's ground, ink and derived fills for the current theme.
+  /// Without a registered [MeSurfaceTokens] (a bare `MaterialApp` in a
+  /// test) the ratified dark values apply, so existing goldens hold.
+  static MeSurfaceTokens of(BuildContext context) =>
+      Theme.of(context).extension<MeSurfaceTokens>() ?? MeSurfaceTokens.dark;
 
   /// Burn / activity side (RULED Xuan 2026-08-14 — widened from
   /// verified-only): burn-side figures, workout accents, verified chips and
@@ -31,7 +39,6 @@ abstract final class MeTokens {
   static const Color proteinAccent = Color.fromRGBO(167, 139, 250, 1);
   static const Color fatAccent = Color.fromRGBO(236, 84, 153, 1);
 
-  static Color creamAlpha(double opacity) => cream.withValues(alpha: opacity);
   static Color electrolyteAlpha(double opacity) =>
       electrolyte.withValues(alpha: opacity);
   static Color orangeAlpha(double opacity) => orange.withValues(alpha: opacity);

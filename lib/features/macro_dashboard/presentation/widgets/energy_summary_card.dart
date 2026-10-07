@@ -50,12 +50,13 @@ class EnergySummaryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final me = MeTokens.of(context);
     return Container(
       constraints: BoxConstraints(minHeight: expanded ? 0 : 68),
       padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.05),
-        border: Border.all(color: MeTokens.creamAlpha(0.1)),
+        color: me.liftAlpha(0.05),
+        border: Border.all(color: me.inkAlpha(0.1)),
         borderRadius: BorderRadius.circular(18),
       ),
       child: Row(
@@ -63,7 +64,7 @@ class EnergySummaryCard extends StatelessWidget {
             ? CrossAxisAlignment.start
             : CrossAxisAlignment.center,
         children: [
-          Expanded(child: _faceContent()),
+          Expanded(child: _faceContent(me)),
           Semantics(
             button: true,
             label: expanded ? 'Collapse details' : 'Expand details',
@@ -79,7 +80,7 @@ class EnergySummaryCard extends StatelessWidget {
                   child: Icon(
                     Icons.keyboard_arrow_down,
                     size: 16,
-                    color: MeTokens.creamAlpha(0.55),
+                    color: me.inkAlpha(0.55),
                   ),
                 ),
               ),
@@ -90,23 +91,23 @@ class EnergySummaryCard extends StatelessWidget {
     );
   }
 
-  Widget _faceContent() {
+  Widget _faceContent(MeSurfaceTokens me) {
     // LOAD replaces the All-lens face on loading days (CD-1); Workout and
     // Meals stay one tap away, untouched.
     final load = carb;
     if (!expanded) {
       return switch (face) {
-        DashboardFilter.all when load != null => _collapsedLoad(load),
-        DashboardFilter.all => _collapsedAll(),
-        DashboardFilter.workout => _collapsedWorkout(),
-        DashboardFilter.meals => _collapsedMeals(),
+        DashboardFilter.all when load != null => _collapsedLoad(me, load),
+        DashboardFilter.all => _collapsedAll(me),
+        DashboardFilter.workout => _collapsedWorkout(me),
+        DashboardFilter.meals => _collapsedMeals(me),
       };
     }
     return switch (face) {
-      DashboardFilter.all when load != null => _expandedLoad(load),
-      DashboardFilter.all => _expandedAll(),
-      DashboardFilter.workout => _expandedWorkout(),
-      DashboardFilter.meals => _expandedMeals(),
+      DashboardFilter.all when load != null => _expandedLoad(me, load),
+      DashboardFilter.all => _expandedAll(me),
+      DashboardFilter.workout => _expandedWorkout(me),
+      DashboardFilter.meals => _expandedMeals(me),
     };
   }
 
@@ -115,12 +116,12 @@ class EnergySummaryCard extends StatelessWidget {
   // arrive from the assembler's copy register verbatim (P-3).
   // -------------------------------------------------------------------
 
-  Widget _collapsedLoad(CarbLoadFaceData load) {
+  Widget _collapsedLoad(MeSurfaceTokens me, CarbLoadFaceData load) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        _label(load.labelLine),
+        _label(me, load.labelLine),
         const SizedBox(height: 8),
         Row(
           crossAxisAlignment: CrossAxisAlignment.center,
@@ -161,7 +162,7 @@ class EnergySummaryCard extends StatelessWidget {
                     style: TextStyle(
                       fontFamily: 'Apercu',
                       fontSize: 10.5,
-                      color: MeTokens.creamAlpha(0.55),
+                      color: me.inkAlpha(0.55),
                     ),
                   ),
                 ],
@@ -173,12 +174,12 @@ class EnergySummaryCard extends StatelessWidget {
     );
   }
 
-  Widget _expandedLoad(CarbLoadFaceData load) {
+  Widget _expandedLoad(MeSurfaceTokens me, CarbLoadFaceData load) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        _label(load.labelLine),
+        _label(me, load.labelLine),
         const SizedBox(height: 7),
         Row(
           crossAxisAlignment: CrossAxisAlignment.baseline,
@@ -197,7 +198,7 @@ class EnergySummaryCard extends StatelessWidget {
             const SizedBox(width: 8),
             // Registered form: to-go clamps at 0 (never negative, never a
             // worded substitute).
-            _unit(load.toGoStr),
+            _unit(me, load.toGoStr),
           ],
         ),
         const SizedBox(height: 10),
@@ -214,13 +215,14 @@ class EnergySummaryCard extends StatelessWidget {
             style: TextStyle(
               fontFamily: 'Apercu',
               fontSize: 10.5,
-              color: MeTokens.creamAlpha(0.5),
+              color: me.inkAlpha(0.5),
             ),
           ),
         ],
         const SizedBox(height: 12),
         // E2 on LOAD: the carb breakdown page, never the net-balance pager.
         _fullBreakdownButton(
+          me,
           onTap: onCarbBreakdown,
           keyName: 'macro_dashboard.carb_full_breakdown',
         ),
@@ -232,12 +234,12 @@ class EnergySummaryCard extends StatelessWidget {
   // Collapsed faces — the single most decision-relevant number (P-2)
   // -------------------------------------------------------------------
 
-  Widget _collapsedAll() {
+  Widget _collapsedAll(MeSurfaceTokens me) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        _label('Net balance'),
+        _label(me, 'Net balance'),
         const SizedBox(height: 2),
         Row(
           crossAxisAlignment: CrossAxisAlignment.baseline,
@@ -255,7 +257,7 @@ class EnergySummaryCard extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 6),
-            _unit('kcal'),
+            _unit(me, 'kcal'),
             if (data.bandCopy != null) ...[
               const SizedBox(width: 6),
               Text(
@@ -264,7 +266,7 @@ class EnergySummaryCard extends StatelessWidget {
                   fontFamily: 'Apercu',
                   fontSize: 11,
                   fontWeight: FontWeight.w500,
-                  color: _bandInk(data.netKcal),
+                  color: _bandInk(me, data.netKcal),
                 ),
               ),
             ],
@@ -274,12 +276,12 @@ class EnergySummaryCard extends StatelessWidget {
     );
   }
 
-  Widget _collapsedWorkout() {
+  Widget _collapsedWorkout(MeSurfaceTokens me) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        _label("Today's Workout"),
+        _label(me, "Today's Workout"),
         const SizedBox(height: 2),
         Row(
           crossAxisAlignment: CrossAxisAlignment.baseline,
@@ -297,19 +299,19 @@ class EnergySummaryCard extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 5),
-            _unit('done · ${kcalStr(data.workoutPlannedKcal)} planned'),
+            _unit(me, 'done · ${kcalStr(data.workoutPlannedKcal)} planned'),
           ],
         ),
       ],
     );
   }
 
-  Widget _collapsedMeals() {
+  Widget _collapsedMeals(MeSurfaceTokens me) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        _label('Daily budget'),
+        _label(me, 'Daily budget'),
         const SizedBox(height: 2),
         Row(
           crossAxisAlignment: CrossAxisAlignment.baseline,
@@ -326,7 +328,7 @@ class EnergySummaryCard extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 6),
-            _unit('kcal'),
+            _unit(me, 'kcal'),
             const SizedBox(width: 6),
             Flexible(
               child: Text.rich(
@@ -334,7 +336,7 @@ class EnergySummaryCard extends StatelessWidget {
                   style: TextStyle(
                     fontFamily: 'Apercu Mono',
                     fontSize: 11,
-                    color: MeTokens.creamAlpha(0.4),
+                    color: me.inkAlpha(0.4),
                     fontFeatures: const [FontFeature.tabularFigures()],
                   ),
                   children: [
@@ -368,12 +370,12 @@ class EnergySummaryCard extends StatelessWidget {
   // Expanded faces — the working detail (P-2)
   // -------------------------------------------------------------------
 
-  Widget _expandedAll() {
+  Widget _expandedAll(MeSurfaceTokens me) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        _label('Net energy balance'),
+        _label(me, 'Net energy balance'),
         const SizedBox(height: 7),
         Wrap(
           crossAxisAlignment: WrapCrossAlignment.center,
@@ -381,17 +383,17 @@ class EnergySummaryCard extends StatelessWidget {
           runSpacing: 5,
           children: [
             _monoNumber(kcalStr(data.eatenKcal), MeTokens.orange),
-            _dimLabel('eaten'),
+            _dimLabel(me, 'eaten'),
             Text(
               '−',
               style: TextStyle(
                 fontFamily: 'Apercu',
                 fontSize: 13,
-                color: MeTokens.creamAlpha(0.4),
+                color: me.inkAlpha(0.4),
               ),
             ),
             _monoNumber(kcalStr(data.burnedKcal), MeTokens.electrolyte),
-            _dimLabel('burned'),
+            _dimLabel(me, 'burned'),
           ],
         ),
         const SizedBox(height: 8),
@@ -405,7 +407,7 @@ class EnergySummaryCard extends StatelessWidget {
                 fontFamily: 'Sansita',
                 fontWeight: FontWeight.w700,
                 fontSize: 22,
-                color: MeTokens.creamAlpha(0.35),
+                color: me.inkAlpha(0.35),
               ),
             ),
             const SizedBox(width: 8),
@@ -435,19 +437,19 @@ class EnergySummaryCard extends StatelessWidget {
         Container(
           padding: const EdgeInsets.only(top: 10),
           decoration: BoxDecoration(
-            border: Border(top: BorderSide(color: MeTokens.creamAlpha(0.1))),
+            border: Border(top: BorderSide(color: me.inkAlpha(0.1))),
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text.rich(
                 TextSpan(
-                  style: _footerStyle,
+                  style: _footerStyle(me),
                   children: [
                     const TextSpan(text: 'Eaten '),
                     TextSpan(
                       text: kcalStr(data.eatenKcal),
-                      style: TextStyle(color: MeTokens.creamAlpha(0.75)),
+                      style: TextStyle(color: me.inkAlpha(0.75)),
                     ),
                     TextSpan(text: ' / ${kcalStr(data.targetKcal)}'),
                   ],
@@ -455,13 +457,13 @@ class EnergySummaryCard extends StatelessWidget {
               ),
               Text.rich(
                 TextSpan(
-                  style: _footerStyle,
+                  style: _footerStyle(me),
                   children: [
                     TextSpan(
                       text: kcalStr(
                         data.remainingKcal.clamp(0, double.infinity),
                       ),
-                      style: TextStyle(color: MeTokens.creamAlpha(0.75)),
+                      style: TextStyle(color: me.inkAlpha(0.75)),
                     ),
                     const TextSpan(text: ' kcal to target'),
                   ],
@@ -470,19 +472,19 @@ class EnergySummaryCard extends StatelessWidget {
             ],
           ),
         ),
-        _fullBreakdownButton(),
+        _fullBreakdownButton(me),
       ],
     );
   }
 
-  Widget _expandedWorkout() {
+  Widget _expandedWorkout(MeSurfaceTokens me) {
     final projected = data.workoutProjectedKcal;
     final donePct = projected > 0 ? data.workoutDoneKcal / projected : 0.0;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        _label('Active energy'),
+        _label(me, 'Active energy'),
         const SizedBox(height: 4),
         Row(
           crossAxisAlignment: CrossAxisAlignment.baseline,
@@ -499,7 +501,7 @@ class EnergySummaryCard extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 5),
-            _unit('done · ${kcalStr(data.workoutPlannedKcal)} planned'),
+            _unit(me, 'done · ${kcalStr(data.workoutPlannedKcal)} planned'),
           ],
         ),
         const SizedBox(height: 12),
@@ -553,9 +555,7 @@ class EnergySummaryCard extends StatelessWidget {
                     style: TextStyle(
                       fontFamily: 'Apercu',
                       fontSize: 11.5,
-                      color: r.planned
-                          ? MeTokens.creamAlpha(0.6)
-                          : MeTokens.cream,
+                      color: r.planned ? me.inkAlpha(0.6) : me.ink,
                     ),
                   ),
                 ),
@@ -565,7 +565,7 @@ class EnergySummaryCard extends StatelessWidget {
                   style: TextStyle(
                     fontFamily: 'Apercu',
                     fontSize: 10,
-                    color: MeTokens.creamAlpha(0.38),
+                    color: me.inkAlpha(0.38),
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -574,9 +574,7 @@ class EnergySummaryCard extends StatelessWidget {
                   style: TextStyle(
                     fontFamily: 'Apercu Mono',
                     fontSize: 11.5,
-                    color: r.planned
-                        ? MeTokens.creamAlpha(0.55)
-                        : MeTokens.cream,
+                    color: r.planned ? me.inkAlpha(0.55) : me.ink,
                     fontFeatures: const [FontFeature.tabularFigures()],
                   ),
                 ),
@@ -588,34 +586,34 @@ class EnergySummaryCard extends StatelessWidget {
           padding: const EdgeInsets.only(top: 9),
           margin: const EdgeInsets.only(top: 3),
           decoration: BoxDecoration(
-            border: Border(top: BorderSide(color: MeTokens.creamAlpha(0.1))),
+            border: Border(top: BorderSide(color: me.inkAlpha(0.1))),
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text("Projected by day's end", style: _footerStyle),
+              Text("Projected by day's end", style: _footerStyle(me)),
               Text(
                 '${kcalStr(projected)} kcal',
-                style: const TextStyle(
+                style: TextStyle(
                   fontFamily: 'Apercu Mono',
                   fontSize: 12.5,
-                  color: MeTokens.cream,
+                  color: me.ink,
                 ),
               ),
             ],
           ),
         ),
-        _fullBreakdownButton(),
+        _fullBreakdownButton(me),
       ],
     );
   }
 
-  Widget _expandedMeals() {
+  Widget _expandedMeals(MeSurfaceTokens me) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        _label('Intake today'),
+        _label(me, 'Intake today'),
         const SizedBox(height: 4),
         Row(
           crossAxisAlignment: CrossAxisAlignment.baseline,
@@ -632,13 +630,14 @@ class EnergySummaryCard extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 5),
-            _unit('/ ${kcalStr(data.targetKcal)} kcal'),
+            _unit(me, '/ ${kcalStr(data.targetKcal)} kcal'),
           ],
         ),
         const SizedBox(height: 11),
         Row(
           children: [
             _macroBar(
+              me,
               'Carbs',
               data.carbEatenG,
               data.carbTargetG,
@@ -646,6 +645,7 @@ class EnergySummaryCard extends StatelessWidget {
             ),
             const SizedBox(width: 12),
             _macroBar(
+              me,
               'Protein',
               data.proteinEatenG,
               data.proteinTargetG,
@@ -653,6 +653,7 @@ class EnergySummaryCard extends StatelessWidget {
             ),
             const SizedBox(width: 12),
             _macroBar(
+              me,
               'Fat',
               data.fatEatenG,
               data.fatTargetG,
@@ -660,12 +661,18 @@ class EnergySummaryCard extends StatelessWidget {
             ),
           ],
         ),
-        _fullBreakdownButton(),
+        _fullBreakdownButton(me),
       ],
     );
   }
 
-  Widget _macroBar(String label, double eaten, double target, Color color) {
+  Widget _macroBar(
+    MeSurfaceTokens me,
+    String label,
+    double eaten,
+    double target,
+    Color color,
+  ) {
     final pct = target > 0 ? (eaten / target).clamp(0.0, 1.0) : 0.0;
     return Expanded(
       child: Column(
@@ -673,17 +680,17 @@ class EnergySummaryCard extends StatelessWidget {
         children: [
           Text.rich(
             TextSpan(
-              style: const TextStyle(
+              style: TextStyle(
                 fontFamily: 'Apercu Mono',
                 fontSize: 12.5,
-                color: MeTokens.cream,
-                fontFeatures: [FontFeature.tabularFigures()],
+                color: me.ink,
+                fontFeatures: const [FontFeature.tabularFigures()],
               ),
               children: [
                 TextSpan(text: '${eaten.round()}'),
                 TextSpan(
                   text: '/${target.round()}g',
-                  style: TextStyle(color: MeTokens.creamAlpha(0.4)),
+                  style: TextStyle(color: me.inkAlpha(0.4)),
                 ),
               ],
             ),
@@ -695,7 +702,7 @@ class EnergySummaryCard extends StatelessWidget {
               height: 5,
               child: Stack(
                 children: [
-                  Container(color: MeTokens.creamAlpha(0.1)),
+                  Container(color: me.inkAlpha(0.1)),
                   FractionallySizedBox(
                     widthFactor: pct,
                     child: Container(color: color),
@@ -710,7 +717,7 @@ class EnergySummaryCard extends StatelessWidget {
             style: TextStyle(
               fontFamily: 'Apercu',
               fontSize: 10,
-              color: MeTokens.creamAlpha(0.5),
+              color: me.inkAlpha(0.5),
             ),
           ),
         ],
@@ -718,7 +725,8 @@ class EnergySummaryCard extends StatelessWidget {
     );
   }
 
-  Widget _fullBreakdownButton({
+  Widget _fullBreakdownButton(
+    MeSurfaceTokens me, {
     VoidCallback? onTap,
     String keyName = 'macro_dashboard.full_breakdown',
   }) {
@@ -756,32 +764,32 @@ class EnergySummaryCard extends StatelessWidget {
 
   // -------------------------------------------------------------------
 
-  Widget _label(String text) => Text(
+  Widget _label(MeSurfaceTokens me, String text) => Text(
     text.toUpperCase(),
     style: TextStyle(
       fontFamily: 'Apercu',
       fontSize: 9.5,
       fontWeight: FontWeight.w500,
       letterSpacing: 0.8,
-      color: MeTokens.creamAlpha(0.5),
+      color: me.inkAlpha(0.5),
     ),
   );
 
-  Widget _unit(String text) => Text(
+  Widget _unit(MeSurfaceTokens me, String text) => Text(
     text,
     style: TextStyle(
       fontFamily: 'Apercu',
       fontSize: 11,
-      color: MeTokens.creamAlpha(0.45),
+      color: me.inkAlpha(0.45),
     ),
   );
 
-  Widget _dimLabel(String text) => Text(
+  Widget _dimLabel(MeSurfaceTokens me, String text) => Text(
     text,
     style: TextStyle(
       fontFamily: 'Apercu',
       fontSize: 11,
-      color: MeTokens.creamAlpha(0.5),
+      color: me.inkAlpha(0.5),
     ),
   );
 
@@ -796,16 +804,13 @@ class EnergySummaryCard extends StatelessWidget {
     ),
   );
 
-  TextStyle get _footerStyle => TextStyle(
-    fontFamily: 'Apercu',
-    fontSize: 10.5,
-    color: MeTokens.creamAlpha(0.45),
-  );
+  TextStyle _footerStyle(MeSurfaceTokens me) =>
+      TextStyle(fontFamily: 'Apercu', fontSize: 10.5, color: me.inkAlpha(0.45));
 
-  Color _bandInk(double net) {
+  Color _bandInk(MeSurfaceTokens me, double net) {
     final magnitude = net.abs();
     if (magnitude <= 200) return MeTokens.electrolyte;
-    if (magnitude <= 500) return MeTokens.creamAlpha(0.7);
+    if (magnitude <= 500) return me.inkAlpha(0.7);
     return MeTokens.orange;
   }
 }

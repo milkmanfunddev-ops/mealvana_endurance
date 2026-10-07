@@ -26,23 +26,24 @@ class DashboardFilterRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final me = MeTokens.of(context);
     return Row(
       children: [
         Expanded(
           child: Container(
             padding: const EdgeInsets.all(4),
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.05),
-              border: Border.all(color: MeTokens.creamAlpha(0.1)),
+              color: me.liftAlpha(0.05),
+              border: Border.all(color: me.inkAlpha(0.1)),
               borderRadius: BorderRadius.circular(100),
             ),
             child: Row(
               children: [
-                _pill('All', DashboardFilter.all),
+                _pill(me, 'All', DashboardFilter.all),
                 const SizedBox(width: 5),
-                _pill('Workout', DashboardFilter.workout),
+                _pill(me, 'Workout', DashboardFilter.workout),
                 const SizedBox(width: 5),
-                _pill('Meals', DashboardFilter.meals),
+                _pill(me, 'Meals', DashboardFilter.meals),
               ],
             ),
           ),
@@ -54,11 +55,11 @@ class DashboardFilterRow extends StatelessWidget {
           icon: Icons.show_chart,
           background: trackingOn
               ? MeTokens.dragonfruit.withValues(alpha: 0.16)
-              : Colors.white.withValues(alpha: 0.05),
+              : me.liftAlpha(0.05),
           border: trackingOn
               ? MeTokens.dragonfruit.withValues(alpha: 0.6)
-              : MeTokens.creamAlpha(0.18),
-          ink: trackingOn ? MeTokens.dragonfruit : MeTokens.creamAlpha(0.55),
+              : me.inkAlpha(0.18),
+          ink: trackingOn ? MeTokens.dragonfruit : me.inkAlpha(0.55),
           onTap: onToggleTracking,
         ),
         const SizedBox(width: 8),
@@ -68,18 +69,18 @@ class DashboardFilterRow extends StatelessWidget {
           icon: timelineOpen ? Icons.schedule : Icons.history_toggle_off,
           background: timelineOpen
               ? MeTokens.electrolyteAlpha(0.12)
-              : Colors.white.withValues(alpha: 0.05),
+              : me.liftAlpha(0.05),
           border: timelineOpen
               ? MeTokens.electrolyteAlpha(0.55)
-              : MeTokens.creamAlpha(0.18),
-          ink: timelineOpen ? MeTokens.electrolyte : MeTokens.creamAlpha(0.55),
+              : me.inkAlpha(0.18),
+          ink: timelineOpen ? MeTokens.electrolyte : me.inkAlpha(0.55),
           onTap: onToggleTimeline,
         ),
       ],
     );
   }
 
-  Widget _pill(String label, DashboardFilter value) {
+  Widget _pill(MeSurfaceTokens me, String label, DashboardFilter value) {
     final active = filter == value;
     return Expanded(
       child: GestureDetector(
@@ -89,7 +90,7 @@ class DashboardFilterRow extends StatelessWidget {
           padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
           alignment: Alignment.center,
           decoration: BoxDecoration(
-            color: active ? MeTokens.cream : Colors.transparent,
+            color: active ? me.ink : Colors.transparent,
             borderRadius: BorderRadius.circular(100),
           ),
           child: Text(
@@ -98,7 +99,7 @@ class DashboardFilterRow extends StatelessWidget {
               fontFamily: 'Apercu',
               fontWeight: FontWeight.w500,
               fontSize: 12.5,
-              color: active ? MeTokens.blackberry : MeTokens.creamAlpha(0.65),
+              color: active ? me.ground : me.inkAlpha(0.65),
             ),
           ),
         ),
