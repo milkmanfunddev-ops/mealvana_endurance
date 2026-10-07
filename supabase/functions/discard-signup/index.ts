@@ -26,4 +26,4 @@ const admin = createClient(supabaseUrl, supabaseServiceKey, {
   auth: { persistSession: false, autoRefreshToken: false },
 });
 
-serve(withSentry(makeDiscardSignupHandler({ admin: () => admin })));
+serve(withSentry('discard-signup', makeDiscardSignupHandler({ admin: () => admin })));
