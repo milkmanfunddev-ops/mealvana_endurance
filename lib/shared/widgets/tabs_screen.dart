@@ -172,7 +172,9 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
       ),
       if (showCoachTab)
         const SizedBox.shrink(), // placeholder (coach portal rendered above)
-      const EventsListScreen(),
+      const EventsListScreen(
+        bottomInset: HomeShellChrome.bottomChromeClearancePx,
+      ),
       const EducationScreen(),
     ];
 
