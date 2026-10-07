@@ -22,7 +22,6 @@ import 'package:mealvana_endurance/features/integrations/domain/integration.dart
 import 'package:mealvana_endurance/shared/database/app_database.dart';
 
 import '../../helpers/fakes/fake_postgrest.dart';
-import '../../helpers/widget_test_harness.dart';
 
 const _userId = 'u-138';
 

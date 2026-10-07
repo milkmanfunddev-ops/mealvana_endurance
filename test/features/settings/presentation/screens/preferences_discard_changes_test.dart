@@ -20,16 +20,11 @@ import 'package:mealvana_endurance/features/settings/domain/settings_state.dart'
 import 'package:mealvana_endurance/features/settings/presentation/providers/settings_controller.dart';
 import 'package:mealvana_endurance/features/settings/presentation/screens/preferences_screen.dart';
 import 'package:mealvana_endurance/shared/services/app_config.dart';
-import 'package:mealvana_endurance/features/daily_macros/application/daily_macro_service.dart';
 
 import '../../../../helpers/widget_test_harness.dart';
 import '../../../../helpers/test_content.dart';
 
 class _MockUserRepository extends Mock implements UserRepository {}
-
-// develop's save reads DailyMacroService before anything else; the real one
-// needs Supabase.
-class _MockDailyMacroService extends Mock implements DailyMacroService {}
 
 final _birthday = DateTime(1985, 3, 20);
 
