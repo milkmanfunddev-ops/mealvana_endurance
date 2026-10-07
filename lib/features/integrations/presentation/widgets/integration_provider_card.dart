@@ -481,47 +481,57 @@ class _SyncButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onSync,
-      // Confirmation is the owner's job: the screen's Q-INT2 dialog
-      // (hide vs delete). No second dialog here.
-      onLongPress: onDisconnect,
-      child: Container(
-        padding: specStyle
-            ? const EdgeInsets.symmetric(vertical: 9, horizontal: 20)
-            : const EdgeInsets.symmetric(
-                horizontal: AppSpacing.xs,
-                vertical: AppSpacing.xxs,
-              ),
-        decoration: BoxDecoration(
-          color: AppColors.dragonfruit,
-          borderRadius: BorderRadius.circular(specStyle ? 100 : 20),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              hasSynced ? Icons.check_circle : Icons.sync,
-              size: specStyle ? 14 : 16,
-              color: AppColors.textDark,
+    final label = hasSynced ? 'Synced!' : 'Sync Now';
+    // Its own named button to a screen reader, not a piece of the card's
+    // one merged element (118-005).
+    return Semantics(
+      container: true,
+      button: true,
+      label: label,
+      child: GestureDetector(
+        onTap: onSync,
+        // Confirmation is the owner's job: the screen's Q-INT2 dialog
+        // (hide vs delete). No second dialog here.
+        onLongPress: onDisconnect,
+        child: ExcludeSemantics(
+          child: Container(
+            padding: specStyle
+                ? const EdgeInsets.symmetric(vertical: 9, horizontal: 20)
+                : const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.xs,
+                    vertical: AppSpacing.xxs,
+                  ),
+            decoration: BoxDecoration(
+              color: AppColors.dragonfruit,
+              borderRadius: BorderRadius.circular(specStyle ? 100 : 20),
             ),
-            const SizedBox(width: 4),
-            Text(
-              hasSynced ? 'Synced!' : 'Sync Now',
-              // Spec rows: same type as the Connect pill this replaces
-              // (Sansita 700 14). Settings keeps buttonPrimary.
-              style: specStyle
-                  ? const TextStyle(
-                      fontFamily: OnbTokens.fontDisplay,
-                      fontWeight: FontWeight.w700,
-                      fontSize: 14,
-                      color: AppColors.textDark,
-                    )
-                  : AppTextStyles.buttonPrimary.copyWith(
-                      color: AppColors.textDark,
-                    ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  hasSynced ? Icons.check_circle : Icons.sync,
+                  size: specStyle ? 14 : 16,
+                  color: AppColors.textDark,
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  label,
+                  // Spec rows: same type as the Connect pill this replaces
+                  // (Sansita 700 14). Settings keeps buttonPrimary.
+                  style: specStyle
+                      ? const TextStyle(
+                          fontFamily: OnbTokens.fontDisplay,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 14,
+                          color: AppColors.textDark,
+                        )
+                      : AppTextStyles.buttonPrimary.copyWith(
+                          color: AppColors.textDark,
+                        ),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );
@@ -550,33 +560,27 @@ class _ConnectButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final text = label ?? 'Connect';
+    final Widget pill;
     if (specStyle) {
-      return GestureDetector(
-        onTap: onConnect,
-        onLongPress: onLongPress,
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 9, horizontal: 20),
-          decoration: BoxDecoration(
-            color: const Color(0xFFDC2597),
-            borderRadius: BorderRadius.circular(OnbTokens.rPill),
-          ),
-          child: Text(
-            label ?? 'Connect',
-            style: const TextStyle(
-              fontFamily: OnbTokens.fontDisplay,
-              fontWeight: FontWeight.w700,
-              fontSize: 14,
-              color: OnbTokens.cream,
-            ),
+      pill = Container(
+        padding: const EdgeInsets.symmetric(vertical: 9, horizontal: 20),
+        decoration: BoxDecoration(
+          color: const Color(0xFFDC2597),
+          borderRadius: BorderRadius.circular(OnbTokens.rPill),
+        ),
+        child: Text(
+          text,
+          style: const TextStyle(
+            fontFamily: OnbTokens.fontDisplay,
+            fontWeight: FontWeight.w700,
+            fontSize: 14,
+            color: OnbTokens.cream,
           ),
         ),
       );
-    }
-
-    return GestureDetector(
-      onTap: onConnect,
-      onLongPress: onLongPress,
-      child: Container(
+    } else {
+      pill = Container(
         padding: const EdgeInsets.symmetric(
           horizontal: AppSpacing.md,
           vertical: AppSpacing.xs,
@@ -586,11 +590,23 @@ class _ConnectButton extends StatelessWidget {
           borderRadius: BorderRadius.circular(20),
         ),
         child: Text(
-          label ?? 'Connect',
+          text,
           style: AppTextStyles.buttonPrimary.copyWith(
             color: AppColors.textDark,
           ),
         ),
+      );
+    }
+
+    // Its own named button to a screen reader (118-005).
+    return Semantics(
+      container: true,
+      button: true,
+      label: text,
+      child: GestureDetector(
+        onTap: onConnect,
+        onLongPress: onLongPress,
+        child: ExcludeSemantics(child: pill),
       ),
     );
   }

@@ -342,6 +342,10 @@ class _EmailSignupScreenState extends ConsumerState<EmailSignupScreen> {
                     key: const ValueKey(
                       'signup_email.password_visibility_button',
                     ),
+                    // Named as Log In's is (118-005, 119-005).
+                    tooltip: _obscurePassword
+                        ? 'Show password'
+                        : 'Hide password',
                     icon: Icon(
                       _obscurePassword
                           ? FontAwesomeIcons.eye.data
@@ -390,6 +394,9 @@ class _EmailSignupScreenState extends ConsumerState<EmailSignupScreen> {
                     key: const ValueKey(
                       'signup_email.confirm_password_visibility_button',
                     ),
+                    tooltip: _obscureConfirmPassword
+                        ? 'Show password'
+                        : 'Hide password',
                     icon: Icon(
                       _obscureConfirmPassword
                           ? FontAwesomeIcons.eye.data
