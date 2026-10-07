@@ -230,4 +230,39 @@ void main() {
       expect(match?.id, 'fav-1');
     });
   });
+
+  group('quantity (testing-wave 02-005)', () {
+    const banana = MealComponent(
+      name: 'Banana',
+      portion: '1 medium banana (~118g)',
+      calories: 105,
+    );
+
+    test('one banana does not match a favourite of two', () {
+      final favourite = saved('fav-2', 'Snack', [
+        banana.copyWith(quantity: 2, calories: 210),
+      ]);
+      expect(
+        findFavoriteMatch(log('Snack', const [banana]), [favourite]),
+        isNull,
+      );
+      expect(
+        mealFavoriteMatchKey('Snack', const [banana]),
+        isNot(mealFavoriteMatchKey('Snack', [banana.copyWith(quantity: 2)])),
+      );
+    });
+
+    test('two bananas match a favourite of two', () {
+      final two = banana.copyWith(quantity: 2, calories: 210);
+      final favourite = saved('fav-2', 'Snack', [two]);
+      expect(findFavoriteMatch(log('Snack', [two]), [favourite]), favourite);
+    });
+
+    test('keys of existing quantity-1 favourites are unchanged', () {
+      expect(
+        mealFavoriteMatchKey('Snack', const [banana]),
+        '["snack",["banana","1 medium banana (~118g)"]]',
+      );
+    });
+  });
 }

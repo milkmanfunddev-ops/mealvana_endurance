@@ -2,11 +2,10 @@
 /// free-text portion string (e.g. "1 cup", "1.5 oz", "1/2 cup dry",
 /// "1 1/2 cups", "a handful").
 ///
-/// Meal items persist the eaten amount inside the portion string itself —
-/// neither [MealComponent] nor [MealAnalysisItem] has a separate quantity
-/// field — so the Edit Item dialogs use these helpers to (a) derive the
-/// baseline quantity from the portion and (b) fold the chosen Quantity back
-/// into the portion at save time. During editing the Portion label itself is
+/// [MealAnalysisItem] has no quantity field, so its Edit Item dialog uses
+/// these helpers to fold the chosen Quantity into the portion at save time.
+/// [MealComponent] carries `quantity` beside the portion instead (testing-wave
+/// develop-2026-10, 02-005), and its dialog no longer rewrites the portion. During editing the Portion label itself is
 /// never rewritten (bug 39fe3fdb): the label shows the unit portion and the
 /// Quantity field communicates how many of it were eaten.
 ///
