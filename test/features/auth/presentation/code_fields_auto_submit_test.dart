@@ -30,9 +30,12 @@ class _FakeEmailAuthService extends EmailAuthService {
     required String token,
     OtpType type = OtpType.signup,
     String? pendingPassword,
+    DateTime? codeSentAt,
   }) async {
     tokens.add(token);
-    throw const InvalidVerificationCodeException('That code is not right.');
+    throw const InvalidVerificationCodeException(
+      VerificationCodeRejection.wrong,
+    );
   }
 }
 
@@ -68,7 +71,9 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(auth.tokens, ['123456']);
-    expect(find.text('That code is not right.'), findsOneWidget);
+    // The screen shows the wrong-code line (its content key; this harness
+    // serves no content).
+    expect(find.text('auth.verify_email.error_wrong_code'), findsOneWidget);
   });
 
   testWidgets('Enter Reset Code: the sixth digit submits the code', (

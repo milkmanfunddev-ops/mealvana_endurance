@@ -1,28 +1,19 @@
-/// What a rejected 6-digit email code says (Finding 32-001).
+/// Why a rejected 6-digit email code was rejected (Finding 32-001, then
+/// develop-2026-10 ticket 21, 01-002).
 ///
 /// GoTrue answers a mistyped code and a stale one alike: 403, code
-/// `otp_expired`, "Token has expired or is invalid". The app cannot tell
-/// them apart from the answer, so a rejected code must never read as
-/// "expired" alone: that sends someone who mistyped to Resend instead of
-/// back to the digits.
+/// `otp_expired`, "Token has expired or is invalid". The code's age decides:
+/// under [signupCodeLifetime] it is wrong, at or past it expired. Lee's
+/// ruling: each case gets its own message. The service seam is in
+/// `email_auth_service_verify_test.dart`.
 library;
 
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mocktail/mocktail.dart';
 import 'package:supabase_flutter/supabase_flutter.dart'
     hide AuthUser, AuthException;
 
-import 'package:mealvana_endurance/features/auth/application/email_auth_service.dart';
 import 'package:mealvana_endurance/features/auth/domain/auth_exceptions.dart';
-import 'package:mealvana_endurance/shared/services/analytics/analytics_tracker.dart';
-import 'package:mealvana_endurance/shared/services/app_external_deps.dart';
-
-import '../../../helpers/widget_test_harness.dart';
-
-class _MockGoTrue extends Mock implements GoTrueClient {}
-
-class _MockSupabase extends Mock implements SupabaseClient {}
+import 'package:mealvana_endurance/features/auth/domain/signup_code.dart';
 
 /// GoTrue's answer to any wrong, superseded or stale code.
 final _goTrueRejection = AuthApiException(
@@ -31,104 +22,73 @@ final _goTrueRejection = AuthApiException(
   code: 'otp_expired',
 );
 
+VerificationCodeRejection _reasonAt(Duration? age, {AuthApiException? e}) {
+  final answer = e ?? _goTrueRejection;
+  return InvalidVerificationCodeException.fromGoTrue(
+    code: answer.code,
+    statusCode: answer.statusCode,
+    message: answer.message,
+    codeAge: age,
+  ).reason;
+}
+
 void main() {
   group('InvalidVerificationCodeException.fromGoTrue', () {
-    test('a rejected code reads as wrong first, never as expired alone', () {
-      final e = InvalidVerificationCodeException.fromGoTrue(
-        code: _goTrueRejection.code,
-        statusCode: _goTrueRejection.statusCode,
-        message: _goTrueRejection.message,
-      );
-      expect(e.message, InvalidVerificationCodeException.wrongOrExpiredText);
-      expect(e.message, startsWith('That code is wrong'));
+    test('a refusal of a young code is wrong, never expired', () {
       expect(
-        e.message,
-        isNot('That code has expired. Tap resend for a new one.'),
+        _reasonAt(const Duration(seconds: 44)),
+        VerificationCodeRejection.wrong,
+      );
+      expect(
+        _reasonAt(signupCodeLifetime - const Duration(seconds: 1)),
+        VerificationCodeRejection.wrong,
       );
     });
 
-    test('the same answer without a code (older GoTrue) reads the same', () {
+    test('the same refusal at or past the lifetime is expired', () {
+      expect(_reasonAt(signupCodeLifetime), VerificationCodeRejection.expired);
+      expect(
+        _reasonAt(const Duration(minutes: 61)),
+        VerificationCodeRejection.expired,
+      );
+    });
+
+    test('an unknown age reads as wrong', () {
+      expect(_reasonAt(null), VerificationCodeRejection.wrong);
+    });
+
+    test('the answer without a code (older GoTrue) reads the same', () {
       final e = InvalidVerificationCodeException.fromGoTrue(
         statusCode: '403',
         message: 'Token has expired or is invalid',
+        codeAge: const Duration(hours: 2),
       );
-      expect(e.message, InvalidVerificationCodeException.wrongOrExpiredText);
+      expect(e.reason, VerificationCodeRejection.expired);
     });
 
-    test('too many tries says wait, not wrong', () {
+    test('a 429 is too many tries, whatever the age', () {
       final byCode = InvalidVerificationCodeException.fromGoTrue(
         code: 'over_request_rate_limit',
         statusCode: '429',
         message: 'Request rate limit reached',
+        codeAge: const Duration(hours: 2),
       );
       final byStatus = InvalidVerificationCodeException.fromGoTrue(
         statusCode: '429',
         message: 'Too many requests',
       );
-      expect(byCode.message, InvalidVerificationCodeException.tooManyTriesText);
-      expect(
-        byStatus.message,
-        InvalidVerificationCodeException.tooManyTriesText,
-      );
+      expect(byCode.reason, VerificationCodeRejection.tooManyTries);
+      expect(byStatus.reason, VerificationCodeRejection.tooManyTries);
     });
 
-    test('any other refusal says the code is not right', () {
+    test('any other refusal is wrong', () {
       final e = InvalidVerificationCodeException.fromGoTrue(
         code: 'validation_failed',
         statusCode: '400',
         message: 'Invalid token',
+        codeAge: const Duration(hours: 2),
       );
-      expect(e.message, InvalidVerificationCodeException.notRightText);
-    });
-  });
-
-  group('EmailAuthService.verifyEmailOtp', () {
-    setUpAll(() => registerFallbackValue(OtpType.signup));
-
-    test('a code GoTrue rejects throws the wrong-or-expired text', () async {
-      final auth = _MockGoTrue();
-      when(() => auth.currentUser).thenReturn(null);
-      when(
-        () => auth.verifyOTP(
-          email: any(named: 'email'),
-          token: any(named: 'token'),
-          type: any(named: 'type'),
-        ),
-      ).thenThrow(_goTrueRejection);
-      final client = _MockSupabase();
-      when(() => client.auth).thenReturn(auth);
-
-      final analytics = MockAnalyticsTracker();
-      when(
-        () => analytics.track(any(), properties: any(named: 'properties')),
-      ).thenAnswer((_) async {});
-      final deps = AppExternalDeps(
-        analytics: analytics,
-        supabaseClient: client,
-        sharedPreferences: MockSharedPreferences(),
-      );
-      final container = ProviderContainer(
-        overrides: [
-          appExternalDepsProvider.overrideWithValue(deps),
-          analyticsTrackerProvider.overrideWithValue(analytics),
-        ],
-      );
-      addTearDown(container.dispose);
-      final sub = container.listen(emailAuthServiceProvider, (_, __) {});
-      addTearDown(sub.close);
-
-      await expectLater(
-        container
-            .read(emailAuthServiceProvider.notifier)
-            .verifyEmailOtp(email: 'a@b.com', token: '123456'),
-        throwsA(
-          isA<InvalidVerificationCodeException>().having(
-            (e) => e.message,
-            'message',
-            InvalidVerificationCodeException.wrongOrExpiredText,
-          ),
-        ),
-      );
+      expect(e.reason, VerificationCodeRejection.wrong);
     });
   });
 }

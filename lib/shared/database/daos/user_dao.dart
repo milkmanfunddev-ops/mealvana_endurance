@@ -13,6 +13,7 @@ import '../../../features/onboarding/domain/allergy.dart';
 import '../../../features/daily_macros/domain/enums.dart';
 import '../../services/report/decode_issue_report.dart';
 import '../../services/report/report.dart';
+import '../../../features/auth/domain/signup_code.dart';
 
 part 'user_dao.g.dart';
 
@@ -176,8 +177,8 @@ class UserDao extends DatabaseAccessor<AppDatabase> with _$UserDaoMixin {
         // Optional name fields for coach mode athlete identification
         firstName: Value(profile.firstName),
         lastName: Value(profile.lastName),
-        // Contact information
-        email: Value(profile.email),
+        // Contact information: stored as the column is (01-009)
+        email: Value(normaliseEmail(profile.email)),
         // Nutrition target overrides (JSON string)
         nutritionTargetOverrides: Value(
           profile.nutritionTargetOverrides?.toJsonString(),
@@ -290,8 +291,8 @@ class UserDao extends DatabaseAccessor<AppDatabase> with _$UserDaoMixin {
         // Optional name fields for coach mode athlete identification
         firstName: Value(profile.firstName),
         lastName: Value(profile.lastName),
-        // Contact information
-        email: Value(profile.email),
+        // Contact information: stored as the column is (01-009)
+        email: Value(normaliseEmail(profile.email)),
         // Nutrition target overrides (JSON string)
         nutritionTargetOverrides: Value(
           profile.nutritionTargetOverrides?.toJsonString(),

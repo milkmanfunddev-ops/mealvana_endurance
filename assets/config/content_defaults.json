@@ -319,7 +319,13 @@
       "resent": "New code sent to {email}",
       "code_superseded": "That code is from an earlier email. Use the code in the newest one.",
       "maybe_account_hint": "No code? This address may already have an account.",
-      "log_in": "Log in"
+      "log_in": "Log in",
+      "error_wrong_code": "That code is not right. Check the email and try again.",
+      "error_expired": "That code has expired. Tap Resend code for a new one.",
+      "error_malformed": "Enter the 6-digit code from your email.",
+      "error_too_many_tries": "Too many tries. Wait a minute and try again.",
+      "error_generic": "Could not verify that code. Please try again.",
+      "error_resend_failed": "Could not resend the code. Check your connection and try again."
     },
     "verify_code": {
       "resend_in": "Resend code in {n}s",

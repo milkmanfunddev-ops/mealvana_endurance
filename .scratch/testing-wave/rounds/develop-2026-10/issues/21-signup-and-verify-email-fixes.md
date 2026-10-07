@@ -151,22 +151,22 @@ No codegen expected: `EmailAuthService.build` keeps its signature, so `email_aut
 every area; the auth screens above in particular). Tickets 23, 24, 26, 27 were not written when this was cut:
 the lead checks `assets/config/content_defaults.json` and `sentry_provider_observer.dart` against them.
 
-- [ ] Seam test through the real `EmailAuthService` notifier (`email_auth_service_verify_test.dart`), with a
+- [x] Seam test through the real `EmailAuthService` notifier (`email_auth_service_verify_test.dart`), with a
       fake Supabase auth that answers like GoTrue (403, code `otp_expired`, message "Token has expired or is
       invalid"; 429 `over_email_send_rate_limit` "For security purposes, you can only request this after 47
       seconds."): a refusal 44 s after the send is `wrong`; the same refusal 61 min after is `expired`; the 429
       is `rateLimited(47)`; a `SocketException` on resend is `failed` and does not escape.
-- [ ] Same file, `RecordingReport`: a plain signup that needs verification and a wrong code produce no fault
+- [x] Same file, `RecordingReport`: a plain signup that needs verification and a wrong code produce no fault
       and no degraded event, and one `auth.flow` breadcrumb each; a GoTrue 500 on verify produces exactly one
       fault, with `area: auth`.
-- [ ] `sentry_provider_observer_test.dart`: an `AsyncError` holding `EmailVerificationRequiredException`
+- [x] `sentry_provider_observer_test.dart`: an `AsyncError` holding `EmailVerificationRequiredException`
       (bare, and wrapped in `ProviderException`) is a breadcrumb, not a fault.
-- [ ] Widget test (`verify_email_screen_test.dart`): wrong-code and expired texts come from the content keys;
+- [x] Widget test (`verify_email_screen_test.dart`): wrong-code and expired texts come from the content keys;
       Resend stays disabled for the server interval; a 429 restarts the countdown at N; a successful resend
       shows the `MealvanaSnackbar` and resets the code age.
-- [ ] `user_email_lowercase_test.dart`: a profile saved with the address as typed on personal info
+- [x] `user_email_lowercase_test.dart`: a profile saved with the address as typed on personal info
       (`Lee+E2E-01-20261007T110602Z@Example.com`) is uploaded and stored locally as lowercase, through
       `UserRepository.saveUserProfile` with a fake Supabase that captures the upsert.
-- [ ] `flutter analyze` clean on touched files.
+- [x] `flutter analyze` clean on touched files.
 - [ ] Lead: the dev SQL above, after the merge. Retest in ticket 30 (retest: auth and account): a wrong code
       reads "not right", and Resend on a plain signup delivers a second email.

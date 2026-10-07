@@ -10,6 +10,7 @@ import '../../../shared/services/report/report.dart';
 import '../../../shared/services/sync/sync_coordinator.dart';
 import '../../../shared/providers/user_id_provider.dart';
 import '../domain/auth_exceptions.dart';
+import '../domain/signup_code.dart';
 import 'auth_migration_service.dart';
 
 part 'email_auth_service.g.dart';
@@ -236,8 +237,6 @@ class EmailAuthService extends _$EmailAuthService {
       await _completeEmailLink(anonymousUserId);
     });
 
-    if (ref.mounted) state = result;
-
     // Re-throw errors for UI to handle
     if (result.hasError) {
       final error = result.error;
@@ -245,18 +244,30 @@ class EmailAuthService extends _$EmailAuthService {
       // Not a failure — the account exists and the uid is intact; the caller
       // must collect the emailed code. Surface it verbatim so the UI can
       // route to the verify screen instead of showing "creation failed".
-      if (error is EmailVerificationRequiredException) throw error;
+      // The Riverpod net files it as an `auth.flow` breadcrumb (01-005).
+      if (error is EmailVerificationRequiredException) {
+        if (ref.mounted) state = result;
+        throw error;
+      }
 
-      await _failAccountCreation(
-        error!,
-        result.stackTrace,
-        email: email,
-        report: report,
-        analytics: analytics,
-        reportMessage: 'Email account linking failed',
-        analyticsEvent: 'email_account_linking_failed',
-      );
+      // Report first, then write state (01-005): the observer then finds the
+      // error already captured, so the one event carries `area: auth`.
+      try {
+        await _failAccountCreation(
+          error!,
+          result.stackTrace,
+          email: email,
+          report: report,
+          analytics: analytics,
+          reportMessage: 'Email account linking failed',
+          analyticsEvent: 'email_account_linking_failed',
+        );
+      } finally {
+        if (ref.mounted) state = result;
+      }
     }
+
+    if (ref.mounted) state = result;
   }
 
   /// Ends a failed signup or link: reports [error] once and rethrows it, or
@@ -438,8 +449,6 @@ class EmailAuthService extends _$EmailAuthService {
       report.info('Email signup complete', area: 'auth');
     });
 
-    if (ref.mounted) state = result;
-
     // Re-throw errors for UI to handle
     if (result.hasError) {
       final error = result.error;
@@ -447,19 +456,30 @@ class EmailAuthService extends _$EmailAuthService {
       // Control-flow signal, not a failure: the account was created and the
       // caller must collect the emailed code. Rethrowing it verbatim is what
       // lets the UI tell "verify me" apart from "creation failed" — the
-      // generic wrapper below would erase that distinction.
-      if (error is EmailVerificationRequiredException) throw error;
+      // generic wrapper below would erase that distinction. The Riverpod net
+      // files it as an `auth.flow` breadcrumb (01-005).
+      if (error is EmailVerificationRequiredException) {
+        if (ref.mounted) state = result;
+        throw error;
+      }
 
-      await _failAccountCreation(
-        error!,
-        result.stackTrace,
-        email: email,
-        report: report,
-        analytics: analytics,
-        reportMessage: 'Email signup failed',
-        analyticsEvent: 'email_signup_failed',
-      );
+      // Report first, then write state (01-005): see [linkEmailAccount].
+      try {
+        await _failAccountCreation(
+          error!,
+          result.stackTrace,
+          email: email,
+          report: report,
+          analytics: analytics,
+          reportMessage: 'Email signup failed',
+          analyticsEvent: 'email_signup_failed',
+        );
+      } finally {
+        if (ref.mounted) state = result;
+      }
     }
+
+    if (ref.mounted) state = result;
   }
 
   /// Sign in with email/password
@@ -483,11 +503,17 @@ class EmailAuthService extends _$EmailAuthService {
   /// set a password on an anonymous user whose email is still unconfirmed, so
   /// [linkEmailAccount] defers it to here and it is applied immediately after
   /// the code is accepted.
+  ///
+  /// [codeSentAt] is when the code being entered was sent (the verify screen
+  /// records it). GoTrue refuses a wrong and a stale code alike, so the
+  /// code's age against [signupCodeLifetime] decides which one the athlete
+  /// is told (01-002). Null reads a refusal as wrong.
   Future<void> verifyEmailOtp({
     required String email,
     required String token,
     OtpType type = OtpType.signup,
     String? pendingPassword,
+    DateTime? codeSentAt,
   }) async {
     final report = _report;
     final supabase = _supabase;
@@ -498,7 +524,7 @@ class EmailAuthService extends _$EmailAuthService {
       final code = token.trim();
       if (code.length != 6 || int.tryParse(code) == null) {
         throw const InvalidVerificationCodeException(
-          'Enter the 6-digit code from your email.',
+          VerificationCodeRejection.malformed,
         );
       }
 
@@ -520,19 +546,26 @@ class EmailAuthService extends _$EmailAuthService {
           type: type,
         );
       } on AuthApiException catch (e) {
-        // GoTrue reports a wrong and a stale code with one answer; surface
-        // something a user can act on instead (see fromGoTrue).
+        // A 5xx is GoTrue failing, not the code being refused: it stays a
+        // real failure and is reported below.
+        final status = int.tryParse(e.statusCode ?? '');
+        if (status != null && status >= 500) rethrow;
+        // GoTrue reports a wrong and a stale code with one answer; the code's
+        // age tells them apart (see fromGoTrue).
         throw InvalidVerificationCodeException.fromGoTrue(
           code: e.code,
           statusCode: e.statusCode,
           message: e.message,
+          codeAge: codeSentAt == null
+              ? null
+              : DateTime.now().difference(codeSentAt),
         );
       }
 
       if (response.session == null) {
-        throw const InvalidVerificationCodeException(
-          'Could not verify that code. Please try again.',
-        );
+        // GoTrue accepted the code but issued no session: not the athlete's
+        // doing, so a real failure (the screen shows its generic line).
+        throw StateError('verifyOTP accepted the code but returned no session');
       }
 
       ref.invalidate(userIdProvider);
@@ -602,13 +635,25 @@ class EmailAuthService extends _$EmailAuthService {
       }
     });
 
-    if (ref.mounted) state = result;
-
     if (result.hasError) {
       final error = result.error!;
-      report.fault(error, area: 'auth', message: 'Email verification failed');
-      throw error;
+      // A refused code is the athlete's turn, not a failure (01-005): the
+      // screen notes it and the Riverpod net leaves an `auth.flow`
+      // breadcrumb. Anything else is reported first, then written to state,
+      // so the one event carries `area: auth`.
+      if (error is! AuthFlowOutcome) {
+        report.fault(
+          error,
+          stackTrace: result.stackTrace,
+          area: 'auth',
+          message: 'Email verification failed',
+        );
+      }
+      if (ref.mounted) state = result;
+      Error.throwWithStackTrace(error, result.stackTrace ?? StackTrace.current);
     }
+
+    if (ref.mounted) state = result;
   }
 
   /// Re-send the signup verification code.
@@ -621,18 +666,29 @@ class EmailAuthService extends _$EmailAuthService {
   /// Its 429 is raised as [ResendRateLimitedException] with the wait its
   /// message names, so the screen counts that down instead of saying the
   /// resend failed (testing-wave 121-001, 124-004).
+  ///
+  /// Every other failure, a network one included, comes back as
+  /// [VerificationResendFailedException], never as an escaped error (01-003).
+  /// [lastSentAt] is when the previous code went out; the note carries the
+  /// gap, so a resend that answered 200 but sent nothing can be lined up
+  /// against the mailbox.
+  ///
+  /// Running twice at once: the screen disables Resend while it counts down,
+  /// and GoTrue answers the second request inside its gap with a 429, which
+  /// becomes a countdown. Nothing here holds state between calls.
   Future<void> resendVerificationCode({
     required String email,
     OtpType type = OtpType.signup,
+    DateTime? lastSentAt,
   }) async {
     final report = _report;
     final supabase = _supabase;
     final analytics = _analytics;
     try {
+      // OtpType.emailChange belongs to the anonymous upgrade and goes with
+      // its removal (Lee's ruling 2026-10-07); left as it is.
       await supabase.auth.resend(type: type, email: email.trim());
-      await analytics.track('email_verification_resent');
-      report.info('Verification code resent', area: 'auth');
-    } on AuthApiException catch (e) {
+    } on AuthApiException catch (e, st) {
       if (ResendRateLimitedException.matches(
         code: e.code,
         statusCode: e.statusCode,
@@ -643,10 +699,37 @@ class EmailAuthService extends _$EmailAuthService {
               ResendRateLimitedException.serverGapSeconds,
         );
       }
-      throw const InvalidVerificationCodeException(
-        'Could not resend the code. Please try again.',
+      // GoTrue answered and refused: worth a warning event (D9).
+      await report.degraded(
+        e,
+        stackTrace: st,
+        area: 'auth',
+        message: 'Verification code resend refused',
+        extra: {'otp_type': type.name},
       );
+      throw VerificationResendFailedException(e);
+    } catch (e) {
+      // No connection (AuthRetryableFetchException, SocketException,
+      // ClientException) or anything else: the screen says the resend
+      // failed, and the note records it (D9).
+      await report.note(
+        'Verification code resend failed',
+        area: 'auth',
+        data: {'otp_type': type.name, 'error_type': e.runtimeType.toString()},
+      );
+      throw VerificationResendFailedException(e);
     }
+    await analytics.track('email_verification_resent');
+    await report.note(
+      'Verification code resent',
+      area: 'auth',
+      data: {
+        'otp_type': type.name,
+        'seconds_since_last_send': lastSentAt == null
+            ? null
+            : DateTime.now().difference(lastSentAt).inSeconds,
+      },
+    );
   }
 
   /// Ask the server to delete a fresh signup the athlete walked away from

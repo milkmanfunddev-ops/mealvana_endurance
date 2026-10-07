@@ -44,6 +44,7 @@ class _FakeEmailAuthService extends EmailAuthService {
   Future<void> resendVerificationCode({
     required String email,
     OtpType type = OtpType.signup,
+    DateTime? lastSentAt,
   }) async {
     spy.resends++;
     if (spy.resendError != null) throw spy.resendError!;
@@ -55,11 +56,13 @@ class _FakeEmailAuthService extends EmailAuthService {
     required String token,
     OtpType type = OtpType.signup,
     String? pendingPassword,
+    DateTime? codeSentAt,
   }) async {
     throw InvalidVerificationCodeException.fromGoTrue(
       code: 'otp_expired',
       statusCode: '403',
       message: 'Token has expired or is invalid',
+      codeAge: DateTime.now().difference(codeSentAt!),
     );
   }
 
@@ -161,11 +164,11 @@ void main() {
         ),
       ]);
 
-      // Before any Resend: GoTrue's answer as it stands (32-001).
+      // Before any Resend: a young code GoTrue refuses is wrong (01-002).
       await tester.enterText(find.byType(TextField), '111111');
       await tester.pumpAndSettle();
       expect(
-        find.text(InvalidVerificationCodeException.wrongOrExpiredText),
+        find.text(_content['auth.verify_email.error_wrong_code']!),
         findsOneWidget,
       );
 
