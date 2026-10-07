@@ -73,9 +73,10 @@ class _WorkoutCardState extends State<WorkoutCard> {
   /// either direction — and never shows a reveal.
   static const double _verifiedNudgeMax = 8;
 
-  /// Left-swipe (skip) and any translation at all: only a verified card is
-  /// fully inert (G3).
-  bool get _canToggle => !widget.data.isVerified;
+  /// Left-swipe (skip) and any translation at all: a verified card is fully
+  /// inert (G3), and so is a platform-reported completion (final for the
+  /// athlete, Lee 2026-09-25).
+  bool get _canToggle => !widget.data.isLocked;
 
   /// Right-swipe (mark done / undone): additionally suppressed on a
   /// planned/skipped card whose day is in the future — a workout that hasn't
