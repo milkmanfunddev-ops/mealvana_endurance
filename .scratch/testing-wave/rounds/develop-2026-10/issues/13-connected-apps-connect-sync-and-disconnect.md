@@ -20,8 +20,8 @@ every screen, every problem a Finding, nothing fixed.
 
 **Accounts:** one new `lee+e2e-13-<UTC time>@rightpathprogramming.com` (`CRED new`). Provider logins
 come only from `CRED list`: look for a section per provider (Garmin, TrainingPeaks, Final Surge, V.O2,
-Runna calendar URL). Use a provider login only if the credentials file marks it as a test athlete;
-never Lee's own training accounts. A provider with no login: one followup-test Finding ("needs a
+Runna calendar URL). Use a provider login only if the credentials file marks it as a test athlete or as
+authorised for testing (Lee, 2026-10-07: the TrainingPeaks login `lee.tri` is); never any other of Lee's own accounts. A provider with no login: one followup-test Finding ("needs a
 <provider> test login in the credentials file") and move on. Provider API credentials for server-side
 checks are in `secrets/integration_test.env` (main clone): never open, cat or print it; if a check needs
 a value, load it into a variable without echoing, the way the runbook loads the Management token.

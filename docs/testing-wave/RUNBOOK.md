@@ -91,17 +91,19 @@ so.
 
 ## 5. Drive the app
 
-- Read the screen with idb: `idb ui describe-all --udid UDID` for the element list, `xcrun simctl io
-  UDID screenshot` for the picture. With two wave simulators up, the mobile MCP's element list has
-  returned the other simulator's screen (#39), so never trust it for what is on `UDID`. Tap and type
-  with the mobile MCP on `UDID`; `idb ui tap X Y --udid UDID` is the fallback.
+- Drive with idb (Lee, 2026-10-07, #103): `idb ui describe-all --udid UDID` for the element list,
+  `xcrun simctl io UDID screenshot` for the picture, `idb ui tap X Y --udid UDID` to tap, `idb ui
+  text` to type. The mobile MCP stays an option for what idb lacks (screen recording, tapping by
+  element reference, batched commands, device logs and crash lists), on `UDID` only: its helper
+  failed to start on two of three clones in wave 1 and, with two simulators up, its element list
+  has returned the other simulator's screen (#39), so never trust it for what is on `UDID`.
 - Scroll with slow idb drags (`idb ui swipe X1 Y1 X2 Y2 --duration 1.2 --udid UDID`) whenever the
   run counts rows or list items: the mobile MCP's swipe flings past them (#43).
 - The dev overlay buttons (red accessibility, blue testing tools, x ~367, y ~695 and ~756) sit on
   the Timeline rows' ⋯ and the Recipes rows' +: scroll a row out of y 650-790 before tapping its
   menu, and read the tap target back from the element list (#98).
-- Type text with the mobile MCP; `idb ui text "<text>" --udid UDID` is the fallback (it once
-  mangled a long address, #35). After `idb ui text`, wait 2 s before tapping the next field and
+- Type text with `idb ui text "<text>" --udid UDID` (it once mangled a long address, #35; the
+  mobile MCP's `type_keys` is the alternative when it does). After `idb ui text`, wait 2 s before tapping the next field and
   read the value back: a tap sooner drops the tail. Backspace deletes forward from the tap point,
   so clear a prefilled field with forward delete (`idb ui key 76`) from its start. zsh does not
   split `$var` (`set -- $t` and `F="node …"; $F` both fail), so wrap a repeated command in a shell
@@ -361,7 +363,10 @@ the above and follows this instead:
    stale generated files (#71).
 7. Deploy once, to dev, from the final merged tree: SQL first, then every function the wave
    changed (#55). Agents deploy nothing. One real read for any changed PostgREST select (#57).
-8. Land with a fast-forward (check `merge-base --is-ancestor` before touching any dirty file, #61)
+8. Close-out names which of the wave's fixes touch code another branch shares and which branch owes
+   them; the owing branch's next round gets a backport ticket (#105, Lee 2026-10-07; ticket 29 is the
+   first).
+9. Land with a fast-forward (check `merge-base --is-ancestor` before touching any dirty file, #61)
    and commit. Pushing follows CLAUDE.md and waits for Lee's go.
 
 A fix ticket closes when its retest passes on a simulator in the next wave.
@@ -380,6 +385,8 @@ A fix ticket closes when its retest passes on a simulator in the next wave.
    wontfix: the end of the round). `COST status WAVE` shows what the wave spent. Triage follows
    `SPEC.md`, "Triage": with Lee in the terminal, one Finding at a time, each ruling written to
    `ROUND/TRIAGE.md` and the Finding's status line.
+   - Findings with one cause (the same screen, the same root, one fix) are one question, not one each
+     (#107): wave 1 needed 25 questions for 56 Findings that way.
    - A retest ticket holds about ten checks (Findings to retest plus follow-up tests), grouped by
      screen or area and by the account and starting state they need; more checks become more
      tickets (Lee, 2026-09-25, #78).

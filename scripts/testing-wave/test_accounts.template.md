@@ -34,6 +34,20 @@ unchanged). Never paste a password into a Finding, a commit, a report or a conso
 | Address | Password | Region | Notes |
 |---|---|---|---|
 
+## Provider test logins (dev)
+
+One `## ` section per provider the Connected Apps screen can link (cred.mjs reads `## ` headings only), kept here so tickets find them with
+`cred.mjs list` and type them with `cred.mjs type <login> --udid UDID` into the provider's web
+sign-in sheet. The Address cell holds the provider's username when it is not an email.
+
+## TrainingPeaks test login (dev, Lee's, authorised for testing)
+
+| Field | Value |
+|---|---|
+| Address | <TrainingPeaks username> |
+| Password | <fill in> |
+| Notes | Username, not an email. Lee authorised it for connect/sync/disconnect tests (2026-10-07). Used by the connected-apps tickets and to reconnect the dev admin's TrainingPeaks link. |
+
 ## Created accounts
 
 One row per account an agent signs up, added the moment signup succeeds and updated when its

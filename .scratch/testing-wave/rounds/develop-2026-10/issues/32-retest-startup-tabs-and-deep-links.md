@@ -150,3 +150,14 @@ unless a step says two slashes. iOS asks "Open in Endurance Dev?" the first time
 - [ ] `netcut.sh off SCRATCH`; background processes stopped by PID, log stream stopped, app terminated, `LOCK release slot testing-wave-32`. The simulator is left for the wave lead to drop.
 - [ ] Console redacted (runbook § 9.4); only `console-redacted.log` is kept.
 - [ ] `findings/32-*.md` and `runs/32/` committed on the ticket branch, explicit paths only.
+
+## Added 2026-10-07 (Lee): the test account's dead integrations
+
+`test@test.com` carries dead TrainingPeaks and V.O2 refresh tokens, so every run logs their failures
+as known noise. Lee ruled that connecting and disconnecting integrations is part of testing. On this
+account, after the other checks: Settings → Connected Apps: disconnect V.O2 (no test login exists);
+disconnect TrainingPeaks, then connect it again with the TrainingPeaks test login from `CRED list`
+(`cred.mjs type lee.tri --udid UDID` into the web sign-in sheet, runbook step 5's OAuth note), run
+Sync Now, and confirm the `integrations` row is live (`status`, `requires_reauth`, `last_sync_at`;
+SELECT with named columns, never the token columns) and that a relaunch logs no refresh failure.
+Both writes are named here and allowed. Evidence: screenshots and `db-integrations-*.txt`.

@@ -19,7 +19,9 @@ Their dates come from the wave each entry names.
 
 ## Open
 
-- 2026-09-25 · mealplanning-2026-09 · open · **#82 a new timeout made retried writes unsafe (wave 33).** Ticket 129 added a 20 s transport
+## Done
+
+- 2026-09-25 · mealplanning-2026-09 · done · **#82 a new timeout made retried writes unsafe (wave 33).** Ticket 129 added a 20 s transport
   timeout that reports "needs a connection". The edge function keeps running after the app hangs
   up, so a slow `log_from_plan`, `pick_meals` or `save_meal` could land while the screen said it
   failed, and a second tap wrote it twice. The agents' tests passed; the review caught it. The lead
@@ -29,13 +31,15 @@ Their dates come from the wave each entry names.
   the server call is idempotent; a non-idempotent one gets a key or no timeout.
   Ruled 2026-09-26 (Lee): the server skips a repeated `log_from_plan`, `pick_meals` or `save_meal` by a phone-made id (ticket 134); the runbook rule goes in with ticket 142.
   Rule in the runbook 09-26 (ticket 142, after-the-wave step 3); stays open for ticket 134's server change.
-- 2026-09-26 · mealplanning-2026-09 · open · **#98 the dev overlay buttons cover row menus (wave 40, and 100-001).** The red accessibility and
+  Closed 2026-10-07 (Lee): the process rule is in the runbook; the server idempotency key is mealplanning ticket 134's, app work, not this ledger's.
+- 2026-09-26 · mealplanning-2026-09 · done · **#98 the dev overlay buttons cover row menus (wave 40, and 100-001).** The red accessibility and
   blue "Open testing tools" buttons (x ~367, y ~695 and ~756) sit on the timeline rows' ⋯ and the
   Recipes rows' +; 113 made three stray taps. Suggested fix: runbook step 5 says to scroll a row
   out of y 650-790 before tapping its ⋯.
   Ruled 2026-09-26 (Lee): the dev buttons fold into one small button at the top edge (ticket 141).
   2026-10-07 (develop-2026-10, wave 1): the runbook line (step 5, scroll the row out of y 650-790) is in; the folded button (ticket 141) is a mealplanning change not on develop-next, so the item stays open until Phase B merges it.
-- 2026-09-26 · mealplanning-2026-09 · open · **#100 the password's last character still showed 3 s after `CRED type` (ticket 142's proof).**
+  Closed 2026-10-07 (Lee): ticket 29 backports the folded button (mealplanning 141); retest 32 taps the row menus.
+- 2026-09-26 · mealplanning-2026-09 · done · **#100 the password's last character still showed 3 s after `CRED type` (ticket 142's proof).**
   Even with the new 2 s wait, a screenshot 0.2 s after tapping Log In (about 3 s after typing) showed
   the last character of the throwaway's password next to the dots, on the "Logging in..." screen.
   It was the fixed `!` every `CRED new` password ends with, so nothing secret showed, and the file
@@ -45,33 +49,42 @@ Their dates come from the wave each entry names.
   screenshot of a password field right after a submit tap may carry the last character, so take
   the next screenshot after the screen changes.
   2026-10-06 (develop-2026-10): `docs/testing-wave/RUNBOOK.md` step 5 now carries the line; status left for the lead to set after a run confirms it.
-- 2026-10-06 · develop-2026-10 · open · **#101 the notification-testing skill is missing (round setup).**
+  Closed 2026-10-07: wave 1's three signups showed no password character in any screenshot; the runbook line holds.
+- 2026-10-06 · develop-2026-10 · done · **#101 the notification-testing skill is missing (round setup).**
   `.claude/skills/notification-testing/` is missing on develop-next although CLAUDE.md requires it
   before touching notifications; restore or fix CLAUDE.md. A round ticket that reaches nudges or
   push surfaces has nothing to read first until then.
   2026-10-07 (develop-2026-10, wave 1): the skill is in no branch's history (`git log --all -- .claude/skills/notification-testing` is empty) and `../ops/docs/messaging-relay-and-testing.md` does not exist on this Mac; CLAUDE.md points at files that were never committed. Ticket 17 waits for Lee to say where they live (or for CLAUDE.md to drop the rule).
-
+  Closed 2026-10-07 (Lee): the rule is dropped from CLAUDE.md; the skill and the fact sheet never existed in this repo's history. Tickets 17, 22 and 28 read the notification code itself first.
 - 2026-10-07 · develop-2026-10 · done · **#102 `scripts/edge_logs.sh` passed silently for a month (wave 1, 02-004, 01-013).** Supabase removed
   the `logs.all` endpoint; the script's formatter read the "endpoint removed" answer as zero rows and exited 0,
   so every run's edge-log check since then was empty and green. Ruled 2026-10-07 (Lee): edge-function logs are
   read through the Supabase MCP's `query_logs` (ClickHouse SQL on the `logs` table, by `source`) and the script
   is deleted (fix ticket 25). Lesson: a log tool must fail loud on any answer that is not rows, and the lead
   pulls one whole-wave extract itself (`runs/wave-1-edge-logs.txt` is the first).
-- 2026-10-07 · develop-2026-10 · open · **#103 the mobile MCP helper does not start on a wave simulator (wave 1, 02-013; also #50 again).**
+- 2026-10-07 · develop-2026-10 · done · **#103 the mobile MCP helper does not start on a wave simulator (wave 1, 02-013; also #50 again).**
   On two of three simulators the first MCP call timed out waiting for WebDriverAgent and left SpringBoard in
   front; ticket 02 ran whole on idb (`idb ui tap/text/describe-all`). Suggested fix: the runbook makes idb the
   primary driver and the MCP optional; `simulator.mjs claim` warms the helper (one `mobile_take_screenshot`)
   before handing the device over, or says it could not.
+  Closed 2026-10-07 (Lee): idb drives the wave simulators (runbook step 5); the mobile MCP stays an option for what idb lacks (recording, element refs, batching, device logs), never the thing a run depends on.
 - 2026-10-07 · develop-2026-10 · done · **#104 deep links need the three-slash form (wave 1, 08-022).**
   `com.milkman.mealvanaendurance://athlete/feedback` reads `athlete` as the host and lands on Page Not Found;
   `com.milkman.mealvanaendurance:///athlete/feedback` (and the one-slash form) work. Runbook step 5 now says so.
-- 2026-10-07 · develop-2026-10 · open · **#105 fixes made on one branch's round never reach the branches that share the code (wave 1, 08-025).**
+- 2026-10-07 · develop-2026-10 · done · **#105 fixes made on one branch's round never reach the branches that share the code (wave 1, 08-025).**
   All 71 fixes of round mealplanning-2026-09 live only on `mealplanning`; about 25 touch code `develop` has, and
   wave 1 re-found four of them (01-002, 08-008, 08-021, 02-011). Ruled 2026-10-07 (Lee): a backport ticket (29)
   carries the shared-code fixes to develop-next now. Suggested rule: when a fix wave lands on a branch, its
   close-out names which fixes touch shared code and which branch owes them.
-
-## Done
+  Closed 2026-10-07 (Lee): rule adopted, runbook fix-wave step 8; ticket 29 is the first backport.
+- 2026-10-07 · develop-2026-10 · done · **#106 the dev admin account carries dead integration tokens (wave 1, every run).** TrainingPeaks and
+  V.O2 refresh failures on `test@test.com` are "known noise" in every run and would hide a real integration error.
+  Ruled 2026-10-07 (Lee): connecting and disconnecting integrations is part of testing; the TrainingPeaks test login
+  is stored in `secrets/test_accounts.md` (`cred.mjs list`, section "TrainingPeaks test login"), and retest 32
+  disconnects both and reconnects TrainingPeaks on the test account. `secrets/test_accounts.md` is the one place
+  tickets look for any test login; the template lists its sections.
+- 2026-10-07 · develop-2026-10 · done · **#107 same-cause Findings are triaged as one question (wave 1).** 56 Findings took 25 questions
+  once grouped by cause (credits, orphan screens, Jade, the launch-trail dialog); runbook after-the-wave step 3 now says so.
 
 - 2026-09-26 · mealplanning-2026-09 · done · **#87 a run's account delete removed the state the next ticket expected (wave 36).** 118's
   ticket said its DEVCOACH30 redeem would leave a pending pairing for 122's 11-009; deleting 118's

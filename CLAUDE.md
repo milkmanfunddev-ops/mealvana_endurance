@@ -32,10 +32,6 @@ mealvana_endurance/
 ```
 
 ## Non-Negotiable Rules
-- TOUCHING anything that notifies, schedules, or deep-links — writing code OR testing it, and
-  including the startup chain — invoke the `notification-testing` skill FIRST
-  (`.claude/skills/notification-testing/`) and read the push-stack fact sheet
-  `ops/docs/messaging-relay-and-testing.md` before writing.
 - **D9 (ratified 2026-10-03): silent paths must write down what they did.** Any early return,
   swallowed error, skipped step or guard bail in startup, sync, notification/push or
   payment paths — one whose failure no user would notice — must record that it happened in a
