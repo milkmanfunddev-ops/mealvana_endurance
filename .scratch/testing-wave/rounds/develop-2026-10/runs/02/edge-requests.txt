@@ -1,0 +1,13 @@
+# function_edge_logs 2026-10-07T11:03Z..2026-10-07T11:13:00Z (new analytics/endpoints/logs, logs table; edge_logs.sh broken, see Finding)
+{"event_message": "POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/calculate-daily-macros-v6", "ms": "824", "timestamp": "2026-10-07T11:06:43.713000"}
+{"event_message": "POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/sync-all-data", "ms": "1375", "timestamp": "2026-10-07T11:07:18.519000"}
+{"event_message": "POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/calculate-daily-macros-v6", "ms": "797", "timestamp": "2026-10-07T11:07:20.660000"}
+{"event_message": "POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/calculate-daily-macros-v6", "ms": "475", "timestamp": "2026-10-07T11:07:23.526000"}
+{"event_message": "POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/ensure-credits", "ms": "1083", "timestamp": "2026-10-07T11:07:56.064000"}
+{"event_message": "POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/describe-meal", "ms": "7364", "timestamp": "2026-10-07T11:08:38.862000"}
+{"event_message": "POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/sync-all-data", "ms": "1355", "timestamp": "2026-10-07T11:09:29.336000"}
+{"event_message": "POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/calculate-daily-macros-v6", "ms": "549", "timestamp": "2026-10-07T11:11:05.636000"}
+{"event_message": "POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/sync-all-data", "ms": "631", "timestamp": "2026-10-07T11:11:06.431000"}
+{"event_message": "POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/calculate-daily-macros-v6", "ms": "365", "timestamp": "2026-10-07T11:11:07.571000"}
+{"event_message": "POST | 200 | https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/delete-user", "ms": "1931", "timestamp": "2026-10-07T11:12:54.513000"}
+(11 rows)

@@ -1,0 +1,58 @@
+Wed Oct  7 11:04:35 UTC 2026
+-- meal_logs today
+[]
+-- wallet
+[
+    {
+        "balance": 49897436,
+        "free_period": "2026-09",
+        "allowance": 3943863,
+        "allowance_monthly": 6000000,
+        "allowance_expires_at": "2026-10-15 19:18:12.98481+00",
+        "unit": "usd_micro",
+        "updated_at": "2026-09-30 13:38:33.197385+00"
+    }
+]
+-- ledger newest 5
+[
+    {
+        "delta": -740,
+        "reason": "settle_usage",
+        "ref": "5a4de1a8-f311-4496-b533-8796a8c6c6fa",
+        "balance_after": 49897436,
+        "unit": "usd_micro",
+        "created_at": "2026-09-30 13:38:33.197385+00"
+    },
+    {
+        "delta": -13000,
+        "reason": "reserve_usage",
+        "ref": "5a4de1a8-f311-4496-b533-8796a8c6c6fa",
+        "balance_after": 49898176,
+        "unit": "usd_micro",
+        "created_at": "2026-09-30 13:38:23.122602+00"
+    },
+    {
+        "delta": -2689,
+        "reason": "settle_usage",
+        "ref": "d69c5519-a510-444c-921b-162b223d3b44",
+        "balance_after": 49911176,
+        "unit": "usd_micro",
+        "created_at": "2026-09-30 13:38:21.626691+00"
+    },
+    {
+        "delta": -8000,
+        "reason": "reserve_usage",
+        "ref": "d69c5519-a510-444c-921b-162b223d3b44",
+        "balance_after": 49913865,
+        "unit": "usd_micro",
+        "created_at": "2026-09-30 13:38:12.211468+00"
+    },
+    {
+        "delta": 9787,
+        "reason": "settle_usage",
+        "ref": "74288aef-463d-4090-9255-13f550e06f52",
+        "balance_after": 49921865,
+        "unit": "usd_micro",
+        "created_at": "2026-09-30 13:38:11.338071+00"
+    }
+]
