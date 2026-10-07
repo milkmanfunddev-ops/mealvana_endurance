@@ -1,6 +1,6 @@
 # 02: Logging a meal by describing it
 
-**Status:** ready (round develop-2026-10)
+**Status:** in-progress (wave 1, 2026-10-07)
 **Labels:** test, round:develop-2026-10, area:meal-logging, ai-call
 **Branch:** `develop-next`
 **Source:** testing-wave 23 (`origin/mealplanning`)

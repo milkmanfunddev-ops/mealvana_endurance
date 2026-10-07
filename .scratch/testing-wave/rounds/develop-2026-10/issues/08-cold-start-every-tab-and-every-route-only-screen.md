@@ -1,6 +1,6 @@
 # 08: Cold start: leftover data, every tab, and every route-only screen
 
-**Status:** ready (round develop-2026-10)
+**Status:** in-progress (wave 1, 2026-10-07)
 **Labels:** test, round:develop-2026-10, area:startup, read-only
 **Branch:** `develop-next`
 **Source:** testing-wave 29 (`origin/mealplanning`), plus the cold start the branch-split HANDOFF owes,

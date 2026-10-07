@@ -1,6 +1,6 @@
 # 01: Delete account, plus-address signup and the account sweep
 
-**Status:** ready (round develop-2026-10)
+**Status:** in-progress (wave 1, 2026-10-07)
 **Labels:** test, round:develop-2026-10, area:account
 **Branch:** `develop-next` (worktree per ticket, branched from the round's base)
 **Source:** testing-wave 02 (`origin/mealplanning`), paywall-menu steps dropped
