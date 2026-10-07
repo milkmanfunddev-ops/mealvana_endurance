@@ -1,0 +1,107 @@
+#!/usr/bin/env node
+// Testing-wave lock: a slot semaphore (three runs at once, one per wave simulator). There is no build lock (Lee, 2026-09-24).
+//
+// A claim is {owner, since}. A claim older than its lock's stale timeout belongs to an agent
+// that died without releasing and is dropped on the next claim. Claiming again as the same
+// owner keeps the one claim. The numbers come from the spec ("Parallelism for this feature").
+//
+// CLI (state in $TESTING_WAVE_STATE, default <tmpdir>/mealvana-testing-wave):
+//   node lock.mjs claim slot <owner> [--wait <minutes>] [--stale <minutes>]
+//        -> exit 0 held, exit 3 still full after the wait (prints who holds it)
+//   node lock.mjs release slot <owner>
+//   node lock.mjs list
+
+import { resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { stateDir, sleepSync, withJson, flag, minutesFlag } from './state.mjs';
+
+const MIN = 60_000;
+export const LOCKS = {
+  // A run holds its slot for the whole scenario; four hours without a release means it died.
+  slot: { cap: 3, staleMs: 240 * MIN, waitMs: 90 * MIN },
+};
+const FILE = 'locks.json';
+
+function lockConfig(name) {
+  const s = LOCKS[name];
+  if (!s) throw new Error(`no lock "${name}": use ${Object.keys(LOCKS).join(' or ')}`);
+  return s;
+}
+
+const isStale = (h, t, staleMs) => t - Date.parse(h.since) > staleMs;
+
+function tryOnce(name, owner, { dir, now, staleMs, cap }) {
+  return withJson(dir, FILE, all => {
+    const t = now();
+    const list = all[name] ?? [];
+    const dropped = list.filter(h => isStale(h, t, staleMs));
+    const live = list.filter(h => !dropped.includes(h));
+    all[name] = live;
+    const mine = live.find(h => h.owner === owner);
+    if (mine) {
+      // Claiming again is a heartbeat: a long run that re-claims never goes stale under itself.
+      mine.since = new Date(t).toISOString();
+      return { acquired: true, reused: true, owner, dropped, held: live };
+    }
+    if (live.length >= cap) return { acquired: false, owner, dropped, held: live };
+    live.push({ owner, since: new Date(t).toISOString() });
+    return { acquired: true, reused: false, owner, dropped, held: live };
+  });
+}
+
+/** Claim a place in the lock, waiting up to `waitMs` (polling every `pollMs`). */
+export function acquire(name, owner, { dir = stateDir(), now = Date.now, sleep = sleepSync, waitMs = 0, pollMs = 30_000, staleMs, cap } = {}) {
+  if (!owner) throw new Error('a claim needs an owner (the ticket, e.g. testing-wave-02)');
+  const s = lockConfig(name);
+  const opts = { dir, now, staleMs: staleMs ?? s.staleMs, cap: cap ?? s.cap };
+  const start = now();
+  const dropped = [];
+  for (;;) {
+    const r = tryOnce(name, owner, opts);
+    dropped.push(...r.dropped);
+    if (r.acquired) return { ...r, dropped };
+    const left = start + waitMs - now();
+    if (left <= 0) return { ...r, dropped, waitedMs: now() - start };
+    sleep(Math.min(pollMs, left));
+  }
+}
+
+export function release(name, owner, { dir = stateDir() } = {}) {
+  lockConfig(name);
+  return withJson(dir, FILE, all => {
+    const list = all[name] ?? [];
+    all[name] = list.filter(h => h.owner !== owner);
+    return { released: all[name].length < list.length, owner };
+  });
+}
+
+/** Who holds the lock now, stale claims included (they go on the next claim). */
+export function holders(name, { dir = stateDir(), now = Date.now, staleMs } = {}) {
+  const s = lockConfig(name);
+  return withJson(dir, FILE, all => (all[name] ?? []).map(h => ({ ...h, stale: isStale(h, now(), staleMs ?? s.staleMs) })));
+}
+
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  const args = process.argv.slice(2);
+  const cmd = args.shift();
+  const usage = () => { process.stderr.write('usage: lock.mjs claim slot <owner> [--wait <minutes>] [--stale <minutes>] | release slot <owner> | list\n'); process.exit(64); };
+  const print = o => process.stdout.write(JSON.stringify(o, null, 2) + '\n');
+  if (cmd === 'claim') {
+    let waitMs, staleMs;
+    try {
+      waitMs = minutesFlag(flag(args, '--wait'), '--wait');
+      staleMs = minutesFlag(flag(args, '--stale'), '--stale');
+    } catch (e) { process.stderr.write(e.message + '\n'); process.exit(64); }
+    const [name, owner] = args;
+    if (!LOCKS[name] || !owner) usage();
+    const r = acquire(name, owner, { waitMs: waitMs ?? LOCKS[name].waitMs, staleMs });
+    print(r);
+    process.exit(r.acquired ? 0 : 3);
+  } else if (cmd === 'release') {
+    const [name, owner] = args;
+    if (!LOCKS[name] || !owner) usage();
+    print(release(name, owner));
+  } else if (cmd === 'list') {
+    print(Object.fromEntries(Object.keys(LOCKS).map(n => [n, { cap: LOCKS[n].cap, held: holders(n) }])));
+  } else usage();
+}

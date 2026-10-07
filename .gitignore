@@ -1,6 +1,7 @@
 # Miscellaneous
 *.class
 *.log
+!.scratch/testing-wave/rounds/*/runs/**/*.log
 *.pyc
 *.swp
 .DS_Store

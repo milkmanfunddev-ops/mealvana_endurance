@@ -1,0 +1,426 @@
+# Testing-wave improvements
+
+Ways to make the testing process itself cheaper or more reliable: the tools, the runbook, the
+prompts, the wave lead's routine. App bugs never go here; they are Findings, and `BUGS.md` lists
+them.
+
+**How to use it.** The wave lead reads this file before a wave, fixes or raises one or two open
+items, and appends what the wave taught after it. Ask Lee which items are worth the time.
+
+**Append-only.** Nobody deletes or rewrites an entry. Each starts with
+`<date> · <round> · <status>`, where status is `open`, `done` or `partly done`. A new entry goes at
+the end of Open with the next free `#` number. When one is fixed, move it to Done, set its status,
+and add a line saying when, in which round, and with which commit or runbook step.
+
+Entries from round `mealplanning-2026-09` were written on the `mealplanning` branch. Their wave and
+ticket numbers belong to that round, their commit hashes are `mealplanning` commits, and some name
+tools that do not exist on every branch (`sync.mjs wave`, Patrol flows, Test Store, Vana, Kroger).
+Their dates come from the wave each entry names.
+
+## Open
+
+- 2026-09-25 · mealplanning-2026-09 · open · **#82 a new timeout made retried writes unsafe (wave 33).** Ticket 129 added a 20 s transport
+  timeout that reports "needs a connection". The edge function keeps running after the app hangs
+  up, so a slow `log_from_plan`, `pick_meals` or `save_meal` could land while the screen said it
+  failed, and a second tap wrote it twice. The agents' tests passed; the review caught it. The lead
+  fixed it (`7fb086ec`): a timed-out write now pulls the plan before rethrowing. That narrows the
+  race but does not close it; only an idempotency key on those actions does. Suggested fix: a
+  ticket that adds a timeout or a retry to a write names each write it covers and says whether
+  the server call is idempotent; a non-idempotent one gets a key or no timeout.
+  Ruled 2026-09-26 (Lee): the server skips a repeated `log_from_plan`, `pick_meals` or `save_meal` by a phone-made id (ticket 134); the runbook rule goes in with ticket 142.
+  Rule in the runbook 09-26 (ticket 142, after-the-wave step 3); stays open for ticket 134's server change.
+- 2026-09-26 · mealplanning-2026-09 · open · **#98 the dev overlay buttons cover row menus (wave 40, and 100-001).** The red accessibility and
+  blue "Open testing tools" buttons (x ~367, y ~695 and ~756) sit on the timeline rows' ⋯ and the
+  Recipes rows' +; 113 made three stray taps. Suggested fix: runbook step 5 says to scroll a row
+  out of y 650-790 before tapping its ⋯.
+  Ruled 2026-09-26 (Lee): the dev buttons fold into one small button at the top edge (ticket 141).
+- 2026-09-26 · mealplanning-2026-09 · open · **#100 the password's last character still showed 3 s after `CRED type` (ticket 142's proof).**
+  Even with the new 2 s wait, a screenshot 0.2 s after tapping Log In (about 3 s after typing) showed
+  the last character of the throwaway's password next to the dots, on the "Logging in..." screen.
+  It was the fixed `!` every `CRED new` password ends with, so nothing secret showed, and the file
+  stayed in scratch. Flutter's obscured field seems to keep the last character until the cursor
+  blinks a few times, which may not happen while the field is disabled. Suggested fix: `CRED new`
+  passwords end in a character that gives nothing away (already true), and the runbook says a
+  screenshot of a password field right after a submit tap may carry the last character, so take
+  the next screenshot after the screen changes.
+  2026-10-06 (develop-2026-10): `docs/testing-wave/RUNBOOK.md` step 5 now carries the line; status left for the lead to set after a run confirms it.
+- 2026-10-06 · develop-2026-10 · open · **#101 the notification-testing skill is missing (round setup).**
+  `.claude/skills/notification-testing/` is missing on develop-next although CLAUDE.md requires it
+  before touching notifications; restore or fix CLAUDE.md. A round ticket that reaches nudges or
+  push surfaces has nothing to read first until then.
+
+## Done
+
+- 2026-09-26 · mealplanning-2026-09 · done · **#87 a run's account delete removed the state the next ticket expected (wave 36).** 118's
+  ticket said its DEVCOACH30 redeem would leave a pending pairing for 122's 11-009; deleting 118's
+  account (runbook step 9) removed the pairing. The lead added a line to 122's Setup: make its
+  own pairing. Suggested fix: never plan one ticket's start state on another run's throwaway
+  account, since step 9 deletes it.
+  Ruled 2026-09-26 (Lee): a seed script writes the start states tests need in a second or two; never another run's account (ticket 142).
+  Done 09-26 (ticket 142): `scripts/testing-wave/seed-states.mjs` writes start states on a run's own `lee+e2e-*` account in about a second (`pairing` 0.93 s, `grant` 1.00 s), dev only; runbook step 6 and lead step 5. No retest after ticket 140 needs a pending pairing (11-009 is moot, 100-008 needs declined/archived), so `pairing` writes `active` by default and takes `--status`.
+- 2026-09-26 · mealplanning-2026-09 · done · **#91 the lead's code map was wrong twice (wave 37).** An Explore agent's map said the Log In
+  chooser has no Apple/Google buttons (it does) and that sign-up with an existing address shows
+  "Account Already Exists" (it does not: Supabase hides it, 124-002). Both agents checked the app
+  and noted it. Suggested fix: a map for the prompt says "from code, unverified" per line, and
+  anything a Finding's verdict hangs on is checked against the screen, not the map.
+  Ruled 2026-09-26 (Lee): maps say "from code, unverified" per line; verdict facts are checked on screen (ticket 142).
+  Done 09-26 (ticket 142): lead step 5 says every code-map line reads "from code, unverified" and verdict facts are checked on screen.
+- 2026-09-26 · mealplanning-2026-09 · done · **#92 no slow network, only a cut one (wave 38).** 122's 12-006 needs a network that answers
+  slowly, to see the admin read give up at two seconds. The agent built a `netcut`-style shim that
+  sleeps inside `connect()`; that blocks Dart's IO threads, the TLS handshakes fail, and the app
+  saw a failing network with a 24-37 s blank start that cannot be blamed on the app (122-009).
+  Suggested fix: a `netcut.sh slow <ms>` that delays after the connect (or a host-side proxy with
+  a fixed latency for the app's traffic only), tested against a known two-second timeout before an
+  agent relies on it.
+  Ruled 2026-09-26 (Lee): build `netcut slow <ms>`, proven against a known 2 s timeout first (ticket 142).
+  Done 09-26 (ticket 142): `netcut.sh slow <ms>` sends the app's TCP connects to a host proxy (`slowproxy.mjs`) that holds each reply; no app thread sleeps. Proved on a wave simulator: `slow 3000 --only api.revenuecat.com` made the 2 s entitlement wait give up (paywall, then in when RevenueCat answered 3.14 s later); `slow 500` went straight in (0.59 s). Numbers in the script header.
+- 2026-09-26 · mealplanning-2026-09 · done · **#96 a Test Store monthly renews while signed out (wave 40, 117-015).** 117's monthly renewed
+  at 11:25, 11:29 and 11:37Z with the account signed out and the app closed, each renewal
+  back-dated after a 42 s to 3.7 min gap. That contradicts #80's "lapses about 5 minutes after
+  sign-out", and RevenueCat's v2 cancel refuses a Test Store subscription. 117 reached a Lapsed
+  sign-in only by tapping Log In 7 s after a period ended. Suggested fix: a run that needs a
+  lapse polls RevenueCat for the period end and signs in within the gap, or a lapse fixture
+  (a Grant that expires) replaces the Test Store for lapse checks; runbook step 5 changes #80's line.
+  Ruled 2026-09-26 (Lee): lapse tests use a seeded free grant that ends in about 2 minutes, not the Test Store (ticket 142).
+  Done 09-26 (ticket 142): `seed-states.mjs grant <account> --minutes 2`; the lapsed paywall showed within 5 s of the end with the app open. RevenueCat drops a second grant on the same account (200, nothing written), so the command reads the grant back and exits 2; one lapse check per account. Runbook step 5's #80 lines replaced.
+- 2026-09-26 · mealplanning-2026-09 · done · **#97 an agent tried a RevenueCat write the ticket did not name (wave 40).** 117 called the v2
+  cancel on its own account's subscription to force the lapse (refused, nothing changed). Runbook
+  step 6 says read, never write. Suggested fix: the prompt repeats "no RevenueCat or database
+  write outside the ticket's criteria, even on your own account".
+  Ruled 2026-09-26 (Lee): every prompt repeats the no-unnamed-writes rule (ticket 142).
+  Done 09-26 (ticket 142): runbook step 6 and lead step 5 (every prompt repeats it).
+- 2026-09-26 · mealplanning-2026-09 · done · **#99 a follow-up test that cannot be run as written (wave 40).** 29-004 asks for tab switches
+  before the first sync ends; the sync ends ~5 s after Log In, under the What's New sheet, which
+  covers the tab bar. Suggested fix: triage rewrites a follow-up the run proved unreachable, or
+  closes it, rather than carrying it to the next retest.
+  Ruled 2026-09-26 (Lee): the lead rewrites or closes a follow-up a run proved impossible (ticket 142).
+  Done 09-26 (ticket 142): after-the-wave step 3.
+- 2026-09-26 · mealplanning-2026-09 · done · Small, for the runbook's step 5 tips: zsh does not split `$var` (`set -- $t`, `F="node …"; $F`
+  fail; use functions); a tap on the next field right after `idb ui text` drops the tail (wait 2 s,
+  read back, as #93); Backspace deletes from the tap point (forward delete, keycode 76, clears a
+  prefilled field); the timeline's Next day arrow moves with the title width.
+  Ruled 2026-09-26: ticket 142 folds these into runbook step 5.
+  Done 09-26 (ticket 142): runbook step 5, next to the `idb ui text` fallback.
+- 2026-09-26 · mealplanning-2026-09 · done · **#94 a logging loop made an 18.6 MB console (wave 39).** 120's offline stretch logged 4,421
+  identical `[IS_ADMIN]` warning boxes (Finding 120-009); the `(Flutter)` filter from #88 kept them
+  all. The lead collapsed them to one count line on the branch before merging (360 KB). Suggested
+  fix: runbook step 9 checks the redacted console's size and, over 5 MB, keeps the first three and
+  the last copy of any repeated logger box with a count line (the lead's script in wave 39's close).
+  Fixed before wave 40: `scripts/testing-wave/collapse-console.mjs` (checked against 120's raw
+  console: 4,417 boxes cut, 18.6 MB to 360 KB, the same as the hand collapse); runbook step 9.
+- 2026-09-26 · mealplanning-2026-09 · done · **#95 a spend recorded after the call, and a known-fixed fact assumed (wave 39).** 100 opened Ask
+  Vana, which made an opener call, before `COST spend … chat`, and recorded the spend afterwards.
+  120 wrote "RevenueCat still keeps both deleted customers (02-005)" without checking; the lead read
+  both: 404, deleted, as 100's retest of 02-005 showed. Suggested fix: the runbook says a note
+  that cites an old Finding as still true must be checked in this run or say "not re-checked", and
+  that any tap that can open Vana comes after the spend.
+  Fixed before wave 40: runbook step 5 (spend before any tap that can open Vana) and step 7
+  (a "still true" note is checked in the run or says "not re-checked").
+- 2026-09-26 · mealplanning-2026-09 · done · **#93 `CRED type` right after the focus tap drops characters (wave 38).** 122's first password
+  entry landed 17 of 19 characters; waiting 1.2 s after the focus tap typed all 19. 123's `idb ui
+  text` cut a sign-up address the same way (#35). Suggested fix: `cred.mjs type` waits about a
+  second before typing, and the runbook says to count the dots against the password's length
+  before submitting. Done 09-26 (wave 39 lead): `cred.mjs type` waits 1 s (`CRED_TYPE_DELAY_MS`) before typing; runbook step 5 says to count the dots.
+- 2026-09-25 · mealplanning-2026-09 · done · **#79 the Patrol account is out of CRED's reach (wave 32).** 03-005's Steps name the Patrol
+  account, whose password lives only in `secrets/integration_test.env`, which agents may not read.
+  116 ran it on its own new account. Suggested fix: add the Patrol account to the credentials
+  file so `CRED type` can reach it, or drop "Patrol account" from Findings' Steps when ticketing. Done 09-26 (wave 38 lead): the Patrol account is a section of the credentials file; it shares Lee's Gmail with the Kroger login, so `cred.mjs type|file` take `--section patrol`.
+- 2026-09-26 · mealplanning-2026-09 · done · **#89 the show-password toggle put a password in the transcript (wave 37).** One of 124's taps
+  hit the eye icon on Sign Up; the element list and a screenshot then carried the typed password.
+  The agent deleted the screenshot and changed that account's password in the credentials file
+  before it was used, so nothing live leaked. Suggested fix: runbook step 5 says never tap the
+  eye icon, and after `CRED type` read the field back only as a count of dots. Done 09-26 (wave 38 lead): runbook step 5 forbids the eye icon on password fields and reads a password field back only as a count of dots.
+- 2026-09-26 · mealplanning-2026-09 · done · **#88 raw consoles of 80 MB (wave 37).** Both runs' log streams held 77-83 MB of OS debug
+  lines in 25 minutes. 124 kept only the app's lines; 125 committed all 77 MB, and the lead cut it
+  to the `(Flutter)` lines (4,053) and amended the commit before merging. Suggested fix: runbook
+  step 9's redaction keeps only `(Flutter)` lines (`grep -F '(Flutter)'`) before the token scan,
+  and the lead checks `git diff --numstat` for any file over 5 MB before merging. Done 09-26 (wave 37 lead): step 9 keeps only `(Flutter)` lines.
+- 2026-09-26 · mealplanning-2026-09 · done · **#90 `netcut.sh on` ran online without a word (wave 37, idea 125-005).** 125 ran `on --relaunch`
+  before `launch` had built the library; the script printed "relaunched offline" while the app was
+  online, and two "offline" steps had to be redone. Done 09-26 (wave 37 lead): `on` exits 1 with
+  "Still online" when the scratch folder holds no `netcut.dylib`.
+- 2026-09-25 · mealplanning-2026-09 · done · **#84 a run cannot delete an account that never signed in (wave 34).** 121's "Use a different
+  email" check leaves the first address as an unconfirmed auth user (121-003) that the in-app
+  delete cannot reach. Suggested fix: a lead-only `scripts/testing-wave/` helper that deletes an
+  unconfirmed `lee+e2e-*` auth user on dev by id, run at the close, so leftovers do not pile up. Done 09-26 (wave 37 lead): no new script needed, `sweep-accounts.mjs delete --id` already reads `auth.users`; runbook step 9 has the run name the leftover in notes.md and the lead delete it at the close.
+- 2026-09-26 · mealplanning-2026-09 · done · **#86 one run of a pair saved no edge extract (wave 36).** 118 saved `edge-requests.txt` for
+  the whole window; 119 saved none. The lead read 118's, which covered both runs (one 502, filed
+  as 118-016). Suggested fix: in a paired wave the lead pulls one extract for the wave's window at
+  the close instead of relying on each run's. Done 09-26 (wave 37 lead): after-the-wave step 4 has the lead pull one extract for the wave's window.
+- 2026-09-26 · mealplanning-2026-09 · done · **#85 an agent's `SELECT *` printed live integration tokens (wave 36).** 119 read test@test.com's
+  `integrations` row with a star and the TrainingPeaks, V.O2, Garmin and Final Surge tokens landed
+  in its transcript (not on disk). Done 09-26 (wave 36 lead): the runbook's Dev database line says
+  to name columns, never `SELECT *`.
+- 2026-09-25 · mealplanning-2026-09 · done · **#83 a prompt named a control that is not on screen (wave 34).** The lead told 112 to make its
+  throwaway saved meal with the meal row's "save as favorite" star (`meal_log_row.dart`), found by
+  grep. That row is not mounted on any screen (112-008); the agent found Build a meal's "Also save
+  as a favorite" instead. Suggested fix: when a prompt names a control, follow the widget up to a
+  screen that mounts it (its route or its parent's), not only to the method it calls.
+  Done 09-25 (wave 36 lead): the runbook's wave-lead step 5 now says to follow a named control
+  up to a screen that mounts it.
+- 2026-09-25 · mealplanning-2026-09 · done · **#78 a twelve-check retest ran out of look-around (wave 32).** Ticket 116 carried 5 retests
+  and 7 follow-ups; it wrote look-around Findings for four screens and none for the Plan tab,
+  Today's Fuel, onboarding or the paywall, and saved no edge-log extract. 115 (6 checks) did both.
+  The lead filed 116-018 and pulled the extract. Suggested fix: count follow-ups toward the
+  ten-check cap when cutting retest tickets (after-the-wave step 3).
+  Done 09-25 (wave 36 lead): the runbook's after-the-wave step 3 already counts follow-ups
+  toward the ten-check cap.
+- 2026-09-25 · mealplanning-2026-09 · done · **#80 the Test Store lapse is not 25 minutes (wave 32).** 115's monthly account lapsed about
+  5 minutes after purchase: it did not renew while signed out. 116's stayed signed in, renewed
+  every 5 minutes, and kept throwing the paywall up (07-003). Ticket 123's Setup still plans
+  "around the 25-minute lapse". Suggested fix: say in runbook step 5 that a monthly renews only
+  while the app is signed in, and that Annual (1-hour periods) suits a run that needs Pro without
+  interruptions. **Fixed (wave 34 lead):** runbook step 5 says so; ticket 123's Setup re-planned.
+- 2026-09-25 · mealplanning-2026-09 · done · **#81 a conversation deep link reaches the Review sheet with no opener (wave 32).** 115 opened
+  `com.milkman.mealvanaendurance:///vana?c=<conversation id>` to confirm an existing draft: no
+  model call, no COST. 116 lost a chat spend to a stray tap on the floating Ask Vana button.
+  Suggested fix: put the deep link in runbook step 5 as the way into an old conversation. **Fixed (wave 34 lead):** runbook step 5 names the deep link.
+- 2026-09-25 · mealplanning-2026-09 · done · **#75 read-only retests held by a read-only wave (wave 31).** Fixed before wave 33: `ticketTouches`
+  drops a Touches entry with no `/` or `.`, so "nothing (read only)" names no file and holds
+  nothing; test in `sync.test.mjs` (read-only 06 and 07).
+- 2026-09-25 · mealplanning-2026-09 · done · **#76, #77 fix-wave prompts (wave 31).** Runbook fix-wave step 1 now tells an agent that adds a
+  call to a shared client to run the tests that fake it, and has logic tickets write down what an
+  async path does when it runs twice or after a refresh.
+- 2026-09-25 · mealplanning-2026-09 · done · **#74 `netcut on` leaves open connections up (wave 30).** Fixed before wave 32:
+  `netcut.sh on SCRATCH --relaunch UDID` cuts, then relaunches the app so nothing opened before the
+  cut survives; runbook step 5 says to use it before an offline check.
+- 2026-09-25 · mealplanning-2026-09 · done · **#73 three-digit tickets had no Findings (wave 30).** `findings.mjs` read and made Findings
+  only for two-digit tickets, so `111-*` files were skipped by `index` and `new` refused
+  ticket 111 (Finding 111-003). Fixed by the wave 30 lead: tickets are two or three digits,
+  with a test.
+- 2026-09-25 · mealplanning-2026-09 · done · **#72 two runs on one account need an order, not just a warning (wave 29).** 88 and 89 shared
+  test@test.com, and 89's 19-009 needed plan be6abf2f confirmed with no list, which 88's confirms
+  and Browse picks would destroy. A flag file in a shared scratch folder (`testing-wave-w29-shared/`)
+  worked: 89 wrote it at 20:06Z, 88 held every confirm and be6abf2f write until 20:07Z. The wave's
+  chat cap (5) was used up by the two runs, so some of 88's legs went unrun (88-024). Suggested fix:
+  wave-lead step 5 names the state each shared-account check starts from and orders them with a
+  flag when one run destroys another's start state; split tickets (Lee 09-25) should keep
+  chat-heavy checks apart so one pair does not exhaust the cap.
+  Done (wave 30 lead): wave-lead step 5 now names each shared-account check's start state and
+  the way back to it, and keeps the flag file for a start state that cannot be rebuilt. The
+  split tickets (110-125) already keep chat-heavy checks apart.
+- 2026-09-25 · mealplanning-2026-09 · done · **#70 two parallel tickets each made their own rule for the same data (wave 27).** 102 (sign-in
+  sweep) and 103 (pull after a failed upload) both had to decide when another account's food
+  preferences are still unsent. 103 added an upload-pending marker; 102 kept them only while the
+  account had other dirty rows, so the sweep deleted unsent preferences. The prompts named the
+  shared files, not the shared state. Only the lead's review caught it, along with 102's sweep
+  deleting the signed-in coach's own coach-mode rows. Suggested fix: when two tickets in one wave
+  decide the same thing about the same rows, give both to one agent, or tell each agent the other
+  ticket's rule in its prompt. Done 09-25: fix-wave step 3.
+- 2026-09-25 · mealplanning-2026-09 · done · **#71 generated files left stale by a closed wave (wave 28).** The unfiltered codegen after
+  wave 28's merge rewrote five `.g.dart` files that 108 never touched (`pro_gate.g.dart` doc comment
+  from wave 27's review fix, four provider hashes): wave 27's review fixes landed after its last
+  codegen. Suggested fix: when the lead's review fixes touch an annotated file, run the codegen
+  again before landing, and commit what it changes. Done 09-25: fix-wave step 6.
+- 2026-09-25 · mealplanning-2026-09 · done · **#68 three-digit tickets read as unblocked (wave 26).** `sync.mjs` read `Blocked by` with
+  `\b\d{2}\b`, so 100 ("Blocked by: 101.") showed on the frontier. Now `\d{2,3}`, with a test
+  (`dcbf75fa`).
+- 2026-09-25 · mealplanning-2026-09 · done · **#69 a review found a path the ticket's own tests missed (wave 26).** 101 deleted a draft's list on
+  archive, but a pick still reaching the archived draft (mp-683) re-created it through
+  `syncPlanList`. Fixed by the lead (`1dfcb06c`). A ticket that deletes something should test every
+  write path that can make it again, not only the ones that delete it.
+- 2026-09-25 · mealplanning-2026-09 · done · **#66 a Drift bump passed the agent's tests but not the suite (wave 25).** Ticket 99 moved Drift to
+  v23 and its migration test passed, but `schema_version_guard_test.dart` still pinned v22, so the
+  full suite went red at the lead. Suggested fix: a ticket that bumps `schemaVersion` lists the guard
+  test in Touches, and the agent prompt says to re-pin `_pinnedVersion` and `_pinnedFingerprint`.
+  Done in wave 26: the lead's fix-wave prompt carries the rule (runbook fix-wave step 1).
+- 2026-09-25 · mealplanning-2026-09 · done · **#67 a retest agent's helper loop outlived its agent (wave 25).** Ticket 87 wrote `watch.sh` (polls
+  the simulator every 20 s for the paywall across the lapse) and ended without stopping it; the
+  lead killed it. Suggested fix: runbook step 9 says to stop every background loop the run started
+  (keep their PIDs in SCRATCH, like the log stream).
+  Done before wave 26: runbook step 9.2 says so.
+- 2026-09-25 · mealplanning-2026-09 · done · **#37 spec clashes had no id.** `findings.mjs`: `decision:` also takes
+  `docs/ssot/spec/<path>.md#<heading>`; `index` checks the file, the heading and the quote
+  (`a5ac3bfe`, Lee 09-25).
+- 2026-09-25 · mealplanning-2026-09 · done · **#63 two waves open at once.** `wave --open` holds back any ticket whose Touches overlap an open
+  wave's, and says which files; `--only` does not override it (`5a5b25f4`, Lee 09-25: fix the root,
+  file overlap, not a warning).
+- 2026-09-25 · mealplanning-2026-09 · done · **#41 settings can't be cleared (Lee 09-25: fix the bug).** Fixed at the root: clearing First
+  name, Last name or Email on Profile & Preferences now saves it cleared (`5ba1fa05`, 31-004; Email
+  had the same bug). 31-004 stays open until a retest runs it.
+- 2026-09-25 · mealplanning-2026-09 · done · **#47, #53 prompts guessed what a screen writes or shows.** Wave lead step 5: read the code behind
+  every screen the ticket visits before writing prompts, and name the conversation or plan each
+  ticket writes into (Lee 09-25).
+- 2026-09-25 · mealplanning-2026-09 · done · **#52 no Kroger certification shopper.** Lee 09-25: test matching only. Ticket 22 now runs
+  matching unconnected (22-004); the cart hand-off is out of scope on dev.
+- 2026-09-25 · mealplanning-2026-09 · done · **#56, #61 landing over another session's dirty files.** Lee 09-25: stop the cause, not script
+  around it. CLAUDE.md: no session leaves edits uncommitted in the main clone.
+- 2026-09-25 · mealplanning-2026-09 · done · **#58 filtered codegen.** Fix waves step 1: codegen always unfiltered, `git status` before staging
+  (Lee 09-25).
+- 2026-09-25 · mealplanning-2026-09 · done · **#62 `/design-sync`.** Lee 09-25: rule dropped from CLAUDE.md. The design widgets are not synced
+  to claude.ai/design.
+- 2026-09-25 · mealplanning-2026-09 · done · **#64 a fix left sibling call sites.** After-the-wave step 3: a navigation fix ticket greps the
+  route and lists every call site in Touches (Lee 09-25).
+- 2026-09-25 · mealplanning-2026-09 · done · **#57, #59, #60 and #61's landing order.** Already in the fix-wave steps (`f8aee35e`); marked done
+  by Lee 09-25.
+- 2026-09-25 · mealplanning-2026-09 · done · **#65 fix waves took 40-60 minutes of lead time (waves 19-22).** Three full-suite runs in wave
+  22, page cards, waiting for the slowest agent, and a landing dance. **Done (Lee, 2026-09-25,
+  wave 24):** RUNBOOK "Fix waves: keep them fast" (no devices, no page writes, merge as agents
+  finish, one full suite, targeted re-runs, review only logic tickets, deploy once). Wave 24 took
+  27 minutes for 12 tickets.
+- 2026-09-25 · mealplanning-2026-09 · done · **#54 CF-2 conformance goes red in the early morning (wave 19).** At 04:40 local the CF-2
+  clamp-bound stepper test reads "1 h — early start" where it expects "Capped: session in …"; it
+  was red at the wave's base too and green in the afternoon waves. The test depends on the clock.
+  Suggested fix: pin the test's clock (a fixed `now` override) and file it as a Finding.
+  Done 09-25 (wave 22 prep): the caption test starts the session 45 min out, under the 60-min
+  early-start window, so the clamp binds at any hour.
+- 2026-09-25 · mealplanning-2026-09 · done · **#55 fix waves deploy once, from the merged tree (wave 19).** Tickets 34, 37, 38 and 55 all
+  changed `_shared/vana/`, so a deploy from one worktree would have overwritten another's. The lead
+  told agents to deploy nothing and deployed the union once after the merge (SQL first). Worth a
+  line in the runbook's wave-lead routine for fix waves.
+  **Done (before wave 21):** the wave lead's routine says a fix wave deploys once, after the merge.
+- 2026-09-24 · mealplanning-2026-09 · done · **#50 the mobile MCP's first command sends the app to the background (wave 17).** On a fresh wave
+  simulator, ticket 21's first MCP tap brought the MCP's helper app to the front and SpringBoard
+  showed; `simctl launch` brought the app back with its state kept. Suggested fix: runbook step 3
+  says to make one harmless MCP call (a screenshot) before the first tap, then relaunch if the home
+  screen shows.
+  **Done (before wave 18):** runbook step 3 makes one harmless MCP call and relaunches before the first tap.
+- 2026-09-24 · mealplanning-2026-09 · done · **#51 a web sign-in sheet has no element list (wave 17).** Kroger's `login.kroger.com` page runs in
+  an out-of-process ASWebAuthenticationSession; neither the MCP nor `idb ui describe-all` lists its
+  fields. Ticket 21 drove it by coordinate taps read off screenshots. Suggested fix: one line in
+  runbook step 5 for any OAuth sheet (Kroger, TrainingPeaks, Garmin).
+  **Done (before wave 18):** runbook step 5 says how to drive an out-of-process sign-in sheet.
+- 2026-09-24 · mealplanning-2026-09 · done · **#49 server-side pushes land in every edge extract (wave 16).** Garmin's fan-out to dev
+  `garmin-push` failed 45 of 45 epochs at 16:13 local, in the middle of the wave. Ticket 18 noted it
+  as "not this app" but filed nothing, so the lead filed 18-012. Suggested fix: runbook step 7 says
+  that a server error the run did not cause is still filed (kind bug, screen none), not skipped.
+  **Done (before wave 17):** runbook step 7 says a server error the run did not cause is still filed.
+- 2026-09-24 · mealplanning-2026-09 · done · **#48 the chat spend is counted before the chat is known to cost anything (wave 16).** Ticket 18
+  spent `COST chat` (1/5) to reach a chat, but that chat opened with no opener and made no model
+  call. Suggested fix: a `COST refund WAVE chat NN` the agent runs when `vana_calls` shows no row
+  for its run, or runbook step 5 notes that an old planning conversation opens without an opener.
+  **Done (before wave 17):** runbook step 5 notes a chat spend that bought nothing.
+- 2026-09-24 · mealplanning-2026-09 · done · **#45 reaching Conversations costs an opener (wave 12).** The only way to the conversation list
+  is Ask Vana, which spends a general opener ($0.02) that no COST kind counts (12-004 raised the
+  gap). Suggested fix: a `COST spend WAVE chat NN` kind with its own cap.
+  **Done (before wave 15):** `cost.mjs` has a `chat` kind, cap 5 a wave; runbook step 5 names it.
+- 2026-09-24 · mealplanning-2026-09 · done · **#46 a harness fix made after `wave --open` misses the wave (wave 14).** The lead built netcut
+  (#36) before opening but committed it at the close, so the worktrees, cut from the wave's base, did
+  not carry it and the prompts had to say so. **Done:** wave-lead step 1 now says to commit
+  between-wave fixes before `wave --open`.
+- 2026-09-24 · mealplanning-2026-09 · done · **#36 no offline tool (wave 10).** Ticket 20 had to write its own per-app network cut:
+  `netcut.dylib`, injected with `SIMCTL_CHILD_DYLD_INSERT_LIBRARIES`. It cuts `connect` while a flag
+  file exists, and `vmmap` confirmed only that app's process loaded it. Proxy variables do nothing,
+  because Dart ignores them. The library stayed in that ticket's scratch folder. Suggested fix: move it
+  to `scripts/testing-wave/netcut/` with an `on`/`off` wrapper, and add a line to runbook step 5. Limit:
+  `connectivity_plus` still reads "online", so the app's own offline banner path needs a device
+  (20-006). Finding 20-007.
+  **Done (wave 14 lead):** `scripts/testing-wave/netcut/{netcut.c,netcut.sh}` (flag and log paths from
+  `NETCUT_FLAG`/`NETCUT_LOG`, passed as `SIMCTL_CHILD_*`), checked live on wave-pool-1: 158 connects
+  blocked in 32 s, library mapped only in the app; runbook step 5 names it.
+- 2026-09-24 · mealplanning-2026-09 · done · **#42 simulator copy died mid-rsync (wave 13).** `capture.mjs` copies app data with
+  `copyAppData`, which skips `Library/SplashBoard`, and `createSimulator` installs the mobile MCP
+  helper before the data copy.
+- 2026-09-24 · mealplanning-2026-09 · done · **#43 MCP swipe skipped chat turns (wave 13).** Runbook step 5: slow idb drags with a duration
+  whenever a run counts rows or turns.
+- 2026-09-24 · mealplanning-2026-09 · done · **#44 two tickets on one account (wave 13).** Wave lead step 5: both prompts name the shared
+  account and what the other run writes.
+  Wave 15 confirmed it: 27 and 28 shared test@test.com, 28 was sent to the day before, and each
+  run's SQL extracts named the other's rows and edge requests without a clash.
+- 2026-09-24 · mealplanning-2026-09 · done · **#39 mobile MCP read another simulator.** Runbook step 4 and 5: idb reads the screen
+  (`describe-all`, `simctl io` screenshot), the MCP only taps and types. The helper-port cause is
+  not looked into. Before wave 12.
+- 2026-09-24 · mealplanning-2026-09 · done · **#40 token in every console.** Runbook step 9 expects the hit, cuts only the matching lines into
+  `console-redacted.log`, rescans it and keeps the rest as evidence. Before wave 12.
+- 2026-09-24 · mealplanning-2026-09 · done · **#38 edge extracts cross tickets.** Runbook, after the wave step 2: the lead reads the
+  tickets' edge-log extracts side by side and matches each error to the run that made it. Wave 11.
+
+**Lee's second walk-through, 2026-09-24** (after wave 9). Each item, what he chose, and where it landed:
+
+- 2026-09-24 · mealplanning-2026-09 · done · **#30 passwords printed.** `scripts/testing-wave/cred.mjs` (`type`, `file`, `new`, `update`,
+  `list`) is the only way agents reach the credentials; none of its commands prints a password
+  (tested). No password change (Lee): the leak stayed in a local transcript. Runbook names and
+  step 5.
+- 2026-09-24 · mealplanning-2026-09 · done · **#31 copied simulators carry Lee's data.** The lead runs `scripts/testing-wave/clear-app.sh
+  <udid>` on each copy: the app's data folder is emptied, the build stays, the app opens signed out
+  with a fresh database (checked: 430 KB new database against the dev simulator's 3 MB). It refuses
+  a simulator not named `wave-*`. Tickets that test the leftover data skip it. Lee wanted no extra
+  reinstalls or rebuilds; this has neither.
+- 2026-09-24 · mealplanning-2026-09 · done · **#32 copies carried an old app.** A build now goes onto the dev simulator itself, so every copy
+  inherits it; the wave-9 build (`52c68764`) was installed there, data kept. Build only when app
+  code changed since `app-build.json` (Lee).
+- 2026-09-24 · mealplanning-2026-09 · done · **#33 `app-build.json` lagged.** The build check and any build happen before `wave --open`, and
+  the prompt's commit wins if the two differ.
+- 2026-09-24 · mealplanning-2026-09 · done · **#35 idb typing.** Type with the mobile MCP, idb as fallback; read long values back with
+  `idb ui describe-all` before submitting. Address format unchanged.
+- 2026-09-24 · mealplanning-2026-09 · done · **#34 one run's stop ended the other run's console (wave 9).** Ticket 16 stopped its log stream
+  at 14:56:02Z and ticket 32's stream died the same second (SIGTERM). Runbook step 3 now saves
+  the stream's PID in SCRATCH and step 9 kills only that PID.
+- 2026-09-24 · mealplanning-2026-09 · done · **#27 launch, #28 screenshots.** Runbook step 3 checks for SpringBoard after `simctl launch`
+  and relaunches; step 5 names `simctl io screenshot` and the stale element list. Before wave 9.
+- 2026-09-24 · mealplanning-2026-09 · done · **#29 `app-build.json` null in worktrees.** Moot while no build is needed: wave 8 committed it
+  (`742d2f16`) before wave 9 opened; a wave that builds commits it before spawning.
+
+**Lee's walk-through, 2026-09-24** (wave 7). Each item, what he chose, and where it landed:
+
+- 2026-09-24 · mealplanning-2026-09 · done · **#3 evidence.** `findings.mjs index` fails on an Evidence path that exists neither under the
+  testing-wave folder nor in the repo. `383a2753`.
+- 2026-09-24 · mealplanning-2026-09 · done · **#4 build lock.** Removed; two builds may run at once (Lee). `lock.mjs` keeps only the slot.
+  `383a2753`.
+- 2026-09-24 · mealplanning-2026-09 · done · **#5 edge_logs.sh.** Reads the unified `logs` table through `/analytics/endpoints/logs`, fails on any
+  answer that is not rows. `383a2753`.
+- 2026-09-24 · mealplanning-2026-09 · done · **#6 mobile MCP.** Its helper app (`com.mobilenext.devicekit-iosUITests.xctrunner`, not
+  WebDriverAgent) is copied from the dev simulator onto every wave simulator; checked live on a new
+  pool device. `383a2753`.
+- 2026-09-24 · mealplanning-2026-09 · done · **#7 env files.** The wave lead copies every `.env*` file into each worktree (Lee: agents see
+  everything the main clone sees). Runbook, wave lead step 4.
+- 2026-09-24 · mealplanning-2026-09 · done · **#8 picture refresh, #9 drawings.** Moot: the testing wave writes nothing to the decisions page
+  (Lee). The 31 ticket cards and three test-setup questions (mp-653, 657, 658) were removed from the
+  record, the proposals and the page; the five paywall questions stay.
+- 2026-09-24 · mealplanning-2026-09 · done · **#12 accounts.** The Patrol account (`secrets/integration_test.env`) is an admin on dev with no
+  Pro, so the nightly job gets past the paywall (mp-658 settled here). test@test.com keeps its
+  three Grants (Lee).
+- 2026-09-24 · mealplanning-2026-09 · done · **#13 email.** Dev now asks for the emailed code and allows 30 auth emails an hour; prod allows 30
+  an hour and still confirms on its own until Lee rules on mp-667. Ticket 32 tests signup and
+  forgot password through the Gmail tool. Resend's `mealvana.io` domain is verified.
+- 2026-09-24 · mealplanning-2026-09 · done · **#14 notes without Findings.** The wave lead reads every `notes.md` at the close and files what
+  the agent did not (wave 7: 09-013). Runbook, after the wave step 2.
+- 2026-09-24 · mealplanning-2026-09 · done · **#15 decision quote.** Already enforced by `index` before today; the part no check can see
+  (filing a clash as an idea) stays with the prompt.
+- 2026-09-24 · mealplanning-2026-09 · done · **#16 live timing.** The rule is in the runbook (step 5): times around every wait, "not seen live"
+  when missed.
+- 2026-09-24 · mealplanning-2026-09 · done · **#17, #23, #24, #25 Patrol.** No Patrol in testing waves (Lee). The seven wave-added flows,
+  their exclusion-list rows and admin_bypass's Codemagic targets were removed; the older flows and
+  the nightly runner are unchanged. `f2c7d8ac`.
+- 2026-09-24 · mealplanning-2026-09 · done · **#18 tickets.** Tickets 10–31 re-read: Patrol criteria and flow blockers gone, and five
+  shared-account clashes made into blockers (16 after 14, 17 after 16, 19 after 20, 27 after 26, 31
+  after 30).
+- 2026-09-24 · mealplanning-2026-09 · done · **#20, #22 simulators.** The wave lead makes one simulator per ticket before spawning and drops
+  them at the close; agents never claim.
+- 2026-09-24 · mealplanning-2026-09 · done · **#21 builds.** The wave lead builds only when app code changed since `app-build.json`'s commit,
+  from a clean worktree, once; agents never build.
+- 2026-09-24 · mealplanning-2026-09 · done · **#26 shared scratch folder (wave 7).** Each ticket gets its own scratch folder, and the runbook
+  bars printing anything that reads a secret. The RevenueCat key that reached ticket 08's local
+  transcript is not rotated (Lee).
+- 2026-09-24 · mealplanning-2026-09 · done · **`timeout` missing on this Mac (wave 7).** Moot with Patrol gone.
+- 2026-09-24 · mealplanning-2026-09 · partly done · **#24, flows copied each other's helpers (part).** `buyMonthlyInTestStore`, `dismissWhatsNew`,
+  `openSettings`, `signOutFromSettings`, `logInWithEmail` and `entitlementRows` moved from the
+  relogin and restore flows into `integration_test/helpers/e2e_account.dart` before 08 and 09.
+  Still open: the three noSettle copies of `deleteFromPaywallMenu`. 09-24, this commit.
+- 2026-09-24 · mealplanning-2026-09 · done · **Cleanup that can't take another run's account.** `sweep-accounts.mjs delete --id <id,id>
+  --apply` deletes only the named throwaway accounts; the three flow headers point at it, since a
+  bare sweep would also delete another agent's live account. Wave 6.
+- 2026-09-24 · mealplanning-2026-09 · partly done · **ssot-conflict quoting (#15), partly.** With the rule in the prompt, both of wave 6's
+  ssot-conflicts (06-002, 07-002) quoted their decision word for word. The `index` check is still
+  open.
+- 2026-09-24 · mealplanning-2026-09 · done · **#10, tickets 06–09 chained on a paid account that lapses.** 06, 07 and 08 each sign up and
+  buy their own Test Store Monthly and finish within 20 minutes; 09 buys, cancels or lets the
+  25-minute lapse stand in, and keeps the lapsed account for 10. Ticket 05's account and two
+  wave-3 leftovers swept. Lesson for ticket writing: chain tickets only on account states that
+  do not expire (lapsed, deleted), never on a paid one. 09-24, `43fdae9a`.
+- 2026-09-24 · mealplanning-2026-09 · done · **#2, run logs gitignored.** `.gitignore` now keeps `.scratch/testing-wave/runs/**/*.log`;
+  the token scan still runs before the commit. 09-24, `43fdae9a`.
+- 2026-09-24 · mealplanning-2026-09 · done · **#1, `wave --open` had no ticket filter.** `sync.mjs wave ... --only NN,NN` or `--max N`
+  (refuses a ticket off the frontier); the implement-lee skill says to use it when a feature
+  caps its waves. 09-24, `43fdae9a`.
+- 2026-09-24 · mealplanning-2026-09 · done · **#19, the two suite tests red before the waves.** The ci_config contract test now asserts
+  pr-validation is PR-only (Lee 08-21), and the wave lead runs the CI gate's own command
+  (`flutter test --exclude-tags="integration || e2e"`), which leaves out the live-token
+  TrainingPeaks test. 09-24, `35b706ac`.
+- 2026-09-24 · mealplanning-2026-09 · done · **#11, dev had no code fixtures.** `scripts/testing-wave/seed-codes.mjs` (`seed`, `list`,
+  `own <user id>`) and the runbook's step 8 note; seeded on dev 09-24. Retests of 11-001 and
+  11-008 can run now. 09-24, this commit.
+- 2026-09-23 · mealplanning-2026-09 · done · Patrol reported a skipped flow as passed; the runner now fails on skips
+  (`PATROL_FAIL_ON_SKIP`, `skipFlow()`). Wave 3, `ff1baafc`.
+- 2026-09-24 · mealplanning-2026-09 · done · The redeem flow's header now says what a thrown wait leaves on dev and how to sweep it. Wave 5,
+  `fe14603c`.
