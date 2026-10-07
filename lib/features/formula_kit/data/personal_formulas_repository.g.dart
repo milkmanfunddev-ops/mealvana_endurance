@@ -56,4 +56,4 @@ final class PersonalFormulasRepositoryProvider
 }
 
 String _$personalFormulasRepositoryHash() =>
-    r'689ee818a4acac4e89c0336e2c4e7ee2c3f6af51';
+    r'ac9e2922e43ffc7d6c6dc42d580bf08d32ee9678';

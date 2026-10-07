@@ -54,4 +54,4 @@ final class DailyMacroServiceProvider
   }
 }
 
-String _$dailyMacroServiceHash() => r'3e00aa419c66dc2b11fdd8cb65dbf2a5284eb814';
+String _$dailyMacroServiceHash() => r'01e230822b9973c7a9f57685656fbe601d527f49';

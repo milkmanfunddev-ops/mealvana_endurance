@@ -35,7 +35,7 @@ final class CoachDirectoryControllerProvider
 }
 
 String _$coachDirectoryControllerHash() =>
-    r'90d6febead0ca95a14eea3e298b0eddde4a83125';
+    r'd6101b41112a0f1438e032e43d7046b078529663';
 
 abstract class _$CoachDirectoryController
     extends $AsyncNotifier<CoachDirectoryState> {

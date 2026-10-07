@@ -55,4 +55,4 @@ final class ActivitySyncHandlerProvider
 }
 
 String _$activitySyncHandlerHash() =>
-    r'b9d282b42917ffd18822e606537fc2615a6061df';
+    r'64f1bdf96be08e6ce1cde79aa5eb0153dc87540d';

@@ -55,4 +55,4 @@ final class SupabaseBarcodeServiceProvider
 }
 
 String _$supabaseBarcodeServiceHash() =>
-    r'316ae595b009d895b09c827aaf768739acca005b';
+    r'b3946a56a1cbdd91e57c8a42f08dacf7409f4d58';

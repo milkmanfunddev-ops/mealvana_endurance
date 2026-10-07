@@ -58,4 +58,4 @@ final class NutritionProductSearchServiceProvider
 }
 
 String _$nutritionProductSearchServiceHash() =>
-    r'2bbba6f51170054b5634aec53e29191188319130';
+    r'32024170019d0d332c0e44f55668d650dece470c';

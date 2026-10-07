@@ -61,7 +61,7 @@ final class BrickActionsControllerProvider
 }
 
 String _$brickActionsControllerHash() =>
-    r'15f5c66c264f651ef9b952281e11fa6cca5f3737';
+    r'c4dbebf812a346cc7396cfb361fcc2d77f5d8ef2';
 
 /// Controller for handling brick workout actions (create, ungroup, remove segments)
 ///

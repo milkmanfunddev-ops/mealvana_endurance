@@ -55,4 +55,4 @@ final class FormulaPinsRepositoryProvider
 }
 
 String _$formulaPinsRepositoryHash() =>
-    r'819fb18274a227e70f06e4095d890ff2eea3c69f';
+    r'8e23ed3ca2d92aec33a20113fe6d3a8fae6f957f';

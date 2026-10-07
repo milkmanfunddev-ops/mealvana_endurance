@@ -75,7 +75,7 @@ final class HomeShellLoggedDatesProvider
 }
 
 String _$homeShellLoggedDatesHash() =>
-    r'7cc73afc0dfd72f1a764d3b8ed5a482a1e8330dc';
+    r'd6cbb2c033a39bff14f5f5028e23fc3b137166a8';
 
 /// Distinct `log_date`s carrying ≥ 1 non-deleted meal log in the inclusive
 /// `'yyyy-MM-dd'` range — the tint channel's rollup (calendar-sheet.md Q2,
@@ -173,7 +173,7 @@ final class HomeShellCalendarMonthProvider
 }
 
 String _$homeShellCalendarMonthHash() =>
-    r'daa3fbb7e393a4a5745c8128582719d0759b77a0';
+    r'd9cbd29e1265bf8880c298b9c83356a72a493a87';
 
 /// The calendar sheet's cell data for the month starting at [month]
 /// (midnight-normalized first-of-month).

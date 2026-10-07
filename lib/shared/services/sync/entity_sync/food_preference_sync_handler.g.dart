@@ -55,4 +55,4 @@ final class FoodPreferenceSyncHandlerProvider
 }
 
 String _$foodPreferenceSyncHandlerHash() =>
-    r'912f5183422b33a4d90a9047b1054575808b36d6';
+    r'7eb159e35745a05b83eb3d4060de54310d1549d7';

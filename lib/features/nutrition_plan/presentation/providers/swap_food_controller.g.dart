@@ -52,7 +52,7 @@ final class FoodRepositoryProvider
   }
 }
 
-String _$foodRepositoryHash() => r'c7cbda34f5dc4619b4973fb8777b6ca1d9424c4f';
+String _$foodRepositoryHash() => r'20632fc84ca6d99bb685dcfbe8854867aed817c3';
 
 /// Controller for swap food functionality - takes swap parameters.
 ///
@@ -121,7 +121,7 @@ final class SwapFoodControllerProvider
 }
 
 String _$swapFoodControllerHash() =>
-    r'a3528146bf352f1281e0b21ceae67245e8548569';
+    r'f8188207e4546c94cb1b6e272c9f2c220003201a';
 
 /// Controller for swap food functionality - takes swap parameters.
 ///

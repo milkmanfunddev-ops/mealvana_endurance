@@ -151,7 +151,7 @@ final class CreditsControllerProvider
   CreditsController create() => CreditsController();
 }
 
-String _$creditsControllerHash() => r'06c4e15ac418796577d39f35f838e25d1fd7e5e4';
+String _$creditsControllerHash() => r'1f72be6bef234649312f00cc8081459bfbaaf678';
 
 abstract class _$CreditsController extends $AsyncNotifier<CreditWallet> {
   FutureOr<CreditWallet> build();

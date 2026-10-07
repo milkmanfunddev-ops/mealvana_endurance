@@ -52,4 +52,4 @@ final class WeatherServiceProvider
   }
 }
 
-String _$weatherServiceHash() => r'37be90d5821d5d413ce5c5cffd636af01f525df0';
+String _$weatherServiceHash() => r'a5eadac99c687fbcd655eddae06e296f9ed5e0b0';

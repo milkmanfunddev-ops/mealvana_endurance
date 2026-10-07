@@ -349,8 +349,16 @@ class AiCoachChatRepository {
       if (decoded is Map<String, dynamic>) {
         return InsufficientCreditsException.fromMap(decoded);
       }
-    } catch (_) {
-      // fall through to defaults
+    } catch (e, st) {
+      // The 402 itself is the signal; a body that is not the documented
+      // shape only costs the balance/cost detail. Degraded, then defaults.
+      _r.degraded(
+        e,
+        stackTrace: st,
+        area: _area,
+        message: 'jade-chat 402 body did not decode; default credits message used',
+        extra: {'body_length': body.length},
+      );
     }
     return const InsufficientCreditsException(
       balance: 0,

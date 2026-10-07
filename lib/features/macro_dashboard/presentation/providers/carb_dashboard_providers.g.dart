@@ -92,7 +92,7 @@ final class CarbDashboardForDateProvider
 }
 
 String _$carbDashboardForDateHash() =>
-    r'70903ea0f16756e8679c99f4b75c8d3ba684b00c';
+    r'cfbecb1dabf514cd5579e5b0a047f5d7dc763640';
 
 /// The loading-day surface data for one date, or null when the date falls in
 /// no carb-loading plan — CD-1's negative: a regular day has NO carb surface

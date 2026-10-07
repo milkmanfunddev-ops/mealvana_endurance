@@ -57,7 +57,7 @@ final class CarbNudgeCoordinatorProvider
 }
 
 String _$carbNudgeCoordinatorHash() =>
-    r'10b65927d9accbdd89db3fc8759ae8d5dd80f5b4';
+    r'63ba2f1affffb902bffaf64593f0d2219a58769d';
 
 /// G27: the open/resume sweep that keeps every event's scheduled nudges in
 /// step with plan-existence and shows the at-most-one-per-day catch-up.

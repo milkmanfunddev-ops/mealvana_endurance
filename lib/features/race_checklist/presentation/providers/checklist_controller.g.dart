@@ -107,7 +107,7 @@ final class ChecklistControllerProvider
 }
 
 String _$checklistControllerHash() =>
-    r'29219455c5b6553ae4c492dde193e0e4ddd31135';
+    r'cbcb2841f536db30b0d66284b4e4d4ea2025a6b4';
 
 /// Controller for race day checklist
 

@@ -760,7 +760,6 @@ class SettingsController extends _$SettingsController {
     final analytics = ref.read(appExternalDepsProvider).analytics;
     final report = ref.read(reportProvider);
     final prefs = ref.read(sharedPreferencesProvider);
-    final subscriptionStatus = ref.read(subscriptionStatusProvider.notifier);
 
     // Track sign out event
     await analytics.track('settings_sign_out_tapped');

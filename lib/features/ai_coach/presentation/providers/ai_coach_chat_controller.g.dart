@@ -34,7 +34,7 @@ final class AiCoachChatControllerProvider
 }
 
 String _$aiCoachChatControllerHash() =>
-    r'6fc851b2a03eb33932cc104cf53b563913e7be9f';
+    r'7a40758dd7b65a0f00c94d9c1641b383e7240a8d';
 
 abstract class _$AiCoachChatController
     extends $AsyncNotifier<AiCoachChatState> {

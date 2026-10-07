@@ -54,4 +54,4 @@ final class CreditsRepositoryProvider
   }
 }
 
-String _$creditsRepositoryHash() => r'16d2523c7a17abb8b06b82383e8d716a0c4bff25';
+String _$creditsRepositoryHash() => r'3818962b05745e9393bc2298be2096862091d612';

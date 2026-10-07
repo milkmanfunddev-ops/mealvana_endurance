@@ -40,7 +40,7 @@ final class MacroTargetsControllerProvider
 }
 
 String _$macroTargetsControllerHash() =>
-    r'4aabcb2062b19457a1c6eb5b17e4bbaadac9ff06';
+    r'6403d80f2ca2747a1e725ed9d578d2a1dc87d58c';
 
 /// Controller for distance page gut entry screen
 /// FOA COMPLIANT: Contains ALL business logic, no UI concerns
@@ -133,4 +133,4 @@ final class DraftActivityCleanupServiceProvider
 }
 
 String _$draftActivityCleanupServiceHash() =>
-    r'405a19f493c2fc77b9a39db290924aec6f12cc97';
+    r'f807505aef94bdb620e71e437a2f0e291d2114d4';

@@ -55,4 +55,4 @@ final class CoachMessagingRepositoryProvider
 }
 
 String _$coachMessagingRepositoryHash() =>
-    r'592a2bba0648152a692ee0dc4783bc7a362e20ed';
+    r'c1a5c52912deeed0a78f2b96840233a354d9220f';

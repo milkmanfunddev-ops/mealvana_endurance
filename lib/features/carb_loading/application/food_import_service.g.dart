@@ -54,4 +54,4 @@ final class FoodImportServiceProvider
   }
 }
 
-String _$foodImportServiceHash() => r'08f3f8e4c934dff51813903211b74d24f306c574';
+String _$foodImportServiceHash() => r'11152df7a7beff459f185a38f46730baabe0eabc';

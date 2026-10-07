@@ -48,4 +48,4 @@ final class AiCoachClientProvider
   }
 }
 
-String _$aiCoachClientHash() => r'49d0c902db07ca44a02429526d361cf49425f02d';
+String _$aiCoachClientHash() => r'551053c9de6a747bb08f2093349028f911837e65';

@@ -148,7 +148,7 @@ final class OnboardingTrainingInsightsProvider
 }
 
 String _$onboardingTrainingInsightsHash() =>
-    r'aeb7d0c0b5dd85c58f197fc063e7128d2adb12fc';
+    r'4b3dfe927929e208f2eae770ef3677ff2e10a07d';
 
 /// The plan preview both reveal screens render, personalized from imported
 /// training data when the reliability gate passes. keepAlive + draft watch:
@@ -303,7 +303,7 @@ final class OnboardingIntegrationProfileProvider
 }
 
 String _$onboardingIntegrationProfileHash() =>
-    r'a148528f3dd73ac6b442bbb47d5cd37088d48749';
+    r'6411cd7e78e1b74c7d4aeca3c733342f2a2d1849';
 
 /// Weight (lbs) from [onboardingIntegrationProfile], kept as its own
 /// provider so the body-composition wheel can listen to just that value.

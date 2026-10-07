@@ -84,7 +84,7 @@ final class OnboardingSessionControllerProvider
 }
 
 String _$onboardingSessionControllerHash() =>
-    r'64180a72fb20856a557458ef9058c377bb6c062a';
+    r'2b88758407d6f99e84909705f8db69922f119695';
 
 /// Ensures a usable Supabase auth session exists before onboarding starts.
 ///

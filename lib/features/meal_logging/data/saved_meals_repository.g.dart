@@ -55,4 +55,4 @@ final class SavedMealsRepositoryProvider
 }
 
 String _$savedMealsRepositoryHash() =>
-    r'0abbc72f1641593c2008a442ee4a1bc6c48500b7';
+    r'6ca77313490a70f1c658390e12a84a0113065a86';

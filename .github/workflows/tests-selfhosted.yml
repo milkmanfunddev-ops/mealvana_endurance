@@ -63,11 +63,12 @@ env:
   MIN_FREE_DISK_GB: 25
   # patrolTest() case count across the --target list below. 20 targets, but
   # integrations_connect_flow_test declares three cases (garmin, trainingpeaks,
-  # finalsurge) and recommendation_stacking_flow_test declares two, so 23; macro_dashboard_flow_test (added 2026-08-20) declares one, so 24.
+  # finalsurge) and recommendation_stacking_flow_test declares two, so 23; macro_dashboard_flow_test (added 2026-08-20) declares one, so 24;
+  # paywall_render_flow_test left with the subscription paywall (2026-10-06 branch split), so 23.
   # Bump this when you add a target or a case — the "Assert the suite actually
   # ran" step uses it to catch a silently dropped target, which otherwise still
   # exits 0.
-  EXPECTED_PATROL_TESTS: 24
+  EXPECTED_PATROL_TESTS: 23
 
 jobs:
   # Device-less suites — fast, reliable, no Xcode/simulator needed.
@@ -266,7 +267,6 @@ jobs:
             --target integration_test/flows/settings_sweep_flow_test.dart \
             --target integration_test/flows/integrations_connect_flow_test.dart \
             --target integration_test/flows/learn_flow_test.dart \
-            --target integration_test/flows/paywall_render_flow_test.dart \
             --target integration_test/flows/recommendation_stacking_flow_test.dart \
             --target integration_test/flows/energy_breakdown_flow_test.dart \
             --target integration_test/flows/macro_dashboard_flow_test.dart \

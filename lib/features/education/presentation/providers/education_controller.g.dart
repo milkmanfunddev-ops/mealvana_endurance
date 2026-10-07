@@ -35,7 +35,7 @@ final class EducationControllerProvider
 }
 
 String _$educationControllerHash() =>
-    r'e3a5223815349b5de90e400aee5cccb41f6bddef';
+    r'a3d7ae7339aef81e87086b5eef00b8c070b1e6f5';
 
 abstract class _$EducationController
     extends $AsyncNotifier<EducationContentGroups> {

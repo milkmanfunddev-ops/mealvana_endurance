@@ -53,4 +53,4 @@ final class CoachSyncHandlerProvider
   }
 }
 
-String _$coachSyncHandlerHash() => r'df98e23d4215a6e35c7473e23611ae78edc0f1ab';
+String _$coachSyncHandlerHash() => r'12904f1f2aa0a8d00625078a707c4f28d5bb9f47';

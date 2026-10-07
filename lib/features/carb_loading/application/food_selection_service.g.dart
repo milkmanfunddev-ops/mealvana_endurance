@@ -55,4 +55,4 @@ final class FoodSelectionServiceProvider
 }
 
 String _$foodSelectionServiceHash() =>
-    r'e11aee644441538aa4d21375a814d30fdc9a4176';
+    r'c13c0930b3dd309deb67e344793b0eaff1d735ab';

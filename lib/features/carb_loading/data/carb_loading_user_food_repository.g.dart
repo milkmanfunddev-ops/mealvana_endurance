@@ -58,4 +58,4 @@ final class CarbLoadingUserFoodRepositoryProvider
 }
 
 String _$carbLoadingUserFoodRepositoryHash() =>
-    r'3a3a2176755cfc5adff08d232bf9d63e8b8bd794';
+    r'4009878ecfc1fbfef119f179552e4bc3732010b0';

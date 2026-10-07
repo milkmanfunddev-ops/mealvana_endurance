@@ -92,7 +92,7 @@ final class AthleteZonesProvider
   }
 }
 
-String _$athleteZonesHash() => r'6a732ca44c691410e1ca2f946e3c3caa25668542';
+String _$athleteZonesHash() => r'671f66b57e3ed09630b0cf0ae04e221385783267';
 
 /// Provider that reads athlete zones from the active Training Peaks integration.
 ///

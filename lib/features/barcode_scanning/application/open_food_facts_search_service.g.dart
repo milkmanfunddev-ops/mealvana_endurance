@@ -56,4 +56,4 @@ final class OpenFoodFactsSearchServiceProvider
 }
 
 String _$openFoodFactsSearchServiceHash() =>
-    r'79d619e03cbd9ca7b59a3c3cedb98c0238335ae0';
+    r'2869ec69bf0aeaf28464d9b40938230f93bbcbd1';

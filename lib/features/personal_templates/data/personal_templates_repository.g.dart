@@ -56,4 +56,4 @@ final class PersonalTemplatesRepositoryProvider
 }
 
 String _$personalTemplatesRepositoryHash() =>
-    r'bf365dbbee0b204d209b6f586a5aa72c5aa16f3f';
+    r'8ee6ff18a40ac4ef187ab8aa1019c61c79811682';

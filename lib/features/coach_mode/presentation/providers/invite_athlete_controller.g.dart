@@ -34,7 +34,7 @@ final class InviteAthleteControllerProvider
 }
 
 String _$inviteAthleteControllerHash() =>
-    r'dedf75d80d4dae395eed6ea0526b841b5c8d8ab9';
+    r'36f6b16c1c4b3da7112559ac360262dc73620502';
 
 abstract class _$InviteAthleteController extends $AsyncNotifier<void> {
   FutureOr<void> build();

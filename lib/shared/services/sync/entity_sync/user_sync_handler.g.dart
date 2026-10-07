@@ -49,4 +49,4 @@ final class UserSyncHandlerProvider
   }
 }
 
-String _$userSyncHandlerHash() => r'd0674412cbf137d8e27cb914cfb6a639fc0005ac';
+String _$userSyncHandlerHash() => r'667cb80184d4bea36d851e87a590182123b07130';

@@ -56,4 +56,4 @@ final class CarbLoadingFoodSyncServiceProvider
 }
 
 String _$carbLoadingFoodSyncServiceHash() =>
-    r'9b9dd13af9e98a257109e39a96aa7d146d5911c4';
+    r'b4ac817187d63a96170e14a1549841d8e779bc1f';

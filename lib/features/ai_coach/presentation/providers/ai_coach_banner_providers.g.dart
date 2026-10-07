@@ -66,4 +66,4 @@ final class AiCoachHasBaselineProvider
 }
 
 String _$aiCoachHasBaselineHash() =>
-    r'699f0f7a2218a2411e2d6556d4e41aa78e59a9bc';
+    r'c4c9db40dae3506aa5ce4ff546911593019f0cb7';

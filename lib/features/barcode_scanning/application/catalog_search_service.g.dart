@@ -55,4 +55,4 @@ final class CatalogSearchServiceProvider
 }
 
 String _$catalogSearchServiceHash() =>
-    r'a0b4c932e7a724d33fda6775cbbca66808ed2181';
+    r'aaaff88b82375af09b796f3dfdb2e1aeb2f8792e';

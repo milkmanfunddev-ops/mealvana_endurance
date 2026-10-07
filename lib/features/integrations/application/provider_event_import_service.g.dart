@@ -56,4 +56,4 @@ final class ProviderEventImportServiceProvider
 }
 
 String _$providerEventImportServiceHash() =>
-    r'6bed4b8aca5869f4191a96cfdfd2a47f1b959fe2';
+    r'6898a9c44a8c2323819771f1bf6a4a37166e0899';

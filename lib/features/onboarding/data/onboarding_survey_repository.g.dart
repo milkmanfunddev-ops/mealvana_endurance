@@ -56,4 +56,4 @@ final class OnboardingSurveyRepositoryProvider
 }
 
 String _$onboardingSurveyRepositoryHash() =>
-    r'a2c435519cbe6e6107dc7124663f9cc1f855242c';
+    r'c0a6ab5b8b12a24c600c072c296ad6f4c4259738';

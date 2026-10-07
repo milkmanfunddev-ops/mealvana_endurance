@@ -156,7 +156,7 @@ final class IntegrationsRepositoryProvider
 }
 
 String _$integrationsRepositoryHash() =>
-    r'9216aa72e31fcc8c9aeb6bfaac9f977ac5da799b';
+    r'08ba34b3b3389a22d6a538070e267f5f94a4ea24';
 
 /// Provider for Final Surge OAuth service
 
@@ -262,7 +262,7 @@ final class FinalSurgeTransformerProvider
 }
 
 String _$finalSurgeTransformerHash() =>
-    r'a4b7b7b85ef111098bae59045c76fc70a96a57da';
+    r'94e2f5af23e873d041c2cf38eb7f3d605734f211';
 
 /// Repository for the raw FS/TP payload capture side-channel
 /// (real-payload-corpus@v1, lifecycle.md L-7).
@@ -321,7 +321,7 @@ final class ProviderRawPayloadsRepositoryProvider
 }
 
 String _$providerRawPayloadsRepositoryHash() =>
-    r'96ed403d1e0bdee04a36bc156c745951f284c1b3';
+    r'd910612239228b523e4e57bea800df3c16ebe047';
 
 /// Dead-man watch on the raw-retention sweep's audit freshness (L-7 item 4).
 /// keepAlive so its once-per-interval throttle survives across syncs.
@@ -377,7 +377,7 @@ final class RawRetentionDeadManCheckProvider
 }
 
 String _$rawRetentionDeadManCheckHash() =>
-    r'ddf46fadf3ac99b4ffa1704e90da68afe5f02655';
+    r'7ec89ee5c291cb88c0755224f5f4e45c578535e3';
 
 /// Provider for Final Surge sync service
 
@@ -430,7 +430,7 @@ final class FinalSurgeSyncServiceProvider
 }
 
 String _$finalSurgeSyncServiceHash() =>
-    r'959a5b1f477e10f6aa2713e01158271a8d62719d';
+    r'b0aefe1f9bda6301640e18c0473be13be11ceb65';
 
 /// Provider to get Final Surge integration for a user
 
@@ -782,7 +782,7 @@ final class TrainingPeaksTransformerProvider
 }
 
 String _$trainingPeaksTransformerHash() =>
-    r'46b78b1659a485391a10d36ae825bab76f78abb5';
+    r'8659db09c9e0390a94e012b3e864e7b87030abe3';
 
 /// Provider for TrainingPeaks OAuth service
 
@@ -829,7 +829,7 @@ final class TrainingPeaksOAuthServiceProvider
 }
 
 String _$trainingPeaksOAuthServiceHash() =>
-    r'7d5954d73d8a358583e1a7a3bda1067dab579b72';
+    r'3f23ab8714088baa7834ae16626689b66151069e';
 
 /// Provider for TrainingPeaks sync service
 
@@ -876,7 +876,7 @@ final class TrainingPeaksSyncServiceProvider
 }
 
 String _$trainingPeaksSyncServiceHash() =>
-    r'c9acf0e9267a4244c23c9c016b83b9a33ac549b1';
+    r'368fccb4a8f729ac0d0a125bf6d7e051c4b146b5';
 
 /// Provider to get TrainingPeaks integration for a user
 
@@ -1106,7 +1106,7 @@ final class GarminOAuthServiceProvider
 }
 
 String _$garminOAuthServiceHash() =>
-    r'13a899004fc28cb477a0c64c5ad81ae033f42cca';
+    r'009e7e84332e8b38f8bd66d32dda47c4d0f8ee9e';
 
 /// Provider to get Garmin Connect integration for a user
 
@@ -1347,7 +1347,7 @@ final class GarminLastBodyCompProvider
 }
 
 String _$garminLastBodyCompHash() =>
-    r'233cafa4713ba6984262d4bbf518a612bfda1a62';
+    r'b57a6fa616a9af7a4b1a27b5b68615e1b7008e84';
 
 /// Fetches the latest body composition record pushed by Garmin for [userId].
 ///
@@ -1474,7 +1474,7 @@ final class VdotOAuthServiceProvider
   }
 }
 
-String _$vdotOAuthServiceHash() => r'faa21874a656d9965fa327ad809ca3a5418d783a';
+String _$vdotOAuthServiceHash() => r'18ceab03a9685509f194d417eda7545461316eea';
 
 /// Provider to get the V.O2 integration for a user.
 
@@ -1685,7 +1685,7 @@ final class VdotTransformerProvider
   }
 }
 
-String _$vdotTransformerHash() => r'834b3198ea2c756a914b85d88a5bc88d634dbdf9';
+String _$vdotTransformerHash() => r'd82bf43759eadb0b5fdb3d74f9d45eff851667e4';
 
 /// Provider for the V.O2 sync service.
 
@@ -1732,7 +1732,7 @@ final class VdotSyncServiceProvider
   }
 }
 
-String _$vdotSyncServiceHash() => r'e2c2d14c1f8563fa9afad9cfcc30331606670861';
+String _$vdotSyncServiceHash() => r'f1f93298a01aeb567637399eff10d87cc02b66f9';
 
 /// Provider for the Runna ICS feed HTTP client. No OAuth — the calendar
 /// subscription URL itself carries the token.
@@ -1929,7 +1929,7 @@ final class RunnaSyncServiceProvider
   }
 }
 
-String _$runnaSyncServiceHash() => r'50df4a68fbc647e70638033485e0aefd53bf5261';
+String _$runnaSyncServiceHash() => r'b4f64d48ad95c1acc91c57ad14d0fd8fda4042cc';
 
 /// Provider to get the Runna integration for a user.
 

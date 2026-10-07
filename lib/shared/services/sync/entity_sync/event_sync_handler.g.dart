@@ -53,4 +53,4 @@ final class EventSyncHandlerProvider
   }
 }
 
-String _$eventSyncHandlerHash() => r'abc74822ce16067216d3adf1106cc115b324badf';
+String _$eventSyncHandlerHash() => r'9c1ffd64510e58d0725616955d886cf2b0e8a181';

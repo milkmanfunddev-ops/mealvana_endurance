@@ -39,7 +39,7 @@ final class EventsControllerProvider
   EventsController create() => EventsController();
 }
 
-String _$eventsControllerHash() => r'97c317a766348e0647d335e9e4bc5260c87c6086';
+String _$eventsControllerHash() => r'b94be1715c1e82b9f91ff004caeb95f7bd03f99d';
 
 /// Controller for managing events
 /// Handles event CRUD operations (create, read, update, delete)
@@ -131,7 +131,7 @@ final class EventDetailProvider
   }
 }
 
-String _$eventDetailHash() => r'098f27d333b4d4bdfe2704383ff34ae1a85272f0';
+String _$eventDetailHash() => r'1e7441a9c8514657dcc8e38a1a1c625d49697e5a';
 
 /// Provider for getting event detail with associated activity.
 /// Accepts an optional [forUserId] to query on behalf of another user
@@ -208,7 +208,7 @@ final class AllEventsProvider
   }
 }
 
-String _$allEventsHash() => r'7377c871ebb1377d43e3f5a2758d4b0193ba30b8';
+String _$allEventsHash() => r'692b3d6e14e63448a398defcf687d2d75aeb4af4';
 
 /// Provider for getting next upcoming event
 
@@ -254,4 +254,4 @@ final class NextUpcomingEventProvider
   }
 }
 
-String _$nextUpcomingEventHash() => r'd919590566743935f92a0938778470b7f34b47fe';
+String _$nextUpcomingEventHash() => r'2487774f552e62bb216582712efea139f2e51a35';

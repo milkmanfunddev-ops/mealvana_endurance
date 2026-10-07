@@ -54,4 +54,4 @@ final class ActivitiesServiceProvider
   }
 }
 
-String _$activitiesServiceHash() => r'1bbc7bff4e7f7c067380936b3a0fce2f56f278ab';
+String _$activitiesServiceHash() => r'bf0a20b53ee28d94727a5b059b96bb9a8df496a0';

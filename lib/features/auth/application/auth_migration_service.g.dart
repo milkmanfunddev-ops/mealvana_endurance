@@ -56,4 +56,4 @@ final class AuthMigrationServiceProvider
 }
 
 String _$authMigrationServiceHash() =>
-    r'b71a281a4104a25cb4ed2b022a0a236638a7302c';
+    r'99e8c20653f4d1ad33d58f49c2333493290fd842';

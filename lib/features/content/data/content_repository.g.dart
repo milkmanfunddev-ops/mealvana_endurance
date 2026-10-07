@@ -58,4 +58,4 @@ final class ContentRepositoryProvider
   }
 }
 
-String _$contentRepositoryHash() => r'45a13b45e5f85fbac697b3fa237f8a5fd3cdecd4';
+String _$contentRepositoryHash() => r'e3f7f62601cf65fa2e2e4ccc2a3f3f8681ba4f3e';

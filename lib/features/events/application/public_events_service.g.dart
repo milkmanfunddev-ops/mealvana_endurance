@@ -59,4 +59,4 @@ final class PublicEventsServiceProvider
 }
 
 String _$publicEventsServiceHash() =>
-    r'a6eb6097bc7f0e5e966c978f425e2325080ab748';
+    r'9b144b20c65f40c7ce9ac0200244344da95d6302';

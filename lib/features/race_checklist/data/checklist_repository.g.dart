@@ -55,4 +55,4 @@ final class ChecklistRepositoryProvider
 }
 
 String _$checklistRepositoryHash() =>
-    r'7f8631d60486a53389281bdc1df9bacc8bc8f90f';
+    r'b7f0871fb9a8287e3a71de09b3cf02d67e840bb1';
