@@ -364,7 +364,7 @@ async function attachWeekGarminContext(
 // Initialise Sentry once per cold-start. No-op when SENTRY_DSN is not set.
 initSentry();
 
-serve(withSentry(async (req) => {
+serve(withSentry('calculate-daily-macros', async (req) => {
   // Handle CORS preflight
   const corsResponse = handleCors(req);
   if (corsResponse) return corsResponse;

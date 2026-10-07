@@ -502,7 +502,11 @@ serve(withSentry('jade-chat', async (req: Request) => {
               `in=${usage?.inputTokens ?? 0} out=${usage?.outputTokens ?? 0} ` +
               `ui_parts=${collectedUiParts.length}`,
           );
-        })();
+        })().catch((persistError) => {
+          // waitUntil runs this outside withSentry's request scope: an
+          // unhandled rejection here would be lost, not reported.
+          captureEdgeError(persistError, { message: '[jade-chat] onFinish persist failed', extra: { conversationId: resolvedConversationId } });
+        });
 
         // deno-lint-ignore no-explicit-any
         (globalThis as any).EdgeRuntime?.waitUntil?.(persist);

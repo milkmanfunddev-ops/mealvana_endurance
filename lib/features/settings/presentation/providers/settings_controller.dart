@@ -793,6 +793,10 @@ class SettingsController extends _$SettingsController {
 
   /// Upload dirty records from all repositories before logout.
   /// Uses Future.wait for parallel uploads - fast and targeted.
+  ///
+  /// `uploadDirtyRecords()` swallows exceptions into a silent
+  /// `UploadResult.failed()`, so every result is checked here and the
+  /// failures reported — an unchecked call looks identical to a success.
   Future<void> _uploadDirtyBeforeLogout(String userId) async {
     final report = ref.read(reportProvider);
     final activitiesRepo = ref.read(activitiesRepositoryProvider);

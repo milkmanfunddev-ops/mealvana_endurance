@@ -294,14 +294,6 @@ void main() {
         expect(tag(event, 'http_endpoint'), 'garmin-backfill');
       });
 
-      test('kroger 502 is upstream_unavailable (DEV-8H)', () {
-        final event = sdkHttpFailure(
-          'https://vlmtsdzpnjnavdgytcmi.supabase.co/functions/v1/kroger',
-          502,
-        );
-        expect(tag(event, 'expected_failure'), 'upstream_unavailable');
-      });
-
       test('a 504 from PostgREST or GoTrue is gateway_timeout (B5/C1/BM)', () {
         for (final url in [
           'https://wvmvsodrvbkxfydabqed.supabase.co/rest/v1/users',

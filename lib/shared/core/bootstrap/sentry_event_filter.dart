@@ -128,9 +128,7 @@ ExpectedFailure? classifyHandledHttpFailure(SentryEvent event) {
   }
 
   final status = _statusCode(event);
-  if (status == 502 &&
-      (url.contains('/functions/v1/garmin-backfill') ||
-          url.contains('/functions/v1/kroger'))) {
+  if (status == 502 && url.contains('/functions/v1/garmin-backfill')) {
     return ExpectedFailure.upstreamUnavailable;
   }
   if (status == 504 &&

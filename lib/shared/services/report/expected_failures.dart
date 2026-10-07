@@ -49,7 +49,7 @@ enum ExpectedFailure {
   handledFallback('handled_fallback'),
 
   /// An edge function answered 502 because ITS upstream failed (Garmin's
-  /// backfill API for `garmin-backfill`, Kroger for `kroger`) and said so;
+  /// backfill API for `garmin-backfill`) and said so;
   /// the caller already degrades. Ticket 19.
   upstreamUnavailable('upstream_unavailable'),
 

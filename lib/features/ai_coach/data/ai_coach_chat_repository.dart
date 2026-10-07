@@ -331,7 +331,7 @@ class AiCoachChatRepository {
 
     _r.info(
       'AiCoachChatRepository._streamRequest: conv=$resolvedConversationId streaming NDJSON',
-      area: 'ai_coach',
+      area: _area,
     );
 
     return AiCoachSendResult(
@@ -442,7 +442,7 @@ class AiCoachChatRepository {
           final message = (json['message'] as String?) ?? 'Unknown error';
           _r.fault(
             LoggedFault('AiCoachChatRepository: server error event: $message'),
-            area: 'ai_coach',
+            area: _area,
           );
           return AiCoachStreamErrorEvent(message);
 
