@@ -43,6 +43,7 @@ import 'package:mealvana_endurance/shared/database/app_database.dart'
 import 'package:mealvana_endurance/shared/domain/activity_type.dart';
 import 'package:mealvana_endurance/shared/providers/user_id_provider.dart';
 import 'package:mealvana_endurance/shared/services/app_config.dart';
+import 'package:mealvana_endurance/features/macro_dashboard/application/dashboard_transient_telemetry.dart';
 import 'package:mealvana_endurance/shared/services/preferences_service.dart';
 
 import '../../helpers/widget_test_harness.dart';
@@ -280,6 +281,10 @@ Future<void> _pumpDashboard(
 
 void main() {
   setUp(HeldTargets.clear);
+  // Ticket 22 (01-006): a dashboard that opens without targets starts the
+  // transient-threshold timer. A test that ends mid-episode must cancel it,
+  // or the binding fails on the pending timer.
+  tearDown(DashboardTransientTelemetry.debugReset);
 
   // Finding 117-005 (Lee, 2026-09-26): a pull on the timeline syncs the
   // connected apps. The pull reaches ActivitiesController.forceRefresh, the
@@ -362,6 +367,10 @@ void main() {
       reason: 'nothing held for this user+day → no card, honestly',
     );
     _SwitchableDailyMacrosController.recomputing = false;
+    // The test ends with the dashboard mid-episode (no targets), so the
+    // transient-threshold timer (ticket 22) is still armed. Cancel it here:
+    // the binding checks for pending timers before tearDown runs.
+    DashboardTransientTelemetry.debugReset();
   });
 
   // The day view places a card on the day of actual_time ?? planned_time.
