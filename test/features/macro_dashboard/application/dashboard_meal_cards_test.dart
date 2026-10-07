@@ -106,6 +106,48 @@ void main() {
     expect(describe(nodes), ['9:00 AM Logged: x, y', '11:00 AM Logged: z']);
   });
 
+  group('finding 112-011: "Any time" meals never sit out of clock order', () {
+    // The wave-34 day: seven "Any time" meals from 6:24 to 6:30, a Lunch at
+    // 6:25 and a Breakfast at 6:26. Grouping by slot filed the 6:30 soup
+    // under 6:24, above meals eaten at 6:25 and 6:26.
+    final day1824 = [
+      meal('oatmeal', null, 18, 24),
+      meal('bowl', null, 18, 24),
+      meal('w13-23-lunch', MealSlot.lunch, 18, 25),
+      meal('banana', null, 18, 26),
+      meal('scramble', MealSlot.breakfast, 18, 26),
+      meal('egg', null, 18, 27),
+      meal('eggs', null, 18, 28),
+      meal('chews', null, 18, 29),
+      meal('soup', null, 18, 30),
+    ];
+
+    test('a card closes when another card opens inside its window', () {
+      expect(describe(cards(day1824)), [
+        '6:24 PM Logged: bowl, oatmeal',
+        '6:25 PM Lunch: w13-23-lunch',
+        '6:26 PM Breakfast: scramble',
+        '6:26 PM Logged: banana, egg, eggs, chews, soup',
+      ]);
+    });
+
+    test('no card ever holds a meal eaten after a later card opened', () {
+      final nodes = cards(day1824);
+      for (var i = 0; i + 1 < nodes.length; i++) {
+        final nextOpen = nodes[i + 1].meals.first.id;
+        final nextTime = day1824.firstWhere((m) => m.id == nextOpen).eatenAt!;
+        for (final m in nodes[i].meals) {
+          final t = day1824.firstWhere((x) => x.id == m.id).eatenAt!;
+          expect(
+            t.isAfter(nextTime),
+            isFalse,
+            reason: '${m.id} ($t) sits above a card opened at $nextTime',
+          );
+        }
+      }
+    });
+  });
+
   group(
     'finding 27-001 day: cards in time order before and after a delete',
     () {
