@@ -8,8 +8,7 @@ description: Run one wave of a testing round as its lead. Agents drive the dev a
 You are the wave lead. Rules live in `docs/testing-wave/SPEC.md` and `docs/testing-wave/RUNBOOK.md`
 ("The wave lead's routine" is the authority for every step below; this skill is the order and the
 mechanics). Read both, plus `docs/testing-wave/README.md` and `docs/testing-wave/IMPROVEMENTS.md`,
-once per session. CLAUDE.md binds you and every agent: no `git stash`, explicit paths when staging,
-no `flutter build`, no push without Lee's go.
+once per session. CLAUDE.md binds you and every agent; this skill repeats none of it.
 
 Names: `ROUND` is `.scratch/testing-wave/rounds/<round>/` in the main clone, `FINDINGS` is
 `node scripts/testing-wave/findings.mjs`, `SIM` is `node scripts/testing-wave/simulator.mjs`,
@@ -24,8 +23,8 @@ You are the lead and run on the session's model. Every agent you spawn runs on O
 - No `ROUND`: `FINDINGS round new <round>`, then stop and tell Lee the round needs tickets in
   `ROUND/issues/` before a wave can run.
 - Read every ticket in `ROUND/issues/`. The wave is the tickets whose Status says ready and whose
-  blockers are done, cut to `--only NN,..` when given. Also cut it to the simulator cap (three, Lee,
-  2026-09-15) and the slot count in `lock.mjs`; the rest wait for the next wave.
+  blockers are done, cut to `--only NN,..` when given. Also cut it to the simulator cap in
+  `simulator.mjs` and the slot count in `lock.mjs`; the rest wait for the next wave.
 - Check `git log` and the wave log at the top of `ROUND/TRIAGE.md` for a wave another session left
   open. Never open a second wave on top of one; continue it at step 5 instead.
 - Fix or raise one or two open `IMPROVEMENTS.md` items and commit them now, before any worktree:

@@ -27,6 +27,35 @@ for that half and go on with the other. `secrets/integration_test.env`: never op
 
 **App data:** cleared by the wave lead.
 
+## Screens (from code, unverified)
+
+| Screen | Entry | Code |
+|---|---|---|
+| Welcome, onboarding, signup | as ticket 01 | `lib/features/onboarding/`, `lib/features/auth/presentation/screens/` |
+| Connected Apps: Garmin Connect card (Connect, Sync Now, Disconnect), TrainingPeaks card (Connect, write-back switch, Disconnect) | Settings → Connected Apps → `/settings/connected-apps` | `lib/features/settings/presentation/screens/connected_apps_screen.dart`, `lib/features/settings/presentation/widgets/tp_writeback_toggle_row.dart` |
+| Garmin and TrainingPeaks sign-in sheets (out of process) | Connect | runbook § 5 |
+| Garmin Connect web, connected apps page; TrainingPeaks web, workout view | Chrome (claude-in-chrome) | provider sites |
+| Timeline workout cards | `/main` | `lib/features/macro_dashboard/presentation/screens/macro_dashboard_screen.dart` |
+| Activity detail (fuel plan save) for a past and a future TP workout | tap a workout card → `/plan?activityId=…` | `lib/features/nutrition_plan/presentation/screens/activity_detail_screen.dart` |
+| Settings → Account → Delete Account | `/settings` | `settings_screen.dart` |
+
+## Expected records (`RUNS/expected.md`)
+
+Columns from `information_schema` first; never a token column.
+- Part A: `integrations` garmin row active after connect; `garmin_user_mappings` row (user id, Garmin
+  user id, created_at). After the revoke and Sync Now: a `garmin-backfill` edge log line answering 409
+  `garmin_reauth_required`; in Sentry `mealvana-endurance-dev`, one `warning` event with message
+  "garmin-backfill 409: Garmin token expired, athlete must reconnect Garmin" (area `garmin`) and no
+  `error` event for `garmin-backfill` in the window. After disconnect: the garmin row inactive or gone
+  (per the disconnect code) and the mapping removed.
+- Part B: `integrations` trainingpeaks row active; `tp_writeback_ledger` (id, activity_id,
+  tp_workout_id, block_kind, status, error, pushed_at): past workout → `failure` / `outside_edit_window`,
+  no PUT; future workout → the success status the code writes, and the block visible on TrainingPeaks.
+  After disconnect: the future workout's block stripped (ledger row for the remove op), the past one
+  skipped with a Note; no TrainingPeaks 400 event in Sentry.
+- After account delete: no `integrations`, `garmin_user_mappings` or `tp_writeback_ledger` rows for
+  the user. RevenueCat: none expected (no purchase in this ticket).
+
 ## Part A: Garmin dead token → 409 → Degraded
 
 From code (unverified): `ConnectTrainingController.triggerGarminBackfill`

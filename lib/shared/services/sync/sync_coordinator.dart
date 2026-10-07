@@ -217,7 +217,7 @@ class SyncCoordinator extends _$SyncCoordinator {
           );
           return;
         }
-        if (!uploadResult.success) {
+        if (uploadResult.failed) {
           throw StateError(
             'Upload failed for $repoKey: ${uploadResult.error ?? 'unknown error'}',
           );
@@ -560,7 +560,19 @@ class SyncCoordinator extends _$SyncCoordinator {
         for (var i = 0; i < runnable.length; i++) {
           final repoKey = runnable[i];
           final result = results[i];
-          if (result.success) continue;
+          if (!result.failed) {
+            // A deferral (rows awaiting their owner's session, DEV-A2) is
+            // not a failure: the repository left its promoted Note, the rows
+            // stay dirty, and dependants are not blocked by it.
+            if (result.deferred) {
+              _report.debug(
+                'Dirty record upload deferred',
+                area: 'sync',
+                data: {'repository': repoKey, 'reason': result.error},
+              );
+            }
+            continue;
+          }
 
           failures.add(repoKey);
           // `uploadDirtyRecords()` swallowed the exception into
@@ -723,7 +735,17 @@ class SyncCoordinator extends _$SyncCoordinator {
 
       // 2. Upload dirty records FIRST (protect user data)
       final uploadResult = await repository.uploadDirtyRecords(userId);
-      if (!uploadResult.success) {
+      if (uploadResult.deferred) {
+        // Same as ensureSynced (DEV-A2): not a failure, nothing to read for
+        // a user the session cannot see, no stamp, so the next call retries.
+        _report.debug(
+          'Force sync stopped: upload deferred',
+          area: 'sync',
+          data: {'repoKey': repoKey, 'reason': uploadResult.error},
+        );
+        return;
+      }
+      if (uploadResult.failed) {
         throw StateError(
           'Upload failed for $repoKey: ${uploadResult.error ?? 'unknown error'}',
         );

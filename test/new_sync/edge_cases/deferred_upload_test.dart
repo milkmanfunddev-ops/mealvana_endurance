@@ -69,6 +69,18 @@ void main() {
     expect(report.faults, isEmpty);
   });
 
+  test('only a real failure reads as failed: a deferral and a success do '
+      'not', () {
+    // Every caller that checks an upload result (CLAUDE.md: always check it)
+    // asks one question, so a deferral can never be mistaken for a failure
+    // in a path the coordinator test above does not cover (force sync,
+    // upload-all, pre-logout, version-check backup).
+    expect(UploadResult.deferred('awaits its session').failed, isFalse);
+    expect(UploadResult.failed('boom').failed, isTrue);
+    expect(UploadResult.successful(1).failed, isFalse);
+    expect(UploadResult.nothingToUpload().failed, isFalse);
+  });
+
   test('a real upload failure is still a Fault', () async {
     final report = RecordingReport();
     final container = ProviderContainer(

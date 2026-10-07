@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Testing-wave simulator pool: at most SIMULATOR_CAP (three) wave simulators on this Mac at once
+// Testing-wave simulator pool: at most SIMULATOR_CAP wave simulators on this Mac at once
 // (Lee, 2026-09-15), each a copy of the dev simulator (same device type and runtime, the dev app
 // and the mobile MCP helper installed, the dev app's data container copied in: login, Drift
 // database, preferences). An agent claims one when it needs a device and releases it right after.

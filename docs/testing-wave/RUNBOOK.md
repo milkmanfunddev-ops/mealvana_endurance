@@ -182,13 +182,11 @@ Save each extract to `RUNS` (`revenuecat-<what>.json`, `db-<what>.txt`) and comp
 
 Fixtures, dev only, never written by hand:
 
-- Start states come from `node scripts/testing-wave/seed-states.mjs` on an account this run made,
-  never on another run's account, which that run's step 9 deletes (#87). Its header lists the
-  states it writes (a coach pairing, a RevenueCat grant that ends minutes out) and `show`, which
-  only reads. The state goes with the account when step 9 deletes it.
-- Code fixtures come from `node scripts/testing-wave/seed-codes.mjs` (`seed`, `list`, `own <user
-  id>`; its header says what each writes). Run `seed` at the start of a redeem run, since an
-  earlier run may have spent a once-in-total code.
+- Start states are written on an account this run made, never on another run's account, which
+  that run's step 9 deletes (#87): through the app where it can, otherwise with a seed script the
+  ticket names (a round whose branch needs one adds it under `scripts/testing-wave/` with a header
+  listing what it writes and a read-only `show`; mealplanning's `seed-states.mjs` and
+  `seed-codes.mjs` are the pattern). The state goes with the account when step 9 deletes it.
 
 ## 7. Look around on every screen
 
@@ -303,8 +301,8 @@ Finding that raises a real product question goes to the review queue
    data was cleared, the ticket's full text and the rules it cites, and points at this runbook. The
    prompt's build commit wins over `app-build.json` if they ever differ.
    - Every prompt repeats: "no RevenueCat or database writes the ticket doesn't name, even on your
-     own account" (#97). A start state the ticket needs is written by the run itself with
-     `seed-states.mjs` on its own account, never planned on another run's account (#87).
+     own account" (#97). A start state the ticket needs is written by the run itself on its own
+     account, never planned on another run's account (#87).
    - Every line of a code map in a prompt says "from code, unverified", and anything a Finding's
      verdict hangs on is checked on the screen, never taken from the map (#91).
    - Before writing any prompt, read the code behind every screen the ticket visits: what its Add,

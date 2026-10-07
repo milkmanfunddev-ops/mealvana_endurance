@@ -31,6 +31,32 @@ push setup: anything that needs OneSignal or APNs from outside stays a followup-
 **Accounts:** one new `lee+e2e-17-<UTC time>@rightpathprogramming.com` (onboarding with run).
 **App data:** cleared by the wave lead. **Cost:** no AI call.
 
+## Screens (from code, unverified)
+
+| Screen | Entry | Code |
+|---|---|---|
+| Welcome, onboarding, signup | as ticket 01 | `lib/features/onboarding/`, `lib/features/auth/presentation/screens/` |
+| iOS notification permission prompt | after sign-in (record when) | system, requested by `lib/shared/services/notification_service.dart` |
+| Events tab, New Event, event detail ("Set Up Carb Loading", "Carb Loading Plan") | tab 1 → `/events/create` → `/events/:eventId` | `lib/features/events/presentation/screens/{events_list,event_form,event_detail}_screen.dart`, `widgets/event_action_buttons_card.dart` |
+| Protocol chooser; Carb Loading Plan summary ("Remove carb loading plan") | "Set Up Carb Loading" / "Carb Loading Plan" | `lib/features/carb_loading/presentation/screens/{carb_loading_protocol_selection,carb_plan_summary}_screen.dart` |
+| iOS banner and Notification Center (the nudge) | background / foreground the app | system |
+| Event detail opened from the nudge tap | payload `carb_event:<eventId>` → `/events/:eventId` | `notification_service.dart`, `event_detail_screen.dart` |
+| Settings → Account → Delete Account | `/settings` | `lib/features/settings/presentation/screens/settings_screen.dart` |
+
+## Expected records (`RUNS/expected.md`)
+
+Columns from `information_schema` first.
+- `events`: one row per event created (2 days out, 10 days out, today), all gone after the deletes.
+- `carb_loading_plans` / `carb_loading_days`: rows for the 2-day-out event after step 6's setup; none
+  after "Remove carb loading plan".
+- Nudge state is local only (shared preferences: last-shown day, armed fire days; from code), so no
+  dev DB row is expected for a nudge. Evidence is the banner screenshot, the Notification Center
+  screenshot and the console.
+- The notification-permission answer: no server row expected on develop-next (the
+  `users.notifications_enabled` write was a mealplanning fix, 138 item 16); record what you see.
+- RevenueCat and Sentry: none expected. Any Sentry event from the push stack during the run is a
+  Finding.
+
 ## What the code does (from code, unverified)
 
 - `NotificationService` (`lib/shared/services/notification_service.dart`): local notifications on the

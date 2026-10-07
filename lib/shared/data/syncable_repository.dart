@@ -47,6 +47,11 @@ class UploadResult {
   factory UploadResult.failed(String error) =>
       UploadResult(success: false, count: 0, error: error);
 
+  /// The one question every caller asks (CLAUDE.md: always check the
+  /// result): did the upload go wrong? A deferral is not [success], but it
+  /// is not a failure either; the rows wait for their owner's session.
+  bool get failed => !success && !deferred;
+
   factory UploadResult.deferred(String reason) => UploadResult(
     success: false,
     count: 0,

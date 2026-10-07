@@ -28,6 +28,20 @@ Never drain or top up a shared account.
 logging 12` before each describe send (two). The send refused at zero balance makes no model call
 (the server checks the balance first); write that in notes so the lead can count it back.
 
+## Screens (from code, unverified)
+
+| Screen | Entry | Code |
+|---|---|---|
+| Welcome, onboarding, signup, Verify your email | `/welcome` → `/onboarding` → `/auth/post-onboarding` → `/auth/email-signup` | see ticket 01 |
+| Log a meal sheet, Describe tab, with the token pill | Timeline "+ Add Food" | `lib/features/meal_logging/presentation/screens/log_meal_screen.dart`, `lib/features/ai_credits/presentation/widgets/token_pill.dart` |
+| Token top-up sheet | tap the pill | `lib/features/ai_credits/presentation/sheets/token_top_up_sheet.dart` |
+| Review | `/meal-log/review` | `lib/features/meal_logging/presentation/screens/meal_review_screen.dart` |
+| Jade chat | deep link `/jade` | `lib/features/ai_coach/presentation/screens/ai_coach_chat_screen.dart` |
+| "Out of AI credits" dialog ("Not now" / "Get credits") | a 402 from an AI call | `lib/features/ai_credits/presentation/insufficient_credits_paywall.dart` |
+| AI Credits (Your Balance, Credit Packs, Restore, How credits work) | `/buy-credits` | `lib/features/ai_credits/presentation/screens/buy_credits_screen.dart` |
+| RevenueCat Test Store purchase sheet | a pack's buy button | system / RevenueCat |
+| Settings → Developer / Tester section | seven taps on the version text | `lib/features/settings/presentation/screens/settings_screen.dart` |
+
 ## How the system works (from code, unverified; confirm on screen and by SQL)
 
 - Wallet: `token_wallets` (balance, `free_period`) and `token_ledger` (delta, reason, ref,

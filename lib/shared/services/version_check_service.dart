@@ -216,7 +216,9 @@ class VersionCheckService {
         for (final entry in repos.entries) {
           try {
             final result = await entry.value.uploadDirtyRecords(userId);
-            if (!result.success) {
+            // A deferral is not an error (DEV-A2); the rows wait for their
+            // owner's session and the repository already left its Note.
+            if (result.failed) {
               uploadErrors.add(
                 UploadError(
                   repository: entry.key,

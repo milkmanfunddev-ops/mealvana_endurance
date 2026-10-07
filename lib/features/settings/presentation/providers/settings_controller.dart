@@ -831,7 +831,9 @@ class SettingsController extends _$SettingsController {
 
     for (var i = 0; i < repos.length; i++) {
       final result = results[i];
-      if (result.success) continue;
+      // A deferral is not a failure (DEV-A2): the repository left its Note
+      // and the rows wait for their owner's session.
+      if (!result.failed) continue;
       report.fault(
         LoggedFault(
           'Pre-logout upload failed for ${repos[i].repositoryKey}',

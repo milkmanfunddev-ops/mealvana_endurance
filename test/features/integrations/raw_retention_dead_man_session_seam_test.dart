@@ -88,7 +88,7 @@ void main() {
 
     expect(report.degradeds, isEmpty, reason: 'a false alarm');
     expect(report.faults, isEmpty);
-    expect(report.notes.single.area, 'integrations');
+    expect(report.notes.single.area, 'sync');
   });
 
   test('signed in with a fresh sweep: silent', () async {

@@ -43,6 +43,24 @@ before pressing anything), `environment` development, the Supabase user id, tags
 `shorebird_patch:none`, a PostgREST `http` breadcrumb, no replay. Each Fault and Degraded also prints
 one `📊 [ANALYTICS] error_reported {...}` line in the console (dev uses the echo tracker).
 
+## Screens (from code, unverified)
+
+| Screen | Entry | Code |
+|---|---|---|
+| Welcome → log in | `/welcome` → `/auth/post-onboarding?mode=login` → `/auth/email-login` | `lib/features/auth/presentation/screens/` |
+| Timeline (header gear) | `/main` | `lib/shared/widgets/tabs_screen.dart` |
+| Settings: version label, Developer / Tester section, "Debug console" row | `/settings` | `lib/features/settings/presentation/screens/settings_screen.dart` |
+| Debug console, "Sentry pipeline" expansion with five buttons and a result line | `MaterialPageRoute` from the row | `lib/features/settings/presentation/screens/debug_screen.dart` |
+
+## Expected records (`RUNS/expected.md`)
+
+- Sentry, project `mealvana-endurance-dev`: exactly the five events in the button table above, each
+  with this build's release (except the edge event, which carries environment `edge-dev`), the dev
+  test account's user id, the listed tags and breadcrumbs, and no replay. Dev replay count unchanged.
+- Console: one `📊 [ANALYTICS] error_reported` line per Fault and Degraded (three), none for the crash.
+- Dev DB: none. The probes write no rows; the edge probe is refused by `get-foods` before any write.
+- RevenueCat: none. No purchase or customer change in this ticket.
+
 ## Steps
 
 1. Sign in. Reach the Debug console. Note the UTC time.

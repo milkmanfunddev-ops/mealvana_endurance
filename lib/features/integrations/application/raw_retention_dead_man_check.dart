@@ -65,9 +65,11 @@ class RawRetentionDeadManCheck {
     // sync that outlived a sign-out. Without a session there is no evidence
     // either way, so skip, and leave the throttle for the next signed-in sync.
     if (_fetchNewestSweep == null && _supabase.auth.currentUser == null) {
+      // Area `sync`: this check runs inside sync, and `sync` is a promoted
+      // Note area (D9: the skip is readable in prod, not just a breadcrumb).
       await _r.note(
         'raw-retention dead-man check skipped: no session, audit rows hidden',
-        area: 'integrations',
+        area: 'sync',
       );
       return;
     }

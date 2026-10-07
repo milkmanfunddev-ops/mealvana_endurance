@@ -86,8 +86,8 @@ that holds (exit 0).
   (`CRED update`).
 - Each run deletes the accounts it created through the app's own delete-account flow, so deletion
   is tested every time. `scripts/testing-wave/sweep-accounts.mjs` removes leftovers on dev.
-- A start state a check needs is written on the run's own account (`seed-states.mjs`), never planned
-  on another run's account, which that run deletes.
+- A start state a check needs is written on the run's own account, through the app or a seed script
+  the ticket names, never planned on another run's account, which that run deletes.
 
 ## Cost caps
 
