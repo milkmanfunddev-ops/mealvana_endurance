@@ -385,20 +385,25 @@ class _WorkoutCardState extends State<WorkoutCard> {
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        Row(
+        // The title gets its space first; the chip sits beside it when the
+        // row has room and wraps under it when it does not. In a Row the
+        // chip took its width first and squeezed "Swim" to "SW…" behind
+        // "verified · Final Surge" (Finding 100-002).
+        Wrap(
+          crossAxisAlignment: WrapCrossAlignment.center,
+          spacing: 8,
+          runSpacing: 4,
           children: [
-            Flexible(
-              child: Text(
-                data.name,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  fontFamily: 'Compadre',
-                  fontSize: 17,
-                  color: MeTokens.cream,
-                ),
+            Text(
+              data.name,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                fontFamily: 'Compadre',
+                fontSize: 17,
+                color: MeTokens.cream,
               ),
             ),
-            const SizedBox(width: 8),
             _chip(done, skipped),
           ],
         ),
@@ -468,14 +473,19 @@ class _WorkoutCardState extends State<WorkoutCard> {
             Icon(Icons.check, size: 9, color: ink),
             const SizedBox(width: 3),
           ],
-          Text(
-            data.chipLabel,
-            style: TextStyle(
-              fontFamily: 'Apercu',
-              fontSize: 9.5,
-              fontWeight: FontWeight.w500,
-              letterSpacing: 0.4,
-              color: ink,
+          // The chip shrinks before the title ever does (Finding 100-002).
+          Flexible(
+            child: Text(
+              data.chipLabel,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontFamily: 'Apercu',
+                fontSize: 9.5,
+                fontWeight: FontWeight.w500,
+                letterSpacing: 0.4,
+                color: ink,
+              ),
             ),
           ),
         ],
