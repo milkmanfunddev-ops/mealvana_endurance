@@ -90,6 +90,25 @@ class ContentKeys {
       'settings.create_account_button';
   static const String settingsLogInButton = 'settings.log_in_button';
   static const String settingsSignOutButton = 'settings.sign_out_button';
+  // The account card's confirms (mp-508, ticket 47): no guest mode, so the
+  // sign-out body says the athlete signs in again. On mealplanning the title,
+  // buttons and delete confirm reuse the paywall's keys; develop has no
+  // paywall, so they live under settings with the same text.
+  static const String settingsSignOutConfirmTitle =
+      'settings.sign_out_confirm_title';
+  static const String settingsSignOutConfirmBody =
+      'settings.sign_out_confirm_body';
+  static const String settingsSignOutConfirmAction =
+      'settings.sign_out_confirm_action';
+  static const String settingsConfirmCancel = 'settings.confirm_cancel';
+  static const String settingsDeleteAccountButton =
+      'settings.delete_account_button';
+  static const String settingsDeleteConfirmTitle =
+      'settings.delete_confirm_title';
+  static const String settingsDeleteConfirmBody =
+      'settings.delete_confirm_body';
+  static const String settingsDeleteConfirmAction =
+      'settings.delete_confirm_action';
   static const String settingsProfileSection = 'settings.profile_section';
   static const String settingsPreferencesSection =
       'settings.preferences_section';
