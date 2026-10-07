@@ -1,6 +1,6 @@
 # 25: Edge-function logs through the Supabase MCP; delete `scripts/edge_logs.sh`
 
-**Status:** ready (round develop-2026-10, fix)
+**Status:** in-progress (wave 2, 2026-10-07)
 **Labels:** fix, round:develop-2026-10, area:harness
 **Branch:** `develop-next` (fix-wave worktree)
 **Blocked by:** none (no code overlap)
