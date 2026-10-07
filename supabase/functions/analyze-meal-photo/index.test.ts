@@ -367,4 +367,11 @@ describe('F. ANALYZE_MEAL_PHOTO_MODEL default', () => {
     assertEquals(Deno.env.get('ANALYZE_MEAL_PHOTO_MODEL'), undefined);
     assertEquals(ANALYZE_MEAL_PHOTO_MODEL, 'anthropic/claude-sonnet-4.6');
   });
+
+  it('logs usage only to ai_usage, never to the dev-only jade_calls table', async () => {
+    // Round develop-2026-10, ticket 27: the duplicate jade_calls insert failed
+    // on prod (the table is dev-only) and raised a warning on every call.
+    const src = await Deno.readTextFile(new URL('./index.ts', import.meta.url));
+    assertEquals(/["']jade_calls["']/.test(src), false);
+  });
 });

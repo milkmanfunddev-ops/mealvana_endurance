@@ -80,8 +80,9 @@ import '../../features/coach_mode/presentation/screens/coach_directory_screen.da
 import '../../features/coach_mode/presentation/screens/coach_chat_screen.dart';
 import '../../features/coach_mode/presentation/screens/coach_portal_screen.dart';
 import '../../features/coach_mode/application/coach_service.dart';
-// Mealvana AI AI coach
-import '../../features/ai_coach/presentation/screens/ai_coach_chat_screen.dart';
+// Mealvana AI coach (Jade)
+// ARCHIVED 2026-10-07 (round develop-2026-10, ticket 27): screen at lib/features/_archived/ai_coach/presentation/screens/ai_coach_chat_screen.dart; restore by moving it back and uncommenting.
+// import '../../features/ai_coach/presentation/screens/ai_coach_chat_screen.dart';
 // Meal logging screens
 import '../../features/meal_logging/presentation/screens/edit_meal_log_screen.dart';
 // ARCHIVED 2026-10-07 (round develop-2026-10, ticket 26): screen at lib/features/_archived/meal_logging/presentation/screens/manual_log_screen.dart; restore by moving it back and uncommenting.
@@ -151,13 +152,12 @@ class AppRouter {
 
         // Metered meal-AI routes fail closed. Hiding the entry points is the
         // primary UX, while this guard also blocks stale deep links from an
-        // older build when the release flag is off. `/jade` rides the same
-        // flag: its banner entry point is intentionally unrendered, and the
-        // chat screen calls the jade-chat edge function on every send.
-        // `/buy-credits` rides it too — with every AI surface hidden there is
-        // nothing to buy credits for, and the 402 paywall flows that push it
-        // all originate from the gated AI calls.
-        if ((currentPath == '/jade' || currentPath == '/buy-credits') &&
+        // older build when the release flag is off. Only `/buy-credits` is
+        // left (the photo, describe and /jade routes were archived in round
+        // develop-2026-10): with every AI surface hidden there is nothing to
+        // buy credits for, and the 402 paywall flows that push it all
+        // originate from the gated AI calls.
+        if (currentPath == '/buy-credits' &&
             !ref.read(appConfigProvider).describeMealEnabled) {
           return '/';
         }
@@ -1080,11 +1080,12 @@ class AppRouter {
         // ====================================================================
         // MEALVANA AI COACH
         // ====================================================================
-        GoRoute(
-          path: '/jade',
-          name: 'jade-chat',
-          builder: (context, state) => const AiCoachChatScreen(),
-        ),
+        // ARCHIVED 2026-10-07 (round develop-2026-10, ticket 27): screen at lib/features/_archived/ai_coach/presentation/screens/ai_coach_chat_screen.dart; restore by moving it back and uncommenting.
+        // GoRoute(
+        //   path: '/jade',
+        //   name: 'jade-chat',
+        //   builder: (context, state) => const AiCoachChatScreen(),
+        // ),
       ],
 
       // Error handling

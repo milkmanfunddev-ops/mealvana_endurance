@@ -1,6 +1,6 @@
-import '../../../shared/domain/decode_issue.dart';
-import '../../meal_logging/domain/meal_component.dart';
-import '../../meal_logging/domain/meal_slot.dart';
+import 'package:mealvana_endurance/shared/domain/decode_issue.dart';
+import 'package:mealvana_endurance/features/meal_logging/domain/meal_component.dart';
+import 'package:mealvana_endurance/features/meal_logging/domain/meal_slot.dart';
 
 /// A suggestion for a single meal, as sent by Mealvana AI.
 ///

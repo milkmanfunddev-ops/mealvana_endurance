@@ -16,7 +16,7 @@ import { tool } from 'npm:ai@6';
 import { z } from 'npm:zod@3';
 import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 import { getInSeasonProduce } from './in_season.ts';
-import { captureEdgeError } from '../sentry.ts';
+import { captureEdgeError } from '../../../_shared/sentry.ts';
 
 // ---------------------------------------------------------------------------
 // Context

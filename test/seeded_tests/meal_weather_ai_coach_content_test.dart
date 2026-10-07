@@ -1,4 +1,4 @@
-// Seeded CONTENT tests — meal-log edit, weather, and ai_coach.
+// Seeded CONTENT tests — meal-log edit and weather.
 //
 // Each test pumps a screen with fake seeded state and asserts rendered VALUES.
 // Screens that read GoRouterState.extra use a two-route GoRouter helper.
@@ -6,7 +6,6 @@
 // Screens covered:
 //  3. EditMealLogScreen        — Fields pre-fill from a seeded MealLog extra.
 //  4. WeatherDetailScreen      — Temp/humidity/conditions values render.
-//  5. AiCoachChatScreen           — Message history renders user + assistant bubbles.
 
 // ignore_for_file: implementation_imports
 
@@ -17,14 +16,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/src/internals.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
-import 'package:mocktail/mocktail.dart';
 
-import 'package:mealvana_endurance/features/content/application/content_service.dart';
-import 'package:mealvana_endurance/features/ai_coach/data/ai_coach_chat_repository.dart';
-import 'package:mealvana_endurance/features/ai_coach/domain/ai_coach_conversation.dart';
-import 'package:mealvana_endurance/features/ai_coach/domain/ai_coach_message.dart';
-import 'package:mealvana_endurance/features/ai_coach/presentation/providers/ai_coach_chat_controller.dart';
-import 'package:mealvana_endurance/features/ai_coach/presentation/screens/ai_coach_chat_screen.dart';
 import 'package:mealvana_endurance/features/meal_logging/domain/meal_log.dart';
 import 'package:mealvana_endurance/features/meal_logging/domain/meal_log_source.dart';
 import 'package:mealvana_endurance/features/meal_logging/domain/meal_slot.dart';
@@ -38,9 +30,7 @@ import 'package:mealvana_endurance/features/nutrition_plan/domain/run_parameters
     show UnitSystem;
 import 'package:mealvana_endurance/shared/providers/unit_system_provider.dart';
 import 'package:mealvana_endurance/shared/services/app_config.dart';
-import 'package:mealvana_endurance/shared/services/report/report.dart';
 
-import '../helpers/fakes/recording_report.dart';
 import '../helpers/widget_test_harness.dart';
 
 // =============================================================================
@@ -100,52 +90,6 @@ Future<void> _pumpWithExtra(
 class _FakeMealLogController extends MealLogController {
   @override
   FutureOr<void> build() => null;
-}
-
-// =============================================================================
-// Fakes — ContentService
-// =============================================================================
-
-class _FakeContentService extends Fake implements ContentService {
-  @override
-  String getValue(String key, {String? defaultValue = ''}) =>
-      defaultValue ?? '';
-}
-
-// =============================================================================
-// Fakes — AiCoachChatRepository (no network; returns immediate done event)
-// =============================================================================
-
-class _FakeAiCoachChatRepository extends Fake implements AiCoachChatRepository {
-  _FakeAiCoachChatRepository({
-    this.conversations = const [],
-    this.messagesByConversation = const {},
-  });
-
-  final List<AiCoachConversation> conversations;
-  final Map<String, List<AiCoachMessage>> messagesByConversation;
-
-  @override
-  Future<List<AiCoachConversation>> fetchConversations() async => conversations;
-
-  @override
-  Future<List<AiCoachMessage>> fetchMessages(String conversationId) async =>
-      messagesByConversation[conversationId] ?? [];
-
-  @override
-  Future<AiCoachSendResult> requestOpener({
-    String? timezone,
-    double? latitude,
-    double? longitude,
-  }) async => AiCoachSendResult(
-    conversationId: '',
-    // Use async generator so the AiCoachDoneEvent is delivered across an
-    // event-loop boundary that tester.pump() can advance. Stream.fromIterable
-    // emits synchronously and the event never arrives in the pump cycle.
-    eventStream: (() async* {
-      yield const AiCoachDoneEvent();
-    })(),
-  );
 }
 
 // =============================================================================
@@ -651,257 +595,6 @@ void main() {
         find.text('212°F'),
         findsWidgets,
         reason: '100°C must convert to 212°F',
-      );
-    });
-  });
-
-  // ===========================================================================
-  // 5. AiCoachChatScreen — message history renders
-  // ===========================================================================
-
-  group('AiCoachChatScreen — seeded message history', () {
-    /// Wire up the AI-coach dependencies the screen needs:
-    ///   - aiCoachChatRepositoryProvider → _FakeAiCoachChatRepository
-    ///   - contentServiceProvider     → _FakeContentService
-    ///   - reportProvider             → RecordingReport
-    List<Override> _AiCoachOverrides({
-      List<AiCoachConversation> conversations = const [],
-      Map<String, List<AiCoachMessage>> messagesByConversation = const {},
-    }) {
-      return [
-        aiCoachChatRepositoryProvider.overrideWithValue(
-          _FakeAiCoachChatRepository(
-            conversations: conversations,
-            messagesByConversation: messagesByConversation,
-          ),
-        ),
-        contentServiceProvider.overrideWithValue(_FakeContentService()),
-        reportProvider.overrideWithValue(RecordingReport()),
-      ];
-    }
-
-    testWidgets('renders empty state with greeting when no history', (
-      tester,
-    ) async {
-      // NOTE: settle: false — the empty state triggers _maybeRequestOpener()
-      // which starts a fake streaming sequence. The _TypingIndicator has a
-      // repeating AnimationController so pumpAndSettle never settles. Pump
-      // many small frames to flush microtasks + post-frame callbacks without
-      // relying on settle.
-      await pumpSeeded(
-        tester,
-        const AiCoachChatScreen(),
-        overrides: _AiCoachOverrides(),
-        settle: false,
-      );
-      // Flush the async build() + opener stream + post-frame callbacks.
-      for (var i = 0; i < 10; i++) {
-        await tester.pump(const Duration(milliseconds: 100));
-      }
-
-      // The FakeContentService returns the defaultValue for every key.
-      // ai_coach.empty_greeting default = "Hey, I'm Mealvana"
-      expect(
-        find.textContaining("Hey, I'm Mealvana"),
-        findsOneWidget,
-        reason: 'Empty greeting must appear when no conversation history',
-      );
-    });
-
-    testWidgets('renders input hint text', (tester) async {
-      // settle: false — repeating AnimationController in empty state prevents
-      // pumpAndSettle from completing. See note above.
-      await pumpSeeded(
-        tester,
-        const AiCoachChatScreen(),
-        overrides: _AiCoachOverrides(),
-        settle: false,
-      );
-      for (var i = 0; i < 10; i++) {
-        await tester.pump(const Duration(milliseconds: 100));
-      }
-
-      // ai_coach.input_hint default = "Ask Mealvana AI anything…"
-      expect(
-        find.textContaining('Ask Mealvana anything'),
-        findsOneWidget,
-        reason: 'Input hint must appear in the text field',
-      );
-    });
-
-    testWidgets('renders user message bubble from seeded history', (
-      tester,
-    ) async {
-      final now = DateTime.now();
-      final conversation = AiCoachConversation(
-        id: 'conv-test',
-        title: 'Test chat',
-        createdAt: now.subtract(const Duration(hours: 1)),
-        updatedAt: now,
-        isDeleted: false,
-      );
-      final messages = [
-        AiCoachMessage(
-          id: 'msg-u1',
-          conversationId: 'conv-test',
-          role: AiCoachMessageRole.user,
-          content: 'How many carbs before a long run?',
-          createdAt: now.subtract(const Duration(minutes: 5)),
-        ),
-        AiCoachMessage(
-          id: 'msg-a1',
-          conversationId: 'conv-test',
-          role: AiCoachMessageRole.assistant,
-          content: 'For a run over 90 minutes, aim for 1-4g/kg.',
-          createdAt: now.subtract(const Duration(minutes: 4)),
-        ),
-      ];
-
-      await pumpSeeded(
-        tester,
-        const AiCoachChatScreen(),
-        overrides: _AiCoachOverrides(
-          conversations: [conversation],
-          messagesByConversation: {'conv-test': messages},
-        ),
-        settle: true,
-      );
-
-      expect(
-        find.text('How many carbs before a long run?'),
-        findsOneWidget,
-        reason: 'User message content must appear in the chat list',
-      );
-    });
-
-    testWidgets('renders assistant message bubble from seeded history', (
-      tester,
-    ) async {
-      final now = DateTime.now();
-      final conversation = AiCoachConversation(
-        id: 'conv-test',
-        title: 'Test chat',
-        createdAt: now,
-        updatedAt: now,
-        isDeleted: false,
-      );
-      final messages = [
-        AiCoachMessage(
-          id: 'msg-a1',
-          conversationId: 'conv-test',
-          role: AiCoachMessageRole.assistant,
-          content: 'For a run over 90 minutes, aim for 1-4g/kg.',
-          createdAt: now,
-        ),
-      ];
-
-      await pumpSeeded(
-        tester,
-        const AiCoachChatScreen(),
-        overrides: _AiCoachOverrides(
-          conversations: [conversation],
-          messagesByConversation: {'conv-test': messages},
-        ),
-        settle: true,
-      );
-
-      expect(
-        find.text('For a run over 90 minutes, aim for 1-4g/kg.'),
-        findsOneWidget,
-        reason: 'Assistant message content must appear in the chat list',
-      );
-    });
-
-    testWidgets('renders both user and assistant messages in order', (
-      tester,
-    ) async {
-      final now = DateTime.now();
-      final conversation = AiCoachConversation(
-        id: 'conv-order',
-        title: '',
-        createdAt: now,
-        updatedAt: now,
-        isDeleted: false,
-      );
-      final messages = [
-        AiCoachMessage(
-          id: 'msg-u1',
-          conversationId: 'conv-order',
-          role: AiCoachMessageRole.user,
-          content: 'How many carbs before a long run?',
-          createdAt: now.subtract(const Duration(minutes: 5)),
-        ),
-        AiCoachMessage(
-          id: 'msg-a1',
-          conversationId: 'conv-order',
-          role: AiCoachMessageRole.assistant,
-          content: 'For a run over 90 minutes, aim for 1-4g/kg.',
-          createdAt: now.subtract(const Duration(minutes: 4)),
-        ),
-      ];
-
-      await pumpSeeded(
-        tester,
-        const AiCoachChatScreen(),
-        overrides: _AiCoachOverrides(
-          conversations: [conversation],
-          messagesByConversation: {'conv-order': messages},
-        ),
-        settle: true,
-      );
-
-      expect(find.text('How many carbs before a long run?'), findsOneWidget);
-      expect(
-        find.text('For a run over 90 minutes, aim for 1-4g/kg.'),
-        findsOneWidget,
-      );
-    });
-
-    testWidgets('Mealvana AI name appears in app bar from content service', (
-      tester,
-    ) async {
-      // settle: false — repeating AnimationController in empty state prevents
-      // pumpAndSettle from completing. See note above.
-      // ai_coach.coach_name defaultValue = 'Mealvana AI'
-      await pumpSeeded(
-        tester,
-        const AiCoachChatScreen(),
-        overrides: _AiCoachOverrides(),
-        settle: false,
-      );
-      for (var i = 0; i < 10; i++) {
-        await tester.pump(const Duration(milliseconds: 100));
-      }
-
-      expect(
-        find.text('Mealvana AI'),
-        findsWidgets,
-        reason:
-            'Coach name from ContentService must appear in the AppBar title',
-      );
-    });
-
-    testWidgets('suggested prompt chips render on empty state', (tester) async {
-      // settle: false — repeating AnimationController in empty state prevents
-      // pumpAndSettle from completing. See note above.
-      // NOTE: The empty state only renders if _maybeRequestOpener produced no
-      // content (opener returns AiCoachDoneEvent immediately with empty content,
-      // so the placeholder is dropped and the static empty state is shown).
-      await pumpSeeded(
-        tester,
-        const AiCoachChatScreen(),
-        overrides: _AiCoachOverrides(),
-        settle: false,
-      );
-      for (var i = 0; i < 10; i++) {
-        await tester.pump(const Duration(milliseconds: 100));
-      }
-
-      // ai_coach.suggested_prompt_plan_day default = 'Plan my day'
-      expect(
-        find.text('Plan my day'),
-        findsOneWidget,
-        reason: 'Suggested prompt chip must appear in the empty state',
       );
     });
   });

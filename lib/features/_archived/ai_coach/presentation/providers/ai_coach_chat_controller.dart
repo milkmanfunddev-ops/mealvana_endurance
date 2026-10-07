@@ -2,13 +2,13 @@ import 'dart:async';
 
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
-import '../../../../features/content/application/content_service.dart';
-import '../../../ai_credits/domain/insufficient_credits_exception.dart';
-import '../../../ai_credits/presentation/insufficient_credits_paywall.dart';
-import '../../data/ai_coach_chat_repository.dart';
-import '../../domain/ai_coach_message.dart';
-import '../../domain/ai_coach_ui_part.dart';
-import '../../../../shared/services/report/report.dart';
+import 'package:mealvana_endurance/features/content/application/content_service.dart';
+import 'package:mealvana_endurance/features/ai_credits/domain/insufficient_credits_exception.dart';
+import 'package:mealvana_endurance/features/ai_credits/presentation/insufficient_credits_paywall.dart';
+import 'package:mealvana_endurance/features/ai_coach/data/ai_coach_chat_repository.dart';
+import 'package:mealvana_endurance/features/ai_coach/domain/ai_coach_message.dart';
+import 'package:mealvana_endurance/features/ai_coach/domain/ai_coach_ui_part.dart';
+import 'package:mealvana_endurance/shared/services/report/report.dart';
 
 part 'ai_coach_chat_controller.g.dart';
 

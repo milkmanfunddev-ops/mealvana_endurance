@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
-import '../../../../../shared/widgets/kyle_design/kyle_design.dart';
-import '../../../meal_logging/domain/meal_log_source.dart';
-import '../../../meal_logging/domain/meal_slot.dart';
-import '../../../meal_logging/presentation/providers/meal_log_providers.dart';
-import '../../domain/ai_coach_ui_part.dart';
+import 'package:mealvana_endurance/shared/widgets/kyle_design/kyle_design.dart';
+import 'package:mealvana_endurance/features/meal_logging/domain/meal_log_source.dart';
+import 'package:mealvana_endurance/features/meal_logging/domain/meal_slot.dart';
+import 'package:mealvana_endurance/features/meal_logging/presentation/providers/meal_log_providers.dart';
+import 'package:mealvana_endurance/features/ai_coach/domain/ai_coach_ui_part.dart';
 
 // ---------------------------------------------------------------------------
 // AiCoachMealCard

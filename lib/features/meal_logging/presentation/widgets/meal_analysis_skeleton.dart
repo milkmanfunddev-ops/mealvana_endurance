@@ -4,7 +4,7 @@ import 'package:shimmer/shimmer.dart';
 import '../../../../theme/kyle_design/app_colors.dart';
 import '../../../../theme/kyle_design/app_spacing.dart';
 import '../../../../theme/kyle_design/app_text_styles.dart';
-import '../../../ai_coach/presentation/widgets/ai_thinking_status.dart';
+import '../../../../shared/widgets/ai_thinking_status.dart';
 
 /// The waiting state for a Mealvana AI meal analysis: the shape of the answer,
 /// shimmering, where the answer is about to be.

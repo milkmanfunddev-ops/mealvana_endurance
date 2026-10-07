@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../../../shared/widgets/kyle_design/kyle_design.dart';
-import '../../domain/ai_coach_ui_part.dart';
-import '../providers/ai_coach_chat_controller.dart';
+import 'package:mealvana_endurance/shared/widgets/kyle_design/kyle_design.dart';
+import 'package:mealvana_endurance/features/ai_coach/domain/ai_coach_ui_part.dart';
+import 'package:mealvana_endurance/features/ai_coach/presentation/providers/ai_coach_chat_controller.dart';
 
 // ---------------------------------------------------------------------------
 // AiCoachChoiceButtons

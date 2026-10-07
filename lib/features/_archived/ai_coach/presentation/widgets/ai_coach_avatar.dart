@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../../../../theme/kyle_design/app_colors.dart';
-import '../../../../theme/kyle_design/app_text_styles.dart';
+import 'package:mealvana_endurance/theme/kyle_design/app_colors.dart';
+import 'package:mealvana_endurance/theme/kyle_design/app_text_styles.dart';
 
 /// Mealvana AI AI coach avatar — a circular Electrolyte-cyan disc with a bold "M".
 ///

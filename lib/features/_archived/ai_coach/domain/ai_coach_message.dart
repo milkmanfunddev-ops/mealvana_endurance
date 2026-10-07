@@ -1,5 +1,5 @@
-import '../../../shared/domain/decode_issue.dart';
-import 'ai_coach_ui_part.dart';
+import 'package:mealvana_endurance/shared/domain/decode_issue.dart';
+import 'package:mealvana_endurance/features/ai_coach/domain/ai_coach_ui_part.dart';
 
 /// Role of a message participant in a Mealvana AI conversation.
 enum AiCoachMessageRole {

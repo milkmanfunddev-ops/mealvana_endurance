@@ -3,11 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../../features/content/application/content_service.dart';
-import '../../../../shared/services/preferences_service.dart';
-import '../../../../shared/widgets/kyle_design/kyle_design.dart';
-import '../providers/ai_coach_banner_providers.dart';
-import 'ai_coach_avatar.dart';
+import 'package:mealvana_endurance/features/content/application/content_service.dart';
+import 'package:mealvana_endurance/shared/services/preferences_service.dart';
+import 'package:mealvana_endurance/shared/widgets/kyle_design/kyle_design.dart';
+import 'package:mealvana_endurance/features/ai_coach/presentation/providers/ai_coach_banner_providers.dart';
+import 'package:mealvana_endurance/features/ai_coach/presentation/widgets/ai_coach_avatar.dart';
 
 /// Slim one-line banner that acts as Mealvana AI's persistent entry point on the
 /// Nutrition Diary tab.

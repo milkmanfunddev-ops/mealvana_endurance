@@ -2,14 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
-import '../../../../features/content/application/content_service.dart';
-import '../../../../shared/widgets/kyle_design/kyle_design.dart';
-import '../../domain/ai_coach_message.dart';
-import '../../domain/ai_coach_ui_part.dart';
-import '../providers/ai_coach_chat_controller.dart';
-import '../widgets/ai_coach_avatar.dart';
-import '../widgets/ai_coach_choice_buttons.dart';
-import '../widgets/ai_coach_meal_card.dart';
+import 'package:mealvana_endurance/features/content/application/content_service.dart';
+import 'package:mealvana_endurance/shared/widgets/kyle_design/kyle_design.dart';
+import 'package:mealvana_endurance/features/ai_coach/domain/ai_coach_message.dart';
+import 'package:mealvana_endurance/features/ai_coach/domain/ai_coach_ui_part.dart';
+import 'package:mealvana_endurance/features/ai_coach/presentation/providers/ai_coach_chat_controller.dart';
+import 'package:mealvana_endurance/features/ai_coach/presentation/widgets/ai_coach_avatar.dart';
+import 'package:mealvana_endurance/features/ai_coach/presentation/widgets/ai_coach_choice_buttons.dart';
+import 'package:mealvana_endurance/features/ai_coach/presentation/widgets/ai_coach_meal_card.dart';
 
 /// Full-screen chat interface for the Mealvana AI AI coach.
 ///

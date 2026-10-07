@@ -5,14 +5,14 @@ import 'package:http/http.dart' as http;
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../../ai_credits/domain/insufficient_credits_exception.dart';
-import '../../../shared/services/app_config.dart';
-import '../../../shared/services/report/decode_issue_report.dart';
-import '../../../shared/services/report/report.dart';
-import '../../../shared/services/supabase/supabase_client_provider.dart';
-import '../domain/ai_coach_conversation.dart';
-import '../domain/ai_coach_message.dart';
-import '../domain/ai_coach_ui_part.dart';
+import 'package:mealvana_endurance/features/ai_credits/domain/insufficient_credits_exception.dart';
+import 'package:mealvana_endurance/shared/services/app_config.dart';
+import 'package:mealvana_endurance/shared/services/report/decode_issue_report.dart';
+import 'package:mealvana_endurance/shared/services/report/report.dart';
+import 'package:mealvana_endurance/shared/services/supabase/supabase_client_provider.dart';
+import 'package:mealvana_endurance/features/ai_coach/domain/ai_coach_conversation.dart';
+import 'package:mealvana_endurance/features/ai_coach/domain/ai_coach_message.dart';
+import 'package:mealvana_endurance/features/ai_coach/domain/ai_coach_ui_part.dart';
 
 part 'ai_coach_chat_repository.g.dart';
 

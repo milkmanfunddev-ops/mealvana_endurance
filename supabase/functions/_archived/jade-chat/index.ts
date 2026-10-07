@@ -55,14 +55,14 @@ import { serve } from 'https://deno.land/std@0.224.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 import { stepCountIs, streamText } from 'npm:ai@6';
-import { corsHeaders } from '../_shared/cors.ts';
-import { errorResponse, jsonResponse, validationError, serverError } from '../_shared/responses.ts';
-import { AI_COACH_MODEL } from '../_shared/ai/model.ts';
-import { logAiUsage } from '../_shared/ai/usage.ts';
+import { corsHeaders } from '../../_shared/cors.ts';
+import { errorResponse, jsonResponse, validationError, serverError } from '../../_shared/responses.ts';
+import { AI_COACH_MODEL } from '../../_shared/ai/model.ts';
+import { logAiUsage } from '../../_shared/ai/usage.ts';
 import { buildSystemPrompt } from '../_shared/ai_coach/persona.ts';
 import { makeAiCoachTools } from '../_shared/ai_coach/tools.ts';
-import { captureEdgeError, initSentry, withSentry } from '../_shared/sentry.ts';
-import { ensureAndCheckCredits, debitForUsage, insufficientCreditsBody } from '../_shared/ai/credits.ts';
+import { captureEdgeError, initSentry, withSentry } from '../../_shared/sentry.ts';
+import { ensureAndCheckCredits, debitForUsage, insufficientCreditsBody } from '../../_shared/ai/credits.ts';
 
 // ---------------------------------------------------------------------------
 // Environment

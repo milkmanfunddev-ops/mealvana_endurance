@@ -9,13 +9,9 @@
  * Override at deploy time with the AI_COACH_MODEL secret if a different model
  * checkpoint should be used (e.g. for cost/latency trade-offs):
  *   supabase secrets set AI_COACH_MODEL=anthropic/claude-haiku-4 ...
- *
- * `JADE_MODEL` is the old name for the same secret and is still honoured, so
- * a project that already has it set keeps working. Prefer AI_COACH_MODEL.
  */
 export const AI_COACH_MODEL: string =
   Deno.env.get('AI_COACH_MODEL') ??
-  Deno.env.get('JADE_MODEL') ??
   'anthropic/claude-sonnet-4.6';
 
 /**

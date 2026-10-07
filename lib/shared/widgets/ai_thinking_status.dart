@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
-import '../../../../theme/kyle_design/app_text_styles.dart';
+import '../../theme/kyle_design/app_text_styles.dart';
 
 /// The one-line running commentary shown while a Mealvana AI AI call is in flight.
 ///

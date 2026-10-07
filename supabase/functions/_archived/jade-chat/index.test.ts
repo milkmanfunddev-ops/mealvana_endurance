@@ -43,7 +43,7 @@ import {
 import { describe, it } from 'https://deno.land/std@0.177.1/testing/bdd.ts';
 
 import { buildSystemPrompt } from '../_shared/ai_coach/persona.ts';
-import { creditCost } from '../_shared/ai/credits.ts';
+import { creditCost } from '../../_shared/ai/credits.ts';
 
 // ---------------------------------------------------------------------------
 // A. NDJSON envelope shape

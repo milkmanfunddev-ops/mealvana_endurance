@@ -2,9 +2,9 @@ import 'dart:async';
 
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
-import '../../../../features/auth/data/user_repository.dart';
-import '../../../../features/meal_logging/data/meal_log_repository.dart';
-import '../../../../shared/services/report/report.dart';
+import 'package:mealvana_endurance/features/auth/data/user_repository.dart';
+import 'package:mealvana_endurance/features/meal_logging/data/meal_log_repository.dart';
+import 'package:mealvana_endurance/shared/services/report/report.dart';
 
 part 'ai_coach_banner_providers.g.dart';
 

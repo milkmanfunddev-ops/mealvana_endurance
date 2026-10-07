@@ -32,9 +32,11 @@ import 'package:yaml/yaml.dart';
 /// every "is jade_chat excluded?" assertion passed for the worst possible
 /// reason — nothing by that name existed anywhere, while the actual
 /// AI-billing flow sailed on unguarded under its new name.
+///
+/// `ai_coach_chat_flow_test` left this list on 2026-10-07 (round
+/// develop-2026-10, ticket 27): Jade was archived and the flow moved to
+/// `_archived/integration_test/flows/`, out of every lane's reach.
 const _mustNeverAutoRun = <String, String>{
-  'ai_coach_chat_flow_test':
-      'calls the AI coach chat edge function — bills real AI spend per run',
   'google_login_flow_test':
       'drives the native Google OAuth sheet, needs interactive consent',
   'onboarding_signup_flow_test': 'requires a clean install with no session',
@@ -209,10 +211,13 @@ void main() {
             'develop.',
       );
       expect(
-        RegExp(r'^on:\s*\n(?:\s+.*\n)*?\s+push:', multiLine: true)
-            .hasMatch(m1Source),
+        RegExp(
+          r'^on:\s*\n(?:\s+.*\n)*?\s+push:',
+          multiLine: true,
+        ).hasMatch(m1Source),
         isTrue,
-        reason: 'The M1 workflow must run on push; it is the unit-test gate '
+        reason:
+            'The M1 workflow must run on push; it is the unit-test gate '
             'for a push to develop.',
       );
       expect(
@@ -283,7 +288,12 @@ void main() {
     });
 
     test('every release workflow carries the upload step', () {
-      for (final name in ['prod-ios', 'prod-android', 'main-ios', 'main-android']) {
+      for (final name in [
+        'prod-ios',
+        'prod-android',
+        'main-ios',
+        'main-android',
+      ]) {
         expect(
           symbolStepOf(name),
           isNotNull,
@@ -305,32 +315,36 @@ void main() {
       );
     });
 
-    test('a missing SENTRY_AUTH_TOKEN fails the step instead of skipping', () async {
-      // Run the real script with no token. It must exit non-zero before it
-      // reaches `dart run`, so the proof needs no Dart, no network, no build.
-      final script = symbolStepOf('prod-ios')!['script'].toString();
-      final result = await Process.run(
-        'bash',
-        ['-c', script],
-        environment: {'PATH': '/usr/bin:/bin', 'FLUTTER_ENV': 'prod'},
-        includeParentEnvironment: false,
-        workingDirectory: repoRoot.path,
-      );
-      expect(
-        result.exitCode,
-        isNot(0),
-        reason:
-            'With SENTRY_AUTH_TOKEN unset the step exited 0 — a release would '
-            'publish with no symbols and nobody would know.\n'
-            'stdout: ${result.stdout}\nstderr: ${result.stderr}',
-      );
-      expect(result.stdout.toString(), contains('SENTRY_AUTH_TOKEN'));
-      expect(
-        script,
-        isNot(contains('continuing anyway')),
-        reason: 'The old non-blocking fallback is back.',
-      );
-    }, skip: !Platform.isMacOS && !Platform.isLinux ? 'needs bash' : null);
+    test(
+      'a missing SENTRY_AUTH_TOKEN fails the step instead of skipping',
+      () async {
+        // Run the real script with no token. It must exit non-zero before it
+        // reaches `dart run`, so the proof needs no Dart, no network, no build.
+        final script = symbolStepOf('prod-ios')!['script'].toString();
+        final result = await Process.run(
+          'bash',
+          ['-c', script],
+          environment: {'PATH': '/usr/bin:/bin', 'FLUTTER_ENV': 'prod'},
+          includeParentEnvironment: false,
+          workingDirectory: repoRoot.path,
+        );
+        expect(
+          result.exitCode,
+          isNot(0),
+          reason:
+              'With SENTRY_AUTH_TOKEN unset the step exited 0 — a release would '
+              'publish with no symbols and nobody would know.\n'
+              'stdout: ${result.stdout}\nstderr: ${result.stderr}',
+        );
+        expect(result.stdout.toString(), contains('SENTRY_AUTH_TOKEN'));
+        expect(
+          script,
+          isNot(contains('continuing anyway')),
+          reason: 'The old non-blocking fallback is back.',
+        );
+      },
+      skip: !Platform.isMacOS && !Platform.isLinux ? 'needs bash' : null,
+    );
 
     test('pubspec names no Sentry project, so a run must say which one', () {
       final pubspec =
