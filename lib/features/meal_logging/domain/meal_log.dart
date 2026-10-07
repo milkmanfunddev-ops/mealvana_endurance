@@ -5,8 +5,10 @@ import 'package:drift/drift.dart';
 import '../../../shared/database/app_database.dart';
 import '../../../shared/domain/decode_issue.dart';
 import 'consumed_totals.dart';
+import 'macro_rounding.dart';
 import 'meal_component.dart';
 import 'meal_log_source.dart';
+import 'meal_relog.dart';
 import 'meal_slot.dart';
 
 /// Immutable domain model for a single meal log entry.
@@ -42,6 +44,7 @@ class MealLog {
     this.recipeId,
     this.savedMealId,
     this.notes,
+    this.servings = 1,
     this.eatenAt,
     required this.createdAt,
     required this.updatedAt,
@@ -91,6 +94,12 @@ class MealLog {
 
   final String? notes;
 
+  /// How many servings this row holds: 1 unless a quick log or a Recent
+  /// re-log was made at another count. [components] and the totals are the
+  /// amount eaten (already multiplied); [perServing] divides them back out
+  /// so Recent's 1 serving always means the original amount (112-012).
+  final double servings;
+
   /// When the user ate this meal (user-adjustable; distinct from [createdAt]).
   final DateTime? eatenAt;
 
@@ -133,6 +142,25 @@ class MealLog {
     });
   }
 
+  /// This log at one serving: items and totals divided by [servings], rounded
+  /// like every stored number, with `servings` 1. A 1-serving log is
+  /// returned as is. Recent lists, previews and re-logs this base.
+  MealLog perServing() {
+    if (servings == 1 || servings <= 0) return this;
+    final factor = 1 / servings;
+    return copyWith(
+      components: [
+        for (final c in components) scaleComponentForRelog(c, factor),
+      ],
+      calories: calories == null ? null : (calories! * factor).round(),
+      carbsG: roundMacro(carbsG == null ? null : carbsG! * factor),
+      proteinG: roundMacro(proteinG == null ? null : proteinG! * factor),
+      fatG: roundMacro(fatG == null ? null : fatG! * factor),
+      sodiumMg: roundSodium(sodiumMg == null ? null : sodiumMg! * factor),
+      servings: 1,
+    );
+  }
+
   // ── Drift serialization ───────────────────────────────────────────────────
 
   /// Decode a Drift row into a [MealLog].
@@ -168,6 +196,7 @@ class MealLog {
       recipeId: entry.recipeId,
       savedMealId: entry.savedMealId,
       notes: entry.notes,
+      servings: entry.servings,
       eatenAt: entry.eatenAt,
       createdAt: entry.createdAt,
       updatedAt: entry.updatedAt,
@@ -196,6 +225,7 @@ class MealLog {
       recipeId: Value(recipeId),
       savedMealId: Value(savedMealId),
       notes: Value(notes),
+      servings: Value(servings),
       eatenAt: Value(eatenAt),
       createdAt: createdAt,
       updatedAt: updatedAt,
@@ -212,6 +242,11 @@ class MealLog {
   /// Excludes Drift-only sync columns ([needsUpload], [localUpdatedAt]).
   /// The `items` column is sent as a native JSON array (not re-encoded string)
   /// so Postgres stores it as JSONB.
+  ///
+  /// `servings` goes up only when it is not 1: the server's column default
+  /// is 1, and a build that reaches a project before migration 20260926163500
+  /// then keeps uploading every ordinary log (PostgREST rejects an unknown
+  /// column, PGRST204), failing only the scaled ones until the column lands.
   Map<String, dynamic> toSupabaseJson() {
     return {
       'id': id,
@@ -230,6 +265,7 @@ class MealLog {
       'recipe_id': recipeId,
       'saved_meal_id': savedMealId,
       'notes': notes,
+      'servings': servings,
       'eaten_at': eatenAt?.toUtc().toIso8601String(),
       'created_at': createdAt.toUtc().toIso8601String(),
       'updated_at': updatedAt.toUtc().toIso8601String(),
@@ -280,6 +316,7 @@ class MealLog {
       recipeId: json['recipe_id'] as String?,
       savedMealId: json['saved_meal_id'] as String?,
       notes: json['notes'] as String?,
+      servings: (json['servings'] as num?)?.toDouble() ?? 1,
       eatenAt: json['eaten_at'] == null
           ? null
           : DateTime.parse(json['eaten_at'] as String),
@@ -312,6 +349,7 @@ class MealLog {
     String? recipeId,
     String? savedMealId,
     String? notes,
+    double? servings,
     DateTime? eatenAt,
     DateTime? createdAt,
     DateTime? updatedAt,
@@ -336,6 +374,7 @@ class MealLog {
       recipeId: recipeId ?? this.recipeId,
       savedMealId: savedMealId ?? this.savedMealId,
       notes: notes ?? this.notes,
+      servings: servings ?? this.servings,
       eatenAt: eatenAt ?? this.eatenAt,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,

@@ -78,6 +78,7 @@ MealLogEntry _driftRow({
     photoPath: photoPath,
     savedMealId: savedMealId,
     notes: 'after the long run',
+    servings: 1,
     eatenAt: created,
     createdAt: created,
     updatedAt: created,

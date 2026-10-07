@@ -40120,6 +40120,18 @@ class $MealLogsTableTable extends MealLogsTable
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _servingsMeta = const VerificationMeta(
+    'servings',
+  );
+  @override
+  late final GeneratedColumn<double> servings = GeneratedColumn<double>(
+    'servings',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(1.0),
+  );
   static const VerificationMeta _eatenAtMeta = const VerificationMeta(
     'eatenAt',
   );
@@ -40212,6 +40224,7 @@ class $MealLogsTableTable extends MealLogsTable
     recipeId,
     savedMealId,
     notes,
+    servings,
     eatenAt,
     createdAt,
     updatedAt,
@@ -40335,6 +40348,12 @@ class $MealLogsTableTable extends MealLogsTable
         notes.isAcceptableOrUnknown(data['notes']!, _notesMeta),
       );
     }
+    if (data.containsKey('servings')) {
+      context.handle(
+        _servingsMeta,
+        servings.isAcceptableOrUnknown(data['servings']!, _servingsMeta),
+      );
+    }
     if (data.containsKey('eaten_at')) {
       context.handle(
         _eatenAtMeta,
@@ -40454,6 +40473,10 @@ class $MealLogsTableTable extends MealLogsTable
         DriftSqlType.string,
         data['${effectivePrefix}notes'],
       ),
+      servings: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}servings'],
+      )!,
       eatenAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}eaten_at'],
@@ -40524,6 +40547,13 @@ class MealLogEntry extends DataClass implements Insertable<MealLogEntry> {
   final String? savedMealId;
   final String? notes;
 
+  /// How many servings of the meal this row holds (1 unless a quick log or a
+  /// Recent re-log was made at another count). Recent divides the row's
+  /// items and totals by it, so its rows and previews always show the
+  /// per-serving base and 1 serving means the original amount (112-012).
+  /// Mirrors Supabase `meal_logs.servings` (migration 20260926163500).
+  final double servings;
+
   /// When the meal was eaten (user-adjustable), distinct from createdAt.
   final DateTime? eatenAt;
   final DateTime createdAt;
@@ -40548,6 +40578,7 @@ class MealLogEntry extends DataClass implements Insertable<MealLogEntry> {
     this.recipeId,
     this.savedMealId,
     this.notes,
+    required this.servings,
     this.eatenAt,
     required this.createdAt,
     required this.updatedAt,
@@ -40594,6 +40625,7 @@ class MealLogEntry extends DataClass implements Insertable<MealLogEntry> {
     if (!nullToAbsent || notes != null) {
       map['notes'] = Variable<String>(notes);
     }
+    map['servings'] = Variable<double>(servings);
     if (!nullToAbsent || eatenAt != null) {
       map['eaten_at'] = Variable<DateTime>(eatenAt);
     }
@@ -40643,6 +40675,7 @@ class MealLogEntry extends DataClass implements Insertable<MealLogEntry> {
       notes: notes == null && nullToAbsent
           ? const Value.absent()
           : Value(notes),
+      servings: Value(servings),
       eatenAt: eatenAt == null && nullToAbsent
           ? const Value.absent()
           : Value(eatenAt),
@@ -40680,6 +40713,7 @@ class MealLogEntry extends DataClass implements Insertable<MealLogEntry> {
       recipeId: serializer.fromJson<String?>(json['recipeId']),
       savedMealId: serializer.fromJson<String?>(json['savedMealId']),
       notes: serializer.fromJson<String?>(json['notes']),
+      servings: serializer.fromJson<double>(json['servings']),
       eatenAt: serializer.fromJson<DateTime?>(json['eatenAt']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
@@ -40708,6 +40742,7 @@ class MealLogEntry extends DataClass implements Insertable<MealLogEntry> {
       'recipeId': serializer.toJson<String?>(recipeId),
       'savedMealId': serializer.toJson<String?>(savedMealId),
       'notes': serializer.toJson<String?>(notes),
+      'servings': serializer.toJson<double>(servings),
       'eatenAt': serializer.toJson<DateTime?>(eatenAt),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
@@ -40734,6 +40769,7 @@ class MealLogEntry extends DataClass implements Insertable<MealLogEntry> {
     Value<String?> recipeId = const Value.absent(),
     Value<String?> savedMealId = const Value.absent(),
     Value<String?> notes = const Value.absent(),
+    double? servings,
     Value<DateTime?> eatenAt = const Value.absent(),
     DateTime? createdAt,
     DateTime? updatedAt,
@@ -40757,6 +40793,7 @@ class MealLogEntry extends DataClass implements Insertable<MealLogEntry> {
     recipeId: recipeId.present ? recipeId.value : this.recipeId,
     savedMealId: savedMealId.present ? savedMealId.value : this.savedMealId,
     notes: notes.present ? notes.value : this.notes,
+    servings: servings ?? this.servings,
     eatenAt: eatenAt.present ? eatenAt.value : this.eatenAt,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
@@ -40786,6 +40823,7 @@ class MealLogEntry extends DataClass implements Insertable<MealLogEntry> {
           ? data.savedMealId.value
           : this.savedMealId,
       notes: data.notes.present ? data.notes.value : this.notes,
+      servings: data.servings.present ? data.servings.value : this.servings,
       eatenAt: data.eatenAt.present ? data.eatenAt.value : this.eatenAt,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
@@ -40818,6 +40856,7 @@ class MealLogEntry extends DataClass implements Insertable<MealLogEntry> {
           ..write('recipeId: $recipeId, ')
           ..write('savedMealId: $savedMealId, ')
           ..write('notes: $notes, ')
+          ..write('servings: $servings, ')
           ..write('eatenAt: $eatenAt, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
@@ -40846,6 +40885,7 @@ class MealLogEntry extends DataClass implements Insertable<MealLogEntry> {
     recipeId,
     savedMealId,
     notes,
+    servings,
     eatenAt,
     createdAt,
     updatedAt,
@@ -40873,6 +40913,7 @@ class MealLogEntry extends DataClass implements Insertable<MealLogEntry> {
           other.recipeId == this.recipeId &&
           other.savedMealId == this.savedMealId &&
           other.notes == this.notes &&
+          other.servings == this.servings &&
           other.eatenAt == this.eatenAt &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt &&
@@ -40898,6 +40939,7 @@ class MealLogsTableCompanion extends UpdateCompanion<MealLogEntry> {
   final Value<String?> recipeId;
   final Value<String?> savedMealId;
   final Value<String?> notes;
+  final Value<double> servings;
   final Value<DateTime?> eatenAt;
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
@@ -40922,6 +40964,7 @@ class MealLogsTableCompanion extends UpdateCompanion<MealLogEntry> {
     this.recipeId = const Value.absent(),
     this.savedMealId = const Value.absent(),
     this.notes = const Value.absent(),
+    this.servings = const Value.absent(),
     this.eatenAt = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
@@ -40947,6 +40990,7 @@ class MealLogsTableCompanion extends UpdateCompanion<MealLogEntry> {
     this.recipeId = const Value.absent(),
     this.savedMealId = const Value.absent(),
     this.notes = const Value.absent(),
+    this.servings = const Value.absent(),
     this.eatenAt = const Value.absent(),
     required DateTime createdAt,
     required DateTime updatedAt,
@@ -40977,6 +41021,7 @@ class MealLogsTableCompanion extends UpdateCompanion<MealLogEntry> {
     Expression<String>? recipeId,
     Expression<String>? savedMealId,
     Expression<String>? notes,
+    Expression<double>? servings,
     Expression<DateTime>? eatenAt,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
@@ -41002,6 +41047,7 @@ class MealLogsTableCompanion extends UpdateCompanion<MealLogEntry> {
       if (recipeId != null) 'recipe_id': recipeId,
       if (savedMealId != null) 'saved_meal_id': savedMealId,
       if (notes != null) 'notes': notes,
+      if (servings != null) 'servings': servings,
       if (eatenAt != null) 'eaten_at': eatenAt,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
@@ -41029,6 +41075,7 @@ class MealLogsTableCompanion extends UpdateCompanion<MealLogEntry> {
     Value<String?>? recipeId,
     Value<String?>? savedMealId,
     Value<String?>? notes,
+    Value<double>? servings,
     Value<DateTime?>? eatenAt,
     Value<DateTime>? createdAt,
     Value<DateTime>? updatedAt,
@@ -41054,6 +41101,7 @@ class MealLogsTableCompanion extends UpdateCompanion<MealLogEntry> {
       recipeId: recipeId ?? this.recipeId,
       savedMealId: savedMealId ?? this.savedMealId,
       notes: notes ?? this.notes,
+      servings: servings ?? this.servings,
       eatenAt: eatenAt ?? this.eatenAt,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
@@ -41115,6 +41163,9 @@ class MealLogsTableCompanion extends UpdateCompanion<MealLogEntry> {
     if (notes.present) {
       map['notes'] = Variable<String>(notes.value);
     }
+    if (servings.present) {
+      map['servings'] = Variable<double>(servings.value);
+    }
     if (eatenAt.present) {
       map['eaten_at'] = Variable<DateTime>(eatenAt.value);
     }
@@ -41158,6 +41209,7 @@ class MealLogsTableCompanion extends UpdateCompanion<MealLogEntry> {
           ..write('recipeId: $recipeId, ')
           ..write('savedMealId: $savedMealId, ')
           ..write('notes: $notes, ')
+          ..write('servings: $servings, ')
           ..write('eatenAt: $eatenAt, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
@@ -60795,6 +60847,7 @@ typedef $$MealLogsTableTableCreateCompanionBuilder =
       Value<String?> recipeId,
       Value<String?> savedMealId,
       Value<String?> notes,
+      Value<double> servings,
       Value<DateTime?> eatenAt,
       required DateTime createdAt,
       required DateTime updatedAt,
@@ -60821,6 +60874,7 @@ typedef $$MealLogsTableTableUpdateCompanionBuilder =
       Value<String?> recipeId,
       Value<String?> savedMealId,
       Value<String?> notes,
+      Value<double> servings,
       Value<DateTime?> eatenAt,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
@@ -60916,6 +60970,11 @@ class $$MealLogsTableTableFilterComposer
 
   ColumnFilters<String> get notes => $composableBuilder(
     column: $table.notes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get servings => $composableBuilder(
+    column: $table.servings,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -61039,6 +61098,11 @@ class $$MealLogsTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<double> get servings => $composableBuilder(
+    column: $table.servings,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get eatenAt => $composableBuilder(
     column: $table.eatenAt,
     builder: (column) => ColumnOrderings(column),
@@ -61129,6 +61193,9 @@ class $$MealLogsTableTableAnnotationComposer
   GeneratedColumn<String> get notes =>
       $composableBuilder(column: $table.notes, builder: (column) => column);
 
+  GeneratedColumn<double> get servings =>
+      $composableBuilder(column: $table.servings, builder: (column) => column);
+
   GeneratedColumn<DateTime> get eatenAt =>
       $composableBuilder(column: $table.eatenAt, builder: (column) => column);
 
@@ -61199,6 +61266,7 @@ class $$MealLogsTableTableTableManager
                 Value<String?> recipeId = const Value.absent(),
                 Value<String?> savedMealId = const Value.absent(),
                 Value<String?> notes = const Value.absent(),
+                Value<double> servings = const Value.absent(),
                 Value<DateTime?> eatenAt = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
@@ -61223,6 +61291,7 @@ class $$MealLogsTableTableTableManager
                 recipeId: recipeId,
                 savedMealId: savedMealId,
                 notes: notes,
+                servings: servings,
                 eatenAt: eatenAt,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
@@ -61249,6 +61318,7 @@ class $$MealLogsTableTableTableManager
                 Value<String?> recipeId = const Value.absent(),
                 Value<String?> savedMealId = const Value.absent(),
                 Value<String?> notes = const Value.absent(),
+                Value<double> servings = const Value.absent(),
                 Value<DateTime?> eatenAt = const Value.absent(),
                 required DateTime createdAt,
                 required DateTime updatedAt,
@@ -61273,6 +61343,7 @@ class $$MealLogsTableTableTableManager
                 recipeId: recipeId,
                 savedMealId: savedMealId,
                 notes: notes,
+                servings: servings,
                 eatenAt: eatenAt,
                 createdAt: createdAt,
                 updatedAt: updatedAt,

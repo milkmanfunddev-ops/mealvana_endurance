@@ -18,10 +18,10 @@ Future<Set<String>> _columns(AppDatabase db, String table) async {
 
 void main() {
   group('completion_type (v23)', () {
-    test('schemaVersion is 23', () async {
+    test('schemaVersion is at least 23', () async {
       final db = AppDatabase.memory();
       addTearDown(db.close);
-      expect(db.schemaVersion, 23);
+      expect(db.schemaVersion, greaterThanOrEqualTo(23));
     });
 
     test('onCreate produces activities.completion_type', () async {

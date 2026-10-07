@@ -322,7 +322,16 @@ class AppDatabase extends _$AppDatabase {
   /// ticket 29 with mealplanning's number). Nullable; null reads as manual.
   /// Supabase app_config.current_schema_version must be bumped to 23 when
   /// the build carrying this ships.
-  int get schemaVersion => 23;
+  ///
+  /// v24: `meal_logs.servings` (REAL NOT NULL DEFAULT 1.0), the local mirror
+  /// of Supabase migration 20260926163500 (mealplanning testing-wave ticket
+  /// 135, backported by develop-2026-10 ticket 29 with mealplanning's
+  /// number). A quick log or Recent re-log made at 1.5 or 2 servings records
+  /// the count, so Recent can show and re-log the per-serving base instead
+  /// of making the doubled row its new 1 serving (testing-wave 112-012).
+  /// Supabase app_config.current_schema_version must be bumped to 24 when
+  /// the build carrying this ships.
+  int get schemaVersion => 24;
 
   /// Ensure sync tracking columns exist for user-authored tables.
   /// Uses ALTER TABLE IF NOT EXISTS which is supported in modern SQLite (3.35+).
@@ -675,6 +684,19 @@ class AppDatabase extends _$AppDatabase {
           // Fork catch-up (idempotent): a mealplanning-lineage dev device
           // whose v22 was home location never ran develop's v22
           // duration_source step above.
+          await addColumn('activities', 'duration_source', 'TEXT');
+        }
+
+        // v24: the serving count a meal log was made at (112-012). Existing
+        // rows were logged at one serving, which the default records.
+        if (from < 24) {
+          await addColumn(
+            'meal_logs',
+            'servings',
+            'REAL NOT NULL DEFAULT 1.0',
+          );
+          // Fork catch-up (idempotent), as in v23: a mealplanning-lineage dev
+          // device at its v23 never ran develop's v22 duration_source step.
           await addColumn('activities', 'duration_source', 'TEXT');
         }
       },
