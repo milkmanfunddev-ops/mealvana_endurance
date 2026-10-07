@@ -1,5 +1,6 @@
-/// Shared helpers used by both the tabbed log sheet and the legacy
-/// [RecentSavedPickerScreen] route.
+/// Shared helpers used by the tabbed log sheet. (The legacy
+/// `RecentSavedPickerScreen` route that also used them was archived
+/// 2026-10-07 to `lib/features/_archived/meal_logging/presentation/screens/`.)
 ///
 /// Extracted here to avoid duplicating business logic across files.
 library;

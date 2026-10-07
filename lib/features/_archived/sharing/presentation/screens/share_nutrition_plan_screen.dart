@@ -2,13 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
-import '../../../../theme/app_theme.dart';
-import '../../../../shared/widgets/kyle_design/kyle_design.dart';
-import '../../../../shared/widgets/primary_button.dart';
-import '../../../../shared/widgets/custom_app_bar_back_button.dart';
-import '../../../content/application/content_service.dart';
-import '../../../nutrition_plan/domain/nutrition_plan.dart';
-import '../providers/share_form_controller.dart';
+import 'package:mealvana_endurance/theme/app_theme.dart';
+import 'package:mealvana_endurance/shared/widgets/kyle_design/kyle_design.dart';
+import 'package:mealvana_endurance/shared/widgets/primary_button.dart';
+import 'package:mealvana_endurance/shared/widgets/custom_app_bar_back_button.dart';
+import 'package:mealvana_endurance/features/content/application/content_service.dart';
+import 'package:mealvana_endurance/features/nutrition_plan/domain/nutrition_plan.dart';
+import 'package:mealvana_endurance/features/sharing/presentation/providers/share_form_controller.dart';
 
 class ShareNutritionPlanScreen extends ConsumerStatefulWidget {
   const ShareNutritionPlanScreen({super.key, required this.nutritionPlan});

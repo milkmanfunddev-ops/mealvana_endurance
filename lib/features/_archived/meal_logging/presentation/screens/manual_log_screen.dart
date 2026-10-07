@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../../shared/widgets/kyle_design/kyle_design.dart';
-import '../widgets/manual_log_form.dart';
+import 'package:mealvana_endurance/shared/widgets/kyle_design/kyle_design.dart';
+import 'package:mealvana_endurance/features/meal_logging/presentation/widgets/manual_log_form.dart';
 
 /// Manual meal entry screen.
 ///

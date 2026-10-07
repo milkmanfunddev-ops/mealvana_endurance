@@ -3,9 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import '../../domain/coach_athlete_relationship.dart';
-import '../providers/coach_dashboard_controller.dart';
-import '../widgets/athlete_card.dart';
+import 'package:mealvana_endurance/features/coach_mode/domain/coach_athlete_relationship.dart';
+import 'package:mealvana_endurance/features/coach_mode/presentation/providers/coach_dashboard_controller.dart';
+import 'package:mealvana_endurance/features/coach_mode/presentation/widgets/athlete_card.dart';
 
 /// Coach Dashboard Screen - main hub for coaches to manage athletes
 class CoachDashboardScreen extends ConsumerWidget {

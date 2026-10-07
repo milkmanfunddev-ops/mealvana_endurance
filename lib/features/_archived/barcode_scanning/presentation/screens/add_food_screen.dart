@@ -3,15 +3,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:mealvana_endurance/shared/widgets/custom_app_bar_back_button.dart';
-import '../../../../shared/screens/food_detail_screen.dart';
-import '../../../nutrition_plan/domain/food_item.dart';
-import '../../../nutrition_plan/domain/food.dart';
-import '../../application/open_food_facts_search_service.dart';
-import '../../application/product_detail_service.dart';
-import '../../application/food_mapping_service.dart';
-import '../../../../shared/database/database_provider.dart';
-import '../../../../shared/widgets/content_area.dart';
-import '../../../../../../../../../shared/widgets/kyle_design/kyle_design.dart';
+import 'package:mealvana_endurance/shared/screens/food_detail_screen.dart';
+import 'package:mealvana_endurance/features/nutrition_plan/domain/food_item.dart';
+import 'package:mealvana_endurance/features/nutrition_plan/domain/food.dart';
+import 'package:mealvana_endurance/features/barcode_scanning/application/open_food_facts_search_service.dart';
+import 'package:mealvana_endurance/features/barcode_scanning/application/product_detail_service.dart';
+import 'package:mealvana_endurance/features/barcode_scanning/application/food_mapping_service.dart';
+import 'package:mealvana_endurance/shared/database/database_provider.dart';
+import 'package:mealvana_endurance/shared/widgets/content_area.dart';
+import 'package:mealvana_endurance/shared/widgets/kyle_design/kyle_design.dart';
 import 'package:mealvana_endurance/shared/services/report/report.dart';
 
 /// Full-screen modal for adding foods via search or barcode scan

@@ -21,8 +21,10 @@ int? parseCaloriesInput(String text) => double.tryParse(text.trim())?.round();
 /// Hosts the name / optional slot / time eaten / macro fields and the Save
 /// button, and writes the entry via [MealLogController.logManualMeal]. It is
 /// intentionally chrome-less (no Scaffold / AppBar) so it can be embedded
-/// either in a full screen ([ManualLogScreen]) or inline as the quick-log
-/// "Manual" tab of `LogMealScreen`.
+/// inline as the quick-log "Manual" tab of `LogMealScreen` or in
+/// `build_meal_screen.dart`. (The standalone `ManualLogScreen` shell was
+/// archived 2026-10-07 to
+/// `lib/features/_archived/meal_logging/presentation/screens/`.)
 ///
 /// On a successful write it calls [onLogged] and clears the form (so the
 /// inline tab can log another item in a row); on failure it calls

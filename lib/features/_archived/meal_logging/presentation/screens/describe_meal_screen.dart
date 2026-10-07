@@ -2,15 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../../shared/widgets/kyle_design/kyle_design.dart';
-import '../../../../shared/services/app_external_deps.dart';
-import '../../../../shared/services/report/report.dart';
-import '../../../ai_credits/domain/insufficient_credits_exception.dart';
-import '../../../ai_credits/presentation/insufficient_credits_paywall.dart';
-import '../../../ai_coach/presentation/widgets/ai_thinking_status.dart';
-import '../../../ai_credits/presentation/widgets/token_pill.dart';
-import '../../application/meal_ai_service.dart';
-import '../widgets/meal_analysis_skeleton.dart';
+import 'package:mealvana_endurance/shared/widgets/kyle_design/kyle_design.dart';
+import 'package:mealvana_endurance/shared/services/app_external_deps.dart';
+import 'package:mealvana_endurance/shared/services/report/report.dart';
+import 'package:mealvana_endurance/features/ai_credits/domain/insufficient_credits_exception.dart';
+import 'package:mealvana_endurance/features/ai_credits/presentation/insufficient_credits_paywall.dart';
+import 'package:mealvana_endurance/features/ai_coach/presentation/widgets/ai_thinking_status.dart';
+import 'package:mealvana_endurance/features/ai_credits/presentation/widgets/token_pill.dart';
+import 'package:mealvana_endurance/features/meal_logging/application/meal_ai_service.dart';
+import 'package:mealvana_endurance/features/meal_logging/presentation/widgets/meal_analysis_skeleton.dart';
 
 /// Natural-language meal description screen.
 ///

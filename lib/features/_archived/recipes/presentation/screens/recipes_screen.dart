@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../../shared/services/app_external_deps.dart';
-import '../../../../shared/widgets/kyle_design/kyle_design.dart';
-import '../../application/recipe_service.dart';
-import '../../domain/recipe.dart';
-import '../../../../shared/services/report/report.dart';
+import 'package:mealvana_endurance/shared/services/app_external_deps.dart';
+import 'package:mealvana_endurance/shared/widgets/kyle_design/kyle_design.dart';
+import 'package:mealvana_endurance/features/recipes/application/recipe_service.dart';
+import 'package:mealvana_endurance/features/recipes/domain/recipe.dart';
+import 'package:mealvana_endurance/shared/services/report/report.dart';
 
 class RecipesScreen extends ConsumerStatefulWidget {
   const RecipesScreen({super.key});

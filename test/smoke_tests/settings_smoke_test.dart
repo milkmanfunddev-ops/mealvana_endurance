@@ -1,6 +1,8 @@
 // Settings screen smoke suite.
 //
-// Covers 14 screens under lib/features/settings/presentation/screens/.
+// Covers the screens under lib/features/settings/presentation/screens/.
+// (§4 SportSettingsScreen, §9 FoodSettingsConsolidatedScreen and §15
+// SettingsMenuScreen archived 2026-10-07, round develop-2026-10 ticket 26.)
 // (WeatherDetailScreen deleted — was unrouted dead code with hardcoded data.)
 // Each test pumps the screen with mocked external deps (via smokeScreen) and
 // asserts it builds without throwing and has no layout overflow at 390 px.
@@ -15,15 +17,12 @@ import 'package:flutter_test/flutter_test.dart';
 
 // Screens under test
 import 'package:mealvana_endurance/features/settings/presentation/screens/settings_screen.dart';
-import 'package:mealvana_endurance/features/settings/presentation/screens/settings_menu_screen.dart';
 import 'package:mealvana_endurance/features/settings/presentation/screens/preferences_screen.dart';
 import 'package:mealvana_endurance/features/settings/presentation/screens/sweat_profile_screen.dart';
-import 'package:mealvana_endurance/features/settings/presentation/screens/sport_settings_screen.dart';
 import 'package:mealvana_endurance/features/settings/presentation/screens/nutrition_profile_screen.dart';
 import 'package:mealvana_endurance/features/settings/presentation/screens/nutrition_targets_screen.dart';
 import 'package:mealvana_endurance/features/settings/presentation/screens/food_preferences_hub_screen.dart';
 import 'package:mealvana_endurance/features/settings/presentation/screens/food_preferences_screen.dart';
-import 'package:mealvana_endurance/features/settings/presentation/screens/food_settings_consolidated_screen.dart';
 import 'package:mealvana_endurance/features/settings/presentation/screens/sport_preferences_hub_screen.dart';
 import 'package:mealvana_endurance/features/settings/presentation/screens/coach_connection_screen.dart';
 import 'package:mealvana_endurance/features/settings/presentation/screens/connected_apps_screen.dart';
@@ -150,30 +149,6 @@ void main() {
       );
     });
 
-    // ── 4. SportSettingsScreen ─────────────────────────────────────────────
-    //
-    // FINDING: SportSettingsScreen has a broken relative import at line 8:
-    //   `../../../../../../../../../shared/widgets/kyle_design/kyle_design.dart`
-    // Nine `../` levels from a file 4 levels deep — resolves above the package
-    // root. Dart currently resolves this gracefully (same as package import),
-    // but it is a latent maintenance bug. Correct form:
-    //   `package:mealvana_endurance/shared/widgets/kyle_design/kyle_design.dart`
-    // Severity: other (import path bug, no runtime failure today).
-    //
-    // Bug #16: _withScreenUtil() workaround removed — harness now wraps all
-    // pumps in ScreenUtilInit via wrapForTest(), so .sp/.h/.w resolve correctly.
-    testWidgets('SportSettingsScreen builds without crash', (tester) async {
-      await smokeScreen(
-        tester,
-        const SportSettingsScreen(),
-        overrides: [
-          settingsControllerProvider.overrideWith(
-            _SeededSettingsController.new,
-          ),
-        ],
-      );
-    });
-
     // ── 5. NutritionProfileScreen ──────────────────────────────────────────
     //
     // Heavy initState: _loadCurrentValues() awaits userRepositoryProvider.future
@@ -233,21 +208,6 @@ void main() {
     // Severity: FOA violation (business logic in presentation layer).
     testWidgets('FoodPreferencesScreen builds (loading state)', (tester) async {
       await smokeScreen(tester, const FoodPreferencesScreen(), settle: false);
-    });
-
-    // ── 9. FoodSettingsConsolidatedScreen ─────────────────────────────────
-    //
-    // initState calls authService.getCurrentUser() which awaits
-    // userRepositoryProvider.future (Drift). Never resolves in-test.
-    // Shows CircularProgressIndicator. settle:false.
-    testWidgets('FoodSettingsConsolidatedScreen builds (loading state)', (
-      tester,
-    ) async {
-      await smokeScreen(
-        tester,
-        const FoodSettingsConsolidatedScreen(),
-        settle: false,
-      );
     });
 
     // ── 10. SportPreferencesHubScreen ─────────────────────────────────────
@@ -328,15 +288,6 @@ void main() {
     // pumps in ScreenUtilInit via wrapForTest(), so .sp/.h/.w resolve correctly.
     testWidgets('DebugScreen builds without crash', (tester) async {
       await smokeScreen(tester, const DebugScreen());
-    });
-
-    // ── 15. SettingsMenuScreen ────────────────────────────────────────────
-    //
-    // Pure-UI ConsumerWidget: watches only appConfigProvider (provided by the
-    // harness default). All navigation (context.push) is tap-only. Settles
-    // cleanly with no per-screen overrides.
-    testWidgets('SettingsMenuScreen builds without overflow', (tester) async {
-      await smokeScreen(tester, const SettingsMenuScreen());
     });
 
     // ── 16. PersonalTemplatesScreen ───────────────────────────────────────

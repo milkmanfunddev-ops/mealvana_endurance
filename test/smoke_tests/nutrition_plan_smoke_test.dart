@@ -23,10 +23,8 @@ import 'package:mealvana_endurance/features/nutrition_plan/presentation/provider
 import 'package:mealvana_endurance/features/nutrition_plan/presentation/providers/activity_detail_state.dart';
 import 'package:mealvana_endurance/features/nutrition_plan/presentation/screens/activity_detail_screen.dart';
 import 'package:mealvana_endurance/features/nutrition_plan/presentation/screens/adjust_macros_screen.dart';
-import 'package:mealvana_endurance/features/nutrition_plan/presentation/screens/cycling_input_screen.dart';
 import 'package:mealvana_endurance/features/nutrition_plan/presentation/screens/fuel_log_screen.dart';
 import 'package:mealvana_endurance/features/nutrition_plan/presentation/screens/new_activity_screen.dart';
-import 'package:mealvana_endurance/features/nutrition_plan/presentation/screens/swimming_input_screen.dart';
 import 'package:mealvana_endurance/features/carb_loading/presentation/providers/carb_loading_day_detail_controller.dart';
 import 'package:mealvana_endurance/features/carb_loading/presentation/screens/carb_loading_day_detail_page.dart';
 import 'package:mealvana_endurance/shared/database/app_database.dart' as db;
@@ -193,24 +191,17 @@ void main() {
     });
 
     // -----------------------------------------------------------------------
-    // 4-6. AdjustMacros / Cycling / Swimming input screens
+    // 4. AdjustMacros (Cycling / Swimming input screens 5-6 were archived
+    //    2026-10-07, round develop-2026-10 ticket 26)
     // -----------------------------------------------------------------------
     // These watch macroTargetsControllerProvider, whose onDispose schedules a
     // draft cleanup. FIXED (2026-06-25): DraftActivityCleanupService now uses a
     // cancellable Timer cancelled on its (keepAlive) provider's onDispose, so
     // the previously-leaking 2s timer no longer trips "A Timer is still pending"
-    // at teardown — unblocking these three smoke tests. settle:false avoids the
+    // at teardown — unblocking these smoke tests. settle:false avoids the
     // perpetual location/weather fetch these screens kick off in initState.
     testWidgets('AdjustMacrosScreen builds (initial state)', (tester) async {
       await smokeScreen(tester, const AdjustMacrosScreen(), settle: false);
-    });
-
-    testWidgets('CyclingInputScreen builds (initial state)', (tester) async {
-      await smokeScreen(tester, const CyclingInputScreen(), settle: false);
-    });
-
-    testWidgets('SwimmingInputScreen builds (initial state)', (tester) async {
-      await smokeScreen(tester, const SwimmingInputScreen(), settle: false);
     });
 
     // -----------------------------------------------------------------------

@@ -2,13 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../../shared/widgets/kyle_design/kyle_design.dart';
-import '../../domain/log_date_time.dart';
-import '../../domain/meal_log.dart';
-import '../../domain/meal_slot.dart';
-import '../../domain/saved_meal.dart';
-import '../providers/meal_log_providers.dart';
-import '../widgets/log_sheet_helpers.dart' show showSlotPickerSheet;
+import 'package:mealvana_endurance/shared/widgets/kyle_design/kyle_design.dart';
+import 'package:mealvana_endurance/features/meal_logging/domain/log_date_time.dart';
+import 'package:mealvana_endurance/features/meal_logging/domain/meal_log.dart';
+import 'package:mealvana_endurance/features/meal_logging/domain/meal_slot.dart';
+import 'package:mealvana_endurance/features/meal_logging/domain/saved_meal.dart';
+import 'package:mealvana_endurance/features/meal_logging/presentation/providers/meal_log_providers.dart';
+import 'package:mealvana_endurance/features/meal_logging/presentation/widgets/log_sheet_helpers.dart' show showSlotPickerSheet;
 
 /// Picker screen for re-logging a recent or saved meal.
 ///

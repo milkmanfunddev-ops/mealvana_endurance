@@ -8,7 +8,6 @@
 //  1. EventDetailScreen       — seeded event name / date / location rendered
 //  2. EventFormScreen         — create-mode form; validation error on empty save
 //  3. MealReviewScreen        — seeded MealAnalysisResult items + null-extra fallback
-//  4. ManualLogScreen         — field labels render; validation fires on empty submit
 
 import 'dart:async';
 
@@ -28,7 +27,6 @@ import 'package:mealvana_endurance/features/events/presentation/screens/event_fo
 import 'package:mealvana_endurance/features/meal_logging/domain/meal_analysis_result.dart';
 import 'package:mealvana_endurance/features/meal_logging/domain/meal_slot.dart';
 import 'package:mealvana_endurance/features/meal_logging/presentation/providers/meal_log_providers.dart';
-import 'package:mealvana_endurance/features/meal_logging/presentation/screens/manual_log_screen.dart';
 import 'package:mealvana_endurance/features/meal_logging/presentation/screens/meal_review_screen.dart';
 import 'package:mealvana_endurance/shared/domain/activity_type.dart';
 
@@ -713,135 +711,6 @@ void main() {
         find.text('Low confidence — please review'),
         findsOneWidget,
         reason: 'Low-confidence badge must show review warning',
-      );
-    });
-  });
-
-  // ==========================================================================
-  // 4. ManualLogScreen — field presence + validation
-  // ==========================================================================
-
-  group('ManualLogScreen — content and validation', () {
-    // ManualLogScreen reads GoRouterState.of(context) for logDate.
-    // null extra → falls back to today; the form renders fully.
-
-    testWidgets('renders "Log a Meal" app bar title', (tester) async {
-      await _pumpWithRouter(
-        tester,
-        () => const ManualLogScreen(),
-        overrides: [
-          mealLogControllerProvider.overrideWith(_FakeMealLogController.new),
-        ],
-        settle: true,
-      );
-
-      expect(
-        find.text('Log a Meal'),
-        findsOneWidget,
-        reason: 'AppBar must show "Log a Meal"',
-      );
-    });
-
-    testWidgets('renders meal name, calories, carbs, protein, fat fields', (
-      tester,
-    ) async {
-      await _pumpWithRouter(
-        tester,
-        () => const ManualLogScreen(),
-        overrides: [
-          mealLogControllerProvider.overrideWith(_FakeMealLogController.new),
-        ],
-        settle: true,
-      );
-
-      expect(
-        find.widgetWithText(TextFormField, 'Meal name'),
-        findsOneWidget,
-        reason: 'Meal name field must render',
-      );
-      expect(
-        find.widgetWithText(TextFormField, 'Calories (kcal)'),
-        findsOneWidget,
-        reason: 'Calories field must render',
-      );
-      expect(
-        find.widgetWithText(TextFormField, 'Carbs (g)'),
-        findsOneWidget,
-        reason: 'Carbs field must render',
-      );
-      expect(
-        find.widgetWithText(TextFormField, 'Protein (g)'),
-        findsOneWidget,
-        reason: 'Protein field must render',
-      );
-      expect(
-        find.widgetWithText(TextFormField, 'Fat (g)'),
-        findsOneWidget,
-        reason: 'Fat field must render',
-      );
-    });
-
-    testWidgets('submitting empty form shows "Name is required" error', (
-      tester,
-    ) async {
-      await _pumpWithRouter(
-        tester,
-        () => const ManualLogScreen(),
-        overrides: [
-          mealLogControllerProvider.overrideWith(_FakeMealLogController.new),
-        ],
-        settle: true,
-      );
-
-      // Tap Save without entering any data (scroll it into view first — the
-      // manual form now includes slot + time fields, so Save can sit below the
-      // test viewport fold).
-      await tester.ensureVisible(find.text('Save'));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Save'));
-      await tester.pump();
-      await tester.pumpAndSettle();
-
-      expect(
-        find.text('Name is required'),
-        findsOneWidget,
-        reason: 'Validation must require a meal name',
-      );
-    });
-
-    testWidgets('saves button is present and enabled when idle', (
-      tester,
-    ) async {
-      await _pumpWithRouter(
-        tester,
-        () => const ManualLogScreen(),
-        overrides: [
-          mealLogControllerProvider.overrideWith(_FakeMealLogController.new),
-        ],
-        settle: true,
-      );
-
-      expect(
-        find.text('Save'),
-        findsOneWidget,
-        reason: 'Save button must be present in the form',
-      );
-    });
-
-    testWidgets('renders Meal type section label', (tester) async {
-      await _pumpWithRouter(
-        tester,
-        () => const ManualLogScreen(),
-        overrides: [
-          mealLogControllerProvider.overrideWith(_FakeMealLogController.new),
-        ],
-        settle: true,
-      );
-
-      expect(
-        find.text('Meal type'),
-        findsOneWidget,
-        reason: 'Slot selector section label must appear',
       );
     });
   });

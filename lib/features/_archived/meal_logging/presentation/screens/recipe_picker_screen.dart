@@ -2,16 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../../shared/services/app_external_deps.dart';
-import '../../../../shared/services/report/report.dart';
-import '../../../../shared/widgets/kyle_design/kyle_design.dart';
-import '../../../recipes/application/recipe_service.dart';
-import '../../../recipes/domain/recipe.dart';
-import '../../application/meal_logging_service.dart';
-import '../../domain/log_date_time.dart';
-import '../../domain/meal_slot.dart';
-import '../providers/meal_log_providers.dart';
-import '../widgets/slot_chip_selector.dart';
+import 'package:mealvana_endurance/shared/services/app_external_deps.dart';
+import 'package:mealvana_endurance/shared/services/report/report.dart';
+import 'package:mealvana_endurance/shared/widgets/kyle_design/kyle_design.dart';
+import 'package:mealvana_endurance/features/recipes/application/recipe_service.dart';
+import 'package:mealvana_endurance/features/recipes/domain/recipe.dart';
+import 'package:mealvana_endurance/features/meal_logging/application/meal_logging_service.dart';
+import 'package:mealvana_endurance/features/meal_logging/domain/log_date_time.dart';
+import 'package:mealvana_endurance/features/meal_logging/domain/meal_slot.dart';
+import 'package:mealvana_endurance/features/meal_logging/presentation/providers/meal_log_providers.dart';
+import 'package:mealvana_endurance/features/meal_logging/presentation/widgets/slot_chip_selector.dart';
 
 /// Screen for selecting a recipe and logging it with a chosen number of servings.
 ///

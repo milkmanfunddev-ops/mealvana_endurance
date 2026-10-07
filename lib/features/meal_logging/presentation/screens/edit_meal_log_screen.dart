@@ -36,7 +36,8 @@ import '../widgets/slot_chip_selector.dart' show OptionalSlotChipSelector;
 ///
 /// When the log has components the editor shows a per-component list
 /// ([MealComponentEditor]). When it has no components (quick-manual entry) it
-/// shows the simple macro fields, matching [ManualLogScreen].
+/// shows the simple macro fields, matching `ManualLogForm` (the quick-log
+/// Manual tab).
 ///
 /// On save the controller calls [MealLogController.updateLog], which goes
 /// through [MealLoggingService.updateLog] (recomputes totals from components

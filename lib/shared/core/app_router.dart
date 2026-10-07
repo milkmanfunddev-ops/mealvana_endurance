@@ -32,11 +32,13 @@ import '../../features/nutrition_plan/presentation/screens/adjust_macros_screen.
 import '../../features/settings/presentation/screens/settings_screen.dart';
 import '../../features/nutrition_plan/presentation/screens/swap_food_screen.dart';
 import '../../features/barcode_scanning/presentation/screens/barcode_scanner_screen.dart';
-import '../../features/settings/presentation/screens/sport_settings_screen.dart';
+// ARCHIVED 2026-10-07 (round develop-2026-10, ticket 26): screen at lib/features/_archived/settings/presentation/screens/sport_settings_screen.dart; restore by moving it back and uncommenting.
+// import '../../features/settings/presentation/screens/sport_settings_screen.dart';
 import '../../features/settings/presentation/screens/preferences_screen.dart';
 import '../../features/settings/presentation/screens/food_preferences_screen.dart'
     as settings;
-import '../../features/settings/presentation/screens/food_settings_consolidated_screen.dart';
+// ARCHIVED 2026-10-07 (round develop-2026-10, ticket 26): screen at lib/features/_archived/settings/presentation/screens/food_settings_consolidated_screen.dart; restore by moving it back and uncommenting.
+// import '../../features/settings/presentation/screens/food_settings_consolidated_screen.dart';
 import '../../features/settings/presentation/screens/food_preferences_hub_screen.dart';
 import '../../features/formula_kit/domain/formula_phase.dart';
 import '../../features/formula_kit/presentation/screens/formula_detail_screen.dart';
@@ -54,7 +56,8 @@ import '../../features/settings/presentation/screens/nutrition_targets_screen.da
 import '../../features/settings/presentation/screens/nutrition_profile_screen.dart';
 import '../../features/settings/presentation/screens/coach_connection_screen.dart';
 import '../core/screen_mode.dart';
-import '../../features/barcode_scanning/presentation/screens/add_food_screen.dart';
+// ARCHIVED 2026-10-07 (round develop-2026-10, ticket 26): screen at lib/features/_archived/barcode_scanning/presentation/screens/add_food_screen.dart; restore by moving it back and uncommenting.
+// import '../../features/barcode_scanning/presentation/screens/add_food_screen.dart';
 import '../../features/carb_loading/presentation/screens/carb_loading_food_selection_screen.dart';
 import '../../features/carb_loading/presentation/screens/create_custom_carb_loading_food_screen.dart';
 import '../../features/carb_loading/domain/meal_type.dart';
@@ -65,7 +68,8 @@ import '../../features/events/presentation/screens/event_form_screen.dart';
 import '../../features/race_checklist/presentation/screens/race_checklist_screen.dart';
 import '../../features/education/presentation/screens/education_screen.dart';
 import '../../features/education/presentation/screens/video_player_screen.dart';
-import '../../features/pro_version/presentation/screens/pro_version_screen.dart';
+// ARCHIVED 2026-10-07 (round develop-2026-10, ticket 26): screen at lib/features/_archived/pro_version/presentation/screens/pro_version_screen.dart; restore by moving it back and uncommenting.
+// import '../../features/pro_version/presentation/screens/pro_version_screen.dart';
 import '../../features/ai_credits/presentation/screens/buy_credits_screen.dart';
 import '../screens/food_detail_screen.dart';
 // Coach mode screens
@@ -80,12 +84,17 @@ import '../../features/coach_mode/application/coach_service.dart';
 import '../../features/ai_coach/presentation/screens/ai_coach_chat_screen.dart';
 // Meal logging screens
 import '../../features/meal_logging/presentation/screens/edit_meal_log_screen.dart';
-import '../../features/meal_logging/presentation/screens/manual_log_screen.dart';
-import '../../features/meal_logging/presentation/screens/photo_capture_screen.dart';
-import '../../features/meal_logging/presentation/screens/describe_meal_screen.dart';
+// ARCHIVED 2026-10-07 (round develop-2026-10, ticket 26): screen at lib/features/_archived/meal_logging/presentation/screens/manual_log_screen.dart; restore by moving it back and uncommenting.
+// import '../../features/meal_logging/presentation/screens/manual_log_screen.dart';
+// ARCHIVED 2026-10-07 (round develop-2026-10, ticket 26): screen at lib/features/_archived/meal_logging/presentation/screens/photo_capture_screen.dart; restore by moving it back and uncommenting.
+// import '../../features/meal_logging/presentation/screens/photo_capture_screen.dart';
+// ARCHIVED 2026-10-07 (round develop-2026-10, ticket 26): screen at lib/features/_archived/meal_logging/presentation/screens/describe_meal_screen.dart; restore by moving it back and uncommenting.
+// import '../../features/meal_logging/presentation/screens/describe_meal_screen.dart';
 import '../../features/meal_logging/presentation/screens/meal_review_screen.dart';
-import '../../features/meal_logging/presentation/screens/recent_saved_picker_screen.dart';
-import '../../features/meal_logging/presentation/screens/recipe_picker_screen.dart';
+// ARCHIVED 2026-10-07 (round develop-2026-10, ticket 26): screen at lib/features/_archived/meal_logging/presentation/screens/recent_saved_picker_screen.dart; restore by moving it back and uncommenting.
+// import '../../features/meal_logging/presentation/screens/recent_saved_picker_screen.dart';
+// ARCHIVED 2026-10-07 (round develop-2026-10, ticket 26): screen at lib/features/_archived/meal_logging/presentation/screens/recipe_picker_screen.dart; restore by moving it back and uncommenting.
+// import '../../features/meal_logging/presentation/screens/recipe_picker_screen.dart';
 
 /// Notifier that triggers GoRouter redirect re-evaluation on auth state changes.
 /// Used by AuthListenerService to signal sign-out/sign-in events.
@@ -148,10 +157,7 @@ class AppRouter {
         // `/buy-credits` rides it too — with every AI surface hidden there is
         // nothing to buy credits for, and the 402 paywall flows that push it
         // all originate from the gated AI calls.
-        if ((currentPath == '/meal-log/photo' ||
-                currentPath == '/meal-log/describe' ||
-                currentPath == '/jade' ||
-                currentPath == '/buy-credits') &&
+        if ((currentPath == '/jade' || currentPath == '/buy-credits') &&
             !ref.read(appConfigProvider).describeMealEnabled) {
           return '/';
         }
@@ -634,11 +640,12 @@ class AppRouter {
         ),
 
         // Pro Version Screen - Premium features showcase
-        GoRoute(
-          path: '/pro',
-          name: 'pro-version',
-          builder: (context, state) => const ProVersionScreen(),
-        ),
+        // ARCHIVED 2026-10-07 (round develop-2026-10, ticket 26): screen at lib/features/_archived/pro_version/presentation/screens/pro_version_screen.dart; restore by moving it back and uncommenting.
+        // GoRoute(
+        //   path: '/pro',
+        //   name: 'pro-version',
+        //   builder: (context, state) => const ProVersionScreen(),
+        // ),
 
         // AI Credits Paywall - purchase credit packs for AI features
         GoRoute(
@@ -683,11 +690,12 @@ class AppRouter {
         ),
 
         // Sport Settings Screen - Cycling, swimming, and sport-specific preferences
-        GoRoute(
-          path: '/settings/sport-settings',
-          name: 'settings-sport-settings',
-          builder: (context, state) => const SportSettingsScreen(),
-        ),
+        // ARCHIVED 2026-10-07 (round develop-2026-10, ticket 26): screen at lib/features/_archived/settings/presentation/screens/sport_settings_screen.dart; restore by moving it back and uncommenting.
+        // GoRoute(
+        //   path: '/settings/sport-settings',
+        //   name: 'settings-sport-settings',
+        //   builder: (context, state) => const SportSettingsScreen(),
+        // ),
 
         // Food Preferences Hub - 2-tier navigation hub for all food settings
         GoRoute(
@@ -732,11 +740,12 @@ class AppRouter {
         ),
 
         // Food Preferences Consolidated Screen - All food-related settings in one place (DEPRECATED - kept for backward compatibility)
-        GoRoute(
-          path: '/settings/food-preferences-consolidated',
-          name: 'settings-food-preferences-consolidated',
-          builder: (context, state) => const FoodSettingsConsolidatedScreen(),
-        ),
+        // ARCHIVED 2026-10-07 (round develop-2026-10, ticket 26): screen at lib/features/_archived/settings/presentation/screens/food_settings_consolidated_screen.dart; restore by moving it back and uncommenting.
+        // GoRoute(
+        //   path: '/settings/food-preferences-consolidated',
+        //   name: 'settings-food-preferences-consolidated',
+        //   builder: (context, state) => const FoodSettingsConsolidatedScreen(),
+        // ),
 
         // Food Preferences Screen - Edit food preferences from settings
         GoRoute(
@@ -786,11 +795,12 @@ class AppRouter {
         ),
 
         // Add Food Screen - Add foods from settings food preferences
-        GoRoute(
-          path: '/settings/food-preferences/add-food',
-          name: 'settings-add-food',
-          builder: (context, state) => const AddFoodScreen(),
-        ),
+        // ARCHIVED 2026-10-07 (round develop-2026-10, ticket 26): screen at lib/features/_archived/barcode_scanning/presentation/screens/add_food_screen.dart; restore by moving it back and uncommenting.
+        // GoRoute(
+        //   path: '/settings/food-preferences/add-food',
+        //   name: 'settings-add-food',
+        //   builder: (context, state) => const AddFoodScreen(),
+        // ),
 
         // Formula Library — browse system Before/During formulas (PR 1).
         GoRoute(
@@ -1027,41 +1037,45 @@ class AppRouter {
           builder: (context, state) => const EditMealLogScreen(),
         ),
 
-        GoRoute(
-          path: '/meal-log/manual',
-          name: 'meal-log-manual',
-          builder: (context, state) => const ManualLogScreen(),
-        ),
+        // ARCHIVED 2026-10-07 (round develop-2026-10, ticket 26): screen at lib/features/_archived/meal_logging/presentation/screens/manual_log_screen.dart; restore by moving it back and uncommenting.
+        // GoRoute(
+        //   path: '/meal-log/manual',
+        //   name: 'meal-log-manual',
+        //   builder: (context, state) => const ManualLogScreen(),
+        // ),
 
-        GoRoute(
-          path: '/meal-log/photo',
-          name: 'meal-log-photo',
-          builder: (context, state) => const PhotoCaptureScreen(),
-        ),
+        // ARCHIVED 2026-10-07 (round develop-2026-10, ticket 26): screen at lib/features/_archived/meal_logging/presentation/screens/photo_capture_screen.dart; restore by moving it back and uncommenting.
+        // GoRoute(
+        //   path: '/meal-log/photo',
+        //   name: 'meal-log-photo',
+        //   builder: (context, state) => const PhotoCaptureScreen(),
+        // ),
 
-        GoRoute(
-          path: '/meal-log/describe',
-          name: 'meal-log-describe',
-          builder: (context, state) => const DescribeMealScreen(),
-        ),
-
+        // ARCHIVED 2026-10-07 (round develop-2026-10, ticket 26): screen at lib/features/_archived/meal_logging/presentation/screens/describe_meal_screen.dart; restore by moving it back and uncommenting.
+        // GoRoute(
+        //   path: '/meal-log/describe',
+        //   name: 'meal-log-describe',
+        //   builder: (context, state) => const DescribeMealScreen(),
+        // ),
         GoRoute(
           path: '/meal-log/review',
           name: 'meal-log-review',
           builder: (context, state) => const MealReviewScreen(),
         ),
 
-        GoRoute(
-          path: '/meal-log/recent-saved',
-          name: 'meal-log-recent-saved',
-          builder: (context, state) => const RecentSavedPickerScreen(),
-        ),
+        // ARCHIVED 2026-10-07 (round develop-2026-10, ticket 26): screen at lib/features/_archived/meal_logging/presentation/screens/recent_saved_picker_screen.dart; restore by moving it back and uncommenting.
+        // GoRoute(
+        //   path: '/meal-log/recent-saved',
+        //   name: 'meal-log-recent-saved',
+        //   builder: (context, state) => const RecentSavedPickerScreen(),
+        // ),
 
-        GoRoute(
-          path: '/meal-log/recipe',
-          name: 'meal-log-recipe',
-          builder: (context, state) => const RecipePickerScreen(),
-        ),
+        // ARCHIVED 2026-10-07 (round develop-2026-10, ticket 26): screen at lib/features/_archived/meal_logging/presentation/screens/recipe_picker_screen.dart; restore by moving it back and uncommenting.
+        // GoRoute(
+        //   path: '/meal-log/recipe',
+        //   name: 'meal-log-recipe',
+        //   builder: (context, state) => const RecipePickerScreen(),
+        // ),
 
         // ====================================================================
         // MEALVANA AI COACH

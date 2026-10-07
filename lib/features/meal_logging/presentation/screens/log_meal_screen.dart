@@ -2021,8 +2021,7 @@ class _AiTabState extends ConsumerState<_AiTab> {
       children: [
         // Prompt on the left, token balance on the right — the cost of
         // the action sits next to the description of it. This is the
-        // primary Describe surface (the Log a Meal tab); the standalone
-        // DescribeMealScreen carries the same pair.
+        // Describe surface (the Log a Meal tab).
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [

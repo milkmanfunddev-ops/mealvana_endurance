@@ -2,16 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../domain/coach_athlete_relationship.dart';
-import '../providers/athlete_detail_controller.dart';
-import '../../../calendar/presentation/providers/calendar_view_provider.dart';
-import '../../../calendar/presentation/widgets/calendar_view_toggle.dart';
-import '../../../calendar/presentation/widgets/calendar_week_view_kyle.dart';
-import '../../../calendar/presentation/widgets/calendar_month_view_kyle.dart';
-import '../../../calendar/domain/calendar_day_indicators.dart';
-import '../../../../shared/providers/unit_system_provider.dart';
-import '../../../../shared/utils/unit_formatter.dart';
-import '../../../nutrition_plan/domain/run_parameters.dart';
+import 'package:mealvana_endurance/features/coach_mode/domain/coach_athlete_relationship.dart';
+import 'package:mealvana_endurance/features/coach_mode/presentation/providers/athlete_detail_controller.dart';
+import 'package:mealvana_endurance/features/calendar/presentation/providers/calendar_view_provider.dart';
+import 'package:mealvana_endurance/features/calendar/presentation/widgets/calendar_view_toggle.dart';
+import 'package:mealvana_endurance/features/calendar/presentation/widgets/calendar_week_view_kyle.dart';
+import 'package:mealvana_endurance/features/calendar/presentation/widgets/calendar_month_view_kyle.dart';
+import 'package:mealvana_endurance/features/calendar/domain/calendar_day_indicators.dart';
+import 'package:mealvana_endurance/shared/providers/unit_system_provider.dart';
+import 'package:mealvana_endurance/shared/utils/unit_formatter.dart';
+import 'package:mealvana_endurance/features/nutrition_plan/domain/run_parameters.dart';
 
 /// Screen showing detailed view of an athlete for coaches
 class AthleteDetailScreen extends ConsumerStatefulWidget {

@@ -10,7 +10,7 @@ import 'manual_log_form.dart' show parseCaloriesInput;
 /// "Manual" tab body for the build-a-meal sheet.
 ///
 /// Unlike the legacy [ManualLogForm] (which writes a terminal `meal_logs` row
-/// directly — still used by the standalone `ManualLogScreen` route), this
+/// directly — still used by the quick-log sheet's Manual tab), this
 /// form builds one [MealComponent] from freeform macro fields and adds it to
 /// the build-a-meal draft (item 1), so it composes with everything else the
 /// user has added from other tabs.

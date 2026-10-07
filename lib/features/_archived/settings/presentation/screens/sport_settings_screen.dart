@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import '../../../../theme/app_theme.dart';
-import '../../../../shared/widgets/primary_button.dart';
-import '../../../../shared/widgets/content_area.dart';
-import '../providers/settings_controller.dart';
-import '../../../../../../../../../shared/widgets/kyle_design/kyle_design.dart';
-import '../../../integrations/presentation/providers/athlete_zones_provider.dart';
-import '../../../../shared/widgets/kyle_design/data/kyle_source_chip.dart';
+import 'package:mealvana_endurance/theme/app_theme.dart';
+import 'package:mealvana_endurance/shared/widgets/primary_button.dart';
+import 'package:mealvana_endurance/shared/widgets/content_area.dart';
+import 'package:mealvana_endurance/features/settings/presentation/providers/settings_controller.dart';
+import 'package:mealvana_endurance/shared/widgets/kyle_design/kyle_design.dart';
+import 'package:mealvana_endurance/features/integrations/presentation/providers/athlete_zones_provider.dart';
+import 'package:mealvana_endurance/shared/widgets/kyle_design/data/kyle_source_chip.dart';
 
 /// Sport Settings Screen - Cycling, swimming, and sport-specific preferences
 class SportSettingsScreen extends ConsumerWidget {

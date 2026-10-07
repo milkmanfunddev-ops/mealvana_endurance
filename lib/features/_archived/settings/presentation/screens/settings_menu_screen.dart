@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
-import '../../../../theme/app_theme.dart';
-import '../../../../shared/services/app_config.dart';
+import 'package:mealvana_endurance/theme/app_theme.dart';
+import 'package:mealvana_endurance/shared/services/app_config.dart';
 
 /// Main Settings Menu - Category selection screen
 class SettingsMenuScreen extends ConsumerWidget {

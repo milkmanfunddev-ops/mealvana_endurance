@@ -69,6 +69,11 @@ import '../../../../shared/services/report/report.dart';
 /// Nothing brick-shaped lives in kyle_design/ yet, by design: promotion into
 /// the library follows ratification (source-authority.md §3), not this port.
 /// Test: test/features/macro_dashboard/macro_dashboard_brick_test.dart.
+///
+/// Not mounted by any route: this class is the method host for
+/// [MacroDashboardBody] (`_layout` calls its `_dayWorkouts` / `_railRow` /
+/// `_dockGap`), so it was kept when round develop-2026-10 (ticket 26) archived
+/// the route-only orphan screens.
 class MacroDashboardScreen extends ConsumerWidget {
   const MacroDashboardScreen({super.key});
 

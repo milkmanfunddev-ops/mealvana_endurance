@@ -3,15 +3,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:mealvana_endurance/shared/widgets/kyle_design/kyle_design.dart';
-import '../../../onboarding/domain/dietary_preference.dart';
-import '../../../onboarding/domain/allergy.dart';
-import '../../../auth/application/auth_service.dart';
-import '../../../onboarding/presentation/providers/onboarding_controller.dart';
-import '../../../../shared/services/app_external_deps.dart';
-import '../../../../shared/services/report/report.dart';
-import '../../../../shared/widgets/selection/figma_radio_option_card.dart';
-import '../../../../shared/widgets/selection/figma_checkbox_card.dart';
-import '../../../../shared/widgets/content_area.dart';
+import 'package:mealvana_endurance/features/onboarding/domain/dietary_preference.dart';
+import 'package:mealvana_endurance/features/onboarding/domain/allergy.dart';
+import 'package:mealvana_endurance/features/auth/application/auth_service.dart';
+import 'package:mealvana_endurance/features/onboarding/presentation/providers/onboarding_controller.dart';
+import 'package:mealvana_endurance/shared/services/app_external_deps.dart';
+import 'package:mealvana_endurance/shared/services/report/report.dart';
+import 'package:mealvana_endurance/shared/widgets/selection/figma_radio_option_card.dart';
+import 'package:mealvana_endurance/shared/widgets/selection/figma_checkbox_card.dart';
+import 'package:mealvana_endurance/shared/widgets/content_area.dart';
 
 /// Consolidated Food Settings Screen
 ///

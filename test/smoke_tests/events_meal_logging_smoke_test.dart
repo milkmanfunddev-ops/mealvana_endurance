@@ -31,12 +31,7 @@ import 'package:mealvana_endurance/features/meal_logging/presentation/screens/bu
 import 'package:mealvana_endurance/features/meal_logging/presentation/screens/edit_meal_log_screen.dart';
 import 'package:mealvana_endurance/features/meal_logging/presentation/screens/log_meal_screen.dart';
 import 'package:mealvana_endurance/features/meal_logging/presentation/screens/meal_log_method_sheet.dart';
-import 'package:mealvana_endurance/features/meal_logging/presentation/screens/manual_log_screen.dart';
-import 'package:mealvana_endurance/features/meal_logging/presentation/screens/photo_capture_screen.dart';
-import 'package:mealvana_endurance/features/meal_logging/presentation/screens/describe_meal_screen.dart';
 import 'package:mealvana_endurance/features/meal_logging/presentation/screens/meal_review_screen.dart';
-import 'package:mealvana_endurance/features/meal_logging/presentation/screens/recent_saved_picker_screen.dart';
-import 'package:mealvana_endurance/features/meal_logging/presentation/screens/recipe_picker_screen.dart';
 import 'package:mealvana_endurance/shared/services/app_config.dart';
 
 import '../helpers/widget_test_harness.dart';
@@ -201,26 +196,6 @@ void main() {
       await _smokeWithRouter(tester, () => const EditMealLogScreen());
     });
 
-    // ManualLogScreen reads GoRouterState.of(context) for logDate.
-    // With null extra it falls back to today's date string — fully safe.
-    testWidgets('ManualLogScreen builds', (tester) async {
-      await _smokeWithRouter(tester, () => const ManualLogScreen());
-    });
-
-    // PhotoCaptureScreen reads GoRouterState.of(context) for logDate.
-    // ImagePicker is only invoked on button taps, not at build time.
-    // NOTE: If a MethodChannel error fires for image_picker on the test host,
-    // this is a native-plugin init issue, not a code bug — mark Patrol-only.
-    testWidgets('PhotoCaptureScreen builds', (tester) async {
-      await _smokeWithRouter(tester, () => const PhotoCaptureScreen());
-    });
-
-    // DescribeMealScreen reads GoRouterState.of(context) for logDate.
-    // Pure form UI — AI call only fires on submit tap.
-    testWidgets('DescribeMealScreen builds', (tester) async {
-      await _smokeWithRouter(tester, () => const DescribeMealScreen());
-    });
-
     // MealReviewScreen reads GoRouterState.of(context) for MealAnalysisResult.
     // With null extra, _result == null and the screen shows 'Missing analysis
     // result.' fallback text — a defined safe state, not a crash.
@@ -228,22 +203,6 @@ void main() {
       tester,
     ) async {
       await _smokeWithRouter(tester, () => const MealReviewScreen());
-    });
-
-    // RecentSavedPickerScreen reads GoRouterState.of(context) for logDate and
-    // watches savedMealsProvider + recentMealsProvider (both async streams).
-    // settle:false — streams never emit without real Drift DB.
-    testWidgets('RecentSavedPickerScreen builds (loading state)', (
-      tester,
-    ) async {
-      await _smokeWithRouter(tester, () => const RecentSavedPickerScreen());
-    });
-
-    // RecipePickerScreen reads GoRouterState.of(context) for logDate and calls
-    // recipeService.ensureSynced() + getAllRecipes() in didChangeDependencies.
-    // settle:false — async recipe load never completes without a real DB.
-    testWidgets('RecipePickerScreen builds (loading state)', (tester) async {
-      await _smokeWithRouter(tester, () => const RecipePickerScreen());
     });
 
     // LogMealScreen (full-screen "Log a Meal" redesign) — logDate is a plain
