@@ -59,7 +59,7 @@ it). Ticket 08 opens it by deep link; this ticket uses the sheet, which is how a
 4. Log it into a slot. Back on the Timeline, the meal card shows at the logged time with the same
    numbers; the day's intake moves by the meal's total.
 5. SQL: the new row(s), the ledger and the balance. Pull the `describe-meal` edge-function log for
-   the minutes of the call (`scripts/edge_logs.sh`).
+   the minutes of the call (the Supabase MCP `query_logs`, per RUNBOOK step 6: console lines).
 6. Relaunch the app: the meal is still there.
 
 ## What counts as a Finding
