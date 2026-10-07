@@ -1,6 +1,27 @@
 /// Content key constants that map to the content_defaults.json structure
 /// These provide type-safe access to all content strings
 class ContentKeys {
+  // Log In errors, one line under the form that stays until the next edit
+  // (testing-wave 125-002, 125-007).
+  static const String loginErrorWrongCredentials =
+      'auth.login.error_wrong_credentials';
+  static const String loginErrorNoConnection = 'auth.login.error_no_connection';
+  static const String loginErrorFailed = 'auth.login.error_failed';
+  // Verify your email (121-001, 121-002, 124-002): the Resend countdown, an
+  // old code after a Resend, and the hint that the address may be an account.
+  static const String verifyEmailResendIn = 'auth.verify_email.resend_in';
+  static const String verifyEmailResend = 'auth.verify_email.resend';
+  static const String verifyEmailResent = 'auth.verify_email.resent';
+  static const String verifyEmailCodeSuperseded =
+      'auth.verify_email.code_superseded';
+  static const String verifyEmailMaybeAccountHint =
+      'auth.verify_email.maybe_account_hint';
+  static const String verifyEmailLogIn = 'auth.verify_email.log_in';
+  // Enter Reset Code (124-004): the same countdown on the reset screen.
+  static const String verifyCodeResendIn = 'auth.verify_code.resend_in';
+  static const String verifyCodeResent = 'auth.verify_code.resent';
+  static const String verifyCodeResendFailed = 'auth.verify_code.resend_failed';
+
   // Main Screen
   static const String mainScreenTitle = 'main_screen.title';
   static const String mainScreenDistanceLabel = 'main_screen.distance_label';
@@ -179,4 +200,15 @@ class ContentKeys {
   // Success Messages
   static const String successFeedbackSubmitted = 'success.feedback_submitted';
   static const String successProfileSaved = 'success.profile_saved';
+
+  /// Interpolates `{name}` placeholders in a content value:
+  /// `format('Give me {n} seconds', {'n': 30})`. (From mealplanning 7b206f04;
+  /// the code screens' countdown reads it.)
+  static String format(String value, Map<String, Object?> params) {
+    var result = value;
+    for (final entry in params.entries) {
+      result = result.replaceAll('{${entry.key}}', '${entry.value}');
+    }
+    return result;
+  }
 }

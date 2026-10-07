@@ -27,6 +27,7 @@ import '../presentation/widgets/dirty_record_recovery_dialog.dart';
 import '../../ai_credits/data/revenuecat_service.dart';
 import '../../auth/application/auth_service.dart';
 import '../../../shared/services/launch_trail.dart';
+import '../../auth/presentation/providers/password_recovery_controller.dart';
 
 /// Service responsible for providing individual startup operations using Drift
 /// Following Andrea Bizzotto's app initialization patterns
@@ -573,6 +574,50 @@ class AppStartupService {
       await DeviceInfoService.instance.initialize();
     }
     return DeviceInfoService.instance.deviceId;
+  }
+
+  /// A password reset the app was quit on (testing-wave 124-003): the right
+  /// reset code signed the phone in, Set New Password was never finished,
+  /// and `PasswordRecoveryController.recoveryPendingKey` is still set. That
+  /// session is signed out here, before the router reads any session, so the
+  /// relaunch lands on Log In and the emailed code alone never signs a phone
+  /// in. The marker is cleared first, so a sign-out that throws is not
+  /// retried on every launch. Never throws.
+  ///
+  /// Running twice: the second run finds no marker and returns.
+  Future<void> endAbandonedRecovery() async {
+    try {
+      final prefs = ref.read(appExternalDepsProvider).sharedPreferences;
+      if (prefs.getBool(PasswordRecoveryController.recoveryPendingKey) !=
+          true) {
+        return;
+      }
+      await prefs.remove(PasswordRecoveryController.recoveryPendingKey);
+      if (_supabase.auth.currentSession == null) {
+        // Marker without a session: nothing to sign out, but say so (D9).
+        LaunchTrail.add('abandoned recovery: marker cleared, no session');
+        await _report.note(
+          'Abandoned recovery marker found with no session; cleared',
+          area: 'auth',
+        );
+        return;
+      }
+      LaunchTrail.add('abandoned recovery: signing the recovery session out');
+      _report.info(
+        'Recovery session found at startup without a new password; signing out',
+        area: 'auth',
+      );
+      await _supabase.auth.signOut();
+    } catch (e, stackTrace) {
+      // Swallowed so startup continues; recorded (D9).
+      LaunchTrail.add('abandoned recovery: sign-out FAILED');
+      await _report.fault(
+        e,
+        stackTrace: stackTrace,
+        area: 'auth',
+        message: 'Ending the abandoned recovery session failed',
+      );
+    }
   }
 
   /// Check if user has existing session and restore it

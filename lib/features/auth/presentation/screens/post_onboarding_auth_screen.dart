@@ -42,6 +42,12 @@ class PostOnboardingAuthScreen extends ConsumerStatefulWidget {
 
 class _PostOnboardingAuthScreenState
     extends ConsumerState<PostOnboardingAuthScreen> {
+  /// True from an email screen's hand-off until this screen navigates away
+  /// (testing-wave 121-011): the save takes a few seconds, during which the
+  /// sign-up buttons showed again under the popped email screen. Busy hides
+  /// them; a failed save gives them back.
+  bool _handingOff = false;
+
   @override
   void initState() {
     super.initState();
@@ -392,9 +398,11 @@ class _PostOnboardingAuthScreenState
         'Email signup successful, saving onboarding data',
         area: 'auth',
       );
-      await _saveOnboardingDataAndNavigate(
-        authProvider: 'email',
-        isAnonymous: false,
+      await _handOff(
+        () => _saveOnboardingDataAndNavigate(
+          authProvider: 'email',
+          isAnonymous: false,
+        ),
       );
     } else {
       report.info(
@@ -412,7 +420,20 @@ class _PostOnboardingAuthScreenState
     // If email login successful, finish without discarding any onboarding
     // draft still in memory (see _finishLoginPreservingDraft).
     if (result == true && mounted) {
-      await _finishLoginPreservingDraft(authProvider: 'email');
+      await _handOff(() => _finishLoginPreservingDraft(authProvider: 'email'));
+    }
+  }
+
+  /// Runs an email screen's hand-off with the screen busy (121-011). Still
+  /// here afterwards: the save failed; the buttons come back. Navigated away:
+  /// nothing to reset.
+  Future<void> _handOff(Future<void> Function() finish) async {
+    if (!mounted) return;
+    setState(() => _handingOff = true);
+    try {
+      await finish();
+    } finally {
+      if (mounted) setState(() => _handingOff = false);
     }
   }
 
@@ -688,12 +709,13 @@ class _PostOnboardingAuthScreenState
     final asyncState = ref.watch(postOnboardingAuthControllerProvider);
     final contentService = ref.watch(contentServiceProvider);
     final isLogin = widget.mode == 'login';
+    final isBusy = asyncState.isLoading || _handingOff;
 
     return AdaptivePageScaffold(
       backgroundColor: OnbTokens.bg,
       appBar: _buildAppBar(
         context,
-        isLoading: asyncState.isLoading,
+        isLoading: isBusy,
         isLogin: isLogin,
       ),
       contentWidth: AdaptiveContentWidth.narrow,
@@ -773,8 +795,8 @@ class _PostOnboardingAuthScreenState
                     icon: FontAwesomeIcons.apple.data,
                     background: OnbTokens.orange,
                     foreground: OnbTokens.bg,
-                    onPressed: asyncState.isLoading ? null : _handleAppleSignIn,
-                    isLoading: asyncState.isLoading,
+                    onPressed: isBusy ? null : _handleAppleSignIn,
+                    isLoading: isBusy,
                   ),
 
                   // Spec "or" divider between the primary and the rest.
@@ -797,8 +819,8 @@ class _PostOnboardingAuthScreenState
                   icon: FontAwesomeIcons.google.data,
                   background: OnbTokens.cream,
                   foreground: OnbTokens.bg,
-                  onPressed: asyncState.isLoading ? null : _handleGoogleSignIn,
-                  isLoading: asyncState.isLoading,
+                  onPressed: isBusy ? null : _handleGoogleSignIn,
+                  isLoading: isBusy,
                 ),
 
                 const SizedBox(height: 10),
@@ -821,7 +843,7 @@ class _PostOnboardingAuthScreenState
                   background: Colors.transparent,
                   foreground: OnbTokens.creamA(0.75),
                   outlineColor: OnbTokens.creamA(0.2),
-                  onPressed: asyncState.isLoading
+                  onPressed: isBusy
                       ? null
                       : (isLogin ? _handleEmailLogin : _handleEmailSignUp),
                   isLoading: false,
@@ -879,7 +901,7 @@ class _PostOnboardingAuthScreenState
           ),
 
           // Loading overlay for OAuth sign-in flows
-          if (asyncState.isLoading)
+          if (isBusy)
             Container(
               color: OnbTokens.bg.withValues(alpha: 0.9),
               child: Center(
