@@ -42,6 +42,44 @@ import 'dev_testing_tools.dart';
 String notificationRouteForCarbEvent(String eventId) =>
     destinationForIntent('carb_event', eventId).location;
 
+/// Dev only: shows this process's launch tape, at most once per process.
+///
+/// Skips a tape with no notification in it (see
+/// [LaunchTrail.hasNotificationEvidence]) and any call after the first
+/// dialog: each resume calls this again, and keyed on tape length every
+/// resume stacked another dialog on the last (Finding 01-011).
+@visibleForTesting
+void showLaunchTrailDialogOnce(BuildContext? ctx, Report report) {
+  if (LaunchTrail.isEmpty) return;
+  if (!LaunchTrail.hasNotificationEvidence) return;
+  if (LaunchTrail.dialogShown) {
+    const line = 'trail dialog skipped: already shown this process';
+    LaunchTrail.add(line);
+    report.breadcrumb(line, category: 'push');
+    return;
+  }
+  if (ctx == null || !ctx.mounted) return;
+  LaunchTrail.markDialogShown();
+  showDialog<void>(
+    context: ctx,
+    builder: (c) => AlertDialog(
+      title: const Text('Launch trail (dev)'),
+      content: SingleChildScrollView(
+        child: SelectableText(
+          LaunchTrail.text,
+          style: const TextStyle(fontSize: 11, height: 1.4),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(c).pop(),
+          child: const Text('Dismiss'),
+        ),
+      ],
+    ),
+  );
+}
+
 class RootAppWidget extends ConsumerStatefulWidget {
   const RootAppWidget({super.key});
 
@@ -106,35 +144,11 @@ class _RootAppWidgetState extends ConsumerState<RootAppWidget>
   /// a BACKGROUNDED tap produces no new launch, so without the resume path the
   /// backgrounded case is unobservable on device, which is how it stayed
   /// "presumed working" until someone finally tried it.
-  int _trailShownAt = -1;
   void _showTrailDialog() {
-    if (!mounted || LaunchTrail.isEmpty) return;
-    // Only when the tape concerns a notification — see
-    // LaunchTrail.hasNotificationEvidence for why this guard exists.
-    if (!LaunchTrail.hasNotificationEvidence) return;
-    if (LaunchTrail.length == _trailShownAt)
-      return; // nothing new since last time
-    _trailShownAt = LaunchTrail.length;
-    final ctx = appNavigatorKey.currentContext;
-    if (ctx == null || !ctx.mounted) return;
-    // ignore: use_build_context_synchronously
-    showDialog<void>(
-      context: ctx,
-      builder: (c) => AlertDialog(
-        title: const Text('Launch trail (dev)'),
-        content: SingleChildScrollView(
-          child: SelectableText(
-            LaunchTrail.text,
-            style: const TextStyle(fontSize: 11, height: 1.4),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(c).pop(),
-            child: const Text('Dismiss'),
-          ),
-        ],
-      ),
+    if (!mounted) return;
+    showLaunchTrailDialogOnce(
+      appNavigatorKey.currentContext,
+      ref.read(reportProvider),
     );
   }
 

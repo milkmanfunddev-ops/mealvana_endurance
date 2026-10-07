@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// A black-box recorder for the cold-start notification path.
@@ -50,6 +51,18 @@ class LaunchTrail {
   /// when something actually changed.
   static final Map<String, String> _nativeSeen = {};
 
+  /// How many lines at the head of the tape [begin] seeded from native keys.
+  ///
+  /// Those values were written by an EARLIER process and some are never
+  /// cleared (`ios_un_willpresent` is overwritten, never removed; the two
+  /// resume payload keys are only removed by a consumer that nothing calls),
+  /// so a seeded line says nothing about this launch. [hasNotificationEvidence]
+  /// reads only the lines after them.
+  static int _seeded = 0;
+
+  /// Whether the dev trail dialog has been put on screen in this process.
+  static bool _dialogShown = false;
+
   /// Roll the last tape aside and start a fresh one. Call once, early.
   ///
   /// Events recorded before this runs are not lost: they buffer in memory and
@@ -69,6 +82,7 @@ class LaunchTrail {
         if (v != null) {
           _nativeSeen[k] = v;
           _events.insert(0, 'native $k=$v');
+          _seeded++;
         }
       }
       _persist();
@@ -144,14 +158,47 @@ class LaunchTrail {
   /// So the dialog now appears only for the case it was built for: a launch or
   /// resume that actually carried a notification. An ordinary launch records
   /// its tape silently and shows nothing.
-  static bool get hasNotificationEvidence {
-    final tape = text;
-    return tape.contains('payload=') ||
-        tape.contains('willpresent') ||
-        tape.contains('routing id=') ||
-        tape.contains('HELD ') ||
-        tape.contains('REPLAY ') ||
-        tape.contains('navigated(');
+  ///
+  /// A bare `payload=` is not evidence: every launch tapes
+  /// `launchDetails didNotificationLaunchApp=false payload=null`, which opened
+  /// the dialog on every launch and resume (Finding 08-007). Only a payload
+  /// with a value counts, and only on lines this process added: the native
+  /// lines [begin] seeds can be days old (see [_seeded]).
+  static bool get hasNotificationEvidence =>
+      _events.skip(_seeded).any(isNotificationEvidence);
+
+  static final _realPayload = RegExp(r'payload=(?!null\b)\S');
+
+  /// Whether one line, added during this process, shows a notification.
+  @visibleForTesting
+  static bool isNotificationEvidence(String line) =>
+      _realPayload.hasMatch(line) ||
+      // Only [pullNative] tapes this during a process, and only when
+      // AppDelegate wrote a new value: a foreground delivery.
+      line.contains('willpresent') ||
+      line.contains('routing id=') ||
+      line.contains('HELD ') ||
+      line.contains('REPLAY ') ||
+      line.contains('navigated(');
+
+  /// Whether the dev trail dialog has already been shown in this process.
+  ///
+  /// Static, so it outlives a rebuilt root state. Every resume adds a line,
+  /// so "the tape grew" is not "something new happened": keyed on length,
+  /// three resumes stacked three dialogs (Finding 01-011). Once per process.
+  static bool get dialogShown => _dialogShown;
+
+  static void markDialogShown() => _dialogShown = true;
+
+  /// Returns the recorder to a fresh process, for tests.
+  @visibleForTesting
+  static void debugReset() {
+    _events.clear();
+    _nativeSeen.clear();
+    _prefs = null;
+    _previous = null;
+    _seeded = 0;
+    _dialogShown = false;
   }
 
   /// How many lines the tape holds — used to tell "nothing new since I last

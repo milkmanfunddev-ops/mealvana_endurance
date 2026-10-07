@@ -72,16 +72,16 @@ No codegen.
 checks `root_app_widget.dart` and `tabs_screen.dart` against them (the Jade and orphan archives may touch the
 shell).
 
-- [ ] Unit test on the guard (`launch_trail_test.dart`), fed the tape lines the app writes: the run's ordinary
+- [x] Unit test on the guard (`launch_trail_test.dart`), fed the tape lines the app writes: the run's ordinary
       launch (`launchDetails didNotificationLaunchApp=false payload=null`, the `plugin.initialize()` lines,
       `app resumed`) is false; a seeded stale `native ios_un_willpresent=…` alone is false;
       `onDidReceiveNotificationResponse payload=act_123 …`, `legacy_launch payload=… (consumed)`,
       `routing id=…` and a fresh `willpresent` from `pullNative()` are each true.
-- [ ] Widget test on the root (or the extracted dialog helper): two resumes with notification evidence show
+- [x] Widget test on the root (or the extracted dialog helper): two resumes with notification evidence show
       one dialog, not two.
-- [ ] Widget test (`events_list_new_event_clears_tab_bar_test.dart`): with five events and the shell's inset,
+- [x] Widget test (`events_list_new_event_clears_tab_bar_test.dart`): with five events and the shell's inset,
       scrolled to the end, the New Event button's bottom edge sits above `bottomChromeClearancePx` from the
       screen bottom and a tap on it opens Create Event.
-- [ ] `flutter analyze` clean on touched files.
+- [x] `flutter analyze` clean on touched files.
 - [ ] Retest on a simulator (ticket 32): no launch-trail dialog on a plain cold start or resume, and the
       Events tab's New Event can be scrolled clear and tapped.
