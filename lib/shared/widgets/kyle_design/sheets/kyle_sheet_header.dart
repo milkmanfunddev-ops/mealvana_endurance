@@ -12,12 +12,11 @@ import 'package:mealvana_endurance/theme/kyle_design/app_text_styles.dart';
 /// write-back consent sheet (`tp-writeback-consent@v1`). Proposed for a
 /// `spec/design/components/sheet-header.md` stub — registered here so the
 /// next sheet reuses it instead of inventing a parallel header.
+///
+/// The X is named for a screen reader with the platform's localized "Close"
+/// (testing-wave 08-002: VoiceOver read it as a bare "button").
 class KyleSheetHeader extends StatelessWidget {
-  const KyleSheetHeader({
-    super.key,
-    required this.title,
-    this.onClose,
-  });
+  const KyleSheetHeader({super.key, required this.title, this.onClose});
 
   final String title;
   final VoidCallback? onClose;
@@ -43,6 +42,9 @@ class KyleSheetHeader extends StatelessWidget {
             onPressed: onClose,
             icon: Icon(
               Icons.close,
+              semanticLabel: MaterialLocalizations.of(
+                context,
+              ).closeButtonTooltip,
               color: AppColors.cream.withValues(alpha: 0.7),
               size: 22,
             ),
