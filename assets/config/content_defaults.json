@@ -324,5 +324,10 @@
       "resent": "A new code has been sent to your email",
       "resend_failed": "Failed to resend code. Please try again."
     }
+  },
+  "connections": {
+    "garmin_sync_note": "Garmin syncs automatically when your watch uploads to Garmin Connect. Tap Sync Now to pull any activities that arrived while the app was closed.",
+    "reconnect_notice": "{provider} needs you to sign in again to keep syncing.",
+    "reconnect_notice_action": "Reconnect"
   }
 }

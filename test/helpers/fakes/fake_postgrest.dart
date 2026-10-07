@@ -31,6 +31,28 @@ class FakePostgrest {
     authOptions: const AuthClientOptions(autoRefreshToken: false),
   );
 
+  /// Gives [client] a signed-in session for [userId] without any network,
+  /// for repositories that only write while the session owns the rows
+  /// (develop's DEV-A2 guard).
+  Future<void> signIn(String userId) => client.auth.setInitialSession(
+    jsonEncode({
+      'access_token': 'fake-access-token',
+      'token_type': 'bearer',
+      'expires_in': 3600,
+      'expires_at':
+          DateTime.now().add(const Duration(hours: 1)).millisecondsSinceEpoch ~/
+          1000,
+      'refresh_token': 'fake-refresh-token',
+      'user': {
+        'id': userId,
+        'aud': 'authenticated',
+        'app_metadata': <String, dynamic>{},
+        'user_metadata': <String, dynamic>{},
+        'created_at': '2026-01-01T00:00:00Z',
+      },
+    }),
+  );
+
   Future<http.Response> _handle(http.Request request) async {
     final segments = request.url.pathSegments;
     if (segments.length < 3 || segments[0] != 'rest') {

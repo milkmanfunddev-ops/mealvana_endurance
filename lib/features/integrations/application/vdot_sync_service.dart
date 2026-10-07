@@ -211,7 +211,7 @@ class VdotSyncService {
         userId,
         _provider,
         status: 'error',
-        error: e.toString(),
+        error: plainSyncErrorMessage(e, providerName: 'V.O2'),
       );
       await _r.fault(
         e,

@@ -309,7 +309,9 @@ class TrainingPeaksOAuthService {
 
   /// Ticket 64 (Finding 21-004): a refresh TP refuses for good (400/401)
   /// marks the connection as needing a sign-in again, which Settings shows
-  /// with a Reconnect action. A transient failure stays an ordinary error.
+  /// with a Reconnect action. A transient failure stays an ordinary error,
+  /// and the repository keeps a stored `requires_reauth` over it (ticket
+  /// 138, Finding 118-002).
   Future<void> _recordRefreshFailure(
     String userId,
     TrainingPeaksApiException e,

@@ -106,10 +106,17 @@ class FinalSurgeSyncService {
   /// Returns a [SyncResult] with sync statistics.
   ///
   /// Automatically handles token refresh when tokens expire.
+  ///
+  /// [lookbackDays] (Finding 100-006, Lee 2026-09-26): the upcoming fetch
+  /// starts at today, so a completion that arrived after its day passed was
+  /// never read. The past [lookbackDays] are fetched too, by date range, so
+  /// late completions land. Deletion flagging stays on today onward: the
+  /// past-days response is not shown to hold every workout.
   Future<SyncResult> syncWorkouts(
     String userId, {
     int numDays = 14,
     int numWorkouts = 21,
+    int lookbackDays = 7,
   }) async {
     // 1. Check if user has an active Final Surge integration
     final integrationRecord = await _integrationsRepository.getIntegration(
@@ -236,6 +243,35 @@ class FinalSurgeSyncService {
           workouts.addAll(fallbackResponse.workouts);
           upcomingHitCap =
               upcomingHitCap || fallbackResponse.workouts.length >= numWorkouts;
+        }
+      }
+
+      // The past week, for completions that arrived after their day passed
+      // (Finding 100-006). Best effort: a tenant without the date-range
+      // endpoint (404) or any other refusal skips the lookback and keeps
+      // the upcoming window.
+      if (lookbackDays > 0) {
+        try {
+          final pastResponse = await fetchDateRangeChunk(
+            startDate: today.subtract(Duration(days: lookbackDays)),
+            endDate: today.subtract(const Duration(days: 1)),
+          );
+          if (pastResponse.hasError) {
+            // D9: the lookback is skipped silently for the athlete.
+            await _r.note(
+              'Final Surge lookback fetch failed; upcoming window only',
+              area: _area,
+              data: {'error': pastResponse.errorMessage},
+            );
+          } else {
+            workouts.addAll(pastResponse.workouts);
+          }
+        } on IntegrationApiException catch (e) {
+          await _r.note(
+            'Final Surge lookback unavailable; upcoming window only',
+            area: _area,
+            data: {'statusCode': e.statusCode},
+          );
         }
       }
 
@@ -469,7 +505,7 @@ class FinalSurgeSyncService {
         userId,
         'final_surge',
         status: 'error',
-        error: e.toString(),
+        error: plainSyncErrorMessage(e, providerName: 'Final Surge'),
       );
 
       await _r.fault(
@@ -801,7 +837,7 @@ class FinalSurgeSyncService {
         userId,
         'final_surge',
         status: 'error',
-        error: e.toString(),
+        error: plainSyncErrorMessage(e, providerName: 'Final Surge'),
       );
 
       await _r.fault(

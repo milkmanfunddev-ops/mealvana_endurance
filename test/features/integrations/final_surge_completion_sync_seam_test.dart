@@ -65,6 +65,18 @@ void main() {
         error: any(named: 'error'),
       ),
     ).thenAnswer((_) async {});
+    // The past-week lookback (Finding 100-006, ticket 138) answers empty;
+    // every payload here arrives through the upcoming feed.
+    when(
+      () => api.getWorkoutsByDateRange(
+        any(),
+        startDate: any(named: 'startDate'),
+        endDate: any(named: 'endDate'),
+      ),
+    ).thenAnswer(
+      (_) async =>
+          const FinalSurgeWorkoutsResponse(success: true, workouts: []),
+    );
 
     service = FinalSurgeSyncService(
       apiClient: api,
@@ -175,6 +187,34 @@ void main() {
     expect(upgraded.completionType, domain.Activity.providerCompletionType);
     expect(upgraded.actualDistanceMiles, closeTo(3.544, 0.001));
     expect(upgraded.actualDurationMinutes, 34);
+  });
+
+  test('a completion that sends no measurements keeps the athlete\'s own '
+      'numbers (wave 25 review)', () async {
+    await syncWith([fsEasyWithoutCompletion()]);
+    final planned = await stored(easyKey);
+    await activities.markWorkoutDone(activityId: planned.id);
+    await (db.update(db.activitiesTable)
+          ..where((t) => t.providerWorkoutId.equals(easyKey)))
+        .write(
+          const ActivitiesTableCompanion(
+            actualDistanceMiles: Value(5.2),
+            actualDurationMinutes: Value(41),
+          ),
+        );
+
+    final bare = Map<String, dynamic>.of(fsCompletedEasy)
+      ..remove('ActualTime')
+      ..remove('ActualDistanceMeters');
+    await syncWith([bare]);
+    final after = await stored(easyKey);
+    expect(after.status, domain.ActivityStatus.completed);
+    expect(after.actualDistanceMiles, 5.2);
+    expect(after.actualDurationMinutes, 41);
+
+    // And it settles: the same bare payload writes nothing next time.
+    await syncWith([bare]);
+    expect((await stored(easyKey)).localUpdatedAt, after.localUpdatedAt);
   });
 
   test('an unchanged completed payload writes nothing on the next sync', () async {

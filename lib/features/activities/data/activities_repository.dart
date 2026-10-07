@@ -1682,8 +1682,10 @@ class ActivitiesRepository with SyncableRepository {
           (incoming.scheduledDateTime != existing.scheduledDateTime
               ? incoming.scheduledDateTime
               : existing.plannedTime),
+      // A completion without measurements keeps what the row already had
+      // (an athlete's own mark-done numbers), wave 25 review.
       actualTime: adoptCompletion
-          ? incoming.actualTime
+          ? incoming.actualTime ?? existing.actualTime
           : incoming.isProviderCompleted
           ? existing.actualTime
           : incoming.actualTime ?? existing.actualTime,
@@ -1692,16 +1694,16 @@ class ActivitiesRepository with SyncableRepository {
       // preserve local completion and nutrition data (a platform-reported
       // completion replaces the completion fields, see adoptCompletion)
       completedAt: adoptCompletion
-          ? incoming.completedAt
+          ? incoming.completedAt ?? existing.completedAt
           : existing.completedAt,
       completionRating: existing.completionRating,
       nutritionRating: existing.nutritionRating,
       completionNotes: existing.completionNotes,
       actualDistanceMiles: adoptCompletion
-          ? incoming.actualDistanceMiles
+          ? incoming.actualDistanceMiles ?? existing.actualDistanceMiles
           : existing.actualDistanceMiles,
       actualDurationMinutes: adoptCompletion
-          ? incoming.actualDurationMinutes
+          ? incoming.actualDurationMinutes ?? existing.actualDurationMinutes
           : existing.actualDurationMinutes,
       completionType: adoptCompletion
           ? incoming.completionType

@@ -211,6 +211,15 @@ class ContentKeys {
   static const String successFeedbackSubmitted = 'success.feedback_submitted';
   static const String successProfileSaved = 'success.profile_saved';
 
+  // Connected apps (testing-wave 138: 118-007 Reconnect notice, 119-008
+  // the Garmin note names Sync Now)
+  static const String connectionsGarminSyncNote =
+      'connections.garmin_sync_note';
+  static const String connectionsReconnectNotice =
+      'connections.reconnect_notice';
+  static const String connectionsReconnectNoticeAction =
+      'connections.reconnect_notice_action';
+
   /// Interpolates `{name}` placeholders in a content value:
   /// `format('Give me {n} seconds', {'n': 30})`. (From mealplanning 7b206f04;
   /// the code screens' countdown reads it.)

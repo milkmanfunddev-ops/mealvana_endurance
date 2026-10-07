@@ -353,7 +353,7 @@ class TrainingPeaksSyncService {
         userId,
         'training_peaks',
         status: 'error',
-        error: e.toString(),
+        error: plainSyncErrorMessage(e, providerName: 'TrainingPeaks'),
       );
 
       await _r.fault(
@@ -561,7 +561,7 @@ class TrainingPeaksSyncService {
         userId,
         'training_peaks',
         status: 'error',
-        error: e.toString(),
+        error: plainSyncErrorMessage(e, providerName: 'TrainingPeaks'),
       );
       await _r.fault(
         e,
@@ -1016,7 +1016,7 @@ class TrainingPeaksSyncService {
     userId,
     'training_peaks',
     status: 'error',
-    error: e.toString(),
+    error: plainSyncErrorMessage(e, providerName: 'TrainingPeaks'),
   );
 
   Future<void> _markNeedsReconnect(String userId) =>
