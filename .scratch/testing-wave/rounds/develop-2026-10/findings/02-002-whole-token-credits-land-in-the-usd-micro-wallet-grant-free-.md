@@ -1,7 +1,7 @@
 # 02-002 · Whole-token credits land in the usd_micro wallet: grant_free +50 at sign-in, describe-meal debits 1 micro-dollar for a 0.0086 USD call
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 02
 - run: w1-20261007T1103Z
 - screen: Log a Meal (Describe tab)
@@ -33,4 +33,4 @@ The dev database carries the usd_micro wallet that mealplanning's reserve/settle
 > 
 
 **Triage.**
-
+fix ticket: develop's token model must work as intended end to end (Lee): tokens start at 50 and go down to 0, one per describe-meal, photo and formula-kit call, the pill shows the real balance, the wall at 0, token packs purchasable; the usd_micro skew with mealplanning's wallet is resolved as part of it, not studied further

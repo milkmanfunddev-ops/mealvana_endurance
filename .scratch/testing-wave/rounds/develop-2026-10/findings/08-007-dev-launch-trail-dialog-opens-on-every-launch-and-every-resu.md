@@ -1,7 +1,7 @@
 # 08-007 · Dev 'Launch trail' dialog opens on every launch and every resume, because 'payload=null' counts as notification evidence
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 08
 - run: w1-20261007T1105Z
 - screen: Timeline (dev dialog over any screen)
@@ -26,3 +26,4 @@ It opened on the first cold start, on the offline cold start, after the notifica
 > 
 
 **Triage.**
+fix ticket (guards batch): the launch-trail guard matches a real notification payload only and the dialog shows once per process; unit test on the guard

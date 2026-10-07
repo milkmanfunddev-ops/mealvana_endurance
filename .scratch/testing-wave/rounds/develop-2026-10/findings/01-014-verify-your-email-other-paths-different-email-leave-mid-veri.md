@@ -1,7 +1,7 @@
 # 01-014 · Verify your email: other paths (different email, leave mid-verify, expired code, relaunch)
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 01
 - run: w1-20261007T1103Z
 - screen: Verify your email
@@ -27,4 +27,4 @@ Not run (look-around).
 > 
 
 **Triage.**
-
+retest ticket 30 (retest: auth and account), wave 3 (Lee: all 27 followups into four retest tickets)

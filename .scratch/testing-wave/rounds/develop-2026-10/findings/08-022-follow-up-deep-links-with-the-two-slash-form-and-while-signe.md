@@ -1,7 +1,7 @@
 # 08-022 · Follow-up: deep links with the two-slash form, and while signed out
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 08
 - run: w1-20261007T1105Z
 - screen: Page Not Found
@@ -23,3 +23,4 @@ Go Home settles on the Timeline; signed-out deep links never show a signed-in sc
 > 
 
 **Triage.**
+retest ticket 32 (retest: startup, tabs, deep links), wave 3 (Lee: all 27 followups into four retest tickets)

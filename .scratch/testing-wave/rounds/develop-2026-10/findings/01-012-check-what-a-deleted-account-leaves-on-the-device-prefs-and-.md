@@ -1,7 +1,7 @@
 # 01-012 · Check what a deleted account leaves on the device (prefs and Drift rows)
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 01
 - run: w1-20261007T1103Z
 - screen: Settings
@@ -26,4 +26,4 @@ Seen in this run (not judged as a bug): after two deletes the prefs still held `
 > 
 
 **Triage.**
-
+retest ticket 33 (retest: cross-device and leftovers), wave 3 (Lee: all 27 followups into four retest tickets)

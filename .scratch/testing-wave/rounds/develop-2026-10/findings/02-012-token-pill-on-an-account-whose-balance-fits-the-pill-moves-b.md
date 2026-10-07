@@ -1,7 +1,7 @@
 # 02-012 · Token pill on an account whose balance fits the pill: moves by the cost after a describe
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 02
 - run: w1-20261007T1103Z
 - screen: Log a Meal (Describe tab)
@@ -24,4 +24,4 @@ Pill equals the balance before; after the call both drop by `creditCost('describ
 > 
 
 **Triage.**
-
+retest ticket 31 (retest: meal logging), wave 3 (Lee: all 27 followups into four retest tickets)

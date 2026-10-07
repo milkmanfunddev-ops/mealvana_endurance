@@ -1,7 +1,7 @@
 # 01-007 · UK consent screen can only be reached when the geo lookup fails or answers a strict country; en_GB locale alone never shows it
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 01
 - run: w1-20261007T1103Z
 - screen: Welcome
@@ -30,4 +30,4 @@ This run (AppleLocale en_GB, app relaunched): no consent screen; prefs held `pri
 > 
 
 **Triage.**
-
+rewritten into retest ticket 30: the consent screen is reached by failing the geo lookup (netcut) or a strict-country answer, not by setting the locale (Lee)

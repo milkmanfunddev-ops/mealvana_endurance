@@ -1,7 +1,7 @@
 # 08-017 · Follow-up: notification permission prompt first appears on the offline cold start after re-sign-in
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 08
 - run: w1-20261007T1105Z
 - screen: none (startup)
@@ -24,3 +24,4 @@ The prompt appears at a deliberate moment, once; scheduling with permission off 
 > 
 
 **Triage.**
+retest ticket 32 (retest: startup, tabs, deep links), wave 3 (Lee: all 27 followups into four retest tickets)

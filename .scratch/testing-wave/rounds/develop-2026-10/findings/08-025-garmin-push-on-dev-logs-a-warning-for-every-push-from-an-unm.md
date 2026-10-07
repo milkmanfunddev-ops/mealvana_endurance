@@ -1,7 +1,7 @@
 # 08-025 · garmin-push on dev logs a warning for every push from an unmapped Garmin user (11 in the wave window, 9 distinct users)
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 08
 - run: w1-20261007T1105Z
 - screen: none (server, garmin-push)
@@ -25,4 +25,4 @@ Filed by the wave lead from the whole-wave extract. 11 `[garmin-push] No user ma
 > 
 
 **Triage.**
-
+fix ticket (backports): the mealplanning round's fixes to code develop shares (about 25 of its 71, Garmin ticket 138 = 63c269c2 included) are extracted from their mealplanning landing commits onto develop-next with their tests; the wave-1 re-finds (01-002, 08-008, 08-021, 02-011) close through it (Lee)

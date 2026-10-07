@@ -1,7 +1,7 @@
 # 02-008 · TrainingPeaks sharing sheet on relaunch while the TrainingPeaks token is dead; what Keep and Turn Off write
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 02
 - run: w1-20261007T1103Z
 - screen: Timeline (TrainingPeaks sharing sheet)
@@ -26,4 +26,4 @@ The sheet appears once, at a sensible moment, and does not promise sharing while
 > 
 
 **Triage.**
-
+retest ticket 31 (retest: meal logging), wave 3 (Lee: all 27 followups into four retest tickets)

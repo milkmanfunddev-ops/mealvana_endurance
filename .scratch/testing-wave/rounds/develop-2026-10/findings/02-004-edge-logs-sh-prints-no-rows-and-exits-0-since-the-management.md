@@ -1,7 +1,7 @@
 # 02-004 · edge_logs.sh prints no rows and exits 0 since the Management API removed logs.all
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 02
 - run: w1-20261007T1103Z
 - screen: none
@@ -27,4 +27,4 @@ Both sources print "(no rows in window)" and exit 0. `--raw` shows the Managemen
 > 
 
 **Triage.**
-
+fix ticket: edge-function logs are read through the Supabase MCP's query_logs (ClickHouse SQL on the logs table) from now on; runbook step 6 and the other callers switch to it and scripts/edge_logs.sh is deleted so nothing passes silently again (Lee)

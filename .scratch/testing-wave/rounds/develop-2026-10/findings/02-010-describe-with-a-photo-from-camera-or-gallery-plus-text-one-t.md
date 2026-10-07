@@ -1,7 +1,7 @@
 # 02-010 · Describe with a photo from Camera or Gallery plus text, one token
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 02
 - run: w1-20261007T1103Z
 - screen: Log a Meal (Describe tab)
@@ -25,4 +25,4 @@ Photo + text is one analysis and one token (log_meal_screen.dart: "one analysis,
 > 
 
 **Triage.**
-
+retest ticket 31 (retest: meal logging), wave 3 (Lee: all 27 followups into four retest tickets)

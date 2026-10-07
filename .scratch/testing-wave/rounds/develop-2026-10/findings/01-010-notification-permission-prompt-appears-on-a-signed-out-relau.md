@@ -1,7 +1,7 @@
 # 01-010 · Notification permission prompt appears on a signed-out relaunch after account deletion, and its wait is reported as a slow operation
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 01
 - run: w1-20261007T1103Z
 - screen: Welcome
@@ -26,4 +26,4 @@ On the first launch of the run (fresh data) no prompt showed (launch trail: `pus
 > 
 
 **Triage.**
-
+retest ticket 30 (retest: auth and account), wave 3 (Lee: all 27 followups into four retest tickets)

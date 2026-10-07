@@ -1,7 +1,7 @@
 # 01-016 · Delete Account: offline, server failure, double tap, and signing in with the deleted address
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 01
 - run: w1-20261007T1103Z
 - screen: Settings
@@ -29,4 +29,4 @@ Not run (look-around). In this run the delete succeeded three times, Cancel kept
 > 
 
 **Triage.**
-
+retest ticket 30 (retest: auth and account), wave 3 (Lee: all 27 followups into four retest tickets)

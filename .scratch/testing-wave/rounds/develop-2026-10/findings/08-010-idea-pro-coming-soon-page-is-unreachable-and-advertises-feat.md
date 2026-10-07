@@ -1,7 +1,7 @@
 # 08-010 · Idea: /pro 'Coming Soon' page is unreachable and advertises features that already ship
 
 - kind: idea
-- status: open
+- status: triaged
 - ticket: 08
 - run: w1-20261007T1105Z
 - screen: Mealvana Pro (/pro)
@@ -23,3 +23,4 @@
 > 
 
 **Triage.**
+fix ticket (orphans): comment out the routes and move the screens to _archived, never delete (Lee): /pro, /settings/sport-settings, /settings/food-preferences-consolidated, /settings/food-preferences/add-food, the five standalone /meal-log/* screens, plus the never-built classes. Carefully: mealplanning and a paywall are coming, so /pro will likely be needed again

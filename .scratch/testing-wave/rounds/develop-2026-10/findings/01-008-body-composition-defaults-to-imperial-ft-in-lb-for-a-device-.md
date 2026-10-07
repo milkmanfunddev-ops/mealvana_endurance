@@ -1,7 +1,7 @@
 # 01-008 · Body composition defaults to Imperial (ft/in, lb) for a device in en_GB
 
 - kind: idea
-- status: open
+- status: wontfix
 - ticket: 01
 - run: w1-20261007T1103Z
 - screen: Basic body composition
@@ -24,4 +24,4 @@ Unit preferences start on Imperial (5 ft 8 in, 150 lb) whatever the locale. Swit
 > 
 
 **Triage.**
-
+Lee: the unit default is Xuan's onboarding call

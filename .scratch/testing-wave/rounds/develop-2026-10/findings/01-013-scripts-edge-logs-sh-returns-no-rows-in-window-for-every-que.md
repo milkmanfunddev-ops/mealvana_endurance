@@ -1,7 +1,7 @@
 # 01-013 · scripts/edge_logs.sh returns '(no rows in window)' for every query on dev, even 24 h unfiltered
 
 - kind: idea
-- status: open
+- status: triaged
 - ticket: 01
 - run: w1-20261007T1103Z
 - screen: none
@@ -24,4 +24,4 @@ Every query returned "(no rows in window)" and exit 0: `-m 35` and `-m 60` with 
 > 
 
 **Triage.**
-
+fix ticket: edge-function logs are read through the Supabase MCP's query_logs (ClickHouse SQL on the logs table) from now on; runbook step 6 and the other callers switch to it and scripts/edge_logs.sh is deleted so nothing passes silently again (Lee)

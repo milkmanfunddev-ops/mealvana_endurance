@@ -1,7 +1,7 @@
 # 01-006 · First Timeline after signup sends two DashboardTargetsAnomaly events to Sentry for a sub-second 'computing' gap
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 01
 - run: w1-20261007T1103Z
 - screen: Timeline
@@ -25,4 +25,4 @@ On all three signups the console logs "Dashboard shown without targets {reason: 
 > 
 
 **Triage.**
-
+fix ticket: a transient that resolves under its threshold is a breadcrumb, not a Sentry error

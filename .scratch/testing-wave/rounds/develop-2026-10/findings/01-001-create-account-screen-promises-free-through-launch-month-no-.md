@@ -1,7 +1,7 @@
 # 01-001 · Create-account screen promises "Free through launch month, no card needed" on a branch with no paywall
 
 - kind: bug
-- status: open
+- status: wontfix
 - ticket: 01
 - run: w1-20261007T1103Z
 - screen: Post-Onboarding Auth ("Your plan is ready. Don't leave it behind.")
@@ -29,4 +29,4 @@ No paywall screen, Pro gate or entitlement read was seen anywhere in the run, an
 > 
 
 **Triage.**
-
+Lee: Xuan's copy, never changed by us anywhere; develop has no paywall, so no paywall tickets are needed

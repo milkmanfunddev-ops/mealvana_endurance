@@ -1,7 +1,7 @@
 # 08-001 · Jade's Back on a deep-linked /jade pops the last route and leaves a black screen
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 08
 - run: w1-20261007T1105Z
 - screen: Mealvana AI (AiCoachChatScreen, /jade)
@@ -27,3 +27,4 @@ The screen goes fully black; only the dev testing-tools overlay stays. No Flutte
 > 
 
 **Triage.**
+fix ticket (archive Jade): comment out /jade, move lib/features/ai_coach to _archived, move the shared thinking-status widget to lib/shared/widgets, rename the jade_calls logging and the JADE_MODEL alias in the functions, leave the dev-only tables; Vana replaces the chat at Phase B (Lee). Meal logging and formula kits are not Jade and stay

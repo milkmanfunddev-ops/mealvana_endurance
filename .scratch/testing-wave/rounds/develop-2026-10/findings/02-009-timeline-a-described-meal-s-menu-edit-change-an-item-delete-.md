@@ -1,7 +1,7 @@
 # 02-009 · Timeline: a described meal's menu (edit, change an item, delete, move slot)
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 02
 - run: w1-20261007T1103Z
 - screen: Timeline
@@ -26,4 +26,4 @@ Every change shows identically on the card, the Net Balance "Eaten" and the stor
 > 
 
 **Triage.**
-
+retest ticket 31 (retest: meal logging), wave 3 (Lee: all 27 followups into four retest tickets)

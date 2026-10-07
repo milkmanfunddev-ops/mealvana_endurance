@@ -1,7 +1,7 @@
 # 01-011 · Dev 'Launch trail' dialog stacks one copy per launch or resume
 
 - kind: idea
-- status: open
+- status: triaged
 - ticket: 01
 - run: w1-20261007T1103Z
 - screen: Welcome
@@ -25,4 +25,4 @@ After a launch that the simulator first left in the background and then resumed,
 > 
 
 **Triage.**
-
+fix ticket (guards batch): the launch-trail guard matches a real notification payload only and the dialog shows once per process; unit test on the guard

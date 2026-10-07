@@ -1,7 +1,7 @@
 # 08-003 · Close/Back on deep-linked /pro and /settings/food-preferences-consolidated does nothing
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 08
 - run: w1-20261007T1105Z
 - screen: Mealvana Pro (/pro); Food Preferences (/settings/food-preferences-consolidated)
@@ -27,3 +27,4 @@ Both buttons do nothing: the screen stays, no console line. Both call context.po
 > 
 
 **Triage.**
+fix ticket (orphans): comment out the routes and move the screens to _archived, never delete (Lee): /pro, /settings/sport-settings, /settings/food-preferences-consolidated, /settings/food-preferences/add-food, the five standalone /meal-log/* screens, plus the never-built classes. Carefully: mealplanning and a paywall are coming, so /pro will likely be needed again

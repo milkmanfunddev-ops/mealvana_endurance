@@ -1,7 +1,7 @@
 # 02-005 · Edit Item folds the quantity into the portion: reopened item shows Quantity 1, doubled numbers, 2 medium banana (~118g)
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 02
 - run: w1-20261007T1103Z
 - screen: Review & Log (Edit Item)
@@ -30,4 +30,4 @@ It reopens with Quantity **1**, Portion "2 medium banana (~118g)" and the double
 > 
 
 **Triage.**
-
+fix ticket: quantity and per-portion base stay separate on an edited item; reopen shows the quantity over the original base (meal-logging ticket with 02-003)

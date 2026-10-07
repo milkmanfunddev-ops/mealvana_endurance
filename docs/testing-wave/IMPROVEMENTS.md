@@ -51,6 +51,26 @@ Their dates come from the wave each entry names.
   push surfaces has nothing to read first until then.
   2026-10-07 (develop-2026-10, wave 1): the skill is in no branch's history (`git log --all -- .claude/skills/notification-testing` is empty) and `../ops/docs/messaging-relay-and-testing.md` does not exist on this Mac; CLAUDE.md points at files that were never committed. Ticket 17 waits for Lee to say where they live (or for CLAUDE.md to drop the rule).
 
+- 2026-10-07 · develop-2026-10 · done · **#102 `scripts/edge_logs.sh` passed silently for a month (wave 1, 02-004, 01-013).** Supabase removed
+  the `logs.all` endpoint; the script's formatter read the "endpoint removed" answer as zero rows and exited 0,
+  so every run's edge-log check since then was empty and green. Ruled 2026-10-07 (Lee): edge-function logs are
+  read through the Supabase MCP's `query_logs` (ClickHouse SQL on the `logs` table, by `source`) and the script
+  is deleted (fix ticket 25). Lesson: a log tool must fail loud on any answer that is not rows, and the lead
+  pulls one whole-wave extract itself (`runs/wave-1-edge-logs.txt` is the first).
+- 2026-10-07 · develop-2026-10 · open · **#103 the mobile MCP helper does not start on a wave simulator (wave 1, 02-013; also #50 again).**
+  On two of three simulators the first MCP call timed out waiting for WebDriverAgent and left SpringBoard in
+  front; ticket 02 ran whole on idb (`idb ui tap/text/describe-all`). Suggested fix: the runbook makes idb the
+  primary driver and the MCP optional; `simulator.mjs claim` warms the helper (one `mobile_take_screenshot`)
+  before handing the device over, or says it could not.
+- 2026-10-07 · develop-2026-10 · done · **#104 deep links need the three-slash form (wave 1, 08-022).**
+  `com.milkman.mealvanaendurance://athlete/feedback` reads `athlete` as the host and lands on Page Not Found;
+  `com.milkman.mealvanaendurance:///athlete/feedback` (and the one-slash form) work. Runbook step 5 now says so.
+- 2026-10-07 · develop-2026-10 · open · **#105 fixes made on one branch's round never reach the branches that share the code (wave 1, 08-025).**
+  All 71 fixes of round mealplanning-2026-09 live only on `mealplanning`; about 25 touch code `develop` has, and
+  wave 1 re-found four of them (01-002, 08-008, 08-021, 02-011). Ruled 2026-10-07 (Lee): a backport ticket (29)
+  carries the shared-code fixes to develop-next now. Suggested rule: when a fix wave lands on a branch, its
+  close-out names which fixes touch shared code and which branch owes them.
+
 ## Done
 
 - 2026-09-26 · mealplanning-2026-09 · done · **#87 a run's account delete removed the state the next ticket expected (wave 36).** 118's

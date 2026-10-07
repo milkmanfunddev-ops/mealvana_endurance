@@ -1,7 +1,7 @@
 # 02-007 · Describe: empty, short and non-food input, and describe-meal failing offline or out of credits
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 02
 - run: w1-20261007T1103Z
 - screen: Log a Meal (Describe tab)
@@ -26,4 +26,4 @@ Validation stops empty/short input before any call; non-food text gets a clear a
 > 
 
 **Triage.**
-
+retest ticket 31 (retest: meal logging), wave 3 (Lee: all 27 followups into four retest tickets)

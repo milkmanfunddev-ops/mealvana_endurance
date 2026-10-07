@@ -1,7 +1,7 @@
 # 02-006 · Review: back without logging, rename, Any time slot, remove and swap an item
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 02
 - run: w1-20261007T1103Z
 - screen: Review & Log
@@ -28,4 +28,4 @@ Back loses nothing it should keep and never charges twice for one analysis; an e
 > 
 
 **Triage.**
-
+retest ticket 31 (retest: meal logging), wave 3 (Lee: all 27 followups into four retest tickets)

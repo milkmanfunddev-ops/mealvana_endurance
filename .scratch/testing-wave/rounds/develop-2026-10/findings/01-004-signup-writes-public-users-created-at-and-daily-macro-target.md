@@ -1,7 +1,7 @@
 # 01-004 · Signup writes public.users.created_at and daily_macro_targets.created_at 5 to 10 hours off
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 01
 - run: w1-20261007T1103Z
 - screen: Verify your email
@@ -29,4 +29,4 @@ The client appears to send local wall-clock time as if it were UTC (5 h = the CD
 > 
 
 **Triage.**
-
+fix ticket: the client writes that send naive local time as created_at send UTC or let the server default

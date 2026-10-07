@@ -1,7 +1,7 @@
 # 01-002 · A wrong signup code is reported as "That code has expired"
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 01
 - run: w1-20261007T1103Z
 - screen: Verify your email
@@ -27,4 +27,4 @@ The console shows the same text as `InvalidVerificationCodeException`, and it wa
 > 
 
 **Triage.**
-
+fix ticket: a wrong code gets its own message; expired stays for expired

@@ -1,7 +1,7 @@
 # 01-009 · Sign-up form ignores the email typed on the personal-info step, and public.users.email then keeps that casing
 
 - kind: idea
-- status: open
+- status: triaged
 - ticket: 01
 - run: w1-20261007T1103Z
 - screen: Sign Up with Email
@@ -25,4 +25,4 @@ Pass B typed `lee+e2e-01-20261007T110602Z@...` (mixed case) on the personal-info
 > 
 
 **Triage.**
-
+fix ticket: public.users.email is normalised to lowercase at write, plus a one-off dev SQL for existing rows; the personal-info prefill is Xuan's onboarding behaviour and goes to the review queue

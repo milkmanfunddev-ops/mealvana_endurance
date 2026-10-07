@@ -107,6 +107,8 @@ so.
   split `$var` (`set -- $t` and `F="node …"; $F` both fail), so wrap a repeated command in a shell
   function. A control whose position depends on text width (a title's Next arrow, for one) moves:
   read its position from the element list each time, never reuse a coordinate.
+- Deep links use the three-slash form, `xcrun simctl openurl UDID "com.milkman.mealvanaendurance:///<path>"`;
+  the two-slash form reads the first segment as a host and lands on Page Not Found (#104).
 - Before submitting a long value (an address, a code), read it back with `idb ui describe-all
   --udid UDID`: a field shows only the tail of a long value.
 - Passwords go in with `CRED type`, never by hand and never into a Finding, commit or report.
@@ -168,9 +170,11 @@ state is a Finding, not a step.
   project, as `docs/deployment/supabase-deploy-playbook.md` describes. Name the columns, never
   `SELECT *`: `integrations` holds live access and refresh tokens, and a star prints them into your
   transcript (#85).
-- Edge-function logs for the functions the scenario touched: `scripts/edge_logs.sh` (`-s
-  function_edge_logs` for request lines). It exits 1 on any answer that is not rows, so "(no rows
-  in window)" really means none.
+- Edge-function logs for the functions the scenario touched: the Supabase MCP's `query_logs` on the dev
+  project (`select timestamp, event_message, log_attributes['level'] from logs where source =
+  'function_edge_logs'` for request lines, `'function_logs'` for console lines, with the run's window as
+  `iso_timestamp_start/end`). `scripts/edge_logs.sh` is gone (#102): it answered "(no rows in window)" for
+  every query after Supabase removed its endpoint. Save the rows to `RUNS/edge-*.txt`.
 
 Both the SQL and the logs need a Management API token. Read it from the main clone without
 printing it, once per shell:

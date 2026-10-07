@@ -1,7 +1,7 @@
 # 08-009 · Cold start reports four SlowOperation warnings to Sentry, and deferred.notifications counts the time the permission prompt waits
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 08
 - run: w1-20261007T1105Z
 - screen: none (startup)
@@ -24,3 +24,4 @@ First launch: deferred.notifications 10987 ms, deferred.revenuecat 14972 ms, das
 > 
 
 **Triage.**
+fix ticket: the deferred.notifications timer excludes the time the OS permission prompt is up; the four thresholds stay; ticket 17's retest on a lone simulator decides whether the other three are real

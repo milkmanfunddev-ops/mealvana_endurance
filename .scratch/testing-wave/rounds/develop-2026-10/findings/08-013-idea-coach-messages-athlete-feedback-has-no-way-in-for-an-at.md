@@ -1,7 +1,7 @@
 # 08-013 · Idea: Coach Messages (/athlete/feedback) has no way in for an athlete
 
 - kind: idea
-- status: open
+- status: triaged
 - ticket: 08
 - run: w1-20261007T1105Z
 - screen: Coach Messages (/athlete/feedback)
@@ -24,3 +24,4 @@
 > 
 
 **Triage.**
+NOT archived (Lee): Coach Messages is reachable when the athlete is linked to a coach; the test account was not paired. Retest in ticket 19 (coach pairing) checks the entry appears once paired; no code navigates to /athlete/feedback by grep, so if 19 finds no entry this comes back as a bug

@@ -1,7 +1,7 @@
 # 08-015 · Follow-up: reach AI Credits the in-app way (insufficient-credits paywall, credit balance chip)
 
 - kind: followup-test
-- status: open
+- status: closed
 - ticket: 08
 - run: w1-20261007T1105Z
 - screen: AI Credits (/buy-credits)
@@ -24,3 +24,4 @@ AI Credits opens on a stack with Back to the screen that opened it; nothing is b
 > 
 
 **Triage.**
+covered by ticket 12 (the pill, the Out-of-credits dialog, Get credits, a pack purchase are all wired in code: token_pill.dart, insufficient_credits_paywall.dart); no separate retest

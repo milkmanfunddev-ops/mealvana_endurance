@@ -1,7 +1,7 @@
 # 02-013 · Mobile MCP agent would not start on wave-pool-2; idb fallback carried the run
 
 - kind: idea
-- status: open
+- status: closed
 - ticket: 02
 - run: w1-20261007T1103Z
 - screen: none
@@ -23,4 +23,4 @@ Agents know before the run whether the MCP works on their simulator.
 > 
 
 **Triage.**
-
+IMPROVEMENTS entry: the mobile MCP helper fails to start on a wave simulator; idb-first is the runbook's fallback and carried a full run

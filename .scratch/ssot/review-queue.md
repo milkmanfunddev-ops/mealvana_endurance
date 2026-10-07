@@ -101,3 +101,12 @@ These are also on the page as the Open tasks reference document (`docs/ssot/deci
 - Built as described, recorded (checked in code): mp-419 → 022, 425 → 232, 427/547 → 245, 546 → 214, 681/687 → 675, 688 → 678, 692/695 → 244. mp-693 (Disconnect Kroger confirms first) is built UI detail, not a card.
 - Obsolete list: dropped (Lee, 2026-09-26).
 - mp-421 → mp-223 · mp-424 → mp-232 (Lee, 2026-09-26).
+
+## Onboarding
+
+- ONB-PREFILL-001 · The email typed on the personal-info onboarding page is not carried into the sign-up form
+  (the athlete types it again), and under en_GB the body-composition page starts on Imperial. Both are
+  Xuan's onboarding behaviour. Should the sign-up form prefill from the personal-info page, and should the
+  unit default follow the device locale? (round develop-2026-10, Findings 01-009 and 01-008.)
+  Recommend: prefill yes, since the value is already typed; units follow locale.
+  Why pending: Lee ruled 2026-10-07 that the stored-email casing is fixed in code (ticket 21) and the prefill is Xuan's call.

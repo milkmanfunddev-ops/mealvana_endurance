@@ -1,7 +1,7 @@
 # 08-018 · Follow-up: Events tab untried paths (open upcoming and past events, pull to refresh, swipe to dismiss)
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 08
 - run: w1-20261007T1105Z
 - screen: My Events (Events tab)
@@ -23,3 +23,4 @@ Each opens its event detail and Back returns to the list; nothing changes unless
 > 
 
 **Triage.**
+retest ticket 32 (retest: startup, tabs, deep links), wave 3 (Lee: all 27 followups into four retest tickets)

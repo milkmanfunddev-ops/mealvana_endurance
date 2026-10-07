@@ -1,7 +1,7 @@
 # 08-024 · A meal logged on another device (ticket 02, 11:10Z) never showed on this device's Timeline during the same minutes
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 08
 - run: w1-20261007T1105Z
 - screen: Timeline (tab 0), test@test.com
@@ -27,4 +27,4 @@ Filed by the wave lead from runs/08/notes.md ("Ticket 02's meal log on test@test
 > 
 
 **Triage.**
-
+retest ticket 33 (retest: cross-device and leftovers), wave 3 (Lee: all 27 followups into four retest tickets)

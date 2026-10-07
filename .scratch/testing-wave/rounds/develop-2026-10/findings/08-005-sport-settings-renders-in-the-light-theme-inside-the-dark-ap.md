@@ -1,7 +1,7 @@
 # 08-005 · Sport Settings renders in the light theme inside the dark app, and its FTP value is nearly invisible
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 08
 - run: w1-20261007T1105Z
 - screen: Sport Settings (/settings/sport-settings)
@@ -23,3 +23,4 @@ Cream background with black headings while every other screen is dark; the FTP f
 > 
 
 **Triage.**
+fix ticket (orphans): comment out the routes and move the screens to _archived, never delete (Lee): /pro, /settings/sport-settings, /settings/food-preferences-consolidated, /settings/food-preferences/add-food, the five standalone /meal-log/* screens, plus the never-built classes. Carefully: mealplanning and a paywall are coming, so /pro will likely be needed again

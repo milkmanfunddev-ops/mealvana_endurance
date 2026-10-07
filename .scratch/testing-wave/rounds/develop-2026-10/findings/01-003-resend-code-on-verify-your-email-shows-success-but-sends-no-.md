@@ -1,7 +1,7 @@
 # 01-003 · Resend code on Verify your email shows success but sends no new email
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 01
 - run: w1-20261007T1103Z
 - screen: Verify your email
@@ -34,4 +34,4 @@ From code, unverified: signup here is an anonymous upgrade, so the screen resend
 > 
 
 **Triage.**
-
+fix ticket, scoped: Lee rules there is no anonymous-upgrade path going forward (it is being removed), so its resend failure goes away with it; fix every other Resend problem on Verify your email (the plain signup resend must send a new email)
