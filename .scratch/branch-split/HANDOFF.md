@@ -4,7 +4,7 @@ Spec: `spec.md`. Research: `STRATEGY.md`. Written by the Phase A session, 2026-1
 
 ## Status
 
-**Phase A done; testing round may start on `develop-next` @ `__DEVNEXT__`** (= `sentry-next` after the
+**Phase A done; testing round may start on `develop-next`** — code tip `1574cd93`, branch tip = this docs commit on top (`git rev-parse develop-next`); = `sentry-next` after the
 fast-forward). Nothing pushed. Xuan informed: **NO** (Lee does this before Phase B's force push).
 Phase B (`mealplanning-next`) not started.
 
@@ -16,7 +16,7 @@ Phase B (`mealplanning-next`) not started.
 | origin/release/1.29.0 | `1dc88f48` |
 | origin/mealplanning | `aec125f7` |
 | local `sentry` | `bec11608` (tag `sentry-original`, LOCAL only — push on Lee's go; code at `deb59745`) |
-| `develop-next` | `__DEVNEXT__` |
+| `develop-next` | code `1574cd93` + this docs commit (`git rev-parse develop-next`) |
 
 Worktrees: `/Users/leemartin/development/mealvana_endurance-waves/branch-split/develop-next` and `.../sentry-next`
 (env files copied in, gitignored).
