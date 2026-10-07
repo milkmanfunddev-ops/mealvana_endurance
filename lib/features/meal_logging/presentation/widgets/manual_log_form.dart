@@ -9,6 +9,13 @@ import '../../domain/meal_slot.dart';
 import '../providers/meal_log_providers.dart';
 import 'slot_chip_selector.dart';
 
+/// Parses a Calories field. The field accepts decimals (decimal keyboard and
+/// the `^\d*\.?\d*` filter), and `meal_logs.calories` is an integer column,
+/// so "250.5" rounds to 251 instead of failing `int.tryParse` and saving null
+/// (Finding 25-001). An empty or partial entry ("", ".") stays unknown (null),
+/// never 0. Shared with [ManualComponentForm] so both forms agree.
+int? parseCaloriesInput(String text) => double.tryParse(text.trim())?.round();
+
 /// Reusable manual meal-entry form.
 ///
 /// Hosts the name / optional slot / time eaten / macro fields and the Save
@@ -110,7 +117,7 @@ class _ManualLogFormState extends ConsumerState<ManualLogForm> {
           name: _nameCtrl.text.trim(),
           slot: _slot,
           logDate: widget.logDate,
-          calories: int.tryParse(_calCtrl.text),
+          calories: parseCaloriesInput(_calCtrl.text),
           carbsG: double.tryParse(_carbCtrl.text),
           proteinG: double.tryParse(_protCtrl.text),
           fatG: double.tryParse(_fatCtrl.text),
