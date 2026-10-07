@@ -12,9 +12,10 @@ import '../../../shared/services/report/report.dart';
 /// ran is the same failure), a Degraded report fires (Sentry warning).
 ///
 /// Mixed-fleet safety: a client running this code against a database that
-/// does not carry the audit table yet (or where RLS denies the read) gets a
-/// query error — recorded as a Note, never a false alarm and never a failed
-/// sync. Throttled to once per [recheckInterval] per app process.
+/// does not carry the audit table yet gets a query error — recorded as a
+/// Note, never a false alarm and never a failed sync. With no session, RLS
+/// hides every row without an error, so the check skips (DEV-9B). Throttled
+/// to once per [recheckInterval] per app process.
 /// Returns the newest sweep timestamp, or null when no sweep has ever run.
 typedef NewestSweepFetcher = Future<DateTime?> Function();
 
@@ -58,6 +59,18 @@ class RawRetentionDeadManCheck {
     final now = DateTime.now().toUtc();
     final last = _lastCheckedAt;
     if (last != null && now.difference(last) < recheckInterval) return;
+
+    // RLS answers a read with no session with zero rows, not an error, and
+    // zero rows reads as "never swept": DEV-9B was this check running in a
+    // sync that outlived a sign-out. Without a session there is no evidence
+    // either way, so skip, and leave the throttle for the next signed-in sync.
+    if (_fetchNewestSweep == null && _supabase.auth.currentUser == null) {
+      await _r.note(
+        'raw-retention dead-man check skipped: no session, audit rows hidden',
+        area: 'integrations',
+      );
+      return;
+    }
     _lastCheckedAt = now;
 
     try {

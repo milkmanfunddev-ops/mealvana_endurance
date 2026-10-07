@@ -21,7 +21,17 @@ enum ExpectedFailure {
   invalidCredentials('invalid_credentials'),
   expiredSession('expired_session'),
   cancelledPurchase('cancelled_purchase'),
+
+  /// A tester chose "fail" in the RevenueCat Test Store purchase sheet. Debug
+  /// dev builds only (the `test_` key never ships); the store did what it was
+  /// told. DEV-9H.
+  simulatedPurchaseFailure('simulated_purchase_failure'),
   accountNotFound('account_not_found'),
+
+  /// A control-flow signal: signed out with no cached profile, so the
+  /// `userIdProvider` has no user to return and the router sends the athlete
+  /// to welcome/onboarding. DEV-8G.
+  noProfile('no_profile'),
   storeNetwork('store_network'),
 
   /// Google Play services failed inside the Google Sign-In flow
@@ -110,6 +120,14 @@ expectedFailureNeedles = <MapEntry<String, ExpectedFailure>>[
   ),
   MapEntry('AuthorizationErrorCode.canceled', ExpectedFailure.cancelledSignIn),
   MapEntry('AuthorizationErrorCode.unknown', ExpectedFailure.cancelledSignIn),
+  // 2026-10-06 (DEV-6W, 70, 84, 85): flutter_web_auth_2 when the athlete
+  // closes a provider's OAuth sheet (Garmin, TrainingPeaks, FinalSurge).
+  // iOS and Android say "User canceled login", the web webview "User
+  // canceled"; the prefix matches both and nothing else from that channel.
+  MapEntry(
+    'PlatformException(CANCELED, User canceled',
+    ExpectedFailure.cancelledSignIn,
+  ),
   // --- User input errors ---
   // 2026-07-11 audit (DEV-5Q): mistyped password on manual login,
   // Supabase `AuthApiException(code: invalid_credentials)`.
@@ -136,6 +154,11 @@ expectedFailureNeedles = <MapEntry<String, ExpectedFailure>>[
   // signup screen offers "sign in instead".
   MapEntry('AccountAlreadyExistsException', ExpectedFailure.accountExists),
   MapEntry('User already registered', ExpectedFailure.accountExists),
+  // 2026-10-06 (DEV-8G): `userIdProvider` signed out with no cached profile.
+  MapEntry(
+    'User must complete onboarding first',
+    ExpectedFailure.noProfile,
+  ),
   // 2026-10-06 (DEV-9Q): "you can only request this after N seconds".
   MapEntry('over_email_send_rate_limit', ExpectedFailure.rateLimited),
   // --- Expired session (refresh token gone; the athlete signs in again) ---
@@ -153,6 +176,11 @@ expectedFailureNeedles = <MapEntry<String, ExpectedFailure>>[
     ExpectedFailure.cancelledPurchase,
   ),
   MapEntry('PURCHASE_CANCELLED', ExpectedFailure.cancelledPurchase),
+  // 2026-10-06 (DEV-9H): the Test Store's own "fail this purchase" choice.
+  MapEntry(
+    'TEST_STORE_SIMULATED_PURCHASE_ERROR',
+    ExpectedFailure.simulatedPurchaseFailure,
+  ),
   MapEntry('PurchasesErrorCode.networkError', ExpectedFailure.storeNetwork),
   MapEntry('NETWORK_ERROR', ExpectedFailure.storeNetwork),
   // --- Debug-only Flutter assertions (never fire in release builds) ---

@@ -206,9 +206,9 @@ class IntegrationsRepository with SyncableRepository {
         rows: dirty.length,
       )) {
         // Rows stay dirty; say so rather than claiming there was nothing.
-        return UploadResult.failed(
-          'deferred: ${dirty.length} integrations rows await a matching '
-          'session and a remote users row',
+        return UploadResult.deferred(
+          '${dirty.length} integrations rows await a matching session and a '
+          'remote users row',
         );
       }
 

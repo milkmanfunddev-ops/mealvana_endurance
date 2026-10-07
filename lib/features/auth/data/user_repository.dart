@@ -106,6 +106,29 @@ class UserRepository with SyncableRepository {
         return UploadResult.nothingToUpload();
       }
 
+      // Session guard (RLS 42501, Sentry DEV-A2). The write policies are
+      // `id = auth.uid()`. A sync that started for this user and outlived a
+      // sign-out (or a switch to another account) used to push the row under
+      // the wrong session and the server refused it. The row stays dirty
+      // under its owner and uploads when that owner signs back in. Same rule
+      // as the integrations guard (ticket 16). Case-insensitive: the
+      // activities code lowercases ids, Supabase does not.
+      final sessionUserId = supabase.auth.currentUser?.id;
+      if (sessionUserId?.toLowerCase() != dirtyUser.id.toLowerCase()) {
+        // D9: a skipped sync step, so a promoted Note.
+        await _r.note(
+          'User profile upload deferred: row belongs to a user other than '
+          'the session',
+          area: 'sync',
+          data: {
+            'rowUserId': dirtyUser.id,
+            'sessionUserId': sessionUserId,
+            'hasSession': sessionUserId != null,
+          },
+        );
+        return UploadResult.deferred('1 users row awaits its own session');
+      }
+
       // Serialize the dirty SNAPSHOT via the DAO's canonical mapping — the
       // single source of truth for every UserProfile field (a hand-duplicated
       // copy used to live here and silently dropped sweatRate/unitSystem/

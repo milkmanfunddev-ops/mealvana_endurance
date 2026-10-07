@@ -205,6 +205,18 @@ class SyncCoordinator extends _$SyncCoordinator {
       // 6. Upload dirty records (if repository provided)
       if (repository != null) {
         final uploadResult = await repository.uploadDirtyRecords(userId);
+        if (uploadResult.deferred) {
+          // Not a failure (DEV-A2): the rows belong to a user other than the
+          // session, and the repository already left a promoted sync Note.
+          // Download nothing the session cannot read, arm no cooldown, and
+          // leave the repository stale so the next call tries again.
+          _report.debug(
+            'Sync stopped: upload deferred',
+            area: 'sync',
+            data: {'repoKey': repoKey, 'reason': uploadResult.error},
+          );
+          return;
+        }
         if (!uploadResult.success) {
           throw StateError(
             'Upload failed for $repoKey: ${uploadResult.error ?? 'unknown error'}',

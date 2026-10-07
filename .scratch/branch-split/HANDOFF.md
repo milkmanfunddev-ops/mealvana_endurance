@@ -196,3 +196,33 @@ Known red (pre-existing, NOT from the split):
 - Deploy NOTHING (spec). The dev edge functions currently deployed are the `sentry` branch's (Vana-aware) versions;
   develop-next's `jade-chat` is the release-line body with reporting — redeploy only with the testing round.
 - `sentry_coverage.test.ts` scans every handler: keep it green if functions are added.
+
+## Not on this branch (for the mealplanning round)
+
+Sentry dev issues whose code lives only on `mealplanning` (round-up ticket 20,
+`.scratch/testing-wave/rounds/develop-2026-10/issues/20-sentry-leftovers.md`, has the evidence). Each needs
+its fix on mealplanning, then `resolvedInNextRelease` with that sha.
+
+- DEV-5G: RenderFlex overflows on mealplanning builds (onboarding 20550 px with the keyboard up, vana-browse 37 px); no widget named, revisit once events carry `flutter_error_details`.
+- DEV-5H: vana-browse rail cards overflow at a fixed 132 px; fixed by `885db994`, resolve when it ships.
+- DEV-7X: `MealCatalogController._localRecents` reads `ref` after dispose.
+- DEV-7Y: `VanaSettingsController._repo` reads `ref` after dispose.
+- DEV-7Z: `KrogerController._assertScope` throws `session_changed` on refresh-token churn.
+- DEV-81: `VanaCompanionHost._onRoute` reads `ref` from a deactivated element during a Router restore; needs an activation guard.
+- DEV-86: Flutter `RenderEditable.selectWord` null check on an iOS long-press in the Vana chat composer (framework, no app frame).
+- DEV-8A: `VanaSettingsController.build` calls `ref.onDispose` after dispose.
+- DEV-8B: `MealCatalogController._loadLocalRails` reads `ref` after dispose.
+- DEV-8K: connection reset on the `kroger` edge call (the reset needle already downgrades it).
+- DEV-8Y: `ai-cost-alert` (dev) daily cost over threshold, by design.
+- DEV-8Z: `ai-cost-alert` forced test alert (`threshold_usd: -1`), by design.
+- DEV-9E: Vana chat `_scrollToBottom` reads `maxScrollExtent` before layout; needs a `hasContentDimensions` guard.
+- DEV-9F: navigator `finalizeRoute` assertion, same event as DEV-9G.
+- DEV-9G: the paywall expiry redirect replaces the page stack under an open pageless sheet; pop pageless routes first.
+- DEV-9R: the paywall clip seeks after dispose; adopt `DisposalSafeVideoPlayerController`.
+- DEV-9W: `SubscriptionScreenController.build` watches after awaits (ticket 18 pattern).
+- DEV-A1: Vana tools fabricate `log:` meal ids; fixed in `82b3ce71` (tools.ts), resolve once that function is on dev.
+
+Related, not a Sentry row: mealplanning's Drift ladder reaches v24 without `activities.duration_source`
+(its v22 is `users.home_*`; develop-next's v22 is `duration_source`). A device crossing between the two
+lineages fails schema validation and resets (DEV-A5/A6/A7 on 2026-10-06). Phase B must renumber
+develop-next's `duration_source` step above mealplanning's 24 (idempotent `addColumn`) when the lines merge.

@@ -213,8 +213,10 @@ class CarbLoadingController extends _$CarbLoadingController {
         bodyWeightPounds: bodyWeightPounds,
         keepEdits: keepEdits,
       );
-      ref.invalidateSelf();
-      ref.invalidate(carbLoadingDaysForRangeProvider);
+      // Every carb surface, now (G24). Waiting for the rebuild's background
+      // sync to do it left the plan summary offering a dropped day for as
+      // long as that sync was on the network; editing it threw DEV-99.
+      _invalidateCarbSurfaces();
     } catch (e) {
       _report.fault(
         e,

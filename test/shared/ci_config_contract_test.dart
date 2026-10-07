@@ -197,11 +197,28 @@ void main() {
             'Codemagic (Lee 08-20); the M1 workflow owns push-triggered '
             'flows.',
       );
+      // ▶ Lee 08-21: pr-validation is PR-only (the every-push run doubled
+      // build minutes). It gates a pull request INTO develop; the unit suite
+      // on a push is the M1 workflow's job (`on: push`, `flutter test`).
       expect(
-        eventsOf('pr-validation').contains('push') &&
+        eventsOf('pr-validation').contains('pull_request') &&
             branchesOf('pr-validation').contains('develop'),
         isTrue,
-        reason: 'Unit tests / analyze / format must gate a push to develop.',
+        reason:
+            'Unit tests / analyze / format must gate a pull request into '
+            'develop.',
+      );
+      expect(
+        RegExp(r'^on:\s*\n(?:\s+.*\n)*?\s+push:', multiLine: true)
+            .hasMatch(m1Source),
+        isTrue,
+        reason: 'The M1 workflow must run on push; it is the unit-test gate '
+            'for a push to develop.',
+      );
+      expect(
+        m1Source,
+        contains('flutter test --exclude-tags="integration || e2e"'),
+        reason: 'The M1 workflow no longer runs the unit + widget suite.',
       );
     });
 

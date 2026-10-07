@@ -23,7 +23,20 @@ class UploadResult {
   final int count;
   final String? error;
 
-  const UploadResult({required this.success, required this.count, this.error});
+  /// The rows are dirty but cannot upload YET, by rule rather than by
+  /// failure: they belong to a user other than the session (RLS would refuse
+  /// them), or their parent row is not remote. The repository has already
+  /// left a promoted sync Note; the rows stay dirty and upload once their
+  /// owner's session is back. Not [success], so nobody mistakes it for
+  /// "nothing to upload".
+  final bool deferred;
+
+  const UploadResult({
+    required this.success,
+    required this.count,
+    this.error,
+    this.deferred = false,
+  });
 
   factory UploadResult.successful(int count) =>
       UploadResult(success: true, count: count);
@@ -33,6 +46,13 @@ class UploadResult {
 
   factory UploadResult.failed(String error) =>
       UploadResult(success: false, count: 0, error: error);
+
+  factory UploadResult.deferred(String reason) => UploadResult(
+    success: false,
+    count: 0,
+    error: 'deferred: $reason',
+    deferred: true,
+  );
 }
 
 /// Mixin for repositories that support synchronization.

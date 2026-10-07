@@ -211,4 +211,77 @@ void main() {
       );
     });
   });
+
+  // Round-up 2026-10 (develop-next Sentry leftovers). Each error is built the
+  // way its producer builds it: flutter_web_auth_2 4.1.0's platform channels
+  // (`SwiftFlutterWebAuth2Plugin.swift`, `FlutterWebAuth2Plugin.kt`,
+  // `lib/src/webview.dart`) and purchases_flutter's Test Store channel.
+  group('integration OAuth: the athlete closed the provider sheet', () {
+    test('iOS / Android "User canceled login" is cancelled_sign_in '
+        '(DEV-6W, 70, 84, 85)', () {
+      // The exact string Sentry recorded on all four groups.
+      final error = PlatformException(
+        code: 'CANCELED',
+        message: 'User canceled login',
+      );
+      expect(
+        error.toString(),
+        'PlatformException(CANCELED, User canceled login, null, null)',
+      );
+      expect(classify(error), ExpectedFailure.cancelledSignIn);
+    });
+
+    test('the web webview\'s "User canceled" is cancelled_sign_in', () {
+      expect(
+        classify(PlatformException(code: 'CANCELED', message: 'User canceled')),
+        ExpectedFailure.cancelledSignIn,
+      );
+    });
+
+    test('a real OAuth failure from the same channel stays a Fault', () {
+      expect(
+        classify(
+          PlatformException(
+            code: 'EUNKNOWN',
+            message: 'URL was null, but no error provided.',
+          ),
+        ),
+        isNull,
+      );
+    });
+  });
+
+  group('RevenueCat Test Store', () {
+    test('a simulated purchase failure is simulated_purchase_failure (DEV-9H)',
+        () {
+      // The exception Sentry recorded on DEV-9H, field for field.
+      final error = PlatformException(
+        code: '42',
+        message: 'Purchase failure simulated successfully in Test Store.',
+        details: <String, Object?>{
+          'code': 42,
+          'message': 'Purchase failure simulated successfully in Test Store.',
+          'readable_error_code': 'TEST_STORE_SIMULATED_PURCHASE_ERROR',
+          'userCancelled': false,
+          'underlyingErrorMessage': '',
+          'readableErrorCode': 'TEST_STORE_SIMULATED_PURCHASE_ERROR',
+        },
+      );
+      expect(classify(error), ExpectedFailure.simulatedPurchaseFailure);
+    });
+
+    test('a real store failure stays a Fault', () {
+      final error = PlatformException(
+        code: '2',
+        message: 'There was a problem with the store.',
+        details: <String, Object?>{
+          'code': 2,
+          'readable_error_code': 'STORE_PROBLEM',
+          'readableErrorCode': 'STORE_PROBLEM',
+          'userCancelled': false,
+        },
+      );
+      expect(classify(error), isNull);
+    });
+  });
 }
