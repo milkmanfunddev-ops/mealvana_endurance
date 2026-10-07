@@ -111,6 +111,21 @@ class SupabaseAuthService {
     }
   }
 
+  /// End every session of the current account: this device's and every
+  /// other device's (GoTrue revokes all the user's refresh tokens).
+  ///
+  /// Only a finished password reset calls this (ticket 108, Finding 32-003):
+  /// a reset is often done because someone else has the password. The local
+  /// session is dropped and `signedOut` fires before the server call, so the
+  /// app's usual sign-out handling runs even when the server call fails.
+  Future<void> signOutEverywhere() async {
+    try {
+      await _supabase.auth.signOut(scope: SignOutScope.global);
+    } catch (e) {
+      throw AuthException('Sign out everywhere failed: ${e.toString()}');
+    }
+  }
+
   /// Send password reset email
   Future<void> resetPassword({required String email}) async {
     try {

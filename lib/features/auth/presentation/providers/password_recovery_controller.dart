@@ -71,7 +71,15 @@ class PasswordRecoveryController extends _$PasswordRecoveryController {
     return !result.hasError;
   }
 
-  /// Set a new password (user must be authenticated via OTP verification)
+  /// Set a new password (user must be authenticated via OTP verification),
+  /// then end every session of the account (ticket 108, Finding 32-003, Lee
+  /// 2026-09-25): the recovery session the code opened and any other device.
+  /// The athlete signs in once with the new password.
+  ///
+  /// A failed update signs nothing out. A sign-out that fails after the
+  /// update still reports success: the password did change, and GoTrue drops
+  /// this device's session before it calls the server, so the athlete lands
+  /// on Log In either way.
   Future<bool> setNewPassword(String password) async {
     final report = _report;
     final authService = _authService;
@@ -81,6 +89,19 @@ class PasswordRecoveryController extends _$PasswordRecoveryController {
       report.info('Setting new password', area: 'auth');
       await authService.updatePassword(newPassword: password);
       report.info('Password updated successfully', area: 'auth');
+
+      try {
+        await authService.signOutEverywhere();
+        report.info('Signed out every session after the reset', area: 'auth');
+      } catch (e, st) {
+        // Swallowed on purpose (the password did change); recorded (D9).
+        await report.degraded(
+          e,
+          stackTrace: st,
+          area: 'auth',
+          message: 'Sign-out of every session after the reset failed',
+        );
+      }
     });
 
     if (ref.mounted) state = result;
