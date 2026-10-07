@@ -1,6 +1,6 @@
 # 29: Backport the mealplanning round's fixes to shared code
 
-**Status:** ready (round develop-2026-10, fix)
+**Status:** in-progress (wave 2, 2026-10-07)
 **Labels:** fix, round:develop-2026-10, area:backport
 **Branch:** `develop-next` (fix-wave worktree)
 **Blocked by:** none. **Runs first and alone in the fix wave** (Overlaps below: it shares files with 21, 22, 23,
@@ -269,8 +269,9 @@ cleaner applies), or hand-port the dependent items without them (smaller, riskie
 **Findings:** 08-025 (source). Closes 01-002, 08-008, 08-021, 02-011. Likely helps 01-003, 01-004, 01-014,
 01-016, 08-019, 08-023 (unverified; retests 30–32 decide).
 
-**Decisions:** Lee, 2026-10-07 (TRIAGE 08-025). Open: the predecessor ruling above, and Drift v23 vs v24
-(item 25).
+**Decisions:** Lee, 2026-10-07 (TRIAGE 08-025). Rulings 2026-10-07 (Lee, wave 2 open): **bring the predecessor
+tickets along** (shared paths only; the list under "Needs a ruling"), and **Drift goes v23 (t99) then v24 (servings),
+the same numbering as mealplanning.**
 
 **Touches** (the union of the shared paths of the commits above; the agent leaves out any hunk tied to
 mealplanning-only code; "(n)" = new on develop-next):

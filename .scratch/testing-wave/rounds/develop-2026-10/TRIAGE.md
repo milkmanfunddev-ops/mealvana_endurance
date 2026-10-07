@@ -5,6 +5,7 @@
 One line per wave: number, base sha, tickets, start time, who led it.
 
 - wave 1 · base `1c254461` · tickets 01, 02, 08 · 2026-10-07T10:56Z · lead: Claude (Fable), test wave
+- wave 2 · base `a69b226b` · ticket 29 alone (sequential Opus agents by area in one worktree), then 21–28 · 2026-10-07T13:40Z · lead: Claude (Fable), fix wave
 
 ## Rulings
 
@@ -65,3 +66,4 @@ One line per Finding decision, made with Lee in the terminal: id, decision, who 
 - 08-024 · triaged · retest ticket 33 (retest: cross-device and leftovers), wave 3 (Lee: all 27 followups into four retest tickets) · Lee, 2026-10-07
 - 01-012 · triaged · retest ticket 33 (retest: cross-device and leftovers), wave 3 (Lee: all 27 followups into four retest tickets) · Lee, 2026-10-07
 - 01-007 · triaged · rewritten into retest ticket 30: the consent screen is reached by failing the geo lookup (netcut) or a strict-country answer, not by setting the locale (Lee) · Lee, 2026-10-07
+- 29 (rulings) · predecessors: bring the mealplanning predecessor tickets along (t42, t99, t101, t76, t102, t103, t79, t81, t83, t98, t44, 31-004, t94, t65, t68, t95), shared paths only · Drift: v23 (t99) then v24 (servings), same numbering as mealplanning · Lee, 2026-10-07
