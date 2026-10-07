@@ -98,7 +98,7 @@ export function parseFinding(text, file) {
 
 /**
  * The paths a Finding's Evidence cites: the first word of each bullet when it looks like a
- * relative path (`runs/08/console.log`, `scripts/edge_logs.sh`), backticks allowed. Prose bullets
+ * relative path (`runs/08/console.log`, `runs/02/edge-requests.txt`), backticks allowed. Prose bullets
  * cite nothing.
  */
 export function evidencePaths(evidence = '') {

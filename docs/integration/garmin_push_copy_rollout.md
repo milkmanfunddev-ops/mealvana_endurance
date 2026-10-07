@@ -20,9 +20,32 @@ athletes get the new copy while their old app reports clicks with no variant —
 sent events tagged `accuracy_hook_v2`, clicks untagged. Total click-through
 still computes; the per-variant split has a blind window until the app lands.
 
-Verify after: `./scripts/edge_logs.sh -m 5 garmin-push` should show
-`OneSignal notification sent … (recipients=N)` with N ≥ 1. A `recipients=0`
-line means the send reached no device.
+Verify after: the Supabase MCP `query_logs`, garmin-push console lines, last 5
+minutes, should show `OneSignal notification sent … (recipients=N)` with N ≥ 1.
+A `recipients=0` line means the send reached no device.
+
+Run this from a Claude session as `query_logs(project_id = <ref>, sql = …,
+iso_timestamp_start = …Z, iso_timestamp_end = …Z)` (dev `vlmtsdzpnjnavdgytcmi`,
+prod `wvmvsodrvbkxfydabqed`; the window is at most 24 h). `function_logs` rows
+carry no function name, only `function_id`, so the query picks garmin-push
+through its request lines:
+
+```sql
+select timestamp, log_attributes['level'] as level, event_message
+from logs
+where source = 'function_logs'
+  and log_attributes['function_id'] in (
+    select log_attributes['function_id'] from logs
+    where source = 'function_edge_logs'
+      and log_attributes['request.pathname'] = '/functions/v1/garmin-push')
+  and event_message like '%OneSignal notification sent%'
+order by timestamp desc
+limit 300
+```
+
+An empty result means "none sent" only when the same window returns a non-zero
+`select count() from logs where source = 'function_edge_logs'`. If that count is
+0, the logs could not be read; don't report "no rows".
 
 ## What changed
 
@@ -121,7 +144,8 @@ signed in as that user with push permission granted.
 Then check:
 
 1. **Device** — heading and body read correctly, nothing truncated.
-2. **Logs** — `./scripts/edge_logs.sh -m 5 garmin-push` → `OneSignal notification sent for activity <id>`.
+2. **Logs** — the Supabase MCP `query_logs`, garmin-push console lines, last 5
+   minutes (SQL under "Verify after" above) → `OneSignal notification sent for activity <id>`.
 3. **Mixpanel Live View** — `activity_upload_push_sent` within ~30s. Tap the
    push, then look for `activity_upload_notification_clicked` carrying the same
    `copy_variant` (needs an app build with this branch; an older build omits

@@ -26,7 +26,10 @@
 #
 # After it returns, verify:
 #   1. Device       — heading/body read correctly, nothing truncated.
-#   2. Edge logs    — ./scripts/edge_logs.sh -m 5 garmin-push
+#   2. Edge logs    — from a Claude session, the Supabase MCP `query_logs` on the
+#                     project (dev vlmtsdzpnjnavdgytcmi, prod wvmvsodrvbkxfydabqed),
+#                     console lines of garmin-push for the last 5 minutes. SQL in
+#                     docs/integration/garmin_push_copy_rollout.md.
 #   3. Mixpanel     — Events / Live View: activity_upload_push_sent, then tap
 #                     the push and watch for activity_upload_notification_clicked.
 #                     Both should carry the same copy_variant.
@@ -130,7 +133,10 @@ cat <<'NEXT'
 
 Next:
   1. Check the device for the notification.
-  2. ./scripts/edge_logs.sh -m 5 garmin-push
+  2. Edge logs: from a Claude session, the Supabase MCP `query_logs` on the
+     project (dev vlmtsdzpnjnavdgytcmi, prod wvmvsodrvbkxfydabqed), console
+     lines of garmin-push for the last 5 minutes. SQL in
+     docs/integration/garmin_push_copy_rollout.md.
      Expect: "OneSignal notification sent for activity <id>"
      A "[mixpanel] MIXPANEL_PROJECT_TOKEN missing" line means the secret
      isn't set on this project — the push still sends, but the

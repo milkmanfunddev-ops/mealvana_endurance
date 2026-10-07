@@ -74,7 +74,7 @@ fires it once per session behind a 6-hour cooldown.
 3. Back in the app: Connected Apps → Garmin → Sync Now. Repeat every few minutes until the function
    answers 409 or 20 minutes pass (write "not seen live" and how you checked instead).
 4. Evidence: the `garmin-backfill` edge log line with the 409 and the Garmin statuses
-   (`scripts/edge_logs.sh`, `-s function_edge_logs` for the request line); the console's Degraded line;
+   (the Supabase MCP `query_logs`, per RUNBOOK step 6: request lines); the console's Degraded line;
    the dev Sentry project (org `milkman-24`, project `mealvana-endurance-dev`, token from
    `~/.sentryclirc`, never printed) shows a warning-level event with that message and no error-level
    event for `garmin-backfill` in the window.
