@@ -1,0 +1,13 @@
+2026-10-07T11:17:47Z
+[{"id":"6c8552d2-63da-4fec-be3f-641914f92c3e","email":"lee+e2e-01-20261007t110602z@rightpathprogramming.com","email_confirmed_at":"2026-10-07 11:17:30.310816+00","is_anonymous":false,"created_at":"2026-10-07 11:13:19.434467+00"}]
+[{"id":"6c8552d2-63da-4fec-be3f-641914f92c3e","email":"lee+e2e-01-20261007T110602Z@rightpathprogramming.com","first_name":null,"created_at":"2026-10-07 06:17:30+00"}]
+[]
+footprint new id:
+auth.identities.user_id: 1
+auth.users.id: 1
+public.daily_macro_targets.user_id: 7
+public.onboarding_surveys.user_id: 1
+public.users.auth_user_id: 1
+public.users.id: 1
+footprint old id:
+no rows keyed to 8fbd939d-ca32-49aa-aabc-de17cafc0383

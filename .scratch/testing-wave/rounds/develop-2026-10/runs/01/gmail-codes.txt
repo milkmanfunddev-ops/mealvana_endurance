@@ -1,0 +1,10 @@
+Gmail reads (to:<address> from:support@mealvana.io), all subject "Your Mealvana Endurance verification code", sender support@mealvana.io.
+Codes are spent (accounts deleted) so they are listed.
+
+Pass A  address ...T110602Z  submit 11:09:45Z  mail 11:09:46Z  id 1a1160e23cbf7e6e  code 720817 (wrong code 720818 tried first: rejected, "That code has expired")
+Pass B  address ...T110602Z  submit 11:15:43Z  mail 11:15:43Z  id 1a11613956b3dace  code 413129
+        Resend tapped 11:16:24Z (app logged email_verification_resent; timer restarted at 26s):
+        no mail arrived by 11:17:20Z; auth.users.email_change_sent_at stayed 11:15:43.139Z.
+        413129 (pre-resend code) then accepted at 11:17:30Z.
+Pass C  address ...T112011Z  submit 11:22:20Z  mail 11:22:21Z  id 1a11619a503bc4e8  code 150478
+        Pass C Resend tapped 11:23:33Z (72 s after first mail): no mail by 11:26:08Z; email_change_sent_at stayed 11:22:20.673Z.

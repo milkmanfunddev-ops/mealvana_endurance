@@ -1,0 +1,8 @@
+privacy_geo_country = US
+privacy_geo_region = AL
+privacy_region_source = geo
+privacy_region_at = 2026-10-07T06:18:56.283357
+analytics_consent_status = (absent)
+analytics_consent_regime = (absent)
+analytics_consent_at = (absent)
+analytics_consent_version = (absent)

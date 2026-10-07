@@ -1,0 +1,6 @@
+auth.identities.user_id: 1
+auth.users.id: 1
+public.daily_macro_targets.user_id: 7
+public.onboarding_surveys.user_id: 1
+public.users.auth_user_id: 1
+public.users.id: 1
