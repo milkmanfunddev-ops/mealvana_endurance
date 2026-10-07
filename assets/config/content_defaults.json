@@ -371,5 +371,11 @@
     "notify_me_confirm": "We'll let you know",
     "offline_message": "Couldn't load the lessons. Check your connection and try again.",
     "retry": "Retry"
+  },
+  "ai_credits": {
+    "out_title": "Out of AI credits",
+    "out_body": "You've used all your AI credits. Get more to keep using AI features.",
+    "out_not_now": "Not now",
+    "out_get_credits": "Get credits"
   }
 }

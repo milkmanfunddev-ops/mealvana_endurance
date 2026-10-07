@@ -76,7 +76,7 @@ final class CoachInsightControllerProvider
 }
 
 String _$coachInsightControllerHash() =>
-    r'b6df8eb79cedc0d88f8fd91fca92ebaaa32fce19';
+    r'621abbdfbc544e08603df1c191d7a2855c1ece6c';
 
 /// Single source of truth for the Formula Kit coach-insight panel.
 ///

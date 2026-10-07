@@ -32,7 +32,7 @@ import {
 import { DESCRIBE_MEAL_MODEL } from "../_shared/ai/model.ts";
 import { gatewayCostUsd, logAiUsage } from "../_shared/ai/usage.ts";
 import { MealAnalysisSchema } from "../_shared/meal_analysis/schema.ts";
-import { captureEdgeError, initSentry, withSentry } from "../_shared/sentry.ts";
+import { initSentry, withSentry } from "../_shared/sentry.ts";
 import {
   debitForUsage,
   ensureAndCheckCredits,
@@ -218,10 +218,10 @@ Return your answer as structured JSON matching the requested schema.`,
         costUsd,
       }),
     );
-    // deno-lint-ignore no-explicit-any
-    (globalThis as any).EdgeRuntime?.waitUntil?.(
-      debitForUsage(serviceClient, user.id, "describe-meal"),
-    );
+    // The debit is awaited, not handed to waitUntil, so the balance is final
+    // by the time the client hears 200 and refreshes its pill (round
+    // develop-2026-10, ticket 23). debitForUsage never throws.
+    await debitForUsage(serviceClient, user.id, "describe-meal");
 
     console.log(
       `[describe-meal] Success for user ${user.id}: "${analysis.name}", ` +

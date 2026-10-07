@@ -26,52 +26,25 @@
  * (guarded by `token_wallets.free_period`), so callers may invoke this on every
  * app start.
  *
+ * The handler (and the D9 wallet-unit warning) is in handler.ts.
+ *
  * Deploy:
  *   supabase functions deploy ensure-credits --project-ref <ref>
  */
 
 import { serve } from 'https://deno.land/std@0.224.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
-import { handleCors } from '../_shared/cors.ts';
-import { errorResponse, jsonResponse, serverError } from '../_shared/responses.ts';
 import { initSentry, withSentry } from '../_shared/sentry.ts';
 import { CREDITS_ENFORCED, FREE_MONTHLY_CREDITS } from '../_shared/ai/credits.ts';
+import { makeEnsureCreditsHandler } from './handler.ts';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? '';
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
 
 initSentry();
 
-serve(withSentry('ensure-credits', async (req) => {
-  const cors = handleCors(req);
-  if (cors) return cors;
-
-  try {
-    const token = req.headers.get('Authorization')?.replace(/^Bearer\s+/i, '');
-    if (!token) return errorResponse('Missing authorization header', 401);
-
-    const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
-    const { data: { user }, error: authError } = await admin.auth.getUser(token);
-    if (authError || !user) {
-      // Expected client fault: a breadcrumb, not an event.
-      return errorResponse('Invalid or expired token', 401, authError?.message);
-    }
-
-    const { data, error } = await admin.rpc('ensure_free_credits', {
-      p_user_id: user.id,
-      p_amount: FREE_MONTHLY_CREDITS,
-    });
-
-    if (error) {
-      return serverError(error, false, 'Could not provision wallet');
-    }
-
-    return jsonResponse({
-      balance: typeof data === 'number' ? data : 0,
-      free_monthly: FREE_MONTHLY_CREDITS,
-      enforced: CREDITS_ENFORCED,
-    });
-  } catch (e) {
-    return serverError(e, false, 'Unexpected error');
-  }
-}));
+serve(withSentry('ensure-credits', makeEnsureCreditsHandler({
+  admin: () => createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY),
+  freeMonthly: FREE_MONTHLY_CREDITS,
+  enforced: CREDITS_ENFORCED,
+})));

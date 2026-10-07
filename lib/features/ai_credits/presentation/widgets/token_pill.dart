@@ -58,7 +58,11 @@ class TokenPill extends ConsumerWidget {
             const SizedBox(width: 7),
             Text(
               switch (wallet) {
-                AsyncData(:final value) => '${value.balance.clamp(0, 99999)}',
+                // Floored at 0, no upper clamp: a wallet in the wrong unit
+                // must read as obviously wrong, not as a plausible 99999
+                // (round develop-2026-10, ticket 23: 02-001).
+                AsyncData(:final value) =>
+                  '${value.balance < 0 ? 0 : value.balance}',
                 AsyncError() => '–',
                 _ => '…',
               },
