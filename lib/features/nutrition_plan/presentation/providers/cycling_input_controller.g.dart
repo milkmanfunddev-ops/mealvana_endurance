@@ -48,7 +48,7 @@ final class CyclingInputControllerProvider
 }
 
 String _$cyclingInputControllerHash() =>
-    r'21b013b94e637a95df0e3b287a0a858745bd3008';
+    r'7fce91e5309ef860466a3dde145551310fa33a63';
 
 /// Cycling Input Controller - manages form state and delegates macro generation
 /// FOA COMPLIANT: Contains form state management and business logic coordination

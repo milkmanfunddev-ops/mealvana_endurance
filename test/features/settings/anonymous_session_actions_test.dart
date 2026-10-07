@@ -233,9 +233,10 @@ void main() {
       await tester.tap(signOutButton);
       await tester.pumpAndSettle();
 
-      // Confirmation dialog, then the confirm action.
-      expect(find.text('Sign Out?'), findsOneWidget);
-      await tester.tap(find.widgetWithText(TextButton, 'Sign Out'));
+      // Confirmation dialog, then the confirm action. Its copy is pinned in
+      // settings_account_dialogs_test.dart.
+      expect(find.byType(AlertDialog), findsOneWidget);
+      await tester.tap(find.byKey(const ValueKey('settings.confirm.action')));
       await tester.pumpAndSettle();
 
       expect(spy.calls, 1);

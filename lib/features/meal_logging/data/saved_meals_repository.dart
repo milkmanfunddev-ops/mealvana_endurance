@@ -317,6 +317,45 @@ class SavedMealsRepository with SyncableRepository {
     _scheduleImmediateUpload(tombstone, label: 'delete');
   }
 
+  /// Undo a [softDelete]: clears the tombstone, re-dirties the row and
+  /// schedules an upload so the restore reaches other devices (testing-wave
+  /// 112-005). No-op if no deleted row exists, so a second Undo, or an Undo
+  /// after the row was restored by a sync, changes nothing.
+  Future<void> restore(String mealId) async {
+    final row =
+        await (_database.select(_database.savedMealsTable)
+              ..where((t) => t.id.equals(mealId) & t.isDeleted.equals(true))
+              ..limit(1))
+            .getSingleOrNull();
+    if (row == null) return;
+
+    final now = DateTime.now();
+    await (_database.update(
+      _database.savedMealsTable,
+    )..where((t) => t.id.equals(mealId))).write(
+      SavedMealsTableCompanion(
+        isDeleted: const Value(false),
+        updatedAt: Value(now),
+        needsUpload: const Value(true),
+        localUpdatedAt: Value(now),
+      ),
+    );
+
+    _report.info(
+      'Restored saved meal',
+      area: 'meal_logging',
+      data: {'mealId': mealId},
+    );
+
+    final restored = SavedMeal.fromDriftEntry(row, onIssue: _onIssue).copyWith(
+      isDeleted: false,
+      updatedAt: now,
+      needsUpload: true,
+      localUpdatedAt: now,
+    );
+    _scheduleImmediateUpload(restored, label: 'restore');
+  }
+
   // ========================================================================
   // Remote Hydration
   // ========================================================================
@@ -333,6 +372,13 @@ class SavedMealsRepository with SyncableRepository {
     final remoteRows = response as List<dynamic>;
     return _upsertRemotePreservingDirty(remoteRows);
   }
+
+  /// The write half of [syncFromRemote] on its own: server-shaped rows in,
+  /// Drift rows out, dirty local rows kept. Lets a seam test feed the rows
+  /// a `saved_meals` SELECT answers with, without a Supabase client.
+  @visibleForTesting
+  Future<int> applyRemoteRows(List<dynamic> remoteRows) =>
+      _upsertRemotePreservingDirty(remoteRows);
 
   // ========================================================================
   // Private Helpers
@@ -390,12 +436,20 @@ class SavedMealsRepository with SyncableRepository {
     return upsertedCount;
   }
 
+  /// The one PostgREST upsert every write goes through; `onConflict: 'id'`
+  /// always (never a partial-unique-index column). Overridable so a seam
+  /// test can run the real repository on an in-memory Drift without a
+  /// Supabase client.
+  @protected
+  @visibleForTesting
+  Future<void> sendUpsert(Map<String, dynamic> row) async {
+    await _supabase.from('saved_meals').upsert(row, onConflict: 'id');
+  }
+
   void _scheduleImmediateUpload(SavedMeal meal, {required String label}) {
     unawaited(() async {
       try {
-        await _supabase
-            .from('saved_meals')
-            .upsert(meal.toSupabaseJson(), onConflict: 'id');
+        await sendUpsert(meal.toSupabaseJson());
         await _clearDirtyFlag(meal.id);
       } catch (e, stackTrace) {
         _report.degraded(

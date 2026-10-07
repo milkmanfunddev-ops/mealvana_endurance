@@ -25,6 +25,7 @@
  */
 
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
+import { normalizeAllergen } from "./allergen-normalize.ts";
 import { safe } from "../utils.ts";
 import type { ActivityType, Food, Phase } from "./types.ts";
 import {
@@ -295,7 +296,7 @@ export async function getTemplateFoodsForPhase(
   if (allEntries.length === 0) return [];
 
   // Prepare allergen filtering sets (case-insensitive)
-  const allergiesLower = (allergies ?? []).map((a) => a.toLowerCase());
+  const allergiesLower = (allergies ?? []).map(normalizeAllergen);
   const dietPrefLower = dietaryPreference?.toLowerCase() ?? "";
 
   // STEP 4: Filter and transform to Food interface
@@ -368,7 +369,7 @@ export async function getTemplateFoodsForPhase(
       ) {
         const foodAllergens = (f.allergens as string[] | null) ?? [];
         const hasAllergen = foodAllergens.some((a: string) =>
-          allergiesLower.includes(a.toLowerCase())
+          allergiesLower.includes(normalizeAllergen(a))
         );
         if (hasAllergen) {
           console.log(
@@ -680,7 +681,7 @@ export async function getTransitionFoods(
   const allEntries = Array.from(allFoodsMap.values());
 
   // Prepare allergen filtering sets (case-insensitive)
-  const transAllergiesLower = (allergies ?? []).map((a) => a.toLowerCase());
+  const transAllergiesLower = (allergies ?? []).map(normalizeAllergen);
   const transDietPrefLower = dietaryPreference?.toLowerCase() ?? "";
 
   return allEntries
@@ -706,7 +707,7 @@ export async function getTransitionFoods(
       if (transAllergiesLower.length > 0 && !isEssential) {
         const foodAllergens = (f.allergens as string[] | null) ?? [];
         const hasAllergen = foodAllergens.some((a: string) =>
-          transAllergiesLower.includes(a.toLowerCase())
+          transAllergiesLower.includes(normalizeAllergen(a))
         );
         if (hasAllergen) {
           console.log(
@@ -984,7 +985,7 @@ export async function getTemplateFoodsForDuringWithConstraints(
     }
   }
 
-  const allergiesLower = (allergies ?? []).map((a) => a.toLowerCase());
+  const allergiesLower = (allergies ?? []).map(normalizeAllergen);
   const dietPrefLower = dietaryPreference?.toLowerCase() ?? "";
 
   return templateFoods
@@ -1027,7 +1028,7 @@ export async function getTemplateFoodsForDuringWithConstraints(
         const foodAllergens = (f.allergens as string[] | null) ?? [];
         if (
           foodAllergens.some((a) =>
-            allergiesLower.includes((a as string).toLowerCase())
+            allergiesLower.includes(normalizeAllergen(a as string))
           )
         ) return false;
       }
@@ -1080,9 +1081,20 @@ export async function getTemplateFoodsForDuringWithConstraints(
       if (isLiked) preferenceCategory = "liked";
       else if (isWilling) preferenceCategory = "willing";
 
-      const maxServings = (f.max_servings_during as number) ??
+      // Postgres `numeric` columns can arrive as strings (every catalog
+      // snapshot fixture does; some clients do). The solver steps its
+      // serving search with `servings += min_increment`, and a string there
+      // concatenates instead of adding (finding 117-016), so every constraint
+      // is coerced here, once, at the boundary. `null` stays `null`: it means
+      // "unconstrained" downstream.
+      const numberOrNull = (value: unknown): number | null => {
+        if (value === null || value === undefined) return null;
+        const n = Number(value);
+        return Number.isFinite(n) ? n : null;
+      };
+      const maxServings = numberOrNull(f.max_servings_during) ??
         DEFAULT_MAX_SERVINGS;
-      const minServings = (f.min_servings_during as number) ?? 1.0;
+      const minServings = numberOrNull(f.min_servings_during) ?? 1.0;
 
       return {
         id: f.id as string,
@@ -1114,10 +1126,10 @@ export async function getTemplateFoodsForDuringWithConstraints(
         solvent_min_ml: (f.solvent_min_ml as number | null) ?? null,
         product_type: (f.product_type as string) ?? undefined,
         // Constraint columns
-        max_per_hr_low: f.max_per_hr_low as number | null ?? null,
-        max_per_hr_moderate: f.max_per_hr_moderate as number | null ?? null,
-        max_per_hr_high: f.max_per_hr_high as number | null ?? null,
-        min_increment: f.min_increment as number | null ?? null,
+        max_per_hr_low: numberOrNull(f.max_per_hr_low),
+        max_per_hr_moderate: numberOrNull(f.max_per_hr_moderate),
+        max_per_hr_high: numberOrNull(f.max_per_hr_high),
+        min_increment: numberOrNull(f.min_increment),
         sodium_top_up_eligible: f.sodium_top_up_eligible as boolean | null ??
           null,
       };

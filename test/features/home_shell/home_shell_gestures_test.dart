@@ -907,7 +907,15 @@ void main() {
       200,
       scrollable: _timeline(),
     );
+    // scrollUntilVisible aligns the card to the viewport's top edge, which
+    // sits under the pinned instrument block: a press there lands on the
+    // block, not the card. Centre it, where the athlete would touch it.
+    final centring = Scrollable.ensureVisible(
+      tester.element(find.text('lift').first),
+      alignment: 0.5,
+    );
     await tester.pumpAndSettle();
+    await centring;
     final cardGesture = await tester.startGesture(
       tester.getCenter(find.text('lift').first),
     );
@@ -1077,6 +1085,12 @@ void main() {
       container.read(calendarSelectedDateProvider),
       DateTime(now.year, now.month, now.day),
       reason: 'Today pill selects + navigates to the current day',
+    );
+    expect(
+      find.byType(KyleCalendarSheet),
+      findsNothing,
+      reason: 'navigating dismisses the sheet, the same as a day tap '
+          '(Finding 117-004)',
     );
   });
 

@@ -122,10 +122,13 @@ class KyleDateHeader extends StatelessWidget {
       child: Row(
         children: [
           // The title cluster owns all space up to the gear, so the title
-          // only ever truncates when genuinely out of room.
+          // only ever truncates when genuinely out of room. The chevrons
+          // sit in FIXED slots at either end of that space: a "Next day"
+          // arrow that trailed the title moved with the day name's width,
+          // so a tap where it sat yesterday opened the month picker instead
+          // (Finding 117-004).
           Expanded(
             child: Row(
-              mainAxisSize: MainAxisSize.min,
               children: [
                 _chevron(
                   key: const ValueKey('kyle_date_header.prev_day'),
@@ -133,7 +136,7 @@ class KyleDateHeader extends StatelessWidget {
                   label: 'Previous day',
                   onTap: onPreviousDay,
                 ),
-                Flexible(
+                Expanded(
                   child: Semantics(
                     button: true,
                     label: '$title ˅',

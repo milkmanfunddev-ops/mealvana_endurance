@@ -5,9 +5,11 @@ import 'package:uuid/uuid.dart';
 import '../data/meal_log_repository.dart';
 import '../data/saved_meals_repository.dart';
 import '../domain/consumed_totals.dart';
+import '../domain/macro_rounding.dart';
 import '../domain/meal_component.dart';
 import '../domain/meal_log.dart';
 import '../domain/meal_log_source.dart';
+import '../domain/meal_relog.dart';
 import '../domain/meal_slot.dart';
 import '../domain/saved_meal.dart';
 
@@ -112,7 +114,9 @@ class MealLoggingService {
   /// describe-to-AI, and detailed-manual flows).
   ///
   /// Totals are computed by summing [components] so the caller does not need to
-  /// aggregate them manually.
+  /// aggregate them manually. [servings] is the count the components were
+  /// already scaled to (a Common ingredient at 1.5); it is recorded on the
+  /// row so Recent can show the per-serving base (112-012).
   Future<MealLog> logFromComponents({
     required String userId,
     required String name,
@@ -125,6 +129,7 @@ class MealLoggingService {
     DateTime? eatenAt,
     String? savedMealId,
     String? recipeId,
+    double servings = 1,
   }) {
     final totals = _sumComponents(components);
     final now = DateTime.now();
@@ -145,6 +150,58 @@ class MealLoggingService {
       recipeId: recipeId,
       savedMealId: savedMealId,
       notes: notes,
+      servings: servings,
+      eatenAt: eatenAt,
+      createdAt: now,
+      updatedAt: now,
+    );
+    return _mealLogRepo.insertLog(log);
+  }
+
+  /// Re-log a past meal (Log a Meal → Recent) as a copy of [original].
+  ///
+  /// The new row carries the original's items, name, `source` and the
+  /// `saved_meal_id` / `recipe_id` / photo it had — never a synthetic
+  /// one-line item or a provenance the original lacked (testing-wave 26-002).
+  /// Items and the stored totals are scaled by [servings]; at 1 serving they
+  /// are copied verbatim. A meal logged with totals only stays item-less.
+  ///
+  /// Not copied: notes (they described that sitting).
+  Future<MealLog> relogMeal({
+    required MealLog original,
+    required String userId,
+    MealSlot? slot,
+    required String logDate,
+    DateTime? eatenAt,
+    double servings = 1,
+  }) {
+    // Recent hands over the per-serving base ([MealLog.perServing]); a
+    // caller holding the row itself is brought to the base first, so
+    // [servings] always counts from the original amount (112-012).
+    final base = original.perServing();
+    double? scale(double? v) => v == null ? null : v * servings;
+    final now = DateTime.now();
+    final log = MealLog(
+      id: _uuid.v4(),
+      userId: userId,
+      logDate: logDate,
+      slot: slot,
+      name: base.name,
+      source: base.source,
+      components: [
+        for (final c in base.components) scaleComponentForRelog(c, servings),
+      ],
+      calories: base.calories == null
+          ? null
+          : (base.calories! * servings).round(),
+      carbsG: roundMacro(scale(base.carbsG)),
+      proteinG: roundMacro(scale(base.proteinG)),
+      fatG: roundMacro(scale(base.fatG)),
+      sodiumMg: roundSodium(scale(base.sodiumMg)),
+      photoPath: base.photoPath,
+      recipeId: base.recipeId,
+      savedMealId: base.savedMealId,
+      servings: servings,
       eatenAt: eatenAt,
       createdAt: now,
       updatedAt: now,
@@ -250,12 +307,14 @@ class MealLoggingService {
       name: params.recipeName,
       portion: '${_formatServings(s)} ${s == 1 ? 'serving' : 'servings'}',
       calories: (params.caloriesPerServing * s).round(),
-      carbG: params.carbsGPerServing * s,
-      proteinG: params.proteinGPerServing * s,
-      fatG: params.fatGPerServing * s,
-      sodiumMg: params.sodiumMgPerServing != null
-          ? params.sodiumMgPerServing! * s
-          : null,
+      carbG: roundMacro(params.carbsGPerServing * s),
+      proteinG: roundMacro(params.proteinGPerServing * s),
+      fatG: roundMacro(params.fatGPerServing * s),
+      sodiumMg: roundSodium(
+        params.sodiumMgPerServing != null
+            ? params.sodiumMgPerServing! * s
+            : null,
+      ),
     );
 
     return logFromComponents(
@@ -268,6 +327,7 @@ class MealLoggingService {
       recipeId: params.recipeId,
       notes: notes,
       eatenAt: eatenAt,
+      servings: s,
     );
   }
 
@@ -344,17 +404,8 @@ class MealLoggingService {
   // Private Helpers
   // ========================================================================
 
-  ConsumedTotals _sumComponents(List<MealComponent> components) {
-    return components.fold(const ConsumedTotals(), (acc, c) {
-      return ConsumedTotals(
-        calories: acc.calories + (c.calories ?? 0),
-        carbsG: acc.carbsG + (c.carbG ?? 0),
-        proteinG: acc.proteinG + (c.proteinG ?? 0),
-        fatG: acc.fatG + (c.fatG ?? 0),
-        sodiumMg: acc.sodiumMg + (c.sodiumMg ?? 0),
-      );
-    });
-  }
+  MealTotals _sumComponents(List<MealComponent> components) =>
+      MealTotals.ofComponents(components);
 
   /// Format a servings multiplier for the portion string.
   String _formatServings(double servings) {

@@ -173,7 +173,22 @@
     "running_section_title": "Running Settings",
     "gi_sensitivity_label": "GI Sensitivity",
     "gi_sensitivity_subtitle": "Do you have a sensitive stomach during exercise?",
-    "gi_sensitivity_help": "This helps us recommend foods that are easier to digest across all sports"
+    "gi_sensitivity_help": "This helps us recommend foods that are easier to digest across all sports",
+    "log_in_button": "Log into an existing account",
+    "sign_out_confirm_title": "Sign out?",
+    "sign_out_confirm_body": "You'll need to sign in again to use Mealvana. Your data stays with your account.",
+    "sign_out_confirm_action": "Sign out",
+    "confirm_cancel": "Cancel",
+    "delete_account_button": "Delete account",
+    "delete_confirm_title": "Delete account?",
+    "delete_confirm_body": "This permanently deletes your account and all of its data. This cannot be undone.",
+    "delete_confirm_action": "Delete",
+    "sign_out_unsynced_kept": "You're offline, so your unsynced changes stay on this phone and sync the next time you sign in.",
+    "delete_needs_connection": "Deleting your account needs a connection. Nothing was deleted; try again when you're online.",
+    "connection_reconnect_button": "Reconnect",
+    "connection_needs_reconnect": "Sign in again to keep your workouts syncing.",
+    "profile_preferences_title": "Profile & Preferences",
+    "profile_preferences_subtitle": "Edit your profile, units, and preferences"
   },
   "cycling_preferences": {
     "ftp_label": "FTP (Functional Threshold Power)",
@@ -292,6 +307,69 @@
       "network_error": "Network error. Please check your connection.",
       "user_id_mismatch": "Account linking failed - data preservation error",
       "generic": "Something went wrong. Please try again."
+    },
+    "login": {
+      "error_wrong_credentials": "That email or password isn't right.",
+      "error_no_connection": "No connection. Check your network and try again.",
+      "error_failed": "Login failed. Please try again."
+    },
+    "verify_email": {
+      "resend_in": "Resend code in {n}s",
+      "resend": "Resend code",
+      "resent": "New code sent to {email}",
+      "code_superseded": "That code is from an earlier email. Use the code in the newest one.",
+      "maybe_account_hint": "No code? This address may already have an account.",
+      "log_in": "Log in"
+    },
+    "verify_code": {
+      "resend_in": "Resend code in {n}s",
+      "resent": "A new code has been sent to your email",
+      "resend_failed": "Failed to resend code. Please try again."
     }
+  },
+  "connections": {
+    "garmin_sync_note": "Garmin syncs automatically when your watch uploads to Garmin Connect. Tap Sync Now to pull any activities that arrived while the app was closed.",
+    "reconnect_notice": "{provider} needs you to sign in again to keep syncing.",
+    "reconnect_notice_action": "Reconnect"
+  },
+  "profile_edit": {
+    "email_login_label": "Your login email",
+    "discard_title": "Discard changes?",
+    "discard_body": "Your edits to your profile will be lost.",
+    "discard": "Discard",
+    "keep_editing": "Keep editing"
+  },
+  "barcode_scanner": {
+    "no_camera": "This device doesn't have a camera we can use for scanning. Type the barcode with Enter below, or search for the food by name.",
+    "permission_denied": "Camera access is off. Turn it on for Mealvana in Settings, type the barcode with Enter below, or search for the food by name.",
+    "camera_failed": "The camera didn't start. Go back and open the scanner again, or type the barcode with Enter below.",
+    "search_instead": "Search for the food instead",
+    "enter_label": "Enter",
+    "enter_title": "Enter a barcode",
+    "enter_body": "Type the number printed under the barcode.",
+    "enter_hint": "8 to 14 digits",
+    "enter_submit": "Look it up",
+    "enter_length": "A barcode has 8 to 14 digits.",
+    "typed_invalid": "That number isn't a barcode we recognise. Check the digits printed under the barcode and type them again."
+  },
+  "meal_log_actions": {
+    "saved_meal_removed": "Saved meal removed",
+    "undo": "Undo",
+    "save_as_favorite": "Save as favorite",
+    "saved_as_favorite": "Saved as a favorite",
+    "save_as_favorite_failed": "Could not save the favorite. Please try again."
+  },
+  "build_meal": {
+    "discard_title": "Discard this meal?",
+    "discard_body": "The foods you added will be lost.",
+    "discard": "Discard",
+    "keep_building": "Keep building"
+  },
+  "learn": {
+    "notify_me": "Notify Me",
+    "notify_me_noted": "Noted",
+    "notify_me_confirm": "We'll let you know",
+    "offline_message": "Couldn't load the lessons. Check your connection and try again.",
+    "retry": "Retry"
   }
 }

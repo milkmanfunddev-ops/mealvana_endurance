@@ -4,6 +4,7 @@ import '../../daily_macros/domain/daily_macro_targets.dart';
 import '../../daily_macros/domain/intraday_display.dart';
 import '../../meal_logging/domain/consumed_totals.dart';
 import '../../meal_logging/domain/meal_log.dart';
+import '../../meal_logging/domain/meal_slot.dart';
 import '../../nutrition_plan/application/daily_baseline_calculator.dart';
 import '../../../shared/domain/session_input_resolver.dart';
 import '../domain/carb_dashboard_models.dart';
@@ -97,7 +98,7 @@ class MacroDashboardAssembler {
     // after every timed card of the day (planned or done); several skipped
     // cards order by planned_time ascending. Unskip / G1 recovery restores
     // the time-ordered slot simply by the card no longer being skipped.
-    final timed = <_TimedNode>[
+    final timed = _TimedNode.sorted([
       for (final c in cards)
         if (c.data.counts)
           _TimedNode(
@@ -107,9 +108,10 @@ class MacroDashboardAssembler {
               workout: c.data,
               brick: c.activity.isBrick ? c.activity : null,
             ),
+            tieBreak: -1,
           ),
       ...mealNodes,
-    ]..sort((a, b) => a.time.compareTo(b.time));
+    ]);
     final tucked = <_TimedNode>[
       for (final c in cards)
         if (c.data.isSkipped)
@@ -183,11 +185,14 @@ class MacroDashboardAssembler {
         kcal: _sessionKcal(a, weightKg),
         state: state,
         sport: a.activityType.name,
+        verifiedSourceName: verifiedSourceNameFor(a),
         skipActive: skipActive,
         // A future day's workout hasn't happened: no mark-done (ruled
         // 2026-08-18). Mark-UNDONE on a (legacy) confirmed future card stays
         // available so it can be corrected.
         markDoneAllowed: !dayFuture,
+        // A platform-reported completion is final (Lee, 2026-09-25).
+        completionFinal: a.isProviderCompleted,
       ),
     );
   }
@@ -287,41 +292,77 @@ class MacroDashboardAssembler {
     );
   }
 
+  /// How far after a card's first meal a same-type meal may be eaten and
+  /// still join that card (finding 27-001). Later than this, it opens its own
+  /// card at its own time.
+  static const _mealCardWindow = Duration(minutes: 30);
+
+  /// Meal cards follow the clock (testing-wave ticket 59, finding 27-001;
+  /// ticket 137, finding 112-011): each card sits at its first meal's time,
+  /// and a meal joins the OPEN card only when it has the same type, was eaten
+  /// within [_mealCardWindow] of that card's first meal, and no other card
+  /// has opened since. Grouping by type alone filed a 3:43 PM snack under a
+  /// 2:08 PM card, and later filed a 6:30 PM "Any time" soup under 6:24 PM,
+  /// above a Lunch eaten at 6:25: a card closes the moment a meal of another
+  /// type opens its own card, so no card ever holds a meal eaten after a
+  /// later card opened.
   List<_TimedNode> _mealNodes(List<MealLog> meals) {
-    final active = meals.where((m) => !m.isDeleted);
-    final groups = <String, List<MealLog>>{};
-    for (final m in active) {
-      groups.putIfAbsent(m.slot?.label ?? 'Logged', () => []).add(m);
-    }
+    DateTime timeOf(MealLog m) => m.eatenAt ?? m.createdAt;
+    int slotOrder(MealSlot? slot) => slot?.index ?? MealSlot.values.length;
+
+    // One clock-ordered walk over the whole day. Same-minute meals order by
+    // meal type (breakfast → snack, then untagged) and then id, never by
+    // which type holds the newest meal — that arrival order swapped two
+    // 2:08 PM cards after a delete.
+    final entries = meals.where((m) => !m.isDeleted).toList(growable: false)
+      ..sort((a, b) {
+        final byTime = timeOf(a).compareTo(timeOf(b));
+        if (byTime != 0) return byTime;
+        final bySlot = slotOrder(a.slot).compareTo(slotOrder(b.slot));
+        return bySlot != 0 ? bySlot : a.id.compareTo(b.id);
+      });
+
     final nodes = <_TimedNode>[];
-    groups.forEach((slot, entries) {
-      entries.sort(
-        (a, b) =>
-            (a.eatenAt ?? a.createdAt).compareTo(b.eatenAt ?? b.createdAt),
-      );
-      final time = entries.first.eatenAt ?? entries.first.createdAt;
+    var card = <MealLog>[];
+    void close() {
+      if (card.isEmpty) return;
+      final slot = card.first.slot;
+      final time = timeOf(card.first);
       nodes.add(
         _TimedNode(
           time,
           DashboardNode.meals(
             timeLabel: _timeLabel(time),
-            mealGroupLabel: slot,
+            mealGroupLabel: slot?.label ?? 'Logged',
             meals: [
-              for (final m in entries)
+              for (final m in card)
                 MealItemData(
                   id: m.id,
                   name: m.name,
-                  kcal: m.calories?.toDouble() ?? 0,
-                  carbsG: m.carbsG ?? 0,
-                  proteinG: m.proteinG ?? 0,
-                  fatG: m.fatG ?? 0,
+                  // Unknown stays unknown: the card shows "—" (113-004).
+                  kcal: m.calories?.toDouble(),
+                  carbsG: m.carbsG,
+                  proteinG: m.proteinG,
+                  fatG: m.fatG,
                   planned: m.eatenAt == null,
                 ),
             ],
           ),
+          tieBreak: slotOrder(slot),
         ),
       );
-    });
+      card = <MealLog>[];
+    }
+
+    for (final m in entries) {
+      final joins =
+          card.isNotEmpty &&
+          m.slot == card.first.slot &&
+          timeOf(m).difference(timeOf(card.first)) <= _mealCardWindow;
+      if (!joins) close();
+      card.add(m);
+    }
+    close();
     return nodes;
   }
 
@@ -512,19 +553,20 @@ class MacroDashboardAssembler {
           timeLabel: m.eatenAt == null
               ? '~${_timeLabel(m.createdAt)}'
               : _timeLabel(m.eatenAt!),
-          kcal: m.calories?.toDouble() ?? 0,
-          carbsG: m.carbsG ?? 0,
-          proteinG: m.proteinG ?? 0,
-          fatG: m.fatG ?? 0,
+          kcal: m.calories?.toDouble(),
+          carbsG: m.carbsG,
+          proteinG: m.proteinG,
+          fatG: m.fatG,
           planned: m.eatenAt == null,
         ),
     ]..sort((a, b) => (a.planned ? 1 : 0).compareTo(b.planned ? 1 : 0));
 
+    // Sums skip an unknown macro, as the day's sodium already does (null ≠ 0).
     var plannedC = 0.0, plannedP = 0.0, plannedF = 0.0;
     for (final r in mealRows.where((r) => r.planned)) {
-      plannedC += r.carbsG;
-      plannedP += r.proteinG;
-      plannedF += r.fatG;
+      plannedC += r.carbsG ?? 0;
+      plannedP += r.proteinG ?? 0;
+      plannedF += r.fatG ?? 0;
     }
 
     // Weekly carb periodization: this week's cached targets + training load
@@ -545,7 +587,13 @@ class MacroDashboardAssembler {
       restingByEnd: targets.rmr,
       movementByEnd: targets.neatKcal ?? 0,
       workoutByEnd: doneKcal + plannedKcal,
-      digestionByEnd: 0.10 * targets.totalCalories,
+      // By day's end the engine's TEF is 10% of the TARGET; on a day that is
+      // over nothing more gets eaten, so the projection is 10% of what WAS
+      // eaten and meets the so-far column (intraday-display.md: "agreement
+      // at day's end by construction"; finding 116-010).
+      digestionByEnd: minutesSinceMidnight >= 1440
+          ? accrual.digestion
+          : 0.10 * targets.totalCalories,
       workoutMark: workoutMark,
       movementMark: movementMark,
       mealRows: mealRows,
@@ -566,7 +614,12 @@ class MacroDashboardAssembler {
   String _meta(Activity a, {required bool verified}) {
     final double? miles;
     final int? minutes;
-    if (verified) {
+    // D-1: one value family per row, `actual ?? planned` AS A PAIR. A
+    // platform can report a workout done without measurements (FinalSurge
+    // `WorkoutCompleted` alone); that card keeps the planned pair.
+    final hasMeasured =
+        a.actualDistanceMiles != null || a.actualDurationMinutes != null;
+    if (verified && hasMeasured) {
       miles = a.actualDistanceMiles;
       minutes = a.actualDurationMinutes;
     } else {
@@ -595,9 +648,28 @@ class MacroDashboardAssembler {
 }
 
 class _TimedNode {
-  const _TimedNode(this.time, this.node);
+  const _TimedNode(this.time, this.node, {this.tieBreak = 0});
   final DateTime time;
   final DashboardNode node;
+
+  /// Orders nodes that share [time]: workouts (-1) before meal cards, meal
+  /// cards by their meal type's rank, so a delete elsewhere never reorders
+  /// them.
+  final int tieBreak;
+
+  /// Sorts [nodes] by time, then [tieBreak], then incoming position. The last
+  /// key keeps same-time workouts in the order they arrived (Dart's
+  /// [List.sort] is not stable).
+  static List<_TimedNode> sorted(List<_TimedNode> nodes) {
+    final indexed = nodes.indexed.toList()
+      ..sort((a, b) {
+        final byTime = a.$2.time.compareTo(b.$2.time);
+        if (byTime != 0) return byTime;
+        final byTie = a.$2.tieBreak.compareTo(b.$2.tieBreak);
+        return byTie != 0 ? byTie : a.$1.compareTo(b.$1);
+      });
+    return [for (final (_, n) in indexed) n];
+  }
 }
 
 class _TimedCard {

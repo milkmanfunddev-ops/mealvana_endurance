@@ -12,6 +12,7 @@ import '../../../shared/data/syncable_repository.dart';
 import '../domain/activity.dart' as domain;
 import '../domain/brick_metadata.dart';
 import '../domain/usual_pace.dart';
+import '../domain/provider_completion_is_final.dart';
 import 'activity_mapper.dart';
 import '../application/activity_deduplication_service.dart';
 import '../../../shared/services/report/report.dart';
@@ -678,16 +679,19 @@ class ActivitiesRepository with SyncableRepository {
       }
     }
 
-    if (idBacked.isNotEmpty) {
-      await _upsertWithConflictFallback(
-        idBacked.map(_mapper.buildUploadPayloadFromRow).toList(),
-        onConflict: 'id',
-      );
+    // One request per key set: a row that omits an unset completion_type
+    // must not share a request with rows that send it (ticket 101).
+    for (final batch in ActivityMapper.uniformKeyBatches(
+      idBacked.map(_mapper.buildUploadPayloadFromRow).toList(),
+    )) {
+      await _upsertWithConflictFallback(batch, onConflict: 'id');
     }
 
-    if (providerBacked.isNotEmpty) {
+    for (final batch in ActivityMapper.uniformKeyBatches(
+      providerBacked.map(_mapper.buildUploadPayloadFromRow).toList(),
+    )) {
       await _upsertWithConflictFallback(
-        providerBacked.map(_mapper.buildUploadPayloadFromRow).toList(),
+        batch,
         onConflict: 'user_id,synced_from_provider,provider_workout_id',
         fallbackOnConflict: 'id',
       );
@@ -955,7 +959,11 @@ class ActivitiesRepository with SyncableRepository {
 
   /// G2: mark-undone CLEARS actual_time — back to null, not zero — so the
   /// card returns to planned_time.
+  ///
+  /// A platform-reported completion is final for the athlete (Lee,
+  /// 2026-09-25): throws [ProviderCompletionIsFinal] and writes nothing.
   Future<void> markWorkoutUndone({required String activityId}) async {
+    await _refuseIfProviderCompleted(activityId);
     final now = DateTime.now();
     await (_database.update(
       _database.activitiesTable,
@@ -982,7 +990,11 @@ class ActivitiesRepository with SyncableRepository {
   /// and fuel windows (platform-resolution.md SKIPPED addition) and loses
   /// its timeline slot (S-7). Sync beats skip: a later matching platform
   /// sync overwrites this with completed + the measured actual_time.
+  ///
+  /// Skipping clears the completion, so a platform-reported completion
+  /// refuses it the same way as mark-undone ([ProviderCompletionIsFinal]).
   Future<void> skipWorkout({required String activityId}) async {
+    await _refuseIfProviderCompleted(activityId);
     final now = DateTime.now();
     await (_database.update(
       _database.activitiesTable,
@@ -997,6 +1009,15 @@ class ActivitiesRepository with SyncableRepository {
       ),
     );
     await _queueImmediateActivityUpsertById(activityId, operation: 'skip');
+  }
+
+  Future<void> _refuseIfProviderCompleted(String activityId) async {
+    final row = await (_database.select(
+      _database.activitiesTable,
+    )..where((tbl) => tbl.id.equals(activityId))).getSingleOrNull();
+    if (row != null && _mapper.fromDriftRow(row).isProviderCompleted) {
+      throw ProviderCompletionIsFinal(activityId);
+    }
   }
 
   /// G5 Unskip: status back to planned; planned_time untouched (the card
@@ -1607,6 +1628,21 @@ class ActivitiesRepository with SyncableRepository {
     domain.Activity existing,
     domain.Activity incoming,
   ) {
+    // A platform-reported completion (FinalSurge WorkoutCompleted/ActualTime,
+    // final-surge-completion.PROPOSED.md) is fact (M-1.3): it lands status,
+    // completion time and the measured values, over a planned, skipped or
+    // mark-done row. It never overwrites a Garmin completion (device
+    // measurement) or a brick-archived segment. A payload WITHOUT completion
+    // never touches any of these fields, so a later plan-only re-sync
+    // cannot undo a completion.
+    final garminCompleted =
+        existing.status == domain.ActivityStatus.completed &&
+        existing.garminSummaryId != null;
+    final adoptCompletion =
+        incoming.isProviderCompleted &&
+        !garminCompleted &&
+        existing.status != domain.ActivityStatus.archivedForBrick;
+
     return domain.Activity(
       // identity
       id: existing.id,
@@ -1616,7 +1652,9 @@ class ActivitiesRepository with SyncableRepository {
       activityType: incoming.activityType,
       title: incoming.title,
       scheduledDateTime: incoming.scheduledDateTime,
-      status: existing.status,
+      status: adoptCompletion
+          ? domain.ActivityStatus.completed
+          : existing.status,
       distanceMiles: incoming.distanceMiles,
       durationMinutes: incoming.durationMinutes,
       paceTargetMinutesPerMile: incoming.paceTargetMinutesPerMile,
@@ -1644,16 +1682,32 @@ class ActivitiesRepository with SyncableRepository {
           (incoming.scheduledDateTime != existing.scheduledDateTime
               ? incoming.scheduledDateTime
               : existing.plannedTime),
-      actualTime: incoming.actualTime ?? existing.actualTime,
+      // A completion without measurements keeps what the row already had
+      // (an athlete's own mark-done numbers), wave 25 review.
+      actualTime: adoptCompletion
+          ? incoming.actualTime ?? existing.actualTime
+          : incoming.isProviderCompleted
+          ? existing.actualTime
+          : incoming.actualTime ?? existing.actualTime,
       caloriesBurned: incoming.caloriesBurned ?? existing.caloriesBurned,
 
-      // preserve local completion and nutrition data
-      completedAt: existing.completedAt,
+      // preserve local completion and nutrition data (a platform-reported
+      // completion replaces the completion fields, see adoptCompletion)
+      completedAt: adoptCompletion
+          ? incoming.completedAt ?? existing.completedAt
+          : existing.completedAt,
       completionRating: existing.completionRating,
       nutritionRating: existing.nutritionRating,
       completionNotes: existing.completionNotes,
-      actualDistanceMiles: existing.actualDistanceMiles,
-      actualDurationMinutes: existing.actualDurationMinutes,
+      actualDistanceMiles: adoptCompletion
+          ? incoming.actualDistanceMiles ?? existing.actualDistanceMiles
+          : existing.actualDistanceMiles,
+      actualDurationMinutes: adoptCompletion
+          ? incoming.actualDurationMinutes ?? existing.actualDurationMinutes
+          : existing.actualDurationMinutes,
+      completionType: adoptCompletion
+          ? incoming.completionType
+          : existing.completionType,
       nutritionPlanData: existing.nutritionPlanData,
       // Preserve the locally-logged fuel data; provider imports never carry it.
       fuelLogData: existing.fuelLogData,
@@ -2348,6 +2402,21 @@ class ActivitiesRepository with SyncableRepository {
           status: const Value('completed'),
           deletedAt: const Value(null),
           completedAt: Value(incoming.completedAt ?? now),
+          // The platform's measurements and completion type, when the
+          // signal carries them (FinalSurge does; see
+          // final-surge-completion.PROPOSED.md). Absent fields stay as-is.
+          actualTime: incoming.actualTime != null
+              ? Value(incoming.actualTime)
+              : const Value.absent(),
+          actualDistanceMiles: incoming.actualDistanceMiles != null
+              ? Value(incoming.actualDistanceMiles)
+              : const Value.absent(),
+          actualDurationMinutes: incoming.actualDurationMinutes != null
+              ? Value(incoming.actualDurationMinutes)
+              : const Value.absent(),
+          completionType: incoming.completionType != null
+              ? Value(incoming.completionType)
+              : const Value.absent(),
           // Provider-owned planning fields refresh from the signal.
           title: Value(incoming.title),
           durationMinutes: Value(incoming.durationMinutes),

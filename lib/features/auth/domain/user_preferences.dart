@@ -44,6 +44,11 @@ class UserProfile {
   final GutTraining gutTraining;
   final SweatRateCat sweatRate;
   final bool onboardingCompleted;
+
+  /// The athlete's answer to the notification permission ask (ticket 138,
+  /// Finding 125-004): mirrors `users.notifications_enabled`, written when
+  /// iOS answers and re-read on every app resume.
+  final bool notificationsEnabled;
   final String appVersion;
   final bool swipeHintShown;
 
@@ -141,6 +146,7 @@ class UserProfile {
     this.gutTraining = GutTraining.moderate,
     this.sweatRate = SweatRateCat.medium,
     this.onboardingCompleted = false,
+    this.notificationsEnabled = false,
     required this.appVersion,
     this.swipeHintShown = false,
     // Unit preferences
@@ -326,11 +332,9 @@ class UserProfile {
       weightPounds: (row['weight_pounds'] as num?)?.toDouble() ?? 0,
       runsWithWaterBottle: row['runs_with_water_bottle'] as bool? ?? false,
       createdAt:
-          DateTime.tryParse(row['created_at'] as String? ?? '') ??
-          DateTime.now(),
+          parseServerTimestamp(row['created_at'] as String?) ?? DateTime.now(),
       updatedAt:
-          DateTime.tryParse(row['updated_at'] as String? ?? '') ??
-          DateTime.now(),
+          parseServerTimestamp(row['updated_at'] as String?) ?? DateTime.now(),
       gutTraining: GutTraining.values.firstWhere(
         (gt) => gt.name == row['gut_training_level'],
         orElse: () => GutTraining.moderate,
@@ -340,6 +344,7 @@ class UserProfile {
         orElse: () => SweatRateCat.medium,
       ),
       onboardingCompleted: row['onboarding_completed'] as bool? ?? false,
+      notificationsEnabled: row['notifications_enabled'] as bool? ?? false,
       appVersion: row['app_version'] as String? ?? '1.0.0',
       unitSystem: UnitSystem.values.firstWhere(
         (u) => u.name == row['unit_system'],
@@ -413,8 +418,8 @@ class UserProfile {
       heightInches: json['height_inches'] as int,
       weightPounds: (json['weight_pounds'] as num).toDouble(),
       runsWithWaterBottle: json['runs_with_water_bottle'] as bool,
-      createdAt: DateTime.parse(json['created_at'] as String),
-      updatedAt: DateTime.parse(json['updated_at'] as String),
+      createdAt: parseServerTimestamp(json['created_at'] as String)!,
+      updatedAt: parseServerTimestamp(json['updated_at'] as String)!,
       gutTraining: GutTraining.values.firstWhere(
         (gt) => gt.name == json['gut_training_level'],
         orElse: () => GutTraining.moderate,
@@ -424,6 +429,7 @@ class UserProfile {
         orElse: () => SweatRateCat.medium,
       ),
       onboardingCompleted: json['onboarding_completed'] as bool? ?? false,
+      notificationsEnabled: json['notifications_enabled'] as bool? ?? false,
       appVersion: json['app_version'] as String? ?? '1.0.0',
       swipeHintShown:
           false, // Drift-only field, always default to false from Supabase
@@ -505,9 +511,13 @@ class UserProfile {
       'gut_training_level': gutTraining.name,
       'sweat_rate': sweatRate.name,
       'onboarding_completed': onboardingCompleted,
+      'notifications_enabled': notificationsEnabled,
       'app_version': appVersion,
-      'created_at': createdAt.toIso8601String(),
-      'updated_at': updatedAt.toIso8601String(),
+      // UTC with its offset (testing-wave 120-003, 121-004): a local
+      // DateTime's ISO string carries no zone, and PostgREST read it as UTC,
+      // so a Chicago signup landed five hours early.
+      'created_at': createdAt.toUtc().toIso8601String(),
+      'updated_at': updatedAt.toUtc().toIso8601String(),
       'unit_system': unitSystem.name,
       // Sport preferences (only include fields that exist in production Supabase)
       'cycling_ftp_watts': ftpWatts,
@@ -570,6 +580,7 @@ class UserProfile {
     GutTraining? gutTraining,
     SweatRateCat? sweatRate,
     bool? onboardingCompleted,
+    bool? notificationsEnabled,
     String? appVersion,
     bool? swipeHintShown,
     // Unit preferences
@@ -614,6 +625,17 @@ class UserProfile {
     // Garmin precedence timestamps
     DateTime? weightPoundsUpdatedAt,
     DateTime? bodyFatPctUpdatedAt,
+    // A user who empties First name, Last name or Email on Profile &
+    // Preferences means "no value" (31-004); `??` cannot say that, since
+    // passing null means "leave it alone".
+    bool clearFirstName = false,
+    bool clearLastName = false,
+    bool clearEmail = false,
+    // Set the overrides back to "use algorithm defaults". `??` cannot say
+    // that — passing null means "leave them alone" — and the settings screen
+    // used to work around it by rebuilding the whole profile field by field,
+    // which silently reset every field that list forgot.
+    bool clearNutritionTargetOverrides = false,
   }) {
     return UserProfile(
       id: id ?? this.id,
@@ -632,6 +654,7 @@ class UserProfile {
       gutTraining: gutTraining ?? this.gutTraining,
       sweatRate: sweatRate ?? this.sweatRate,
       onboardingCompleted: onboardingCompleted ?? this.onboardingCompleted,
+      notificationsEnabled: notificationsEnabled ?? this.notificationsEnabled,
       appVersion: appVersion ?? this.appVersion,
       swipeHintShown: swipeHintShown ?? this.swipeHintShown,
       // Unit preferences
@@ -659,13 +682,14 @@ class UserProfile {
       // Sharing preferences
       senderName: senderName ?? this.senderName,
       // User identity
-      firstName: firstName ?? this.firstName,
-      lastName: lastName ?? this.lastName,
+      firstName: clearFirstName ? null : (firstName ?? this.firstName),
+      lastName: clearLastName ? null : (lastName ?? this.lastName),
       // Contact information
-      email: email ?? this.email,
+      email: clearEmail ? null : (email ?? this.email),
       // Nutrition target overrides
-      nutritionTargetOverrides:
-          nutritionTargetOverrides ?? this.nutritionTargetOverrides,
+      nutritionTargetOverrides: clearNutritionTargetOverrides
+          ? null
+          : (nutritionTargetOverrides ?? this.nutritionTargetOverrides),
       // Daily macro calculation fields
       bodyFatPct: bodyFatPct ?? this.bodyFatPct,
       lifestyle: lifestyle ?? this.lifestyle,
@@ -850,4 +874,21 @@ enum GutTrainingLevel {
 
   /// Get string value for API calls
   String get value => name;
+}
+
+/// Parses a `users` timestamp as the server sends it.
+///
+/// `users.created_at` and `updated_at` are `timestamp without time zone`, so
+/// PostgREST returns `2026-09-26T17:04:11.123` with no offset. `DateTime.parse`
+/// reads a zoneless string as LOCAL time, which moved the instant by the
+/// device's offset on every read (testing-wave 120-003, 121-004). The server
+/// stores UTC wall-clock (the app sends `toUtc()` and the column defaults to
+/// `CURRENT_TIMESTAMP` on a UTC server), so a zoneless string is UTC. A
+/// string that carries a zone is parsed as written. Null or unparseable
+/// answers null.
+DateTime? parseServerTimestamp(String? value) {
+  if (value == null || value.isEmpty) return null;
+  final trimmed = value.trim();
+  final hasZone = RegExp(r'(Z|[+-]\d{2}(:?\d{2})?)$').hasMatch(trimmed);
+  return DateTime.tryParse(hasZone ? trimmed : '${trimmed}Z');
 }

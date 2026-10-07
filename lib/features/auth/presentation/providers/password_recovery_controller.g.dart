@@ -10,6 +10,15 @@ part of 'password_recovery_controller.dart';
 // ignore_for_file: type=lint, type=warning
 /// Controller for managing OTP-based password recovery flow
 /// Steps: 1) Send reset code  2) Verify code  3) Set new password
+///
+/// The right reset code signs the phone in (GoTrue's recovery OTP opens a
+/// session). That session is only ever a means to Set New Password
+/// (testing-wave 124-003, Lee 2026-09-26): [verifyResetCode] sets the
+/// [recoveryPendingKey] marker, [setNewPassword] clears it, and
+/// [cancelRecovery] (Cancel, back) signs the session out. A marker still set
+/// at startup means the app was quit on Set New Password:
+/// `AppStartupService.endAbandonedRecovery` signs out before routing, so the
+/// relaunch lands on Log In.
 
 @ProviderFor(PasswordRecoveryController)
 const passwordRecoveryControllerProvider =
@@ -17,10 +26,28 @@ const passwordRecoveryControllerProvider =
 
 /// Controller for managing OTP-based password recovery flow
 /// Steps: 1) Send reset code  2) Verify code  3) Set new password
+///
+/// The right reset code signs the phone in (GoTrue's recovery OTP opens a
+/// session). That session is only ever a means to Set New Password
+/// (testing-wave 124-003, Lee 2026-09-26): [verifyResetCode] sets the
+/// [recoveryPendingKey] marker, [setNewPassword] clears it, and
+/// [cancelRecovery] (Cancel, back) signs the session out. A marker still set
+/// at startup means the app was quit on Set New Password:
+/// `AppStartupService.endAbandonedRecovery` signs out before routing, so the
+/// relaunch lands on Log In.
 final class PasswordRecoveryControllerProvider
     extends $AsyncNotifierProvider<PasswordRecoveryController, void> {
   /// Controller for managing OTP-based password recovery flow
   /// Steps: 1) Send reset code  2) Verify code  3) Set new password
+  ///
+  /// The right reset code signs the phone in (GoTrue's recovery OTP opens a
+  /// session). That session is only ever a means to Set New Password
+  /// (testing-wave 124-003, Lee 2026-09-26): [verifyResetCode] sets the
+  /// [recoveryPendingKey] marker, [setNewPassword] clears it, and
+  /// [cancelRecovery] (Cancel, back) signs the session out. A marker still set
+  /// at startup means the app was quit on Set New Password:
+  /// `AppStartupService.endAbandonedRecovery` signs out before routing, so the
+  /// relaunch lands on Log In.
   const PasswordRecoveryControllerProvider._()
     : super(
         from: null,
@@ -41,10 +68,19 @@ final class PasswordRecoveryControllerProvider
 }
 
 String _$passwordRecoveryControllerHash() =>
-    r'cf0a80f58988a0fa507d42377ee6198df4a67323';
+    r'f20a7084a429a83784f255a3c64db08171779d45';
 
 /// Controller for managing OTP-based password recovery flow
 /// Steps: 1) Send reset code  2) Verify code  3) Set new password
+///
+/// The right reset code signs the phone in (GoTrue's recovery OTP opens a
+/// session). That session is only ever a means to Set New Password
+/// (testing-wave 124-003, Lee 2026-09-26): [verifyResetCode] sets the
+/// [recoveryPendingKey] marker, [setNewPassword] clears it, and
+/// [cancelRecovery] (Cancel, back) signs the session out. A marker still set
+/// at startup means the app was quit on Set New Password:
+/// `AppStartupService.endAbandonedRecovery` signs out before routing, so the
+/// relaunch lands on Log In.
 
 abstract class _$PasswordRecoveryController extends $AsyncNotifier<void> {
   FutureOr<void> build();

@@ -77,6 +77,10 @@ class AppStartup extends _$AppStartup {
           .read(privacyRegionServiceProvider)
           .ensureResolved();
 
+      // 0a'. A reset the app was quit on (124-003): its recovery session is
+      // signed out before anything reads the session, RevenueCat included.
+      await startupService.endAbandonedRecovery();
+
       // 0. VERSION CHECK: Check app version and schema version BEFORE database initialization
       // This prevents incompatible app versions from accessing the database
       final versionCheckService = ref.read(versionCheckServiceProvider);

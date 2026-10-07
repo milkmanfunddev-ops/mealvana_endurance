@@ -1,11 +1,19 @@
+import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'dart:async';
 import 'package:mealvana_endurance/shared/database/database_provider.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../../integrations/presentation/providers/athlete_zones_provider.dart';
-import 'package:supabase_flutter/supabase_flutter.dart' show HttpMethod;
+import 'package:supabase_flutter/supabase_flutter.dart'
+    show FunctionResponse, HttpMethod;
 import '../../../../shared/services/app_external_deps.dart';
 import '../../../../shared/services/report/report.dart';
 import '../../../activities/data/activities_repository.dart';
+import '../../../ai_credits/data/revenuecat_service.dart';
+import '../../../../shared/domain/activity_type.dart';
+import '../../../../shared/providers/user_id_provider.dart';
+import '../../../activities/domain/activity.dart';
+import '../../../nutrition_plan/application/resolved_during_target_resolver.dart';
+import '../../../nutrition_plan/data/macro_repository.dart';
 import '../../../auth/application/supabase_auth_service.dart';
 import '../../../auth/data/user_repository.dart';
 import '../../../auth/domain/user_preferences.dart';
@@ -22,11 +30,19 @@ import '../../../coach_mode/data/coach_repository.dart';
 import '../../../events/data/events_repository.dart';
 import '../../../feedback/data/feedback_repository.dart';
 import '../../../food_preferences/data/food_preferences_repository.dart';
+import '../../../formula_kit/data/formula_pins_repository.dart';
+import '../../../formula_kit/data/personal_formulas_repository.dart';
+import '../../../integrations/presentation/providers/integrations_providers.dart';
 import '../../../meal_logging/data/meal_log_repository.dart';
 import '../../../meal_logging/data/saved_meals_repository.dart';
 import '../../../../shared/data/syncable_repository.dart';
 import '../../../nutrition_plan/presentation/providers/macro_targets_controller.dart';
 import '../../../onboarding/application/onboarding_snapshot_service.dart';
+import '../../../onboarding/data/onboarding_survey_repository.dart';
+import '../../../personal_templates/data/personal_templates_repository.dart';
+import '../../../user_foods/data/user_foods_repository.dart';
+import '../../application/sign_out_notice.dart';
+import '../../domain/account_deletion_exceptions.dart';
 import '../../domain/settings_state.dart';
 
 part 'settings_controller.g.dart';
@@ -409,6 +425,10 @@ class SettingsController extends _$SettingsController {
 
   /// Save all preferences in a single batch operation
   /// This avoids multiple invalidations that cause excessive UI refreshes
+  ///
+  /// For the free-text fields ([firstName], [lastName], [email]) null means
+  /// "not touched, keep the saved value" and an empty string means "the user
+  /// cleared it, save it cleared" (31-004).
   Future<void> saveAllPreferences({
     Gender? gender,
     DateTime? birthday,
@@ -439,8 +459,8 @@ class SettingsController extends _$SettingsController {
         unitSystem: unitSystem ?? currentState.unitSystem,
         gutTrainingLevel: gutTrainingLevel ?? currentState.gutTrainingLevel,
         sweatRate: sweatRate ?? currentState.sweatRate,
-        firstName: firstName,
-        lastName: lastName,
+        firstName: firstName ?? currentState.firstName,
+        lastName: lastName ?? currentState.lastName,
         email: email ?? currentState.email,
         isSaving: true,
       ),
@@ -552,8 +572,8 @@ class SettingsController extends _$SettingsController {
   }
 
   /// Save nutrition target overrides (null clears all overrides).
-  /// Bypasses _saveProfile() to handle the null/clearing case directly,
-  /// since copyWith with `??` would preserve existing values when null is passed.
+  /// Bypasses _saveProfile() so it can say "clear", which the rest of the
+  /// screen's `??`-shaped save cannot express.
   Future<void> saveNutritionTargetOverrides(
     NutritionTargetOverrides? overrides,
   ) async {
@@ -568,51 +588,36 @@ class SettingsController extends _$SettingsController {
         throw Exception('No user profile found to update.');
       }
 
-      // Use a sentinel empty override to distinguish "set to null" from "don't change"
-      // We create the profile with a non-null value first, then null it out manually
-      final updatedProfile = UserProfile(
-        id: existingProfile.id,
-        deviceId: existingProfile.deviceId,
-        authUserId: existingProfile.authUserId,
-        authProvider: existingProfile.authProvider,
-        isAnonymous: existingProfile.isAnonymous,
-        gender: existingProfile.gender,
-        birthday: existingProfile.birthday,
-        heightFeet: existingProfile.heightFeet,
-        heightInches: existingProfile.heightInches,
-        weightPounds: existingProfile.weightPounds,
-        runsWithWaterBottle: existingProfile.runsWithWaterBottle,
-        createdAt: existingProfile.createdAt,
-        updatedAt: DateTime.now(),
-        gutTraining: existingProfile.gutTraining,
-        sweatRate: existingProfile.sweatRate,
-        onboardingCompleted: existingProfile.onboardingCompleted,
-        appVersion: existingProfile.appVersion,
-        swipeHintShown: existingProfile.swipeHintShown,
-        unitSystem: existingProfile.unitSystem,
-        giSensitivity: existingProfile.giSensitivity,
-        ftpWatts: existingProfile.ftpWatts,
-        typicalBikeBottles: existingProfile.typicalBikeBottles,
-        hasAeroBottle: existingProfile.hasAeroBottle,
-        hasBentoBox: existingProfile.hasBentoBox,
-        cssPacePer100mSeconds: existingProfile.cssPacePer100mSeconds,
-        typicalWetsuit: existingProfile.typicalWetsuit,
-        typicalSwimCapType: existingProfile.typicalSwimCapType,
-        defaultRunningPaceMinPerMile:
-            existingProfile.defaultRunningPaceMinPerMile,
-        defaultCyclingSpeedMph: existingProfile.defaultCyclingSpeedMph,
-        defaultSwimmingPacePer100Sec:
-            existingProfile.defaultSwimmingPacePer100Sec,
-        dietaryPreference: existingProfile.dietaryPreference,
-        allergies: existingProfile.allergies,
-        senderName: existingProfile.senderName,
-        firstName: existingProfile.firstName,
-        lastName: existingProfile.lastName,
-        email: existingProfile.email,
-        nutritionTargetOverrides: overrides, // Explicitly set (can be null)
-      );
+      // copyWith owns the "clear" case (`clearNutritionTargetOverrides`),
+      // because `??` cannot distinguish it from "leave them alone". This
+      // used to rebuild UserProfile field by field instead, and that
+      // hand-rolled list silently reset every field it did not mention —
+      // body fat, lifestyle, training phase, the sweat test, the Garmin
+      // timestamps (mealplanning e663c3bb).
+      final updatedProfile = overrides == null
+          ? existingProfile.copyWith(
+              updatedAt: DateTime.now(),
+              clearNutritionTargetOverrides: true,
+            )
+          : existingProfile.copyWith(
+              updatedAt: DateTime.now(),
+              nutritionTargetOverrides: overrides,
+            );
 
       await userRepository.updateUserProfile(updatedProfile);
+
+      // A during rate that just left the settings leaves its stored plans
+      // behind (Finding 116-003): flag them so they re-plan without it.
+      final removed = removedDuringRates(
+        existingProfile.nutritionTargetOverrides,
+        overrides,
+      );
+      if (removed.isNotEmpty && ref.mounted) {
+        await _flagPlansBuiltOnRemovedOverrides(
+          removed,
+          deviceId: existingProfile.deviceId,
+        );
+      }
 
       // Guard against the notifier being disposed during the async gap above.
       if (ref.mounted) {
@@ -628,6 +633,110 @@ class SettingsController extends _$SettingsController {
     // The save above completed; only the UI state is dropped when this
     // auto-dispose controller was disposed during it.
     if (ref.mounted) state = result;
+  }
+
+  /// The during carb rates (g/h, by sport) present in [before] and gone or
+  /// changed in [after]. A stored plan built on one of these is stale.
+  @visibleForTesting
+  static Map<ActivityType, double> removedDuringRates(
+    NutritionTargetOverrides? before,
+    NutritionTargetOverrides? after,
+  ) {
+    final removed = <ActivityType, double>{};
+    for (final sport in const [
+      ActivityType.running,
+      ActivityType.cycling,
+      ActivityType.swimming,
+    ]) {
+      final was = before?.getDuring(sport)?.carbRateGPerH;
+      if (was == null || was <= 0) continue;
+      final now = after?.getDuring(sport)?.carbRateGPerH;
+      final kept =
+          now != null &&
+          (now - was).abs() <=
+              ResolvedDuringTargetResolver.defaultToleranceGPerH;
+      if (!kept) removed[sport] = was;
+    }
+    return removed;
+  }
+
+  /// Marks every not-yet-done activity whose stored plan carries a removed
+  /// override rate `needs_nutrition_refresh`, so the Activity detail shows
+  /// its stale-plan notice and the next regeneration plans without the
+  /// override. Without this the plan kept 50.4 g/h and the screen showed
+  /// 92 g below its band with nothing explaining why (Finding 116-003).
+  ///
+  /// Runs after the profile save and never fails it: a miss here leaves a
+  /// stale plan, which the athlete can still regenerate by hand. Running it
+  /// twice (two saves, or a save after a refresh) sets the same flag on the
+  /// same rows; the flag is cleared only by a regeneration.
+  Future<void> _flagPlansBuiltOnRemovedOverrides(
+    Map<ActivityType, double> removed, {
+    required String deviceId,
+  }) async {
+    final report = ref.read(reportProvider);
+    try {
+      final userId = await ref.read(userIdProvider.future);
+      final activitiesRepo = ref.read(activitiesRepositoryProvider);
+      final macroRepo = ref.read(macroRepositoryProvider);
+      final now = DateTime.now();
+      final today = DateTime(now.year, now.month, now.day);
+      final candidates = await activitiesRepo.getActivitiesForDateRange(
+        userId,
+        today,
+        today.add(const Duration(days: 730)),
+      );
+      var flagged = 0;
+      for (final a in candidates) {
+        if (a.status != ActivityStatus.planned) continue;
+        if (a.nutritionPlanData == null || a.needsNutritionRefresh) continue;
+        final was = removed[a.activityType];
+        if (was == null) continue;
+        final targets = await macroRepo.getCachedMacroTargetsForActivity(
+          a.id,
+          expectedActivityType: a.activityType,
+        );
+        final planRate =
+            targets?.duringRun.carbRateGPerH ??
+            _duringRateFromPlanData(a.nutritionPlanData);
+        if (planRate == null) continue;
+        if ((planRate - was).abs() >
+            ResolvedDuringTargetResolver.defaultToleranceGPerH) {
+          continue;
+        }
+        await activitiesRepo.updateActivity(
+          deviceId: deviceId,
+          activity: a.copyWith(needsNutritionRefresh: true),
+        );
+        flagged++;
+      }
+      report.info(
+        'Flagged plans built on a removed during override',
+        area: 'settings',
+        data: {'removed': removed.toString(), 'flagged': flagged},
+      );
+    } catch (e, stackTrace) {
+      // The save stands; a stale plan stays regenerable by hand.
+      await report.degraded(
+        e,
+        stackTrace: stackTrace,
+        area: 'settings',
+        message: 'Could not flag plans built on a removed during override',
+        extra: {'removed': removed.toString()},
+      );
+    }
+  }
+
+  /// The stored plan's during carb rate, read from the plan JSON the way
+  /// ActivityDetailController reads it (`detailedMacroTargets.duringRun`).
+  static double? _duringRateFromPlanData(Map<String, dynamic>? planData) {
+    final detailed =
+        planData?['detailedMacroTargets'] ?? planData?['macroTargetsDetailed'];
+    if (detailed is! Map) return null;
+    final during = detailed['duringRun'];
+    if (during is! Map) return null;
+    final rate = during['carbRateGPerH'];
+    return rate is num ? rate.toDouble() : null;
   }
 
   /// Save profile changes (both local and Supabase)
@@ -685,11 +794,16 @@ class SettingsController extends _$SettingsController {
         allergies: currentState.allergies.isNotEmpty
             ? currentState.allergies
             : existingProfile.allergies,
-        // Optional name fields for coach mode athlete identification
+        // Optional name fields for coach mode athlete identification.
+        // An empty string is a field the user cleared (31-004); null is one
+        // nobody touched, so the saved value stays.
         firstName: currentState.firstName ?? existingProfile.firstName,
+        clearFirstName: currentState.firstName?.isEmpty ?? false,
         lastName: currentState.lastName ?? existingProfile.lastName,
+        clearLastName: currentState.lastName?.isEmpty ?? false,
         // Contact information
         email: currentState.email ?? existingProfile.email,
+        clearEmail: currentState.email?.isEmpty ?? false,
         // Nutrition target overrides
         nutritionTargetOverrides:
             currentState.nutritionTargetOverrides ??
@@ -748,32 +862,61 @@ class SettingsController extends _$SettingsController {
     );
   }
 
-  /// Sign out the current user
-  /// This triggers the auth state listener which will:
-  /// 1. Invalidate user-specific providers
-  /// 2. Notify GoRouter to redirect to /welcome
-  /// Note: This controller will be disposed after signOut, so we must not
-  /// access ref or state after the signOut call completes.
+  /// Sign out the current user, leaving nothing the server holds on the phone.
+  ///
+  /// Order: upload what is still dirty, drop the onboarding prefs, log the
+  /// RevenueCat SDK out, delete the account's synced local rows, then sign
+  /// out of Supabase (whose `signedOut` event invalidates the user providers
+  /// and sends GoRouter to /welcome).
+  ///
+  /// Ticket 102 (Lee, 2026-09-25): the wipe keeps every row that still needs
+  /// upload, so an offline sign-out loses nothing; those rows upload at the
+  /// account's next sign-in. When the upload fails the athlete is told so in
+  /// one line, through [signOutNoticeProvider], which the Welcome screen
+  /// shows. `food_preferences` has no upload flag: it stays only when its
+  /// own upload failed.
+  ///
+  /// **Every `ref.read` happens before the first `await`.** This controller
+  /// is auto-dispose; a caller holding only `ref.read(...notifier)` loses the
+  /// Ref by the time the analytics call returns, and reading it after that
+  /// threw "Cannot use the Ref of settingsControllerProvider after it has
+  /// been disposed", silently skipping the pre-logout upload (Finding 02-003
+  /// on mealplanning). Nothing here touches `ref` or `state` after the first
+  /// await.
   Future<void> signOut() async {
-    // Capture all dependencies BEFORE signOut (which disposes this controller)
-    final supabaseClient = ref.read(appExternalDepsProvider).supabaseClient;
-    final analytics = ref.read(appExternalDepsProvider).analytics;
+    final deps = ref.read(appExternalDepsProvider);
+    final supabaseClient = deps.supabaseClient;
+    final analytics = deps.analytics;
     final report = ref.read(reportProvider);
     final prefs = ref.read(sharedPreferencesProvider);
+    final database = ref.read(appDatabaseProvider);
+    // keepAlive: the service outlives this controller.
+    final revenueCat = ref.read(revenueCatServiceProvider);
+    final signOutNotice = ref.read(signOutNoticeProvider.notifier);
+    final unsyncedKeptLine = _contentService.getValue(
+      ContentKeys.settingsSignOutUnsyncedKept,
+    );
+    final currentUser = supabaseClient.auth.currentUser;
+    // The repository reads run now; only the async providers are awaited
+    // later, by which time their futures no longer need the Ref.
+    final syncRepos = currentUser == null ? null : _captureSyncRepositories();
 
-    // Track sign out event
     await analytics.track('settings_sign_out_tapped');
 
-    // CRITICAL: Upload dirty records to Supabase BEFORE sign-out
-    // This prevents data loss when local database is cleared
-    // No download needed - just upload dirty records directly per-repository
-    final currentUser = supabaseClient.auth.currentUser;
-    if (currentUser != null) {
+    // Upload dirty records BEFORE the local rows are deleted below. What
+    // fails to upload stays on the phone (the wipe keeps dirty rows).
+    var uploadFailed = <String>{};
+    if (currentUser != null && syncRepos != null) {
       try {
-        await _uploadDirtyBeforeLogout(currentUser.id);
+        uploadFailed = await _uploadDirtyBeforeLogout(
+          currentUser.id,
+          await syncRepos,
+          report,
+        );
       } catch (e) {
-        // Log error but continue with sign-out
+        // Report but continue with sign-out; nothing was uploaded.
         report.fault(e, area: 'settings', message: 'Pre-logout upload failed');
+        uploadFailed = {_everyRepository};
       }
     }
 
@@ -785,10 +928,86 @@ class SettingsController extends _$SettingsController {
     // would let a later startup resurrect it under a different account.
     await prefs.remove(OnboardingSnapshotService.prefsKey);
 
+    // Return the RevenueCat SDK (identified for AI credits) to an anonymous
+    // customer, so the next account on this device never reads the outgoing
+    // user's customer (Finding 03-002). logOut reports its own failures.
+    await revenueCat.logOut();
+
+    // Delete the account's synced local rows (Finding 14-004). Rows the
+    // upload above did not land stay for the next sign-in (ticket 102).
+    if (currentUser != null) {
+      try {
+        await database.clearUserData(
+          currentUser.id,
+          keepUnsynced: true,
+          keepFoodPreferences:
+              uploadFailed.contains(_everyRepository) ||
+              uploadFailed.contains('food_preferences'),
+        );
+      } catch (e, st) {
+        await report.fault(
+          e,
+          stackTrace: st,
+          area: 'settings',
+          message: 'Local data clear failed',
+        );
+      }
+    }
+
+    // Say so (Finding 86-007): one line on the Welcome screen.
+    signOutNotice.set(uploadFailed.isEmpty ? null : unsyncedKeptLine);
+
     // Sign out from Supabase (triggers AuthChangeEvent.signedOut)
-    // IMPORTANT: After this call, the auth listener will invalidate this controller
-    // and GoRouter will navigate to /welcome. Do NOT access ref or state after this.
     await supabaseClient.auth.signOut();
+  }
+
+  /// Marker in the failed-upload set when the whole pre-logout upload threw.
+  static const _everyRepository = '*';
+
+  /// Reads every syncable repository synchronously (no `await` before the
+  /// reads) so the list can be awaited after this controller is disposed.
+  Future<List<SyncableRepository>> _captureSyncRepositories() {
+    final activitiesRepo = ref.read(activitiesRepositoryProvider);
+    final eventsRepo = ref.read(eventsRepositoryProvider);
+    final carbLoadingRepo = ref.read(carbLoadingRepositoryProvider);
+    final feedbackRepo = ref.read(feedbackRepositoryProvider);
+    final foodPrefsRepoFuture = ref.read(
+      foodPreferencesRepositoryProvider.future,
+    );
+    final userRepoFuture = ref.read(userRepositoryProvider.future);
+    final mealLogRepo = ref.read(mealLogRepositoryProvider);
+    final savedMealsRepo = ref.read(savedMealsRepositoryProvider);
+    // Ticket 102: these six write locally with needs_upload too and were
+    // wiped at sign-out with no upload attempt.
+    final userFoodsRepoFuture = ref.read(userFoodsRepositoryProvider.future);
+    final integrationsRepo = ref.read(integrationsRepositoryProvider);
+    final formulaPinsRepo = ref.read(formulaPinsRepositoryProvider);
+    final onboardingSurveyRepo = ref.read(onboardingSurveyRepositoryProvider);
+    final personalFormulasRepo = ref.read(personalFormulasRepositoryProvider);
+    final personalTemplatesRepo = ref.read(personalTemplatesRepositoryProvider);
+
+    return Future.wait([
+      foodPrefsRepoFuture,
+      userRepoFuture,
+      userFoodsRepoFuture,
+    ]).then(
+      (resolved) => <SyncableRepository>[
+        activitiesRepo,
+        eventsRepo,
+        carbLoadingRepo,
+        feedbackRepo,
+        resolved[0],
+        resolved[1],
+        mealLogRepo,
+        savedMealsRepo,
+        resolved[2],
+        integrationsRepo,
+        formulaPinsRepo,
+        onboardingSurveyRepo,
+        personalFormulasRepo,
+        personalTemplatesRepo,
+      ],
+    );
   }
 
   /// Upload dirty records from all repositories before logout.
@@ -797,40 +1016,24 @@ class SettingsController extends _$SettingsController {
   /// `uploadDirtyRecords()` swallows exceptions into a silent
   /// `UploadResult.failed()`, so every result is checked here and the
   /// failures reported — an unchecked call looks identical to a success.
-  Future<void> _uploadDirtyBeforeLogout(String userId) async {
-    final report = ref.read(reportProvider);
-    final activitiesRepo = ref.read(activitiesRepositoryProvider);
-    final eventsRepo = ref.read(eventsRepositoryProvider);
-    final carbLoadingRepo = ref.read(carbLoadingRepositoryProvider);
-    final feedbackRepo = ref.read(feedbackRepositoryProvider);
-    final mealLogRepo = ref.read(mealLogRepositoryProvider);
-    final savedMealsRepo = ref.read(savedMealsRepositoryProvider);
-    // Both futures are taken before either await, so no `ref` use follows
-    // an async gap.
-    final foodPrefsRepoFuture = ref.read(
-      foodPreferencesRepositoryProvider.future,
-    );
-    final userRepoFuture = ref.read(userRepositoryProvider.future);
-    final foodPrefsRepo = await foodPrefsRepoFuture;
-    final userRepo = await userRepoFuture;
-
-    final repos = <SyncableRepository>[
-      activitiesRepo,
-      eventsRepo,
-      carbLoadingRepo,
-      feedbackRepo,
-      foodPrefsRepo,
-      userRepo,
-      mealLogRepo,
-      savedMealsRepo,
-    ];
-
+  /// Takes its collaborators as arguments: it runs after the controller may
+  /// have been disposed (see [signOut]). Returns the keys of the repositories
+  /// whose upload failed (empty when everything landed).
+  Future<Set<String>> _uploadDirtyBeforeLogout(
+    String userId,
+    List<SyncableRepository> repos,
+    Report report,
+  ) async {
     final results = await Future.wait(
       repos.map((repo) => repo.uploadDirtyRecords(userId)),
     );
 
+    final failed = <String>{};
     for (var i = 0; i < repos.length; i++) {
       final result = results[i];
+      if (result.success) continue;
+      // Not landed: its rows stay on the phone (ticket 102).
+      failed.add(repos[i].repositoryKey);
       // A deferral is not a failure (DEV-A2): the repository left its Note
       // and the rows wait for their owner's session.
       if (!result.failed) continue;
@@ -843,6 +1046,7 @@ class SettingsController extends _$SettingsController {
         extra: {'repository': repos[i].repositoryKey, 'error': result.error},
       );
     }
+    return failed;
   }
 
   /// Delete the current user account
@@ -850,6 +1054,21 @@ class SettingsController extends _$SettingsController {
   /// 1. Call delete-user Edge Function to delete from auth.users and public.users
   /// 2. Clear user's local data (with WHERE user_id filter)
   /// 3. Sign out to trigger auth state change which rebuilds UI
+  ///
+  /// The server's answer is the ack (testing-wave 121-007, 121-009): when
+  /// `delete-user` cannot be reached or answers anything but 200, nothing
+  /// else runs. The local rows, the RevenueCat identity and the session all
+  /// stay, the state shown is left as it was, and
+  /// [AccountDeletionNeedsConnectionException] reaches the screen, which
+  /// says the delete needs a connection. This is the one write path that
+  /// rethrows past `AsyncValue.guard`: a half-deleted account (rows gone,
+  /// account alive) is worse than a delete that did not happen.
+  ///
+  /// Running twice: a second tap while the first is in flight sends a second
+  /// `delete-user`; the function deletes once and the second call answers
+  /// 401 (no user for the token), which stops that second run before it
+  /// touches anything, while the first finishes the wipe. A retry after a
+  /// failure repeats only the function call, which is idempotent.
   Future<void> deleteAccount() async {
     final result = await AsyncValue.guard(() async {
       final supabaseClient = ref.read(appExternalDepsProvider).supabaseClient;
@@ -857,6 +1076,8 @@ class SettingsController extends _$SettingsController {
       final report = ref.read(reportProvider);
       final database = ref.read(appDatabaseProvider);
       final prefs = ref.read(sharedPreferencesProvider);
+      // keepAlive: the service outlives this controller.
+      final revenueCat = ref.read(revenueCatServiceProvider);
       final stateBefore = state;
       final currentUserId = supabaseClient.auth.currentUser?.id;
 
@@ -867,50 +1088,49 @@ class SettingsController extends _$SettingsController {
       // Track delete account event
       await analytics.track('settings_delete_account_tapped');
 
-      // If authenticated, call the delete-user Edge Function
-      // This deletes from both auth.users and public.users (with CASCADE)
+      // The delete-user Edge Function deletes auth.users and public.users
+      // (with CASCADE). Its 200 is the ack everything below waits for.
+      report.info('Calling delete-user Edge Function', area: 'settings');
+      final FunctionResponse response;
       try {
-        report.info('Calling delete-user Edge Function', area: 'settings');
-
-        final response = await supabaseClient.functions.invoke(
+        response = await supabaseClient.functions.invoke(
           'delete-user',
           method: HttpMethod.post,
           body: {}, // No body needed - user ID comes from JWT
         );
-
-        if (response.status != 200) {
-          final errorData = response.data;
-          final errorMessage = errorData?['message'] ?? 'Unknown error';
-          report.fault(
-            LoggedFault(
-              'delete-user Edge Function failed',
-              context: 'SETTINGS',
-            ),
-            area: 'settings',
-            extra: {'status': response.status, 'message': errorMessage},
-          );
-          // Continue with local cleanup even if server deletion fails
-        } else {
-          report.info(
-            'User deleted from Supabase successfully',
-            area: 'settings',
-          );
-        }
-      } catch (e) {
-        report.fault(
+      } catch (e, st) {
+        // Unreachable, or the SDK raised the non-2xx itself.
+        await report.degraded(
           e,
+          stackTrace: st,
           area: 'settings',
           message: 'Error calling delete-user Edge Function',
         );
-        // Continue with local cleanup even if edge function call fails
+        throw AccountDeletionNeedsConnectionException(e.toString());
       }
 
-      // Clear user's local data with forceDelete = true
-      // This deletes ONLY this user's data (WHERE user_id = currentUserId)
-      await database.diagnosticDao.clearUserScopedData(
-        userId: currentUserId,
-        forceDelete: true,
-      );
+      if (response.status != 200) {
+        final errorData = response.data;
+        final errorMessage = errorData is Map
+            ? errorData['message'] ?? 'Unknown error'
+            : 'Unknown error';
+        await report.fault(
+          LoggedFault('delete-user Edge Function failed', context: 'SETTINGS'),
+          area: 'settings',
+          extra: {'status': response.status, 'message': errorMessage},
+        );
+        throw AccountDeletionNeedsConnectionException(
+          'delete-user answered ${response.status}: $errorMessage',
+        );
+      }
+      report.info('User deleted from Supabase successfully', area: 'settings');
+
+      // Log the RevenueCat SDK out, as sign-out does: the deleted account's
+      // customer must not linger. logOut reports its own failures.
+      await revenueCat.logOut();
+
+      // Delete ONLY this user's local rows, across every user-scoped table.
+      await database.clearUserData(currentUserId);
 
       // Clear the temp user ID from SharedPreferences
       // This ensures a new user won't inherit the previous user's integration status
@@ -942,6 +1162,13 @@ class SettingsController extends _$SettingsController {
       // to the state captured before the first await.
       return ref.mounted ? state.requireValue : stateBefore.requireValue;
     });
+
+    // The server did not confirm: nothing local changed, so the shown state
+    // stays as it was and the screen hears why (121-007).
+    if (result.error case final AccountDeletionNeedsConnectionException e) {
+      throw e;
+    }
+
     // The save above completed; only the UI state is dropped when this
     // auto-dispose controller was disposed during it.
     if (ref.mounted) state = result;

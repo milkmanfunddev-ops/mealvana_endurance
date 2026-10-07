@@ -7,13 +7,18 @@ import 'package:mealvana_endurance/shared/widgets/app_date_picker.dart';
 import 'package:mealvana_endurance/shared/widgets/kyle_design/kyle_design.dart';
 import '../../../../shared/widgets/navigation/figma_onboarding_footer.dart';
 import '../../../../shared/widgets/kyle_design/data/kyle_source_chip.dart';
+import '../../../../shared/widgets/inputs/field_name.dart';
 import '../../../integrations/presentation/providers/athlete_zones_provider.dart';
 import '../../../../shared/services/report/report.dart';
 import '../../../../shared/widgets/content_area.dart';
+import '../../../../shared/widgets/custom_app_bar_back_button.dart';
+import '../../../content/application/content_service.dart';
+import '../../../content/domain/content_keys.dart';
 import '../providers/settings_controller.dart';
 import '../../../auth/domain/user_preferences.dart';
 
-/// Preferences Screen - Settings version that matches onboarding UserProfileScreen
+/// Profile & Preferences: the settings edit of the fields onboarding's
+/// personal-info step collects, under its own title (31-014).
 /// Saves immediately to database instead of caching
 class PreferencesScreen extends ConsumerStatefulWidget {
   const PreferencesScreen({super.key});
@@ -125,15 +130,12 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
         unitSystem: _unitSystem,
         gutTrainingLevel: _gutTraining,
         sweatRate: _sweatRate,
-        firstName: _firstNameController.text.trim().isNotEmpty
-            ? _firstNameController.text.trim()
-            : null,
-        lastName: _lastNameController.text.trim().isNotEmpty
-            ? _lastNameController.text.trim()
-            : null,
-        email: _emailController.text.trim().isNotEmpty
-            ? _emailController.text.trim()
-            : null,
+        // Every text field is sent as typed: an empty one is a clear, not
+        // "leave it alone" (31-004).
+        firstName: _firstNameController.text.trim(),
+        lastName: _lastNameController.text.trim(),
+        // Email is the login email and read-only here (119-002, Lee
+        // 2026-09-26); a change-email flow can come later.
       );
 
       if (mounted) {
@@ -165,42 +167,108 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
     }
   }
 
+  /// Back arrow, bottom Back and the iOS swipe all come here (119-010, Lee
+  /// 2026-09-26): with edits pending, ask "Discard changes?"; with none,
+  /// leave at once. A programmatic pop after a save bypasses the guard.
+  Future<void> _leave() async {
+    if (!_hasChanges) {
+      if (mounted) Navigator.of(context).pop();
+      return;
+    }
+    final discard = await _confirmDiscard();
+    if (discard && mounted) Navigator.of(context).pop();
+  }
+
+  Future<void> _onPopInvoked(bool didPop) async {
+    if (didPop) return;
+    await _leave();
+  }
+
+  Future<bool> _confirmDiscard() async {
+    final content = ref.read(contentServiceProvider);
+    final answer = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        key: const ValueKey('profile_edit.discard_dialog'),
+        title: Text(content.getValue(ContentKeys.profileEditDiscardTitle)),
+        content: Text(content.getValue(ContentKeys.profileEditDiscardBody)),
+        actions: [
+          TextButton(
+            key: const ValueKey('profile_edit.keep_editing'),
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: Text(content.getValue(ContentKeys.profileEditKeepEditing)),
+          ),
+          TextButton(
+            key: const ValueKey('profile_edit.discard'),
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: Text(content.getValue(ContentKeys.profileEditDiscard)),
+          ),
+        ],
+      ),
+    );
+    return answer ?? false;
+  }
+
   @override
   Widget build(BuildContext context) {
     final settingsAsync = ref.watch(settingsControllerProvider);
+    final content = ref.watch(contentServiceProvider);
     final theme = Theme.of(context);
 
-    return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
-      body: ContentArea(
-        child: Column(
-          children: [
-            // Content area
-            Expanded(
-              child: SafeArea(
-                bottom: false,
-                child: settingsAsync.when(
-                  data: (state) => _buildContent(context, state),
-                  loading: () => _buildLoadingState(context),
-                  error: (error, stack) => _buildErrorState(context, error),
+    return PopScope(
+      // Every way out goes through _leave (119-010).
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) => _onPopInvoked(didPop),
+      child: Scaffold(
+        backgroundColor: theme.scaffoldBackgroundColor,
+        // A settings screen titled for what it is, with its back control at
+        // the top (31-014); the onboarding heading it shared is gone.
+        appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          scrolledUnderElevation: 0,
+          leading: CustomAppBarBackButton(
+            key: const ValueKey('preferences.app_bar_back_button'),
+            onPressed: _leave,
+          ),
+          title: Text(
+            key: const ValueKey('preferences.title'),
+            content.getValue(ContentKeys.settingsProfilePreferencesTitle),
+            style: AppTextStyles.sectionTitle.copyWith(
+              color: theme.colorScheme.onSurface,
+            ),
+          ),
+        ),
+        body: ContentArea(
+          child: Column(
+            children: [
+              // Content area
+              Expanded(
+                child: SafeArea(
+                  bottom: false,
+                  child: settingsAsync.when(
+                    data: (state) => _buildContent(context, state),
+                    loading: () => _buildLoadingState(context),
+                    error: (error, stack) => _buildErrorState(context, error),
+                  ),
                 ),
               ),
-            ),
 
-            // Footer navigation (matching onboarding style)
-            SafeArea(
-              top: false,
-              child: FigmaOnboardingFooter(
-                onContinue: _hasChanges && !_isSaving ? _saveChanges : null,
-                onBack: () => Navigator.of(context).pop(),
-                canContinue: _hasChanges && !_isSaving,
-                isLoading: _isSaving,
-                buttonText: 'Save Changes',
-                continueButtonKey: const ValueKey('profile_edit.save_button'),
-                backButtonKey: const ValueKey('profile_edit.back_button'),
+              // Footer navigation (matching onboarding style)
+              SafeArea(
+                top: false,
+                child: FigmaOnboardingFooter(
+                  onContinue: _hasChanges && !_isSaving ? _saveChanges : null,
+                  onBack: _leave,
+                  canContinue: _hasChanges && !_isSaving,
+                  isLoading: _isSaving,
+                  buttonText: 'Save Changes',
+                  continueButtonKey: const ValueKey('profile_edit.save_button'),
+                  backButtonKey: const ValueKey('profile_edit.back_button'),
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -244,10 +312,6 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
   }
 
   Widget _buildContent(BuildContext context, dynamic state) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    final titleColor = isDark ? AppColors.orange : theme.colorScheme.onSurface;
-
     return GestureDetector(
       onTap: () {
         // Dismiss keyboard when tapping outside input fields
@@ -261,32 +325,6 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const SizedBox(height: 16),
-
-              // Introduction text (matching onboarding)
-              Text(
-                'Tell us about yourself',
-                style: const TextStyle(
-                  fontFamily: 'Sansita',
-                  fontSize: 26,
-                  fontWeight: FontWeight.w700,
-                  height: 1.0,
-                ).copyWith(color: titleColor),
-              ),
-              const SizedBox(height: 12),
-              Text(
-                'This helps us calculate accurate nutrition plans for your activities.',
-                style: const TextStyle(
-                  fontFamily: 'Apercu',
-                  fontSize: 16,
-                  fontWeight: FontWeight.w400,
-                  letterSpacing: 0.192,
-                  height: 1.0,
-                ).copyWith(color: theme.colorScheme.onSurfaceVariant),
-              ),
-
-              const SizedBox(height: AppSpacing.lg),
-
               // Personal information section
               _buildPersonalInfoSection(context),
 
@@ -360,17 +398,15 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
 
           const SizedBox(height: AppSpacing.md),
 
-          // Email field
-          _buildTextField(
-            fieldKey: const ValueKey('profile_edit.email_field'),
+          // Email: the login email, read-only (119-002, Lee 2026-09-26).
+          _buildReadOnlyField(
             context: context,
-            controller: _emailController,
-            label: 'Email',
-            hint: 'Email address',
+            label: ref
+                .watch(contentServiceProvider)
+                .getValue(ContentKeys.profileEditEmailLoginLabel),
+            value: _emailController.text,
             icon: FontAwesomeIcons.envelope.data,
-            keyboardType: TextInputType.emailAddress,
-            autocorrect: false,
-            autofillHints: const [AutofillHints.email],
+            valueKey: const ValueKey('profile_edit.email_value'),
           ),
 
           const SizedBox(height: AppSpacing.md),
@@ -661,55 +697,64 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
     final isDark = theme.brightness == Brightness.dark;
     final isSelected = groupValue == value;
 
-    return GestureDetector(
+    // A button that reports selected (119-006: static text to VoiceOver).
+    return Semantics(
       key: radioKey,
-      onTap: () => onChanged(value),
-      child: Container(
-        height: 80,
-        decoration: BoxDecoration(
-          color: isSelected
-              ? (isDark ? AppColors.cream : AppColors.blackberry)
-              : Colors.transparent,
-          border: Border.all(
-            color: isDark ? AppColors.cream : AppColors.blackberry,
-            width: 2,
-          ),
-          borderRadius: BorderRadius.circular(15),
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            // Icon based on gender
-            Icon(
-              value == Gender.male
-                  ? FontAwesomeIcons.mars.data
-                  : value == Gender.female
-                  ? FontAwesomeIcons.venus.data
-                  : FontAwesomeIcons.genderless.data,
-              size: 28,
+      container: true,
+      button: true,
+      selected: isSelected,
+      label: title,
+      child: GestureDetector(
+        onTap: () => onChanged(value),
+        child: ExcludeSemantics(
+          child: Container(
+            height: 80,
+            decoration: BoxDecoration(
               color: isSelected
-                  ? (isDark ? AppColors.blackberry : AppColors.cream)
-                  : (isDark
-                        ? AppColors.cream.withValues(alpha: 0.5)
-                        : AppColors.blackberry.withValues(alpha: 0.5)),
-            ),
-            const SizedBox(height: 4),
-
-            // Text content
-            Text(
-              title.toUpperCase(),
-              style: AppTextStyles.smallLabel.copyWith(
-                fontSize: 9,
-                fontWeight: FontWeight.w700,
-                color: isSelected
-                    ? (isDark ? AppColors.blackberry : AppColors.cream)
-                    : (isDark
-                          ? AppColors.cream.withValues(alpha: 0.5)
-                          : AppColors.blackberry.withValues(alpha: 0.5)),
+                  ? (isDark ? AppColors.cream : AppColors.blackberry)
+                  : Colors.transparent,
+              border: Border.all(
+                color: isDark ? AppColors.cream : AppColors.blackberry,
+                width: 2,
               ),
-              textAlign: TextAlign.center,
+              borderRadius: BorderRadius.circular(15),
             ),
-          ],
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                // Icon based on gender
+                Icon(
+                  value == Gender.male
+                      ? FontAwesomeIcons.mars.data
+                      : value == Gender.female
+                      ? FontAwesomeIcons.venus.data
+                      : FontAwesomeIcons.genderless.data,
+                  size: 28,
+                  color: isSelected
+                      ? (isDark ? AppColors.blackberry : AppColors.cream)
+                      : (isDark
+                            ? AppColors.cream.withValues(alpha: 0.5)
+                            : AppColors.blackberry.withValues(alpha: 0.5)),
+                ),
+                const SizedBox(height: 4),
+
+                // Text content
+                Text(
+                  title.toUpperCase(),
+                  style: AppTextStyles.smallLabel.copyWith(
+                    fontSize: 9,
+                    fontWeight: FontWeight.w700,
+                    color: isSelected
+                        ? (isDark ? AppColors.blackberry : AppColors.cream)
+                        : (isDark
+                              ? AppColors.cream.withValues(alpha: 0.5)
+                              : AppColors.blackberry.withValues(alpha: 0.5)),
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );
@@ -729,66 +774,140 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
 
         const SizedBox(height: AppSpacing.sm),
 
-        InkWell(
-          key: const ValueKey('profile_edit.birthday_button'),
-          onTap: () async {
-            final selectedDate = await showAppDatePicker(
-              context: context,
-              initialDate:
-                  _birthday ??
-                  DateTime.now().subtract(const Duration(days: 365 * 30)),
-              firstDate: DateTime.now().subtract(
-                const Duration(days: 365 * 100),
+        // Named "Birthday" with the date as its value (119-006: the date
+        // alone read as static text).
+        Semantics(
+          container: true,
+          button: true,
+          label: 'Birthday',
+          value: _birthday != null
+              ? '${_birthday!.month}/${_birthday!.day}/${_birthday!.year}'
+              : 'Select your birthday',
+          child: InkWell(
+            key: const ValueKey('profile_edit.birthday_button'),
+            onTap: () async {
+              final selectedDate = await showAppDatePicker(
+                context: context,
+                initialDate:
+                    _birthday ??
+                    DateTime.now().subtract(const Duration(days: 365 * 30)),
+                firstDate: DateTime.now().subtract(
+                  const Duration(days: 365 * 100),
+                ),
+                lastDate: DateTime.now().subtract(
+                  const Duration(days: 365 * 16),
+                ),
+              );
+              if (selectedDate != null) {
+                setState(() {
+                  _birthday = selectedDate;
+                });
+                _markChanged();
+              }
+            },
+            borderRadius: AppRadius.inputRadius,
+            child: Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.md,
+                vertical: AppSpacing.md,
               ),
-              lastDate: DateTime.now().subtract(const Duration(days: 365 * 16)),
-            );
-            if (selectedDate != null) {
-              setState(() {
-                _birthday = selectedDate;
-              });
-              _markChanged();
-            }
-          },
-          borderRadius: AppRadius.inputRadius,
-          child: Container(
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.surface,
+                border: Border.all(
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.onSurface.withValues(alpha: 0.2),
+                ),
+                borderRadius: AppRadius.inputRadius,
+              ),
+              child: ExcludeSemantics(
+                child: Row(
+                  children: [
+                    FaIcon(
+                      FontAwesomeIcons.calendar,
+                      size: AppIconSizes.controlIcon,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                    const SizedBox(width: AppSpacing.md),
+                    Expanded(
+                      child: Text(
+                        _birthday != null
+                            ? '${_birthday!.month}/${_birthday!.day}/${_birthday!.year}'
+                            : 'Select your birthday',
+                        style: AppTextStyles.bodyMedium.copyWith(
+                          color: _birthday != null
+                              ? Theme.of(context).colorScheme.onSurface
+                              : Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// A labelled value that cannot be edited, styled like the text fields.
+  Widget _buildReadOnlyField({
+    required BuildContext context,
+    required String label,
+    required String value,
+    required IconData icon,
+    Key? valueKey,
+  }) {
+    final scheme = Theme.of(context).colorScheme;
+    // One node for the screen reader: the label names the value, as a text
+    // field's label does (ticket 141's named-field rule).
+    return MergeSemantics(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: AppTextStyles.bodyMedium.copyWith(
+              color: scheme.onSurface,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Container(
+            width: double.infinity,
             padding: const EdgeInsets.symmetric(
               horizontal: AppSpacing.md,
               vertical: AppSpacing.md,
             ),
             decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surface,
-              border: Border.all(
-                color: Theme.of(
-                  context,
-                ).colorScheme.onSurface.withValues(alpha: 0.2),
-              ),
               borderRadius: AppRadius.inputRadius,
+              border: Border.all(
+                color: scheme.onSurface.withValues(alpha: 0.12),
+              ),
             ),
             child: Row(
               children: [
-                FaIcon(
-                  FontAwesomeIcons.calendar,
+                Icon(
+                  icon,
                   size: AppIconSizes.controlIcon,
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  color: scheme.onSurfaceVariant,
                 ),
-                const SizedBox(width: AppSpacing.md),
+                const SizedBox(width: AppSpacing.sm),
                 Expanded(
                   child: Text(
-                    _birthday != null
-                        ? '${_birthday!.month}/${_birthday!.day}/${_birthday!.year}'
-                        : 'Select your birthday',
+                    value,
+                    key: valueKey,
                     style: AppTextStyles.bodyMedium.copyWith(
-                      color: _birthday != null
-                          ? Theme.of(context).colorScheme.onSurface
-                          : Theme.of(context).colorScheme.onSurfaceVariant,
+                      color: scheme.onSurfaceVariant,
                     ),
                   ),
                 ),
               ],
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -820,69 +939,76 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
           ),
           const SizedBox(height: AppSpacing.sm),
         ],
-        TextFormField(
-          key: fieldKey,
+        // Named for a screen reader: by its label all the time, or by its
+        // hint once the hint is gone (119-006).
+        FieldName(
+          name: label ?? hint,
+          always: label != null,
           controller: controller,
-          keyboardType: keyboardType,
-          textCapitalization: textCapitalization,
-          autocorrect: autocorrect,
-          autofillHints: autofillHints,
-          validator: validator,
-          onChanged: onChanged ?? (_) => _markChanged(),
-          decoration: InputDecoration(
-            hintText: hint,
-            hintStyle: AppTextStyles.bodyMedium.copyWith(
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
-            ),
-            prefixIcon: Icon(
-              icon,
-              size: AppIconSizes.controlIcon,
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
-            ),
-            suffix: suffix != null
-                ? Text(
-                    suffix,
-                    style: AppTextStyles.bodyMedium.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
-                  )
-                : null,
-            border: OutlineInputBorder(
-              borderRadius: AppRadius.inputRadius,
-              borderSide: BorderSide(
-                color: Theme.of(
-                  context,
-                ).colorScheme.onSurface.withValues(alpha: 0.2),
+          child: TextFormField(
+            key: fieldKey,
+            controller: controller,
+            keyboardType: keyboardType,
+            textCapitalization: textCapitalization,
+            autocorrect: autocorrect,
+            autofillHints: autofillHints,
+            validator: validator,
+            onChanged: onChanged ?? (_) => _markChanged(),
+            decoration: InputDecoration(
+              hintText: hint,
+              hintStyle: AppTextStyles.bodyMedium.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+              prefixIcon: Icon(
+                icon,
+                size: AppIconSizes.controlIcon,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+              suffix: suffix != null
+                  ? Text(
+                      suffix,
+                      style: AppTextStyles.bodyMedium.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                    )
+                  : null,
+              border: OutlineInputBorder(
+                borderRadius: AppRadius.inputRadius,
+                borderSide: BorderSide(
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.onSurface.withValues(alpha: 0.2),
+                ),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: AppRadius.inputRadius,
+                borderSide: BorderSide(
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.onSurface.withValues(alpha: 0.2),
+                ),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: AppRadius.inputRadius,
+                borderSide: const BorderSide(color: AppColors.orange, width: 2),
+              ),
+              errorBorder: OutlineInputBorder(
+                borderRadius: AppRadius.inputRadius,
+                borderSide: const BorderSide(
+                  color: AppColors.dragonfruit,
+                  width: 2,
+                ),
+              ),
+              filled: true,
+              fillColor: Theme.of(context).colorScheme.surface,
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.md,
+                vertical: AppSpacing.md,
               ),
             ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: AppRadius.inputRadius,
-              borderSide: BorderSide(
-                color: Theme.of(
-                  context,
-                ).colorScheme.onSurface.withValues(alpha: 0.2),
-              ),
+            style: AppTextStyles.bodyMedium.copyWith(
+              color: Theme.of(context).colorScheme.onSurface,
             ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: AppRadius.inputRadius,
-              borderSide: const BorderSide(color: AppColors.orange, width: 2),
-            ),
-            errorBorder: OutlineInputBorder(
-              borderRadius: AppRadius.inputRadius,
-              borderSide: const BorderSide(
-                color: AppColors.dragonfruit,
-                width: 2,
-              ),
-            ),
-            filled: true,
-            fillColor: Theme.of(context).colorScheme.surface,
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.md,
-              vertical: AppSpacing.md,
-            ),
-          ),
-          style: AppTextStyles.bodyMedium.copyWith(
-            color: Theme.of(context).colorScheme.onSurface,
           ),
         ),
       ],
@@ -1009,84 +1135,91 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
     );
   }
 
+  /// A checkbox to a screen reader, with its checked state (testing-wave
+  /// 31-002: it read as static text whether on or off).
   Widget _buildWaterBottleToggle(BuildContext context) {
-    return InkWell(
-      onTap: () {
-        setState(() {
-          _runsWithWaterBottle = !(_runsWithWaterBottle ?? false);
-        });
-        _markChanged();
-      },
-      borderRadius: AppRadius.cardRadius,
-      child: Container(
-        padding: const EdgeInsets.all(AppSpacing.md),
-        decoration: BoxDecoration(
-          color: (_runsWithWaterBottle ?? false)
-              ? AppColors.blackberry.withValues(alpha: 0.1)
-              : Colors.transparent,
-          border: Border.all(
+    return Semantics(
+      key: const ValueKey('preferences.water_bottle'),
+      container: true,
+      checked: _runsWithWaterBottle ?? false,
+      child: InkWell(
+        onTap: () {
+          setState(() {
+            _runsWithWaterBottle = !(_runsWithWaterBottle ?? false);
+          });
+          _markChanged();
+        },
+        borderRadius: AppRadius.cardRadius,
+        child: Container(
+          padding: const EdgeInsets.all(AppSpacing.md),
+          decoration: BoxDecoration(
             color: (_runsWithWaterBottle ?? false)
-                ? AppColors.blackberry
-                : Theme.of(
-                    context,
-                  ).colorScheme.onSurface.withValues(alpha: 0.2),
-            width: (_runsWithWaterBottle ?? false) ? 2 : 1,
+                ? AppColors.blackberry.withValues(alpha: 0.1)
+                : Colors.transparent,
+            border: Border.all(
+              color: (_runsWithWaterBottle ?? false)
+                  ? AppColors.blackberry
+                  : Theme.of(
+                      context,
+                    ).colorScheme.onSurface.withValues(alpha: 0.2),
+              width: (_runsWithWaterBottle ?? false) ? 2 : 1,
+            ),
+            borderRadius: AppRadius.cardRadius,
           ),
-          borderRadius: AppRadius.cardRadius,
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 24,
-              height: 24,
-              decoration: BoxDecoration(
-                color: (_runsWithWaterBottle ?? false)
-                    ? AppColors.blackberry
-                    : Colors.transparent,
-                border: Border.all(
+          child: Row(
+            children: [
+              Container(
+                width: 24,
+                height: 24,
+                decoration: BoxDecoration(
                   color: (_runsWithWaterBottle ?? false)
                       ? AppColors.blackberry
-                      : Theme.of(
-                          context,
-                        ).colorScheme.onSurface.withValues(alpha: 0.5),
-                  width: 2,
+                      : Colors.transparent,
+                  border: Border.all(
+                    color: (_runsWithWaterBottle ?? false)
+                        ? AppColors.blackberry
+                        : Theme.of(
+                            context,
+                          ).colorScheme.onSurface.withValues(alpha: 0.5),
+                    width: 2,
+                  ),
+                  borderRadius: BorderRadius.circular(6),
                 ),
-                borderRadius: BorderRadius.circular(6),
+                child: (_runsWithWaterBottle ?? false)
+                    ? const FaIcon(
+                        FontAwesomeIcons.check,
+                        size: 14,
+                        color: AppColors.cream,
+                      )
+                    : null,
               ),
-              child: (_runsWithWaterBottle ?? false)
-                  ? const FaIcon(
-                      FontAwesomeIcons.check,
-                      size: 14,
-                      color: AppColors.cream,
-                    )
-                  : null,
-            ),
 
-            const SizedBox(width: AppSpacing.md),
+              const SizedBox(width: AppSpacing.md),
 
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'I run with a water bottle',
-                    style: AppTextStyles.bodyMedium.copyWith(
-                      color: Theme.of(context).colorScheme.onSurface,
-                      fontWeight: FontWeight.w500,
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'I run with a water bottle',
+                      style: AppTextStyles.bodyMedium.copyWith(
+                        color: Theme.of(context).colorScheme.onSurface,
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: AppSpacing.xs),
-                  Text(
-                    'This helps us estimate your hydration needs',
-                    style: AppTextStyles.bodyMedium.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      fontSize: 14,
+                    const SizedBox(height: AppSpacing.xs),
+                    Text(
+                      'This helps us estimate your hydration needs',
+                      style: AppTextStyles.bodyMedium.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        fontSize: 14,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

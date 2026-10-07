@@ -15,6 +15,7 @@ import '../../../daily_macros/data/daily_macro_targets_repository.dart';
 import '../../../daily_macros/presentation/providers/daily_macros_controller.dart';
 import '../../../onboarding/presentation/providers/onboarding_controller.dart';
 import '../../../onboarding/presentation/theme/onboarding_design_tokens.dart';
+import '../../../onboarding/presentation/widgets/onboarding_multi_select_step.dart';
 import '../../../onboarding/presentation/widgets/onboarding_step_scaffold.dart';
 import '../../application/apple_web_authentication.dart';
 import '../../application/auth_service.dart';
@@ -42,6 +43,12 @@ class PostOnboardingAuthScreen extends ConsumerStatefulWidget {
 
 class _PostOnboardingAuthScreenState
     extends ConsumerState<PostOnboardingAuthScreen> {
+  /// True from an email screen's hand-off until this screen navigates away
+  /// (testing-wave 121-011): the save takes a few seconds, during which the
+  /// sign-up buttons showed again under the popped email screen. Busy hides
+  /// them; a failed save gives them back.
+  bool _handingOff = false;
+
   @override
   void initState() {
     super.initState();
@@ -169,8 +176,13 @@ class _PostOnboardingAuthScreenState
   }
 
   void _handleError(BuildContext context, String providerName) {
-    // Check if the error is because the account already exists
     final state = ref.read(postOnboardingAuthControllerProvider);
+
+    // The athlete closed the provider's sheet (125-003): nothing failed, so
+    // nothing is said.
+    if (state.hasError && state.error is OAuthCancelledException) return;
+
+    // Check if the error is because the account already exists
     if (state.hasError && state.error is AccountAlreadyExistsException) {
       final exception = state.error as AccountAlreadyExistsException;
       _showAccountExistsDialog(context, providerName, exception.email);
@@ -387,9 +399,11 @@ class _PostOnboardingAuthScreenState
         'Email signup successful, saving onboarding data',
         area: 'auth',
       );
-      await _saveOnboardingDataAndNavigate(
-        authProvider: 'email',
-        isAnonymous: false,
+      await _handOff(
+        () => _saveOnboardingDataAndNavigate(
+          authProvider: 'email',
+          isAnonymous: false,
+        ),
       );
     } else {
       report.info(
@@ -407,7 +421,20 @@ class _PostOnboardingAuthScreenState
     // If email login successful, finish without discarding any onboarding
     // draft still in memory (see _finishLoginPreservingDraft).
     if (result == true && mounted) {
-      await _finishLoginPreservingDraft(authProvider: 'email');
+      await _handOff(() => _finishLoginPreservingDraft(authProvider: 'email'));
+    }
+  }
+
+  /// Runs an email screen's hand-off with the screen busy (121-011). Still
+  /// here afterwards: the save failed; the buttons come back. Navigated away:
+  /// nothing to reset.
+  Future<void> _handOff(Future<void> Function() finish) async {
+    if (!mounted) return;
+    setState(() => _handingOff = true);
+    try {
+      await finish();
+    } finally {
+      if (mounted) setState(() => _handingOff = false);
     }
   }
 
@@ -683,12 +710,13 @@ class _PostOnboardingAuthScreenState
     final asyncState = ref.watch(postOnboardingAuthControllerProvider);
     final contentService = ref.watch(contentServiceProvider);
     final isLogin = widget.mode == 'login';
+    final isBusy = asyncState.isLoading || _handingOff;
 
     return AdaptivePageScaffold(
       backgroundColor: OnbTokens.bg,
       appBar: _buildAppBar(
         context,
-        isLoading: asyncState.isLoading,
+        isLoading: isBusy,
         isLogin: isLogin,
       ),
       contentWidth: AdaptiveContentWidth.narrow,
@@ -768,8 +796,8 @@ class _PostOnboardingAuthScreenState
                     icon: FontAwesomeIcons.apple.data,
                     background: OnbTokens.orange,
                     foreground: OnbTokens.bg,
-                    onPressed: asyncState.isLoading ? null : _handleAppleSignIn,
-                    isLoading: asyncState.isLoading,
+                    onPressed: isBusy ? null : _handleAppleSignIn,
+                    isLoading: isBusy,
                   ),
 
                   // Spec "or" divider between the primary and the rest.
@@ -792,8 +820,8 @@ class _PostOnboardingAuthScreenState
                   icon: FontAwesomeIcons.google.data,
                   background: OnbTokens.cream,
                   foreground: OnbTokens.bg,
-                  onPressed: asyncState.isLoading ? null : _handleGoogleSignIn,
-                  isLoading: asyncState.isLoading,
+                  onPressed: isBusy ? null : _handleGoogleSignIn,
+                  isLoading: isBusy,
                 ),
 
                 const SizedBox(height: 10),
@@ -816,7 +844,7 @@ class _PostOnboardingAuthScreenState
                   background: Colors.transparent,
                   foreground: OnbTokens.creamA(0.75),
                   outlineColor: OnbTokens.creamA(0.2),
-                  onPressed: asyncState.isLoading
+                  onPressed: isBusy
                       ? null
                       : (isLogin ? _handleEmailLogin : _handleEmailSignUp),
                   isLoading: false,
@@ -874,7 +902,7 @@ class _PostOnboardingAuthScreenState
           ),
 
           // Loading overlay for OAuth sign-in flows
-          if (asyncState.isLoading)
+          if (isBusy)
             Container(
               color: OnbTokens.bg.withValues(alpha: 0.9),
               child: Center(
@@ -921,53 +949,38 @@ class _PostOnboardingAuthScreenState
           // cream-10% chevron circle as the onboarding step headers.
           Opacity(
             opacity: isLoading ? 0.5 : 1.0,
-            child: InkWell(
+            // A button named "Back" (124-005: the AppBar title merged it
+            // out of the accessibility tree).
+            child: OnboardingBackCircle(
               key: ValueKey(
                 isLogin
                     ? 'login_options.back_button'
                     : 'create_account.back_button',
               ),
-              customBorder: const CircleBorder(),
-              onTap: isLoading
-                  ? null
-                  : () {
-                      // Sentry MEALVANA-ENDURANCE-DEV-5R: this screen can be
-                      // reached via context.go() (post-onboarding flow) as
-                      // well as push(), so guard against GoError "There is
-                      // nothing to pop". The go() arrival replaces the stack,
-                      // so in the redesigned flow canPop() is false for EVERY
-                      // new user landing here — the fallback must return to
-                      // the flow they came from, not /main: going to /main
-                      // would silently abandon all nine onboarding steps
-                      // before saveAllOnboardingData ever runs.
-                      if (context.canPop()) {
-                        context.pop();
-                      } else {
-                        // Nothing to pop. LOGIN mode: the person is not
-                        // signed in and just asked to go back, so /main
-                        // would strand an unauthenticated user in the app.
-                        // SIGNUP mode: return to the flow AT ITS LAST PAGE
-                        // (?page=last) — a bare /onboarding builds a fresh
-                        // PageView at page 0, rewinding the athlete nine
-                        // answered steps when they were one tap from saving.
-                        context.go(
-                          isLogin ? '/welcome' : '/onboarding?page=last',
-                        );
-                      }
-                    },
-              child: Container(
-                width: 32,
-                height: 32,
-                decoration: BoxDecoration(
-                  color: OnbTokens.creamA(0.1),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  Icons.chevron_left,
-                  size: 18,
-                  color: OnbTokens.creamA(0.8),
-                ),
-              ),
+              enabled: !isLoading,
+              onTap: () {
+                // Sentry MEALVANA-ENDURANCE-DEV-5R: this screen can be
+                // reached via context.go() (post-onboarding flow) as
+                // well as push(), so guard against GoError "There is
+                // nothing to pop". The go() arrival replaces the stack,
+                // so in the redesigned flow canPop() is false for EVERY
+                // new user landing here — the fallback must return to
+                // the flow they came from, not /main: going to /main
+                // would silently abandon all nine onboarding steps
+                // before saveAllOnboardingData ever runs.
+                if (context.canPop()) {
+                  context.pop();
+                } else {
+                  // Nothing to pop. LOGIN mode: the person is not
+                  // signed in and just asked to go back, so /main
+                  // would strand an unauthenticated user in the app.
+                  // SIGNUP mode: return to the flow AT ITS LAST PAGE
+                  // (?page=last) — a bare /onboarding builds a fresh
+                  // PageView at page 0, rewinding the athlete nine
+                  // answered steps when they were one tap from saving.
+                  context.go(isLogin ? '/welcome' : '/onboarding?page=last');
+                }
+              },
             ),
           ),
         ],

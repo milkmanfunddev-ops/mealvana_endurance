@@ -11371,6 +11371,17 @@ class $ActivitiesTableTable extends ActivitiesTable
     type: DriftSqlType.int,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _completionTypeMeta = const VerificationMeta(
+    'completionType',
+  );
+  @override
+  late final GeneratedColumn<String> completionType = GeneratedColumn<String>(
+    'completion_type',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _nutritionPlanDataMeta = const VerificationMeta(
     'nutritionPlanData',
   );
@@ -11647,6 +11658,7 @@ class $ActivitiesTableTable extends ActivitiesTable
     completionNotes,
     actualDistanceMiles,
     actualDurationMinutes,
+    completionType,
     nutritionPlanData,
     fuelLogData,
     brickMetadata,
@@ -12126,6 +12138,15 @@ class $ActivitiesTableTable extends ActivitiesTable
         ),
       );
     }
+    if (data.containsKey('completion_type')) {
+      context.handle(
+        _completionTypeMeta,
+        completionType.isAcceptableOrUnknown(
+          data['completion_type']!,
+          _completionTypeMeta,
+        ),
+      );
+    }
     if (data.containsKey('nutrition_plan_data')) {
       context.handle(
         _nutritionPlanDataMeta,
@@ -12487,6 +12508,10 @@ class $ActivitiesTableTable extends ActivitiesTable
         DriftSqlType.int,
         data['${effectivePrefix}actual_duration_minutes'],
       ),
+      completionType: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}completion_type'],
+      ),
       nutritionPlanData: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}nutrition_plan_data'],
@@ -12640,6 +12665,7 @@ class Activity extends DataClass implements Insertable<Activity> {
   final String? completionNotes;
   final double? actualDistanceMiles;
   final int? actualDurationMinutes;
+  final String? completionType;
   final String? nutritionPlanData;
   final String? fuelLogData;
   final String? brickMetadata;
@@ -12712,6 +12738,7 @@ class Activity extends DataClass implements Insertable<Activity> {
     this.completionNotes,
     this.actualDistanceMiles,
     this.actualDurationMinutes,
+    this.completionType,
     this.nutritionPlanData,
     this.fuelLogData,
     this.brickMetadata,
@@ -12878,6 +12905,9 @@ class Activity extends DataClass implements Insertable<Activity> {
     }
     if (!nullToAbsent || actualDurationMinutes != null) {
       map['actual_duration_minutes'] = Variable<int>(actualDurationMinutes);
+    }
+    if (!nullToAbsent || completionType != null) {
+      map['completion_type'] = Variable<String>(completionType);
     }
     if (!nullToAbsent || nutritionPlanData != null) {
       map['nutrition_plan_data'] = Variable<String>(nutritionPlanData);
@@ -13074,6 +13104,9 @@ class Activity extends DataClass implements Insertable<Activity> {
       actualDurationMinutes: actualDurationMinutes == null && nullToAbsent
           ? const Value.absent()
           : Value(actualDurationMinutes),
+      completionType: completionType == null && nullToAbsent
+          ? const Value.absent()
+          : Value(completionType),
       nutritionPlanData: nutritionPlanData == null && nullToAbsent
           ? const Value.absent()
           : Value(nutritionPlanData),
@@ -13228,6 +13261,7 @@ class Activity extends DataClass implements Insertable<Activity> {
       actualDurationMinutes: serializer.fromJson<int?>(
         json['actualDurationMinutes'],
       ),
+      completionType: serializer.fromJson<String?>(json['completionType']),
       nutritionPlanData: serializer.fromJson<String?>(
         json['nutritionPlanData'],
       ),
@@ -13321,6 +13355,7 @@ class Activity extends DataClass implements Insertable<Activity> {
       'completionNotes': serializer.toJson<String?>(completionNotes),
       'actualDistanceMiles': serializer.toJson<double?>(actualDistanceMiles),
       'actualDurationMinutes': serializer.toJson<int?>(actualDurationMinutes),
+      'completionType': serializer.toJson<String?>(completionType),
       'nutritionPlanData': serializer.toJson<String?>(nutritionPlanData),
       'fuelLogData': serializer.toJson<String?>(fuelLogData),
       'brickMetadata': serializer.toJson<String?>(brickMetadata),
@@ -13396,6 +13431,7 @@ class Activity extends DataClass implements Insertable<Activity> {
     Value<String?> completionNotes = const Value.absent(),
     Value<double?> actualDistanceMiles = const Value.absent(),
     Value<int?> actualDurationMinutes = const Value.absent(),
+    Value<String?> completionType = const Value.absent(),
     Value<String?> nutritionPlanData = const Value.absent(),
     Value<String?> fuelLogData = const Value.absent(),
     Value<String?> brickMetadata = const Value.absent(),
@@ -13540,6 +13576,9 @@ class Activity extends DataClass implements Insertable<Activity> {
     actualDurationMinutes: actualDurationMinutes.present
         ? actualDurationMinutes.value
         : this.actualDurationMinutes,
+    completionType: completionType.present
+        ? completionType.value
+        : this.completionType,
     nutritionPlanData: nutritionPlanData.present
         ? nutritionPlanData.value
         : this.nutritionPlanData,
@@ -13720,6 +13759,9 @@ class Activity extends DataClass implements Insertable<Activity> {
       actualDurationMinutes: data.actualDurationMinutes.present
           ? data.actualDurationMinutes.value
           : this.actualDurationMinutes,
+      completionType: data.completionType.present
+          ? data.completionType.value
+          : this.completionType,
       nutritionPlanData: data.nutritionPlanData.present
           ? data.nutritionPlanData.value
           : this.nutritionPlanData,
@@ -13817,6 +13859,7 @@ class Activity extends DataClass implements Insertable<Activity> {
           ..write('completionNotes: $completionNotes, ')
           ..write('actualDistanceMiles: $actualDistanceMiles, ')
           ..write('actualDurationMinutes: $actualDurationMinutes, ')
+          ..write('completionType: $completionType, ')
           ..write('nutritionPlanData: $nutritionPlanData, ')
           ..write('fuelLogData: $fuelLogData, ')
           ..write('brickMetadata: $brickMetadata, ')
@@ -13894,6 +13937,7 @@ class Activity extends DataClass implements Insertable<Activity> {
     completionNotes,
     actualDistanceMiles,
     actualDurationMinutes,
+    completionType,
     nutritionPlanData,
     fuelLogData,
     brickMetadata,
@@ -13970,6 +14014,7 @@ class Activity extends DataClass implements Insertable<Activity> {
           other.completionNotes == this.completionNotes &&
           other.actualDistanceMiles == this.actualDistanceMiles &&
           other.actualDurationMinutes == this.actualDurationMinutes &&
+          other.completionType == this.completionType &&
           other.nutritionPlanData == this.nutritionPlanData &&
           other.fuelLogData == this.fuelLogData &&
           other.brickMetadata == this.brickMetadata &&
@@ -14044,6 +14089,7 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
   final Value<String?> completionNotes;
   final Value<double?> actualDistanceMiles;
   final Value<int?> actualDurationMinutes;
+  final Value<String?> completionType;
   final Value<String?> nutritionPlanData;
   final Value<String?> fuelLogData;
   final Value<String?> brickMetadata;
@@ -14117,6 +14163,7 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
     this.completionNotes = const Value.absent(),
     this.actualDistanceMiles = const Value.absent(),
     this.actualDurationMinutes = const Value.absent(),
+    this.completionType = const Value.absent(),
     this.nutritionPlanData = const Value.absent(),
     this.fuelLogData = const Value.absent(),
     this.brickMetadata = const Value.absent(),
@@ -14191,6 +14238,7 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
     this.completionNotes = const Value.absent(),
     this.actualDistanceMiles = const Value.absent(),
     this.actualDurationMinutes = const Value.absent(),
+    this.completionType = const Value.absent(),
     this.nutritionPlanData = const Value.absent(),
     this.fuelLogData = const Value.absent(),
     this.brickMetadata = const Value.absent(),
@@ -14270,6 +14318,7 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
     Expression<String>? completionNotes,
     Expression<double>? actualDistanceMiles,
     Expression<int>? actualDurationMinutes,
+    Expression<String>? completionType,
     Expression<String>? nutritionPlanData,
     Expression<String>? fuelLogData,
     Expression<String>? brickMetadata,
@@ -14360,6 +14409,7 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
         'actual_distance_miles': actualDistanceMiles,
       if (actualDurationMinutes != null)
         'actual_duration_minutes': actualDurationMinutes,
+      if (completionType != null) 'completion_type': completionType,
       if (nutritionPlanData != null) 'nutrition_plan_data': nutritionPlanData,
       if (fuelLogData != null) 'fuel_log_data': fuelLogData,
       if (brickMetadata != null) 'brick_metadata': brickMetadata,
@@ -14437,6 +14487,7 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
     Value<String?>? completionNotes,
     Value<double?>? actualDistanceMiles,
     Value<int?>? actualDurationMinutes,
+    Value<String?>? completionType,
     Value<String?>? nutritionPlanData,
     Value<String?>? fuelLogData,
     Value<String?>? brickMetadata,
@@ -14519,6 +14570,7 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
       actualDistanceMiles: actualDistanceMiles ?? this.actualDistanceMiles,
       actualDurationMinutes:
           actualDurationMinutes ?? this.actualDurationMinutes,
+      completionType: completionType ?? this.completionType,
       nutritionPlanData: nutritionPlanData ?? this.nutritionPlanData,
       fuelLogData: fuelLogData ?? this.fuelLogData,
       brickMetadata: brickMetadata ?? this.brickMetadata,
@@ -14721,6 +14773,9 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
         actualDurationMinutes.value,
       );
     }
+    if (completionType.present) {
+      map['completion_type'] = Variable<String>(completionType.value);
+    }
     if (nutritionPlanData.present) {
       map['nutrition_plan_data'] = Variable<String>(nutritionPlanData.value);
     }
@@ -14841,6 +14896,7 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
           ..write('completionNotes: $completionNotes, ')
           ..write('actualDistanceMiles: $actualDistanceMiles, ')
           ..write('actualDurationMinutes: $actualDurationMinutes, ')
+          ..write('completionType: $completionType, ')
           ..write('nutritionPlanData: $nutritionPlanData, ')
           ..write('fuelLogData: $fuelLogData, ')
           ..write('brickMetadata: $brickMetadata, ')
@@ -40064,6 +40120,18 @@ class $MealLogsTableTable extends MealLogsTable
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _servingsMeta = const VerificationMeta(
+    'servings',
+  );
+  @override
+  late final GeneratedColumn<double> servings = GeneratedColumn<double>(
+    'servings',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(1.0),
+  );
   static const VerificationMeta _eatenAtMeta = const VerificationMeta(
     'eatenAt',
   );
@@ -40156,6 +40224,7 @@ class $MealLogsTableTable extends MealLogsTable
     recipeId,
     savedMealId,
     notes,
+    servings,
     eatenAt,
     createdAt,
     updatedAt,
@@ -40279,6 +40348,12 @@ class $MealLogsTableTable extends MealLogsTable
         notes.isAcceptableOrUnknown(data['notes']!, _notesMeta),
       );
     }
+    if (data.containsKey('servings')) {
+      context.handle(
+        _servingsMeta,
+        servings.isAcceptableOrUnknown(data['servings']!, _servingsMeta),
+      );
+    }
     if (data.containsKey('eaten_at')) {
       context.handle(
         _eatenAtMeta,
@@ -40398,6 +40473,10 @@ class $MealLogsTableTable extends MealLogsTable
         DriftSqlType.string,
         data['${effectivePrefix}notes'],
       ),
+      servings: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}servings'],
+      )!,
       eatenAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}eaten_at'],
@@ -40468,6 +40547,13 @@ class MealLogEntry extends DataClass implements Insertable<MealLogEntry> {
   final String? savedMealId;
   final String? notes;
 
+  /// How many servings of the meal this row holds (1 unless a quick log or a
+  /// Recent re-log was made at another count). Recent divides the row's
+  /// items and totals by it, so its rows and previews always show the
+  /// per-serving base and 1 serving means the original amount (112-012).
+  /// Mirrors Supabase `meal_logs.servings` (migration 20260926163500).
+  final double servings;
+
   /// When the meal was eaten (user-adjustable), distinct from createdAt.
   final DateTime? eatenAt;
   final DateTime createdAt;
@@ -40492,6 +40578,7 @@ class MealLogEntry extends DataClass implements Insertable<MealLogEntry> {
     this.recipeId,
     this.savedMealId,
     this.notes,
+    required this.servings,
     this.eatenAt,
     required this.createdAt,
     required this.updatedAt,
@@ -40538,6 +40625,7 @@ class MealLogEntry extends DataClass implements Insertable<MealLogEntry> {
     if (!nullToAbsent || notes != null) {
       map['notes'] = Variable<String>(notes);
     }
+    map['servings'] = Variable<double>(servings);
     if (!nullToAbsent || eatenAt != null) {
       map['eaten_at'] = Variable<DateTime>(eatenAt);
     }
@@ -40587,6 +40675,7 @@ class MealLogEntry extends DataClass implements Insertable<MealLogEntry> {
       notes: notes == null && nullToAbsent
           ? const Value.absent()
           : Value(notes),
+      servings: Value(servings),
       eatenAt: eatenAt == null && nullToAbsent
           ? const Value.absent()
           : Value(eatenAt),
@@ -40624,6 +40713,7 @@ class MealLogEntry extends DataClass implements Insertable<MealLogEntry> {
       recipeId: serializer.fromJson<String?>(json['recipeId']),
       savedMealId: serializer.fromJson<String?>(json['savedMealId']),
       notes: serializer.fromJson<String?>(json['notes']),
+      servings: serializer.fromJson<double>(json['servings']),
       eatenAt: serializer.fromJson<DateTime?>(json['eatenAt']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
@@ -40652,6 +40742,7 @@ class MealLogEntry extends DataClass implements Insertable<MealLogEntry> {
       'recipeId': serializer.toJson<String?>(recipeId),
       'savedMealId': serializer.toJson<String?>(savedMealId),
       'notes': serializer.toJson<String?>(notes),
+      'servings': serializer.toJson<double>(servings),
       'eatenAt': serializer.toJson<DateTime?>(eatenAt),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
@@ -40678,6 +40769,7 @@ class MealLogEntry extends DataClass implements Insertable<MealLogEntry> {
     Value<String?> recipeId = const Value.absent(),
     Value<String?> savedMealId = const Value.absent(),
     Value<String?> notes = const Value.absent(),
+    double? servings,
     Value<DateTime?> eatenAt = const Value.absent(),
     DateTime? createdAt,
     DateTime? updatedAt,
@@ -40701,6 +40793,7 @@ class MealLogEntry extends DataClass implements Insertable<MealLogEntry> {
     recipeId: recipeId.present ? recipeId.value : this.recipeId,
     savedMealId: savedMealId.present ? savedMealId.value : this.savedMealId,
     notes: notes.present ? notes.value : this.notes,
+    servings: servings ?? this.servings,
     eatenAt: eatenAt.present ? eatenAt.value : this.eatenAt,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
@@ -40730,6 +40823,7 @@ class MealLogEntry extends DataClass implements Insertable<MealLogEntry> {
           ? data.savedMealId.value
           : this.savedMealId,
       notes: data.notes.present ? data.notes.value : this.notes,
+      servings: data.servings.present ? data.servings.value : this.servings,
       eatenAt: data.eatenAt.present ? data.eatenAt.value : this.eatenAt,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
@@ -40762,6 +40856,7 @@ class MealLogEntry extends DataClass implements Insertable<MealLogEntry> {
           ..write('recipeId: $recipeId, ')
           ..write('savedMealId: $savedMealId, ')
           ..write('notes: $notes, ')
+          ..write('servings: $servings, ')
           ..write('eatenAt: $eatenAt, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
@@ -40790,6 +40885,7 @@ class MealLogEntry extends DataClass implements Insertable<MealLogEntry> {
     recipeId,
     savedMealId,
     notes,
+    servings,
     eatenAt,
     createdAt,
     updatedAt,
@@ -40817,6 +40913,7 @@ class MealLogEntry extends DataClass implements Insertable<MealLogEntry> {
           other.recipeId == this.recipeId &&
           other.savedMealId == this.savedMealId &&
           other.notes == this.notes &&
+          other.servings == this.servings &&
           other.eatenAt == this.eatenAt &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt &&
@@ -40842,6 +40939,7 @@ class MealLogsTableCompanion extends UpdateCompanion<MealLogEntry> {
   final Value<String?> recipeId;
   final Value<String?> savedMealId;
   final Value<String?> notes;
+  final Value<double> servings;
   final Value<DateTime?> eatenAt;
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
@@ -40866,6 +40964,7 @@ class MealLogsTableCompanion extends UpdateCompanion<MealLogEntry> {
     this.recipeId = const Value.absent(),
     this.savedMealId = const Value.absent(),
     this.notes = const Value.absent(),
+    this.servings = const Value.absent(),
     this.eatenAt = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
@@ -40891,6 +40990,7 @@ class MealLogsTableCompanion extends UpdateCompanion<MealLogEntry> {
     this.recipeId = const Value.absent(),
     this.savedMealId = const Value.absent(),
     this.notes = const Value.absent(),
+    this.servings = const Value.absent(),
     this.eatenAt = const Value.absent(),
     required DateTime createdAt,
     required DateTime updatedAt,
@@ -40921,6 +41021,7 @@ class MealLogsTableCompanion extends UpdateCompanion<MealLogEntry> {
     Expression<String>? recipeId,
     Expression<String>? savedMealId,
     Expression<String>? notes,
+    Expression<double>? servings,
     Expression<DateTime>? eatenAt,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
@@ -40946,6 +41047,7 @@ class MealLogsTableCompanion extends UpdateCompanion<MealLogEntry> {
       if (recipeId != null) 'recipe_id': recipeId,
       if (savedMealId != null) 'saved_meal_id': savedMealId,
       if (notes != null) 'notes': notes,
+      if (servings != null) 'servings': servings,
       if (eatenAt != null) 'eaten_at': eatenAt,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
@@ -40973,6 +41075,7 @@ class MealLogsTableCompanion extends UpdateCompanion<MealLogEntry> {
     Value<String?>? recipeId,
     Value<String?>? savedMealId,
     Value<String?>? notes,
+    Value<double>? servings,
     Value<DateTime?>? eatenAt,
     Value<DateTime>? createdAt,
     Value<DateTime>? updatedAt,
@@ -40998,6 +41101,7 @@ class MealLogsTableCompanion extends UpdateCompanion<MealLogEntry> {
       recipeId: recipeId ?? this.recipeId,
       savedMealId: savedMealId ?? this.savedMealId,
       notes: notes ?? this.notes,
+      servings: servings ?? this.servings,
       eatenAt: eatenAt ?? this.eatenAt,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
@@ -41059,6 +41163,9 @@ class MealLogsTableCompanion extends UpdateCompanion<MealLogEntry> {
     if (notes.present) {
       map['notes'] = Variable<String>(notes.value);
     }
+    if (servings.present) {
+      map['servings'] = Variable<double>(servings.value);
+    }
     if (eatenAt.present) {
       map['eaten_at'] = Variable<DateTime>(eatenAt.value);
     }
@@ -41102,6 +41209,7 @@ class MealLogsTableCompanion extends UpdateCompanion<MealLogEntry> {
           ..write('recipeId: $recipeId, ')
           ..write('savedMealId: $savedMealId, ')
           ..write('notes: $notes, ')
+          ..write('servings: $servings, ')
           ..write('eatenAt: $eatenAt, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
@@ -47779,6 +47887,7 @@ typedef $$ActivitiesTableTableCreateCompanionBuilder =
       Value<String?> completionNotes,
       Value<double?> actualDistanceMiles,
       Value<int?> actualDurationMinutes,
+      Value<String?> completionType,
       Value<String?> nutritionPlanData,
       Value<String?> fuelLogData,
       Value<String?> brickMetadata,
@@ -47854,6 +47963,7 @@ typedef $$ActivitiesTableTableUpdateCompanionBuilder =
       Value<String?> completionNotes,
       Value<double?> actualDistanceMiles,
       Value<int?> actualDurationMinutes,
+      Value<String?> completionType,
       Value<String?> nutritionPlanData,
       Value<String?> fuelLogData,
       Value<String?> brickMetadata,
@@ -48138,6 +48248,11 @@ class $$ActivitiesTableTableFilterComposer
 
   ColumnFilters<int> get actualDurationMinutes => $composableBuilder(
     column: $table.actualDurationMinutes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get completionType => $composableBuilder(
+    column: $table.completionType,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -48506,6 +48621,11 @@ class $$ActivitiesTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get completionType => $composableBuilder(
+    column: $table.completionType,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get nutritionPlanData => $composableBuilder(
     column: $table.nutritionPlanData,
     builder: (column) => ColumnOrderings(column),
@@ -48861,6 +48981,11 @@ class $$ActivitiesTableTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<String> get completionType => $composableBuilder(
+    column: $table.completionType,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<String> get nutritionPlanData => $composableBuilder(
     column: $table.nutritionPlanData,
     builder: (column) => column,
@@ -49026,6 +49151,7 @@ class $$ActivitiesTableTableTableManager
                 Value<String?> completionNotes = const Value.absent(),
                 Value<double?> actualDistanceMiles = const Value.absent(),
                 Value<int?> actualDurationMinutes = const Value.absent(),
+                Value<String?> completionType = const Value.absent(),
                 Value<String?> nutritionPlanData = const Value.absent(),
                 Value<String?> fuelLogData = const Value.absent(),
                 Value<String?> brickMetadata = const Value.absent(),
@@ -49099,6 +49225,7 @@ class $$ActivitiesTableTableTableManager
                 completionNotes: completionNotes,
                 actualDistanceMiles: actualDistanceMiles,
                 actualDurationMinutes: actualDurationMinutes,
+                completionType: completionType,
                 nutritionPlanData: nutritionPlanData,
                 fuelLogData: fuelLogData,
                 brickMetadata: brickMetadata,
@@ -49174,6 +49301,7 @@ class $$ActivitiesTableTableTableManager
                 Value<String?> completionNotes = const Value.absent(),
                 Value<double?> actualDistanceMiles = const Value.absent(),
                 Value<int?> actualDurationMinutes = const Value.absent(),
+                Value<String?> completionType = const Value.absent(),
                 Value<String?> nutritionPlanData = const Value.absent(),
                 Value<String?> fuelLogData = const Value.absent(),
                 Value<String?> brickMetadata = const Value.absent(),
@@ -49247,6 +49375,7 @@ class $$ActivitiesTableTableTableManager
                 completionNotes: completionNotes,
                 actualDistanceMiles: actualDistanceMiles,
                 actualDurationMinutes: actualDurationMinutes,
+                completionType: completionType,
                 nutritionPlanData: nutritionPlanData,
                 fuelLogData: fuelLogData,
                 brickMetadata: brickMetadata,
@@ -60718,6 +60847,7 @@ typedef $$MealLogsTableTableCreateCompanionBuilder =
       Value<String?> recipeId,
       Value<String?> savedMealId,
       Value<String?> notes,
+      Value<double> servings,
       Value<DateTime?> eatenAt,
       required DateTime createdAt,
       required DateTime updatedAt,
@@ -60744,6 +60874,7 @@ typedef $$MealLogsTableTableUpdateCompanionBuilder =
       Value<String?> recipeId,
       Value<String?> savedMealId,
       Value<String?> notes,
+      Value<double> servings,
       Value<DateTime?> eatenAt,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
@@ -60839,6 +60970,11 @@ class $$MealLogsTableTableFilterComposer
 
   ColumnFilters<String> get notes => $composableBuilder(
     column: $table.notes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get servings => $composableBuilder(
+    column: $table.servings,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -60962,6 +61098,11 @@ class $$MealLogsTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<double> get servings => $composableBuilder(
+    column: $table.servings,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get eatenAt => $composableBuilder(
     column: $table.eatenAt,
     builder: (column) => ColumnOrderings(column),
@@ -61052,6 +61193,9 @@ class $$MealLogsTableTableAnnotationComposer
   GeneratedColumn<String> get notes =>
       $composableBuilder(column: $table.notes, builder: (column) => column);
 
+  GeneratedColumn<double> get servings =>
+      $composableBuilder(column: $table.servings, builder: (column) => column);
+
   GeneratedColumn<DateTime> get eatenAt =>
       $composableBuilder(column: $table.eatenAt, builder: (column) => column);
 
@@ -61122,6 +61266,7 @@ class $$MealLogsTableTableTableManager
                 Value<String?> recipeId = const Value.absent(),
                 Value<String?> savedMealId = const Value.absent(),
                 Value<String?> notes = const Value.absent(),
+                Value<double> servings = const Value.absent(),
                 Value<DateTime?> eatenAt = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
@@ -61146,6 +61291,7 @@ class $$MealLogsTableTableTableManager
                 recipeId: recipeId,
                 savedMealId: savedMealId,
                 notes: notes,
+                servings: servings,
                 eatenAt: eatenAt,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
@@ -61172,6 +61318,7 @@ class $$MealLogsTableTableTableManager
                 Value<String?> recipeId = const Value.absent(),
                 Value<String?> savedMealId = const Value.absent(),
                 Value<String?> notes = const Value.absent(),
+                Value<double> servings = const Value.absent(),
                 Value<DateTime?> eatenAt = const Value.absent(),
                 required DateTime createdAt,
                 required DateTime updatedAt,
@@ -61196,6 +61343,7 @@ class $$MealLogsTableTableTableManager
                 recipeId: recipeId,
                 savedMealId: savedMealId,
                 notes: notes,
+                servings: servings,
                 eatenAt: eatenAt,
                 createdAt: createdAt,
                 updatedAt: updatedAt,

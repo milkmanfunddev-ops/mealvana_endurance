@@ -1,12 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:mealvana_endurance/shared/widgets/custom_app_bar_back_button.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:mealvana_endurance/shared/widgets/kyle_design/kyle_design.dart';
+import 'package:mealvana_endurance/shared/widgets/kyle_design/materials/glass.dart';
+import 'package:mealvana_endurance/theme/kyle_design/app_materials.dart';
 import '../../../../shared/services/app_external_deps.dart';
 import '../../../../shared/screens/food_detail_screen.dart';
+import '../../../content/application/content_service.dart';
+import '../../../content/domain/content_keys.dart';
 import '../../application/barcode_scanner_service.dart';
 import '../../../nutrition_plan/domain/food.dart';
 import 'package:mealvana_endurance/shared/services/report/report.dart';
@@ -37,8 +42,19 @@ class _BarcodeScannerScreenState extends ConsumerState<BarcodeScannerScreen>
     with WidgetsBindingObserver {
   MobileScannerController? _controller;
   bool _isScanning = true;
-  bool _isStartingScanner = false;
+
+  /// The start in flight, if any. A second start while one is running
+  /// joins it instead of reaching the platform (finding 28-001).
+  Future<void>? _startInFlight;
+
+  /// True only when this screen stopped a running camera because the app
+  /// went inactive or paused; resume restarts only in that case.
+  bool _stoppedForLifecycle = false;
   String? _lastScannedBarcode;
+
+  /// True while the current lookup came from the Enter sheet, so a format
+  /// failure speaks of typing, not scanning (113-006).
+  bool _lastEntryTyped = false;
   BarcodeScanResult? _lastScanResult;
   bool _flashOn = false;
 
@@ -99,11 +115,14 @@ class _BarcodeScannerScreenState extends ConsumerState<BarcodeScannerScreen>
 
     switch (state) {
       case AppLifecycleState.resumed:
-        _safeStartScanner();
+        _resumeScanner();
         break;
       case AppLifecycleState.inactive:
       case AppLifecycleState.paused:
-        _safeStopScanner();
+        if (_controller!.value.isRunning) {
+          _stoppedForLifecycle = true;
+          _safeStopScanner();
+        }
         break;
       case AppLifecycleState.detached:
       case AppLifecycleState.hidden:
@@ -111,34 +130,57 @@ class _BarcodeScannerScreenState extends ConsumerState<BarcodeScannerScreen>
     }
   }
 
-  /// Start the scanner, tolerating the race where the controller is still
-  /// initializing (a previous start() is still in flight — e.g. app-resume
-  /// firing while the initial start hasn't finished, or the reset button
-  /// being tapped again before the last start completed). In that window
-  /// `start()` throws `MobileScannerException(controllerInitializing)` —
-  /// safe to ignore since the controller will be running once init
-  /// completes. Fixes an app-resume crash: Sentry MEALVANA-ENDURANCE-79.
+  /// Start the scanner. All start() calls in this screen go through here
+  /// (the controller is created with `autoStart: false`).
   ///
-  /// All start() calls in this screen must go through this method (the
-  /// controller itself is created with `autoStart: false`) so the
-  /// `_isStartingScanner` guard and mounted checks apply uniformly.
-  Future<void> _safeStartScanner() async {
-    if (_isStartingScanner || _controller == null) return;
-    _isStartingScanner = true;
-    try {
-      await _controller?.start();
-    } on MobileScannerException catch (e) {
-      // Already starting / still initializing — benign race, start skipped.
-      ref
-          .read(reportProvider)
-          .note(
-            'scanner start skipped: controller still initializing',
-            area: 'barcode_scanning',
-            data: {'code': e.errorCode.name},
-          );
-    } finally {
-      _isStartingScanner = false;
+  /// - A call while a start is in flight joins that start rather than
+  ///   starting again. Sentry MEALVANA-ENDURANCE-79 was the
+  ///   `controllerInitializing` throw from that race.
+  /// - After a start that ended in an error, only a permission error is
+  ///   worth retrying. The iOS plugin leaves its capture session open when a
+  ///   start fails (e.g. no camera), so any later start answers "already
+  ///   started", and that error replaced the useful one on screen
+  ///   (finding 28-001).
+  Future<void> _safeStartScanner() {
+    final controller = _controller;
+    if (controller == null) return Future.value();
+    final inFlight = _startInFlight;
+    if (inFlight != null) return inFlight;
+    final error = controller.value.error;
+    if (error != null &&
+        error.errorCode != MobileScannerErrorCode.permissionDenied) {
+      return Future.value();
     }
+    final start = () async {
+      try {
+        await controller.start();
+      } on MobileScannerException catch (e) {
+        // Still initializing or disposed: benign, start skipped.
+        if (mounted) {
+          ref
+              .read(reportProvider)
+              .note(
+                'scanner start skipped: controller still initializing',
+                area: 'barcode_scanning',
+                data: {'code': e.errorCode.name},
+              );
+        }
+      }
+    }();
+    _startInFlight = start;
+    return start.whenComplete(() {
+      if (identical(_startInFlight, start)) _startInFlight = null;
+    });
+  }
+
+  /// App resumed: wait for any start still in flight (the camera
+  /// permission alert resumes the app while the first start waits on it),
+  /// then restart only a camera that the inactive/paused state stopped.
+  Future<void> _resumeScanner() async {
+    await _startInFlight;
+    if (!mounted || !_stoppedForLifecycle) return;
+    _stoppedForLifecycle = false;
+    await _safeStartScanner();
   }
 
   Future<void> _safeStopScanner() async {
@@ -184,6 +226,56 @@ class _BarcodeScannerScreenState extends ConsumerState<BarcodeScannerScreen>
 
     // Perform barcode lookup
     _lookupBarcode(barcodeValue);
+  }
+
+  String _text(String key) => ref.read(contentServiceProvider).getValue(key);
+
+  /// "Enter": a typed barcode for a device with no working camera
+  /// (testing-wave 28-004). Takes the same lookup → confirm → pop path a
+  /// scan does, from [_lookupBarcode] on.
+  Future<void> _showEnterBarcodeSheet() async {
+    // The glass-sheet recipe (tokens.md §Materials) as develop composes it
+    // elsewhere; mealplanning's showGlassSheet helper is not on develop.
+    final digits = await showModalBottomSheet<String>(
+      context: context,
+      isScrollControlled: true,
+      barrierColor: AppMaterials.sheetScrim,
+      backgroundColor: Colors.transparent,
+      builder: (_) => GlassSheetSurface(
+        child: SafeArea(
+          top: false,
+          child: _EnterBarcodeSheet(
+            title: _text(ContentKeys.barcodeScannerEnterTitle),
+            body: _text(ContentKeys.barcodeScannerEnterBody),
+            hint: _text(ContentKeys.barcodeScannerEnterHint),
+            submit: _text(ContentKeys.barcodeScannerEnterSubmit),
+            lengthMessage: _text(ContentKeys.barcodeScannerEnterLength),
+          ),
+        ),
+      ),
+    );
+    if (digits == null || !mounted) return;
+
+    setState(() {
+      _isScanning = false;
+      _lastScannedBarcode = digits;
+      _lastEntryTyped = true;
+    });
+    await _safeStopScanner();
+    if (!mounted) return;
+
+    ref
+        .read(appExternalDepsProvider)
+        .analytics
+        .track(
+          'barcode_entered',
+          properties: {
+            'code': digits,
+            'category': widget.category,
+            'context': widget.context,
+          },
+        );
+    await _lookupBarcode(digits);
   }
 
   Future<void> _lookupBarcode(String barcode) async {
@@ -269,7 +361,14 @@ class _BarcodeScannerScreenState extends ConsumerState<BarcodeScannerScreen>
       _showNotFoundResult(result.barcode, result.message!);
     } else if (result.isInvalidFormat) {
       _trackLookupFailed('invalid_format', result.barcode);
-      _showInvalidFormatResult(result.barcode, result.message!);
+      // The service's message is about scanning; a typed number that the
+      // format check refuses (say 10 digits) is told to check what it typed.
+      _showInvalidFormatResult(
+        result.barcode,
+        _lastEntryTyped
+            ? _text(ContentKeys.barcodeScannerTypedInvalid)
+            : result.message!,
+      );
     } else {
       _trackLookupFailed('error', result.barcode);
       _showError(result.message ?? 'Unknown error occurred');
@@ -692,6 +791,7 @@ class _BarcodeScannerScreenState extends ConsumerState<BarcodeScannerScreen>
     setState(() {
       _isScanning = true;
       _lastScannedBarcode = null;
+      _lastEntryTyped = false;
       _lastScanResult = null;
     });
     // Route through the guarded starter — a rapid double-tap of the reset
@@ -751,6 +851,7 @@ class _BarcodeScannerScreenState extends ConsumerState<BarcodeScannerScreen>
               _flashOn
                   ? FontAwesomeIcons.bolt.data
                   : FontAwesomeIcons.bolt.data,
+              semanticLabel: 'Flash',
               color: _flashOn ? AppColors.orange : Colors.white,
               size: AppIconSizes.md,
             ),
@@ -764,10 +865,33 @@ class _BarcodeScannerScreenState extends ConsumerState<BarcodeScannerScreen>
             MobileScanner(
               controller: _controller!,
               onDetect: _handleBarcodeDetection,
+              errorBuilder: (context, error) => _buildScannerError(error),
             ),
 
-          // Scanner overlay
-          _buildScannerOverlay(),
+          // Scanner frame and instructions: only over a camera. Once the
+          // camera has errored the error message and its link sit here, so
+          // the frame is dropped and never takes their taps.
+          if (_controller != null)
+            ValueListenableBuilder<MobileScannerState>(
+              valueListenable: _controller!,
+              builder: (context, value, _) {
+                if (value.error != null) return const SizedBox.shrink();
+                return IgnorePointer(
+                  child: Stack(
+                    children: [
+                      _buildScannerOverlay(),
+                      if (_isScanning)
+                        Positioned(
+                          top: 120,
+                          left: 20,
+                          right: 20,
+                          child: _buildInstructions(),
+                        ),
+                    ],
+                  ),
+                );
+              },
+            ),
 
           // Bottom controls
           Positioned(
@@ -776,16 +900,51 @@ class _BarcodeScannerScreenState extends ConsumerState<BarcodeScannerScreen>
             right: 0,
             child: _buildBottomControls(),
           ),
-
-          // Instructions
-          if (_isScanning)
-            Positioned(
-              top: 120,
-              left: 20,
-              right: 20,
-              child: _buildInstructions(),
-            ),
         ],
+      ),
+    );
+  }
+
+  /// The camera could not start. The app's own words (content system)
+  /// instead of the package's error widget with its developer text
+  /// (findings 28-001, 28-004), and a way on: back to the caller's search.
+  Widget _buildScannerError(MobileScannerException error) {
+    final message = _text(switch (error.errorCode) {
+      MobileScannerErrorCode.permissionDenied =>
+        ContentKeys.barcodeScannerPermissionDenied,
+      MobileScannerErrorCode.unsupported => ContentKeys.barcodeScannerNoCamera,
+      _ => ContentKeys.barcodeScannerCameraFailed,
+    });
+    return ColoredBox(
+      color: Colors.black,
+      child: Center(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                key: const ValueKey('barcode.error'),
+                message,
+                style: AppTextStyles.bodyMedium.copyWith(color: Colors.white),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: AppSpacing.md),
+              TextButton(
+                key: const ValueKey('barcode.search_link'),
+                onPressed: () => context.pop(),
+                child: Text(
+                  _text(ContentKeys.barcodeScannerSearchInstead),
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    color: AppColors.electrolyte,
+                    decoration: TextDecoration.underline,
+                    decorationColor: AppColors.electrolyte,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -829,6 +988,14 @@ class _BarcodeScannerScreenState extends ConsumerState<BarcodeScannerScreen>
           onPressed: _switchCamera,
           label: 'Switch',
         ),
+
+        // Type the barcode: the path for a device with no working camera.
+        _buildControlButton(
+          buttonKey: const ValueKey('barcode.enter_button'),
+          icon: FontAwesomeIcons.keyboard.data,
+          onPressed: _showEnterBarcodeSheet,
+          label: _text(ContentKeys.barcodeScannerEnterLabel),
+        ),
       ],
     );
   }
@@ -855,16 +1022,140 @@ class _BarcodeScannerScreenState extends ConsumerState<BarcodeScannerScreen>
           ),
           child: IconButton(
             key: buttonKey,
-            icon: Icon(icon, color: Colors.white, size: AppIconSizes.md),
+            // The caption names the button for a screen reader; the caption
+            // itself is excluded so it is not read twice (testing-wave
+            // 28-006: only the captions read, as text).
+            icon: Icon(
+              icon,
+              semanticLabel: label,
+              color: Colors.white,
+              size: AppIconSizes.md,
+            ),
             onPressed: onPressed,
           ),
         ),
         const SizedBox(height: AppSpacing.xs),
-        Text(
-          label,
-          style: AppTextStyles.smallLabel.copyWith(color: Colors.white),
+        ExcludeSemantics(
+          child: Text(
+            label,
+            style: AppTextStyles.smallLabel.copyWith(color: Colors.white),
+          ),
         ),
       ],
+    );
+  }
+}
+
+/// The "Enter a barcode" sheet: a numeric field that pops its digits.
+/// Owns its text controller so the field outlives the sheet's exit.
+class _EnterBarcodeSheet extends StatefulWidget {
+  const _EnterBarcodeSheet({
+    required this.title,
+    required this.body,
+    required this.hint,
+    required this.submit,
+    required this.lengthMessage,
+  });
+
+  final String title;
+  final String body;
+  final String hint;
+  final String submit;
+
+  /// Shown under the field while the entry is outside 8 to 14 digits; Look
+  /// it up stays disabled until it is (113-006).
+  final String lengthMessage;
+
+  static const int minDigits = 8;
+  static const int maxDigits = 14;
+
+  @override
+  State<_EnterBarcodeSheet> createState() => _EnterBarcodeSheetState();
+}
+
+class _EnterBarcodeSheetState extends State<_EnterBarcodeSheet> {
+  final _controller = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _controller.addListener(() => setState(() {}));
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  String get _digits => _controller.text.replaceAll(RegExp(r'\D'), '');
+
+  bool get _lengthOk =>
+      _digits.length >= _EnterBarcodeSheet.minDigits &&
+      _digits.length <= _EnterBarcodeSheet.maxDigits;
+
+  /// Closes the sheet with the typed digits; an entry outside 8 to 14
+  /// digits stays open (the button is disabled; this covers the keyboard's
+  /// Done).
+  void _submit(String value) {
+    if (!_lengthOk) return;
+    Navigator.of(context).pop(_digits);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.fromLTRB(
+        AppSpacing.lg,
+        AppSpacing.lg,
+        AppSpacing.lg,
+        AppSpacing.lg + MediaQuery.viewInsetsOf(context).bottom,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            widget.title,
+            style: AppTextStyles.sectionTitle.copyWith(
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Text(
+            widget.body,
+            style: AppTextStyles.bodyMedium.copyWith(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.md),
+          KyleInputField(
+            key: const ValueKey('barcode.enter_field'),
+            controller: _controller,
+            hintText: widget.hint,
+            keyboardType: TextInputType.number,
+            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+            autofocus: true,
+            onSubmitted: _submit,
+          ),
+          if (_digits.isNotEmpty && !_lengthOk) ...[
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              widget.lengthMessage,
+              key: const ValueKey('barcode.enter_length_message'),
+              style: AppTextStyles.bodySmall.copyWith(
+                color: Theme.of(context).colorScheme.error,
+              ),
+            ),
+          ],
+          const SizedBox(height: AppSpacing.md),
+          KylePrimaryButton(
+            key: const ValueKey('barcode.enter_submit'),
+            text: widget.submit,
+            onPressed: _lengthOk ? () => _submit(_controller.text) : null,
+          ),
+        ],
+      ),
     );
   }
 }

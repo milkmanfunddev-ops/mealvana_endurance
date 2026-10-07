@@ -27,6 +27,8 @@ import 'test_config.dart';
 /// pump briefly — do NOT pumpAndSettle (startup may show a persistent
 /// spinner); [ensureAuthenticated] uses explicit visibility gates instead.
 Future<void> launchApp() async {
+  // No env file, no run: the probe and the account guards read these values.
+  TestConfig.requireSupabaseEnv();
   _testErrorHandler = FlutterError.onError;
   if (TestConfig.isProd) {
     await prod.main();

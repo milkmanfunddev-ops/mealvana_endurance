@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../../../shared/widgets/swipe_action_background.dart';
+import '../../domain/consumed_totals.dart' show MealTotals;
 import '../../domain/meal_component.dart';
 import '../../domain/portion_quantity.dart';
 
@@ -39,6 +40,7 @@ class _MealComponentEditorState extends State<MealComponentEditor> {
   /// in the list twice — e.g. starting a build from the same logged meal
   /// twice copies the same instances in again — and Flutter threw "Duplicate
   /// keys found" (Sentry DEV-9Y / DEV-9Z).
+  /// A Quick add combo adds the same instances each time too (113-001).
   late List<int> _rowIds;
   int _nextRowId = 0;
 
@@ -104,18 +106,13 @@ class _MealComponentEditorState extends State<MealComponentEditor> {
     );
   }
 
-  int get _totalCalories =>
-      _items.fold(0, (sum, item) => sum + (item.calories ?? 0));
-  double get _totalCarbG =>
-      _items.fold(0.0, (sum, item) => sum + (item.carbG ?? 0));
-  double get _totalProteinG =>
-      _items.fold(0.0, (sum, item) => sum + (item.proteinG ?? 0));
-  double get _totalFatG =>
-      _items.fold(0.0, (sum, item) => sum + (item.fatG ?? 0));
+  /// A macro no item carries reads "—", never 0 (null ≠ 0, 113-004).
+  static String _g(double? v) => v == null ? '\u2014' : v.toStringAsFixed(0);
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final totals = MealTotals.ofComponents(_items);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -204,10 +201,10 @@ class _MealComponentEditorState extends State<MealComponentEditor> {
               const SizedBox(width: 8),
               Flexible(
                 child: Text(
-                  '$_totalCalories kcal  '
-                  'C ${_totalCarbG.toStringAsFixed(0)}g  '
-                  'P ${_totalProteinG.toStringAsFixed(0)}g  '
-                  'F ${_totalFatG.toStringAsFixed(0)}g',
+                  '${totals.calories ?? '\u2014'} kcal  '
+                  'C ${_g(totals.carbsG)}g  '
+                  'P ${_g(totals.proteinG)}g  '
+                  'F ${_g(totals.fatG)}g',
                   style: theme.textTheme.bodySmall?.copyWith(
                     fontWeight: FontWeight.w600,
                   ),

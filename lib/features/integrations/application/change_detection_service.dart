@@ -44,11 +44,22 @@ class ChangeDetectionService {
   /// actual `TotalTime`). M-1.3 provable-fact primacy: such a signal on a
   /// tombstoned row REVIVES it to completed; a plan re-import (the default
   /// classification) still drops against the tombstone.
+  ///
+  /// [deletionWindowStart] / [deletionWindowEnd] — the date window (on local
+  /// `scheduledDateTime`, inclusive at both ends) that [remoteWorkouts] was
+  /// fetched for. A local row outside that window was never in the provider's
+  /// answer, so its absence says nothing; only rows inside the window can be
+  /// flagged as deleted upstream (Finding 30-001: the FinalSurge sync fetches
+  /// upcoming workouts only and was flagging every past workout the day after
+  /// it happened). Either bound may be null to leave that side open; both
+  /// null keeps the old behaviour for callers that fetch everything.
   SyncChangeResult detectChanges({
     required List<Activity> localActivities,
     required List<Activity> remoteWorkouts,
     required String provider,
     Set<String> completionSignalIds = const {},
+    DateTime? deletionWindowStart,
+    DateTime? deletionWindowEnd,
   }) {
     final newActivities = <Activity>[];
     final updatedActivities = <ActivityChange>[];
@@ -281,6 +292,22 @@ class ChangeDetectionService {
       // re-flag them for provider soft-deletion.
       if (localActivity.status == ActivityStatus.deleted) continue;
 
+      // Outside the fetched window the provider was never asked, so absence
+      // is not evidence of deletion (Finding 30-001).
+      if (!_isInsideDeletionWindow(
+        localActivity.scheduledDateTime,
+        start: deletionWindowStart,
+        end: deletionWindowEnd,
+      )) {
+        if (kDebugMode) {
+          debugPrint(
+            '   ⏭ OUTSIDE WINDOW: ${localActivity.title} '
+            '(provider_id: $providerId) — not fetched, not flagged',
+          );
+        }
+        continue;
+      }
+
       // DELETED: Workout exists in local but not in remote
       if (!remoteProviderIds.contains(providerId)) {
         deletedActivityIds.add(localActivity.id);
@@ -296,6 +323,18 @@ class ChangeDetectionService {
       revivedActivities: revivedActivities,
       unhiddenActivities: unhiddenActivities,
     );
+  }
+
+  /// True when [scheduledAt] lies inside the fetched window (inclusive at
+  /// both ends). A null bound leaves that side open.
+  bool _isInsideDeletionWindow(
+    DateTime scheduledAt, {
+    required DateTime? start,
+    required DateTime? end,
+  }) {
+    if (start != null && scheduledAt.isBefore(start)) return false;
+    if (end != null && scheduledAt.isAfter(end)) return false;
+    return true;
   }
 
   /// Determine if schedule change is significant enough to flag nutrition plan as stale
@@ -353,6 +392,12 @@ class ChangeDetectionService {
 
   /// Check if activity has minor changes (title, notes, pace, etc.)
   bool _hasMinorChanges(Activity oldActivity, Activity newActivity) {
+    // A platform-reported completion the stored row does not carry yet
+    // (final-surge-completion.PROPOSED.md FSC-3). Without this a completed
+    // payload whose planned fields match the stored plan reads UNCHANGED
+    // and the row stays planned (Finding 29-002).
+    if (_bringsNewProviderCompletion(oldActivity, newActivity)) return true;
+
     // Compare key fields that might change without affecting schedule
     if (oldActivity.title != newActivity.title) return true;
     if (oldActivity.notes != newActivity.notes) return true;
@@ -428,6 +473,27 @@ class ChangeDetectionService {
     }
 
     return false;
+  }
+
+  /// True when [remote] reports a platform completion that [local] does not
+  /// already hold with the same measurements. A Garmin-completed row keeps
+  /// Garmin's measurements (the repository merge never overwrites them), so
+  /// it never counts as a change; nor does a brick-archived segment.
+  bool _bringsNewProviderCompletion(Activity local, Activity remote) {
+    if (!remote.isProviderCompleted) return false;
+    if (local.status == ActivityStatus.archivedForBrick) return false;
+    if (local.status == ActivityStatus.completed &&
+        local.garminSummaryId != null) {
+      return false;
+    }
+    // A measurement the payload leaves out is kept by the merge, so only a
+    // sent value that differs counts as a change.
+    bool differs(Object? sent, Object? held) => sent != null && sent != held;
+    return !local.isProviderCompleted ||
+        differs(remote.actualTime, local.actualTime) ||
+        differs(remote.completedAt, local.completedAt) ||
+        differs(remote.actualDistanceMiles, local.actualDistanceMiles) ||
+        differs(remote.actualDurationMinutes, local.actualDurationMinutes);
   }
 
   String _fingerprint(Activity activity) {

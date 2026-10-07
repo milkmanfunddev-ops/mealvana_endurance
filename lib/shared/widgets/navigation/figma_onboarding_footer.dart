@@ -62,6 +62,8 @@ class FigmaOnboardingFooter extends StatelessWidget {
               child: IconButton(
                 key: backButtonKey,
                 onPressed: isLoading ? null : onBack,
+                // Named (119-005: a Button with an empty label).
+                tooltip: MaterialLocalizations.of(context).backButtonTooltip,
                 icon: const Icon(
                   Icons.arrow_back,
                   size: 28,

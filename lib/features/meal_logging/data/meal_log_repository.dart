@@ -13,6 +13,7 @@ import '../../../shared/database/database_provider.dart';
 import '../../../shared/domain/decode_issue.dart';
 import '../../../shared/services/report/decode_issue_report.dart';
 import '../../../shared/services/report/report.dart';
+import '../../../shared/services/sync/sync_coordinator.dart';
 import '../../../shared/services/sync/sync_dependency_graph.dart';
 import '../domain/meal_log.dart';
 
@@ -20,10 +21,13 @@ part 'meal_log_repository.g.dart';
 
 @riverpod
 MealLogRepository mealLogRepository(Ref ref) {
+  // The coordinator is keepAlive, so the notifier outlives this provider.
+  final sync = ref.read(syncCoordinatorProvider.notifier);
   return MealLogRepository(
     supabase: Supabase.instance.client,
     database: ref.read(appDatabaseProvider),
     report: ref.read(reportProvider),
+    onUploadFailed: () => sync.markUploadRetryOwed('meal_logs'),
   );
 }
 
@@ -39,6 +43,12 @@ MealLogRepository mealLogRepository(Ref ref) {
 /// - **Upload**: [uploadDirtyRecords] upserts via `onConflict: 'id'` (primary
 ///   key — never column-based `onConflict` due to the PostgREST partial-index
 ///   gotcha documented in MEMORY.md).
+/// - **Retry**: an immediate upload that fails (offline, a timed-out insert)
+///   leaves the row dirty and tells the coordinator, through
+///   [onUploadFailed], that `meal_logs` is owed a retry. The coordinator then
+///   runs the upload on the next `ensureSynced` (opening Log a Meal, the
+///   timeline, pull-to-refresh) even while the table is fresh, and when the
+///   network comes back or the app resumes (testing-wave 112-001).
 ///
 /// **DateTime ↔ Supabase.** Drift stores [DateTime] columns as Unix timestamps
 /// locally. [toSupabaseJson] converts to UTC ISO-8601 strings.
@@ -49,9 +59,11 @@ class MealLogRepository with SyncableRepository {
     required SupabaseClient supabase,
     required AppDatabase database,
     required Report report,
+    void Function()? onUploadFailed,
   }) : _supabase = supabase,
        _database = database,
-       _report = report;
+       _report = report,
+       _onUploadFailed = onUploadFailed;
 
   final SupabaseClient _supabase;
   final AppDatabase _database;
@@ -60,6 +72,10 @@ class MealLogRepository with SyncableRepository {
   /// Where a malformed stored column is reported (the row still decodes,
   /// with the fallback value).
   DecodeIssue get _onIssue => _report.decodeIssue('meal_logging');
+
+  /// Called after an immediate upload fails and its rows stay dirty, so the
+  /// sync coordinator marks this repository owed a retry.
+  final void Function()? _onUploadFailed;
 
   static const _uuid = Uuid();
 
@@ -154,12 +170,10 @@ class MealLogRepository with SyncableRepository {
       if (dirtyEntries.isEmpty) return UploadResult.nothingToUpload();
 
       final logs = _decodeEntries(dirtyEntries);
-      final payload = logs.map((l) => l.toSupabaseJson()).toList();
 
-      // CRITICAL: always use onConflict: 'id' (primary key).
-      // Never use column-based onConflict — see PostgREST partial-index gotcha
-      // in MEMORY.md.
-      await _supabase.from('meal_logs').upsert(payload, onConflict: 'id');
+      // A dirty row may be new to the server or an edit of a row it holds;
+      // [_sendChanged] keeps the server's created time either way.
+      await _sendChanged(logs);
 
       await _database.batch((batch) {
         for (final log in logs) {
@@ -271,34 +285,54 @@ class MealLogRepository with SyncableRepository {
   }
 
   /// Most recent non-deleted logs for [userId], newest first, up to [limit]
-  /// rows. Deduplicated by lowercase name so the "Recent" section shows unique
-  /// meal types rather than duplicating the same meal logged many times.
+  /// rows, each at its per-serving base ([MealLog.perServing]), so the
+  /// "Recent" section shows unique meals and 1 serving always means the
+  /// original amount (112-012). Deduplicated by lowercase name plus the
+  /// items' names: two same-named meals with different items both show.
   ///
   /// Deduplication is performed in Dart (not SQL) for portability.
-  Future<List<MealLog>> getRecentLogs(String userId, {int limit = 25}) async {
-    final entries =
-        await (_database.select(_database.mealLogsTable)
-              ..where(
-                (t) => t.userId.equals(userId) & t.isDeleted.equals(false),
-              )
-              ..orderBy([(t) => OrderingTerm.desc(t.createdAt)])
-              ..limit(limit * 3)) // over-fetch to survive deduplication
-            .get();
+  Future<List<MealLog>> getRecentLogs(String userId, {int limit = 25}) async =>
+      _dedupeRecent(await _recentQuery(userId, limit).get(), limit);
 
+  /// [getRecentLogs] as a Drift stream: re-emits on every local write to
+  /// `meal_logs`, so a meal just logged moves to the top at once
+  /// (testing-wave 26-005).
+  Stream<List<MealLog>> watchRecentLogs(String userId, {int limit = 25}) =>
+      _recentQuery(
+        userId,
+        limit,
+      ).watch().map((entries) => _dedupeRecent(entries, limit));
+
+  SimpleSelectStatement<$MealLogsTableTable, MealLogEntry> _recentQuery(
+    String userId,
+    int limit,
+  ) => _database.select(_database.mealLogsTable)
+    ..where((t) => t.userId.equals(userId) & t.isDeleted.equals(false))
+    ..orderBy([(t) => OrderingTerm.desc(t.createdAt)])
+    ..limit(limit * 3); // over-fetch to survive deduplication
+
+  List<MealLog> _dedupeRecent(List<MealLogEntry> entries, int limit) {
     final seen = <String>{};
     final result = <MealLog>[];
 
     for (final entry in entries) {
       final log = MealLog.fromDriftEntry(entry, onIssue: _onIssue);
       if (log == null) continue;
-      final key = log.name.toLowerCase().trim();
-      if (seen.add(key)) {
-        result.add(log);
+      if (seen.add(_recentKey(log))) {
+        result.add(log.perServing());
         if (result.length >= limit) break;
       }
     }
 
     return result;
+  }
+
+  /// Name plus item names, lowercased: a re-log at another serving count has
+  /// the same items (scaled) and folds in; a one-line copy of a two-item meal
+  /// does not.
+  static String _recentKey(MealLog log) {
+    final items = log.components.map((c) => c.name.toLowerCase().trim());
+    return '${log.name.toLowerCase().trim()}|${items.join('|')}';
   }
 
   // ========================================================================
@@ -334,7 +368,7 @@ class MealLogRepository with SyncableRepository {
       },
     );
 
-    _scheduleImmediateUpload(toSave, label: 'insert');
+    _scheduleImmediateUpload(toSave, label: 'insert', isNew: true);
     return toSave;
   }
 
@@ -508,6 +542,13 @@ class MealLogRepository with SyncableRepository {
     return _upsertRemotePreservingDirty(remoteRows);
   }
 
+  /// The write half of [syncFromRemote] on its own: server-shaped rows in,
+  /// Drift rows out, dirty local rows kept. Lets a seam test feed the rows
+  /// a `meal_logs` SELECT answers with, without a Supabase client.
+  @visibleForTesting
+  Future<int> applyRemoteRows(List<dynamic> remoteRows) =>
+      _upsertRemotePreservingDirty(remoteRows);
+
   // ========================================================================
   // Private Helpers
   // ========================================================================
@@ -566,12 +607,21 @@ class MealLogRepository with SyncableRepository {
     return upsertedCount;
   }
 
-  void _scheduleImmediateUpload(MealLog log, {required String label}) {
+  void _scheduleImmediateUpload(
+    MealLog log, {
+    required String label,
+    bool isNew = false,
+  }) {
     unawaited(() async {
       try {
-        await _supabase
-            .from('meal_logs')
-            .upsert(log.toSupabaseJson(), onConflict: 'id');
+        // A new row carries a fresh id, so the plain upsert is an insert and
+        // sends the phone's created time; an update, delete or restore may
+        // land on a row the server holds and must keep the server's.
+        if (isNew) {
+          await sendUpsert([log.toSupabaseJson()]);
+        } else {
+          await _sendChanged([log]);
+        }
         await _clearDirtyFlag(log.id);
       } catch (e, stackTrace) {
         _report.degraded(
@@ -582,23 +632,21 @@ class MealLogRepository with SyncableRepository {
           extra: {'logId': log.id, 'url': 'supabase:meal_logs:$label'},
           message: 'Immediate $label upload failed; log stays dirty for retry',
         );
+        _onUploadFailed?.call();
       }
     }());
   }
 
   /// Fire-and-forget bulk upsert for [insertLogs] — one round-trip for the
-  /// whole batch instead of N per-row uploads. Rows stay dirty on failure so
-  /// the normal sync path retries them.
+  /// whole batch instead of N per-row uploads. Rows stay dirty on failure and
+  /// the coordinator is told a retry is owed.
   void _scheduleImmediateBulkUpload(List<MealLog> logs) {
     if (logs.isEmpty) return;
     unawaited(() async {
       try {
-        await _supabase
-            .from('meal_logs')
-            .upsert(
-              logs.map((l) => l.toSupabaseJson()).toList(growable: false),
-              onConflict: 'id',
-            );
+        await sendUpsert(
+          logs.map((l) => l.toSupabaseJson()).toList(growable: false),
+        );
         await _clearDirtyFlags(logs.map((l) => l.id).toList(growable: false));
       } catch (e, stackTrace) {
         _report.degraded(
@@ -613,8 +661,47 @@ class MealLogRepository with SyncableRepository {
           message:
               'Immediate bulk insert upload failed; logs stay dirty for retry',
         );
+        _onUploadFailed?.call();
       }
     }());
+  }
+
+  /// Upload [logs] that may already exist on the server without touching
+  /// their server `created_at` (testing-wave 27-002).
+  ///
+  /// Two round trips: first an insert-if-missing with the full row, so a row
+  /// the server never saw (logged offline, then edited) is created with the
+  /// phone's created time; then the overwrite, which carries no `created_at`,
+  /// so a row the server holds keeps the value it first wrote. The local copy
+  /// holds whole seconds, so sending it back would cut the server's fraction.
+  Future<void> _sendChanged(List<MealLog> logs) async {
+    if (logs.isEmpty) return;
+    await sendUpsert(
+      logs.map((l) => l.toSupabaseJson()).toList(growable: false),
+      ignoreDuplicates: true,
+    );
+    await sendUpsert(
+      logs.map((l) => l.toSupabaseUpdateJson()).toList(growable: false),
+    );
+  }
+
+  /// The one place a `meal_logs` upsert crosses the wire.
+  ///
+  /// CRITICAL: always `onConflict: 'id'` (primary key). Never a column-based
+  /// `onConflict` — see the PostgREST partial-index gotcha in MEMORY.md.
+  /// [ignoreDuplicates] makes it an insert-if-missing (`ON CONFLICT DO
+  /// NOTHING`): rows the server already holds are left untouched.
+  ///
+  /// Overridable so a test can read the payload without a Supabase client.
+  @protected
+  @visibleForTesting
+  Future<void> sendUpsert(
+    List<Map<String, dynamic>> rows, {
+    bool ignoreDuplicates = false,
+  }) async {
+    await _supabase
+        .from('meal_logs')
+        .upsert(rows, onConflict: 'id', ignoreDuplicates: ignoreDuplicates);
   }
 
   Future<void> _clearDirtyFlag(String logId) async {

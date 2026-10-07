@@ -220,6 +220,38 @@ class RevenueCatService {
     }
   }
 
+  /// Forget the signed-in user: the SDK returns to a fresh anonymous customer
+  /// with an empty CustomerInfo cache.
+  ///
+  /// Without this, sign-out left the SDK identified as the last account, so a
+  /// signed-out phone kept fetching that customer's entitlement and the next
+  /// person's first status read could be the previous person's subscription
+  /// (Findings 03-002, 32-002). No-op before configure and when the SDK is
+  /// already anonymous (`Purchases.logOut` throws for an anonymous user).
+  Future<void> logOut() async {
+    if (!_configured) {
+      _crumb('logOut skipped: SDK not configured');
+      return;
+    }
+
+    try {
+      if (await Purchases.isAnonymous) {
+        _crumb('logOut skipped: already anonymous');
+        return;
+      }
+      await Purchases.logOut();
+      _crumb('logged out');
+    } catch (e, st) {
+      await _r.fault(
+        e,
+        stackTrace: st,
+        area: _area,
+        message: 'logOut failed',
+        tags: _tags('logOut failed'),
+      );
+    }
+  }
+
   /// Fetch the current RevenueCat offering catalogue.
   ///
   /// Returns null when the SDK is not configured or on any error.

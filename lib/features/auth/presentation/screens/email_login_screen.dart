@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -9,14 +11,27 @@ import '../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../../../shared/services/app_external_deps.dart';
 import '../../../../shared/services/report/report.dart';
 import '../../../content/application/content_service.dart';
+import '../../../content/domain/content_keys.dart';
 import '../../../coach_mode/application/coach_service.dart';
 import '../providers/post_onboarding_auth_controller.dart';
 import '../../application/email_auth_service.dart';
+import '../../domain/auth_exceptions.dart';
+import 'verify_email_screen.dart';
 
 /// Email Login Screen
 /// Allows users to sign in with email and password
+///
+/// A failed Log In says why in one line under the form, which stays until
+/// the next edit (testing-wave 125-002, 125-007): the email or password is
+/// wrong, there is no connection, or it failed. An address that never entered
+/// its signup code is not a failure: the code is resent and Verify your
+/// email opens for it (124-001).
 class EmailLoginScreen extends ConsumerStatefulWidget {
-  const EmailLoginScreen({super.key});
+  const EmailLoginScreen({super.key, this.initialEmail});
+
+  /// An address to start with: the one Verify your email's "Log in" offered
+  /// (124-002).
+  final String? initialEmail;
 
   @override
   ConsumerState<EmailLoginScreen> createState() => _EmailLoginScreenState();
@@ -24,10 +39,23 @@ class EmailLoginScreen extends ConsumerStatefulWidget {
 
 class _EmailLoginScreenState extends ConsumerState<EmailLoginScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _emailController = TextEditingController();
+  late final _emailController = TextEditingController(
+    text: widget.initialEmail ?? '',
+  );
   final _passwordController = TextEditingController();
 
   bool _obscurePassword = true;
+
+  /// The line under the form after a failed Log In; cleared by the next edit.
+  String? _errorLine;
+
+  /// True from the Log In tap until this screen is left. The controller's
+  /// state stops loading as soon as the session lands, but the screen still
+  /// has work before it navigates (the controller's trailing analytics, the
+  /// pop, or settling the app gate); reading busy from the controller alone
+  /// showed the form enabled for about a second (Finding 12-003). Cleared
+  /// only when the login fails, never on success.
+  bool _submitting = false;
 
   @override
   void initState() {
@@ -50,6 +78,9 @@ class _EmailLoginScreenState extends ConsumerState<EmailLoginScreen> {
     if (!_formKey.currentState!.validate()) {
       return;
     }
+
+    if (_submitting) return;
+    setState(() => _submitting = true);
 
     final controller = ref.read(postOnboardingAuthControllerProvider.notifier);
     final contentService = ref.read(contentServiceProvider);
@@ -91,26 +122,78 @@ class _EmailLoginScreenState extends ConsumerState<EmailLoginScreen> {
         context.go('/main');
       }
     } else if (!success && mounted) {
-      // Error message shown by controller via snackbar
-      MealvanaSnackbar.showError(
-        context,
-        contentService.getValue(
-          'auth.login.error_failed',
-          defaultValue: 'Login failed. Please check your credentials.',
-        ),
+      setState(() => _submitting = false);
+      final error = ref.read(postOnboardingAuthControllerProvider).error;
+      if (error is EmailNotConfirmedException) {
+        await _finishVerifying(error.email);
+        return;
+      }
+      // One line under the form, until the next edit (125-002, 125-007).
+      setState(() {
+        _errorLine = switch (error) {
+          WrongCredentialsException() => contentService.getValue(
+            ContentKeys.loginErrorWrongCredentials,
+          ),
+          NoConnectionException() => contentService.getValue(
+            ContentKeys.loginErrorNoConnection,
+          ),
+          _ => contentService.getValue(ContentKeys.loginErrorFailed),
+        };
+      });
+    }
+  }
+
+  /// The account exists but never entered its signup code (124-001): resend
+  /// it (best effort; the server may say the last one is recent) and open
+  /// Verify your email. A verified code continues the way a signup does when
+  /// the onboarding answers are still in memory; after a relaunch they are
+  /// not (the draft lives in memory only), and the account continues as a
+  /// login, which the startup flow routes to onboarding if it has no profile.
+  Future<void> _finishVerifying(String email) async {
+    final emailAuth = ref.read(emailAuthServiceProvider.notifier);
+    final report = ref.read(reportProvider);
+    try {
+      await emailAuth.resendVerificationCode(email: email);
+    } catch (e) {
+      // A recent code may still be in the inbox; the screen can Resend.
+      await report.note(
+        'Verification code send before Verify failed; Resend remains',
+        area: 'auth',
+        data: {'error': e.toString()},
       );
     }
+    if (!mounted) return;
+    final verified = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(
+        builder: (_) => VerifyEmailScreen(email: email),
+        fullscreenDialog: true,
+      ),
+    );
+    if (verified != true || !mounted) return;
+    // Develop hands back through the pop result (mealplanning uses its
+    // emailAuthHandoffProvider and app gate here): the screen beneath
+    // finishes as a login, which keeps any onboarding draft in memory.
+    if (context.canPop()) {
+      context.pop(true);
+    } else {
+      context.go('/main');
+    }
+  }
+
+  void _clearErrorLine() {
+    if (_errorLine != null) setState(() => _errorLine = null);
   }
 
   @override
   Widget build(BuildContext context) {
     final asyncState = ref.watch(postOnboardingAuthControllerProvider);
+    final isBusy = asyncState.isLoading || _submitting;
     final contentService = ref.watch(contentServiceProvider);
     final emailAuthService = ref.watch(emailAuthServiceProvider.notifier);
 
     return AdaptivePageScaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: _buildAppBar(context, isLoading: asyncState.isLoading),
+      appBar: _buildAppBar(context, isLoading: isBusy),
       contentWidth: AdaptiveContentWidth.narrow,
       body: Stack(
         children: [
@@ -180,6 +263,7 @@ class _EmailLoginScreenState extends ConsumerState<EmailLoginScreen> {
                       ),
                     ),
                     style: AppTextStyles.bodyMedium,
+                    onChanged: (_) => _clearErrorLine(),
                     validator: (value) {
                       return emailAuthService.validateEmail(value ?? '');
                     },
@@ -229,11 +313,24 @@ class _EmailLoginScreenState extends ConsumerState<EmailLoginScreen> {
                       ),
                     ),
                     style: AppTextStyles.bodyMedium,
+                    onChanged: (_) => _clearErrorLine(),
                     validator: (value) {
                       if ((value ?? '').isEmpty) return 'Password is required';
                       return null;
                     },
                   ),
+
+                  // Why the last Log In failed (125-002, 125-007).
+                  if (_errorLine != null) ...[
+                    const SizedBox(height: AppSpacing.sm),
+                    Text(
+                      _errorLine!,
+                      key: const ValueKey('login.error_line'),
+                      style: AppTextStyles.bodySmall.copyWith(
+                        color: Theme.of(context).colorScheme.error,
+                      ),
+                    ),
+                  ],
 
                   const SizedBox(height: AppSpacing.md),
 
@@ -243,7 +340,7 @@ class _EmailLoginScreenState extends ConsumerState<EmailLoginScreen> {
                     child: GestureDetector(
                       key: const ValueKey('login.forgot_password_button'),
                       behavior: HitTestBehavior.opaque,
-                      onTap: asyncState.isLoading
+                      onTap: isBusy
                           ? null
                           : () => context.push('/auth/forgot-password'),
                       child: Padding(
@@ -270,14 +367,12 @@ class _EmailLoginScreenState extends ConsumerState<EmailLoginScreen> {
                   KylePrimaryButton(
                     key: const ValueKey('login.log_in_button'),
                     text: contentService.getValue(
-                      asyncState.isLoading
+                      isBusy
                           ? 'auth.login.logging_in_button'
                           : 'auth.login.button',
-                      defaultValue: asyncState.isLoading
-                          ? 'Logging in...'
-                          : 'Log In',
+                      defaultValue: isBusy ? 'Logging in...' : 'Log In',
                     ),
-                    onPressed: asyncState.isLoading ? null : _handleLogin,
+                    onPressed: isBusy ? null : _handleLogin,
                   ),
 
                   const SizedBox(height: AppSpacing.md),
@@ -289,9 +384,7 @@ class _EmailLoginScreenState extends ConsumerState<EmailLoginScreen> {
                       'auth.email_signup.back_button',
                       defaultValue: 'Back',
                     ),
-                    onPressed: asyncState.isLoading
-                        ? null
-                        : () => context.pop(),
+                    onPressed: isBusy ? null : () => context.pop(),
                   ),
 
                   const SizedBox(height: AppSpacing.xxl),
@@ -301,7 +394,7 @@ class _EmailLoginScreenState extends ConsumerState<EmailLoginScreen> {
           ),
 
           // Loading overlay
-          if (asyncState.isLoading)
+          if (isBusy)
             Container(
               color: Theme.of(
                 context,

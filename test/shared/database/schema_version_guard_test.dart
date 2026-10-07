@@ -114,13 +114,24 @@ void main() {
 /// claimed 21 would leave a dev-TestFlight device with from == to, so Drift
 /// would skip onUpgrade and the integrity check would wipe the local database:
 /// the very failure this guard exists for, arriving from the other direction.
-const _pinnedVersion = 22;
+///
+/// 2026-10-07: v23 for `activities.completion_type` (mealplanning ticket 99,
+/// backported by develop-2026-10 ticket 29 under mealplanning's number; v24
+/// is `meal_logs.servings`, next). The step also re-adds duration_source
+/// idempotently for a mealplanning-lineage device whose v22 was home location.
+///
+/// 2026-10-07: v24 for `meal_logs.servings` (mealplanning ticket 135, same
+/// number; Supabase migration 20260926163500). Its step repeats the
+/// duration_source catch-up for a mealplanning-lineage device at v23.
+const _pinnedVersion = 24;
 // 2026-10-06 branch split: develop is rebuilt from the release line without
 // the Vana tables, so develop's v22 fingerprint IS the release line's again.
 // (The 2026-10-01 re-pin to develop's Vana-inclusive value, bf2ff574cb0b…,
 // lives on the `mealplanning` branch, which still carries those tables.)
+// 2026-10-07: re-pinned for v23 (v22 was 242db9fc97e1…), then for v24
+// (v23 was 138f2619e791…).
 const _pinnedFingerprint =
-    '242db9fc97e1e64101fa5ba39fd7110d1f04ca51d16c60da80063d9f722c1d2a';
+    '6439b5387ef989a9f51f3ca56856140a34e92e9333bb95230632d5c16c1a0e90';
 
 /// The migration ladder in app_database.dart starts at `from < 7`; versions
 /// 1–6 predate it and were consolidated. Only guard from here upward.

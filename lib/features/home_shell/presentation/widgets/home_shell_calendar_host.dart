@@ -91,12 +91,12 @@ class _HomeShellCalendarHostState extends ConsumerState<HomeShellCalendarHost> {
         ref.read(calendarSelectedDateProvider.notifier).setDate(date);
         Navigator.of(context).pop();
       },
-      // CS-6: select + navigate to the current day (the sheet stays, month
-      // jumps into view).
+      // CS-6: select + navigate to the current day. Navigating dismisses,
+      // the same as a day tap (CS-4): Today used to leave the sheet open
+      // until it was swiped down (Finding 117-004).
       onTodayTap: () {
-        final today = _today;
-        ref.read(calendarSelectedDateProvider.notifier).setDate(today);
-        setState(() => _month = DateTime(today.year, today.month, 1));
+        ref.read(calendarSelectedDateProvider.notifier).setDate(_today);
+        Navigator.of(context).pop();
       },
       onDismiss: () => Navigator.of(context).pop(),
     );

@@ -26,7 +26,9 @@ import '../../../shared/models/dirty_record_backup.dart';
 import '../presentation/widgets/dirty_record_recovery_dialog.dart';
 import '../../ai_credits/data/revenuecat_service.dart';
 import '../../auth/application/auth_service.dart';
+import '../../auth/data/user_repository.dart';
 import '../../../shared/services/launch_trail.dart';
+import '../../auth/presentation/providers/password_recovery_controller.dart';
 
 /// Service responsible for providing individual startup operations using Drift
 /// Following Andrea Bizzotto's app initialization patterns
@@ -323,6 +325,13 @@ class AppStartupService {
           NotificationService.configureRemotePush(
             oneSignalAppId: ref.read(appConfigProvider).oneSignalAppId,
           );
+          // Ticket 138 (125-004): the OS's answer lands on the profile, local
+          // first, and follows later changes in iOS Settings on resume. Wired
+          // here, not in configure(), because configure() waits for
+          // analytics consent and storing the answer is not tracking.
+          NotificationService.configurePermissionAnswer(
+            _storeNotificationPermission,
+          );
           await NotificationService.initialize();
         });
 
@@ -403,6 +412,27 @@ class AppStartupService {
 
   /// Initialize analytics service with proper user identification
   /// Called after first frame to avoid Android DeviceInfoPlugin deadlock
+  /// Stores the OS's notification answer on the signed-in athlete's
+  /// profile (`users.notifications_enabled`, ticket 138). Runs on the ask
+  /// after sign-in and on a resume that finds the answer changed; repeating
+  /// it is safe, the same value lands again.
+  Future<void> _storeNotificationPermission(bool granted) async {
+    final users = await ref.read(userRepositoryProvider.future);
+    final user = await users.getCurrentUser();
+    if (user == null) {
+      // D9: the answer is dropped until a profile exists; the next resume
+      // that sees a change, or the next launch's ask, stores it.
+      LaunchTrail.add('notification answer not stored: no local profile');
+      await _report.note(
+        'Notification permission answer not stored: no local profile',
+        area: 'push',
+        data: {'granted': granted},
+      );
+      return;
+    }
+    await users.setNotificationsEnabled(user.id, granted);
+  }
+
   Future<void> _initializeAnalytics() async {
     // CONSENT GATE. Nothing may reach Mixpanel until the user has said yes —
     // this method both initializes the SDK and fires `app_opened`, so an
@@ -575,11 +605,59 @@ class AppStartupService {
     return DeviceInfoService.instance.deviceId;
   }
 
+  /// A password reset the app was quit on (testing-wave 124-003): the right
+  /// reset code signed the phone in, Set New Password was never finished,
+  /// and `PasswordRecoveryController.recoveryPendingKey` is still set. That
+  /// session is signed out here, before the router reads any session, so the
+  /// relaunch lands on Log In and the emailed code alone never signs a phone
+  /// in. The marker is cleared first, so a sign-out that throws is not
+  /// retried on every launch. Never throws.
+  ///
+  /// Running twice: the second run finds no marker and returns.
+  Future<void> endAbandonedRecovery() async {
+    try {
+      final prefs = ref.read(appExternalDepsProvider).sharedPreferences;
+      if (prefs.getBool(PasswordRecoveryController.recoveryPendingKey) !=
+          true) {
+        return;
+      }
+      await prefs.remove(PasswordRecoveryController.recoveryPendingKey);
+      if (_supabase.auth.currentSession == null) {
+        // Marker without a session: nothing to sign out, but say so (D9).
+        LaunchTrail.add('abandoned recovery: marker cleared, no session');
+        await _report.note(
+          'Abandoned recovery marker found with no session; cleared',
+          area: 'auth',
+        );
+        return;
+      }
+      LaunchTrail.add('abandoned recovery: signing the recovery session out');
+      _report.info(
+        'Recovery session found at startup without a new password; signing out',
+        area: 'auth',
+      );
+      await _supabase.auth.signOut();
+    } catch (e, stackTrace) {
+      // Swallowed so startup continues; recorded (D9).
+      LaunchTrail.add('abandoned recovery: sign-out FAILED');
+      await _report.fault(
+        e,
+        stackTrace: stackTrace,
+        area: 'auth',
+        message: 'Ending the abandoned recovery session failed',
+      );
+    }
+  }
+
   /// Check if user has existing session and restore it
   Future<void> checkUserSession() async {
     try {
       final database = ref.read(appDatabaseProvider);
-      final user = await database.userDao.getLocalUserProfile();
+      // The signed-in account's profile only (ticket 102): another account's
+      // rows on the phone must never name the analytics identity.
+      final user = await database.userDao.getLocalUserProfile(
+        _supabase.auth.currentUser?.id,
+      );
 
       if (user != null) {
         // User exists locally - identify them properly in analytics

@@ -61,6 +61,7 @@ class ActivityMapper {
       completionNotes: row.completionNotes,
       actualDistanceMiles: row.actualDistanceMiles,
       actualDurationMinutes: row.actualDurationMinutes,
+      completionType: row.completionType,
       nutritionPlanDataRaw: row.nutritionPlanData,
       fuelLogDataRaw: row.fuelLogData,
       notes: row.notes,
@@ -141,6 +142,7 @@ class ActivityMapper {
       completionNotes: json['completion_notes'] as String?,
       actualDistanceMiles: (json['actual_distance_miles'] as num?)?.toDouble(),
       actualDurationMinutes: (json['actual_duration_minutes'] as num?)?.toInt(),
+      completionType: json['completion_type'] as String?,
       nutritionPlanDataRaw: json['nutrition_plan_data'],
       fuelLogDataRaw: json['fuel_log_data'],
       notes: json['notes'] as String?,
@@ -219,6 +221,7 @@ class ActivityMapper {
     required String? completionNotes,
     required double? actualDistanceMiles,
     required int? actualDurationMinutes,
+    required String? completionType,
     required dynamic nutritionPlanDataRaw,
     required dynamic fuelLogDataRaw,
     required String? notes,
@@ -334,6 +337,7 @@ class ActivityMapper {
       completionNotes: completionNotes,
       actualDistanceMiles: actualDistanceMiles,
       actualDurationMinutes: actualDurationMinutes,
+      completionType: completionType,
       nutritionPlanData: parsedNutritionPlanData,
       fuelLogData: parsedFuelLogData,
       notes: notes,
@@ -429,6 +433,7 @@ class ActivityMapper {
       completedAt: Value(activity.completedAt),
       actualDistanceMiles: Value(activity.actualDistanceMiles),
       actualDurationMinutes: Value(activity.actualDurationMinutes),
+      completionType: Value(activity.completionType),
       completionRating: Value(activity.completionRating),
       completionNotes: Value(activity.completionNotes),
       nutritionPlanData: Value(
@@ -531,6 +536,12 @@ class ActivityMapper {
       'completed_at': activity.completedAt?.toIso8601String(),
       'actual_distance_miles': activity.actualDistanceMiles,
       'actual_duration_minutes': activity.actualDurationMinutes,
+      // Sent only when set: a null here (a row from before the v23 local
+      // column) must never overwrite the server's 'provider' with 'manual'
+      // (ticket 101). An absent key leaves the server value alone, and an
+      // insert takes the column default 'manual'.
+      if (activity.completionType != null)
+        'completion_type': activity.completionType,
       'completion_rating': activity.completionRating,
       'nutrition_rating': activity.nutritionRating,
       'completion_notes': activity.completionNotes,
@@ -539,13 +550,13 @@ class ActivityMapper {
       'synced_from_provider': activity.syncedFromProvider,
       'provider_workout_id': activity.providerWorkoutId,
       'provider_workout_url': activity.providerWorkoutUrl,
-      'last_synced_at': activity.lastSyncedAt?.toIso8601String(),
+      'last_synced_at': utcIso8601(activity.lastSyncedAt),
       'workout_subtype': activity.workoutSubtype,
       'pace_min_minutes_per_mile': activity.paceMinMinutesPerMile,
       'pace_max_minutes_per_mile': activity.paceMaxMinutesPerMile,
-      'provider_deleted_at': activity.providerDeletedAt?.toIso8601String(),
-      'provider_scheduled_at': activity.providerScheduledAt?.toIso8601String(),
-      'schedule_changed_at': activity.scheduleChangedAt?.toIso8601String(),
+      'provider_deleted_at': utcIso8601(activity.providerDeletedAt),
+      'provider_scheduled_at': utcIso8601(activity.providerScheduledAt),
+      'schedule_changed_at': utcIso8601(activity.scheduleChangedAt),
       'brick_metadata': activity.brickMetadata?.toJson(),
       'brick_id': activity.brickId,
       'garmin_summary_id': activity.garminSummaryId,
@@ -565,6 +576,24 @@ class ActivityMapper {
       if (includeCreatedAt) 'created_at': activity.createdAt.toIso8601String(),
       'updated_at': DateTime.now().toIso8601String(),
     };
+  }
+
+  /// Split upload payloads into groups whose rows carry the same keys.
+  ///
+  /// PostgREST updates the union of the rows' keys; a row missing one of
+  /// them inside a mixed request gets NULL (or the column default with
+  /// `missing=default`) written over the server value. Payloads that omit an
+  /// unset field (`completion_type`, ticket 101) must therefore be sent in
+  /// their own request. Order inside each group is kept.
+  static List<List<Map<String, dynamic>>> uniformKeyBatches(
+    List<Map<String, dynamic>> payloads,
+  ) {
+    final groups = <String, List<Map<String, dynamic>>>{};
+    for (final p in payloads) {
+      final signature = (p.keys.toList()..sort()).join(',');
+      (groups[signature] ??= []).add(p);
+    }
+    return groups.values.toList();
   }
 
   /// Build Supabase JSON payload from a Drift [Activity] row (for dirty record uploads).
@@ -611,6 +640,10 @@ class ActivityMapper {
       'completed_at': record.completedAt?.toIso8601String(),
       'actual_distance_miles': record.actualDistanceMiles,
       'actual_duration_minutes': record.actualDurationMinutes,
+      // Only when set; see buildSupabasePayload (ticket 101). Bulk uploads
+      // go through [uniformKeyBatches] so the absent key stays absent.
+      if (record.completionType != null)
+        'completion_type': record.completionType,
       'completion_rating': record.completionRating,
       'nutrition_rating': nutritionRating,
       'completion_notes': record.completionNotes,
@@ -623,13 +656,13 @@ class ActivityMapper {
       'synced_from_provider': record.syncedFromProvider,
       'provider_workout_id': record.providerWorkoutId,
       'provider_workout_url': record.providerWorkoutUrl,
-      'last_synced_at': record.lastSyncedAt?.toIso8601String(),
+      'last_synced_at': utcIso8601(record.lastSyncedAt),
       'workout_subtype': record.workoutSubtype,
       'pace_min_minutes_per_mile': record.paceMinMinutesPerMile,
       'pace_max_minutes_per_mile': record.paceMaxMinutesPerMile,
-      'provider_deleted_at': record.providerDeletedAt?.toIso8601String(),
-      'provider_scheduled_at': record.providerScheduledAt?.toIso8601String(),
-      'schedule_changed_at': record.scheduleChangedAt?.toIso8601String(),
+      'provider_deleted_at': utcIso8601(record.providerDeletedAt),
+      'provider_scheduled_at': utcIso8601(record.providerScheduledAt),
+      'schedule_changed_at': utcIso8601(record.scheduleChangedAt),
       'brick_metadata': decodeJsonObject(
         record.brickMetadata,
         fieldName: 'brick_metadata',
@@ -707,6 +740,17 @@ class ActivityMapper {
     }
     return null;
   }
+
+  /// Serialise a value bound for a `timestamp with time zone` column.
+  ///
+  /// A local `DateTime` rendered with a bare `toIso8601String()` carries no
+  /// offset, so Postgres reads the device's wall clock as UTC (Finding
+  /// 30-002: `last_synced_at` landed five hours early in CDT). Converting to
+  /// UTC first yields a `Z` suffix and the true instant. Wall-clock columns
+  /// (`scheduled_date_time`, `updated_at`, `created_at`, `completed_at`) are
+  /// `timestamp without time zone` and must NOT go through this.
+  static String? utcIso8601(DateTime? value) =>
+      value?.toUtc().toIso8601String();
 
   /// Parse nutrition plan data from any source (JSONB map, JSON string, or null).
   Map<String, dynamic>? parseNutritionPlanDataValue(dynamic value) {

@@ -40,16 +40,30 @@ class TestConfig {
   /// which meant a `--flavor prod` run drove the prod app but asserted against
   /// the dev database — every DB check silently looked at the wrong project.
   ///
-  /// The defaults keep a bare `patrol test` (no env file) working against dev.
-  static const supabaseUrl = String.fromEnvironment(
-    'SUPABASE_URL',
-    defaultValue: 'https://vlmtsdzpnjnavdgytcmi.supabase.co',
-  );
-  static const supabaseAnonKey = String.fromEnvironment(
-    'SUPABASE_ANON_KEY',
-    defaultValue:
-        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZsbXRzZHpwbmpuYXZkZ3l0Y21pIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM0NDQ5MTAsImV4cCI6MjA1OTAyMDkxMH0.7iH2kqvRQUa4tFPYHJVSMJK3MYEYhP9RmUfX6l2YWYE',
-  );
+  /// No defaults. A baked-in dev anon key went stale when dev's keys changed,
+  /// and a bare `patrol test` then failed every auth call with "Invalid API
+  /// key" (Finding 02-007). The env file is the one source; `launchApp` calls
+  /// [requireSupabaseEnv] so a run without it stops at launch.
+  static const supabaseUrl = String.fromEnvironment('SUPABASE_URL');
+  static const supabaseAnonKey = String.fromEnvironment('SUPABASE_ANON_KEY');
+
+  /// Throws a [StateError] naming the missing values and the env file to pass
+  /// when [url] or [anonKey] (default: this run's) is empty.
+  static void requireSupabaseEnv({
+    String url = supabaseUrl,
+    String anonKey = supabaseAnonKey,
+  }) {
+    final missing = [
+      if (url.isEmpty) 'SUPABASE_URL',
+      if (anonKey.isEmpty) 'SUPABASE_ANON_KEY',
+    ];
+    if (missing.isEmpty) return;
+    throw StateError(
+      'Patrol run has no ${missing.join(', ')}. Pass the flavor\'s env file: '
+      '--dart-define-from-file=.env.dev.local (or .env.prod.local with '
+      '--flavor prod). TestConfig has no built-in project.',
+    );
+  }
 
   /// True when the tests are pointed at the production project. Flows that
   /// create or delete rows can use this to guard destructive steps.

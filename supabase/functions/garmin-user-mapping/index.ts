@@ -3,6 +3,8 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 import { handleCors } from '../_shared/cors.ts';
 import { errorResponse, successResponse } from '../_shared/responses.ts';
 import { initSentry, withSentry } from '../_shared/sentry.ts';
+import { deregisterGarminForUser } from '../_shared/garmin/token.ts';
+import { deleteGarminMapping } from './delete.ts';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? '';
 const SUPABASE_SERVICE_ROLE_KEY =
@@ -95,47 +97,21 @@ serve(withSentry('garmin-user-mapping', async (req: Request) => {
     }
 
     if (action === 'delete') {
-      let query = supabase
-        .from('garmin_user_mappings')
-        .delete()
-        .eq('user_id', user.id);
-
-      if (body.garmin_user_id) {
-        query = query.eq('garmin_user_id', body.garmin_user_id);
+      // Ticket 138 (112-010, 121-010): deregister at Garmin first, with a
+      // fresh token, so Garmin stops pushing; a Garmin failure is logged and
+      // the row is still deleted (delete.ts).
+      const result = await deleteGarminMapping(supabase, user.id, body.garmin_user_id, {
+        deregister: (userId) =>
+          deregisterGarminForUser(supabase, userId, { logPrefix: '[garmin-user-mapping]' }),
+      });
+      if (!result.ok) {
+        return errorResponse(result.message, result.status, result.details);
       }
-
-      const { error } = await query;
-      if (error) {
-        return errorResponse(
-          'Failed to delete Garmin mapping',
-          500,
-          error.message,
-          undefined,
-          error,
-        );
-      }
-
-      let countQuery = supabase
-        .from('garmin_user_mappings')
-        .select('id', { count: 'exact', head: true })
-        .eq('user_id', user.id);
-
-      if (body.garmin_user_id) {
-        countQuery = countQuery.eq('garmin_user_id', body.garmin_user_id);
-      }
-
-      const { count, error: countError } = await countQuery;
-      if (countError) {
-        return errorResponse(
-          'Failed to verify Garmin mapping deletion',
-          500,
-          countError.message,
-          undefined,
-          countError,
-        );
-      }
-
-      return successResponse({ action: 'delete', remaining: count ?? 0 });
+      return successResponse({
+        action: 'delete',
+        remaining: result.remaining,
+        garmin_deregistration: result.garmin,
+      });
     }
 
     if (action !== 'upsert') {

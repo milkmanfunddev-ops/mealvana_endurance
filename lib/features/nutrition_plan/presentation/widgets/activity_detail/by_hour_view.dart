@@ -122,6 +122,13 @@ class _ByHourViewState extends State<ByHourView> {
       byHourData: widget.byHourData,
     ).where((item) => !globalSipFoodIds.contains(item.foodId)).toList();
 
+    // Each hour's line counts its share of the sip-throughout items
+    // (Finding 116-005).
+    final sipShare = ByHourSyncService.sipShareForHour(
+      summaryFoods: widget.section.foodItems,
+      byHourData: widget.byHourData,
+    );
+
     // Clear tray selection if selected food is no longer in tray
     if (_selectedTrayFoodId != null &&
         !unassignedItems.any((item) => item.foodId == _selectedTrayFoodId)) {
@@ -196,6 +203,8 @@ class _ByHourViewState extends State<ByHourView> {
             onUpdateQuantity: widget.onUpdateQuantity,
             onMoveFoodToTimeSlot: widget.onMoveFoodToTimeSlot,
             selectedFoodId: _selectedFoodId,
+            sipCarbsG: sipShare.carbsG,
+            sipSodiumMg: sipShare.sodiumMg,
             onPlaceFromTray: (foodId, slot, qty, timingCategory, isSip) {
               // Check if the food is from global sip section
               if (globalSipFoodIds.contains(foodId) &&

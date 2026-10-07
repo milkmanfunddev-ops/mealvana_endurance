@@ -6,6 +6,9 @@ import 'package:go_router/go_router.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:mealvana_endurance/shared/widgets/kyle_design/kyle_design.dart';
+import '../../../content/application/content_service.dart';
+import '../../../content/domain/content_keys.dart';
+import '../../domain/account_deletion_exceptions.dart';
 import '../../../../shared/core/guarded_navigation.dart';
 import '../../../../shared/services/analytics/analytics_tracker.dart';
 import '../../../../shared/services/analytics/internal_user_service.dart';
@@ -572,31 +575,27 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             SizedBox(
               width: double.infinity,
               child: KyleSecondaryButton(
-                text: state.signOutButton ?? 'Sign Out',
+                key: const ValueKey('settings.sign_out_button'),
+                text: state.signOutButton,
                 onPressed: () async {
-                  // Show confirmation dialog
-                  final confirmed = await showDialog<bool>(
-                    context: context,
-                    builder: (context) => AlertDialog(
-                      title: const Text('Sign Out?'),
-                      content: const Text(
-                        'You\'ll continue using the app as a guest. Your preferences will be saved on this device. Sign in again to sync across devices.',
-                      ),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.pop(context, false),
-                          child: const Text('Cancel'),
-                        ),
-                        TextButton(
-                          onPressed: () => Navigator.pop(context, true),
-                          child: const Text('Sign Out'),
-                        ),
-                      ],
+                  // mp-508: no guest mode, so the confirm says the athlete
+                  // signs in again. Every string is a content key.
+                  final content = ref.read(contentServiceProvider);
+                  final confirmed = await _confirmAccountAction(
+                    context,
+                    title: content.getValue(
+                      ContentKeys.settingsSignOutConfirmTitle,
                     ),
+                    body: content.getValue(
+                      ContentKeys.settingsSignOutConfirmBody,
+                    ),
+                    action: content.getValue(ContentKeys.settingsSignOutConfirmAction),
+                    cancel: content.getValue(ContentKeys.settingsConfirmCancel),
+                    destructive: false,
                   );
 
                   // If user confirmed, proceed with sign out
-                  if (confirmed == true && context.mounted) {
+                  if (confirmed && context.mounted) {
                     await ref
                         .read(settingsControllerProvider.notifier)
                         .signOut();
@@ -612,40 +611,46 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
             const SizedBox(height: AppSpacing.md),
 
-            // Delete Account button
+            // Delete Account button: every string is a content key (finding 02-006).
             SizedBox(
               width: double.infinity,
               child: TextButton(
+                key: const ValueKey('settings.delete_account_button'),
                 onPressed: () async {
-                  // Show confirmation dialog
-                  final confirmed = await showDialog<bool>(
-                    context: context,
-                    builder: (context) => AlertDialog(
-                      title: const Text('Delete Account?'),
-                      content: const Text(
-                        'This will permanently delete your account and all associated data. This action cannot be undone.',
-                      ),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.pop(context, false),
-                          child: const Text('Cancel'),
-                        ),
-                        TextButton(
-                          onPressed: () => Navigator.pop(context, true),
-                          style: TextButton.styleFrom(
-                            foregroundColor: AppColors.dragonfruit,
-                          ),
-                          child: const Text('Delete'),
-                        ),
-                      ],
+                  final content = ref.read(contentServiceProvider);
+                  final confirmed = await _confirmAccountAction(
+                    context,
+                    title: content.getValue(
+                      ContentKeys.settingsDeleteConfirmTitle,
                     ),
+                    body: content.getValue(
+                      ContentKeys.settingsDeleteConfirmBody,
+                    ),
+                    action: content.getValue(
+                      ContentKeys.settingsDeleteConfirmAction,
+                    ),
+                    cancel: content.getValue(ContentKeys.settingsConfirmCancel),
+                    destructive: true,
                   );
 
                   // If user confirmed, proceed with delete
-                  if (confirmed == true && context.mounted) {
-                    await ref
-                        .read(settingsControllerProvider.notifier)
-                        .deleteAccount();
+                  if (confirmed && context.mounted) {
+                    try {
+                      await ref
+                          .read(settingsControllerProvider.notifier)
+                          .deleteAccount();
+                    } on AccountDeletionNeedsConnectionException {
+                      // Nothing was deleted (121-007): still signed in.
+                      if (context.mounted) {
+                        MealvanaSnackbar.showError(
+                          context,
+                          content.getValue(
+                            ContentKeys.settingsDeleteNeedsConnection,
+                          ),
+                        );
+                      }
+                      return;
+                    }
 
                     // Navigate to welcome screen after account deletion
                     if (context.mounted) {
@@ -654,7 +659,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   }
                 },
                 child: Text(
-                  'Delete Account',
+                  ref
+                      .watch(contentServiceProvider)
+                      .getValue(ContentKeys.settingsDeleteAccountButton),
                   style: AppTextStyles.bodyMedium.copyWith(
                     color: AppColors.dragonfruit,
                     decoration: TextDecoration.underline,
@@ -668,7 +675,43 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     );
   }
 
+  /// The account card's confirm (sign out, delete account). Every string is
+  /// passed in from the content system.
+  Future<bool> _confirmAccountAction(
+    BuildContext context, {
+    required String title,
+    required String body,
+    required String action,
+    required String cancel,
+    required bool destructive,
+  }) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(title),
+        content: Text(body),
+        actions: [
+          TextButton(
+            key: const ValueKey('settings.confirm.cancel'),
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(cancel),
+          ),
+          TextButton(
+            key: const ValueKey('settings.confirm.action'),
+            onPressed: () => Navigator.pop(context, true),
+            style: destructive
+                ? TextButton.styleFrom(foregroundColor: AppColors.dragonfruit)
+                : null,
+            child: Text(action),
+          ),
+        ],
+      ),
+    );
+    return confirmed == true;
+  }
+
   Widget _buildQuickLinksSection(BuildContext context) {
+    final content = ref.watch(contentServiceProvider);
     return BaseCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -678,8 +721,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             context: context,
             rowKey: const ValueKey('settings.profile_row'),
             icon: FontAwesomeIcons.user.data,
-            title: 'Profile & Preferences',
-            subtitle: 'Edit your profile, units, and preferences',
+            title: content.getValue(
+              ContentKeys.settingsProfilePreferencesTitle,
+            ),
+            subtitle: content.getValue(
+              ContentKeys.settingsProfilePreferencesSubtitle,
+            ),
             onTap: () {
               final analytics = ref.read(appExternalDepsProvider);
               analytics.analytics.track('settings_preferences_tapped');
@@ -906,8 +953,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   ThemeMode.light => 'appearance.light_button',
                   ThemeMode.dark => 'appearance.dark_button',
                 };
+                // Says which one is on (119-006: three buttons with no
+                // selected state).
                 return RadioListTile<ThemeMode>(
                   key: ValueKey(modeKey),
+                  selected: mode == currentMode,
                   title: Text(_getThemeModeName(mode)),
                   value: mode,
                   groupValue: currentMode,

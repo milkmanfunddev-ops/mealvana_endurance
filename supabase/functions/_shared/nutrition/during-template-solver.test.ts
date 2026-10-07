@@ -1510,6 +1510,172 @@ describe("Quantity Calculation (generateDuringPhaseTemplate)", () => {
       "Should return null when extreme targets cannot be satisfied",
     );
   });
+
+  // 21. Finding 117-016: the sodium top-up must stay inside the carb cap the
+  // result is validated against. A default 12 mi run (108 min, moderate gut)
+  // carries a 95 g target with an 81-108 g band; 4 gels = 100 g fit, but the
+  // fill was bounded by the band high (108 g) while validation applies the
+  // fixed 1.1 cap (104.5 g), so three carb-bearing tablets pushed every 4-gel
+  // candidate to 106 g and the template fell back to the rule solver.
+  it("sodium top-up never pushes carbs past the validation cap (117-016)", async () => {
+    // Running pool as of the C1 catalog convention (2026-09-01): the tablet
+    // is dry (fluid 0) so no fluid bound knocks it out, the pickle shot is a
+    // liquid so carryable-first prefers the tablet, and only the tablet
+    // carries carbs (2 g).
+    const pool = new Map<string, FoodWithConstraints>();
+    const perServing = (
+      carbs_g: number,
+      sodium_mg: number,
+      water_ml: number,
+    ) => ({
+      carbs_g,
+      protein_g: 0,
+      fat_g: 0,
+      sodium_mg,
+      water_ml,
+      calories: carbs_g * 4,
+    });
+    pool.set(
+      "energy_gel",
+      makeFoodWithConstraints({
+        id: "energy_gel",
+        name: "energy_gel",
+        per_serving: perServing(25, 55, 20),
+        product_type: "gel",
+        is_indivisible: true,
+        min_increment: 1,
+        max_per_hr_low: 2,
+        max_per_hr_moderate: 3,
+        max_per_hr_high: 3,
+        min_servings: 0.5,
+        max_servings: 15,
+      }),
+    );
+    pool.set(
+      "water",
+      makeFoodWithConstraints({
+        id: "water",
+        name: "water",
+        per_serving: perServing(0, 0, 240),
+        product_type: "beverage",
+        is_liquid: true,
+        is_essential: true,
+        min_increment: 0.5,
+        min_servings: 0.5,
+        max_servings: 14,
+      }),
+    );
+    const topUps: Array<
+      [string, number, number, number, number, Partial<FoodWithConstraints>]
+    > = [
+      ["electrolyte_tablet", 2, 300, 0, 12, {}],
+      ["electrolyte_capsule", 0, 190, 0, 8, {}],
+      ["high_sodium_electrolyte_mix", 0, 1000, 0, 4, {}],
+      ["pickle_juice_shot", 0, 940, 70, 3, { is_liquid: true }],
+    ];
+    for (const [name, carbs, sodium, water, max, extra] of topUps) {
+      pool.set(
+        name,
+        makeFoodWithConstraints({
+          id: name,
+          name,
+          per_serving: perServing(carbs, sodium, water),
+          product_type: "supplement",
+          is_electrolyte: true,
+          is_indivisible: true,
+          sodium_top_up_eligible: true,
+          min_increment: 1,
+          min_servings: 1,
+          max_servings: max,
+          ...extra,
+        }),
+      );
+    }
+    const template = makeTemplate({
+      template_number: 1,
+      name: "Gel + Water",
+      activity_types: ["running"],
+      duration_brackets: ["90-150 min"],
+      component_food_names: ["energy_gel", "water"],
+      component_carb_ratios: { "energy_gel": 1.0 },
+    });
+    const targets: MacroTargets = {
+      carbs_g: 95,
+      carbs_low_g: 81,
+      carbs_high_g: 108,
+      sodium_mg: 1120,
+      sodium_low_mg: 1008,
+      sodium_high_mg: 1232,
+      water_ml: 1400,
+      water_low_ml: 1260,
+      water_high_ml: 1540,
+    };
+
+    const result = generateDuringPhaseTemplate(
+      template,
+      pool,
+      targets,
+      108,
+      "moderate",
+    );
+
+    await logs.writeToFile(
+      "template-gen-117-016-carb-cap",
+      "Template 1, 95g carbs (81-108 band), 108 min -- 4 gels + zero-carb sodium top-up must validate",
+    );
+
+    assertExists(
+      result,
+      "Template 1 must fit a 95g target: 4 gels (100g) with a zero-carb sodium top-up",
+    );
+    const totals = sumFoodResults(result.foods);
+    assert(
+      totals.carbs_g >= 95 * 0.9 && totals.carbs_g <= 95 * 1.1,
+      `carbs ${totals.carbs_g}g must sit inside 85.5-104.5g`,
+    );
+    assert(
+      totals.sodium_mg >= 1008 && totals.sodium_mg <= 1232,
+      `sodium ${totals.sodium_mg}mg must sit inside 1008-1232mg`,
+    );
+    assert(
+      !logs.dump().includes("trying sequential fill"),
+      "the optimized search itself must find the fit",
+    );
+  });
+
+  // 22. Finding 117-016, the honest half: when no candidate of a template
+  // can satisfy validation, the solver says so in one plain line before the
+  // caller falls back to the rule solver.
+  it("logs one plain line naming why a template cannot fit (117-016)", () => {
+    const pool = makeTemplateFoodPool();
+    const template = makeTemplate({
+      template_number: 1,
+      name: "Gel + Water",
+      activity_types: ["running"],
+      duration_brackets: ["90-150 min"],
+      component_food_names: ["energy_gel", "water"],
+      component_carb_ratios: { "energy_gel": 1.0 },
+    });
+    // 2 gels/hr x 2 hr = 4 gels = 100 g against 300 g: nothing fits.
+    const result = generateDuringPhaseTemplate(
+      template,
+      pool,
+      { carbs_g: 300, sodium_mg: 600, water_ml: 700 },
+      120,
+      "low",
+    );
+    assertEquals(result, null);
+    const noFit = logs.getByPrefix("DURING-TEMPLATE").filter((e) =>
+      e.message.includes("cannot fit")
+    );
+    assertEquals(noFit.length, 1, `expected one no-fit line, got:\n${logs.dump()}`);
+    assert(
+      noFit[0].message.includes("template 1") &&
+        noFit[0].message.includes("carbs") &&
+        noFit[0].message.includes("energy_gel"),
+      `no-fit line must name the template, the failing macro and the searched foods: ${noFit[0].message}`,
+    );
+  });
 });
 
 // ============================================================================

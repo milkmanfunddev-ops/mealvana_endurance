@@ -501,3 +501,110 @@ describe('garmin-user-mapping', () => {
 if (import.meta.main) {
   console.log('Running garmin-user-mapping tests...');
 }
+
+// ============================================================================
+// Ticket 138 (112-010, 121-010): the delete action deregisters at Garmin
+// and still deletes our row when Garmin fails. Drives the real delete.ts.
+// ============================================================================
+
+import { deleteGarminMapping } from './delete.ts';
+
+function fakeMappingsClient(opts: { deleteError?: { message: string } | null } = {}) {
+  const deletes: [string, unknown][][] = [];
+  let deleted = false;
+  const supabase = {
+    from(_table: string) {
+      return {
+        delete() {
+          const filters: [string, unknown][] = [];
+          const q = {
+            eq(col: string, v: unknown) {
+              filters.push([col, v]);
+              return q;
+            },
+            then(resolve: (r: { error: unknown }) => void) {
+              deletes.push(filters);
+              if (!opts.deleteError) deleted = true;
+              resolve({ error: opts.deleteError ?? null });
+            },
+          };
+          return q;
+        },
+        select() {
+          const q = {
+            eq() {
+              return q;
+            },
+            then(resolve: (r: { count: number; error: null }) => void) {
+              resolve({ count: deleted ? 0 : 1, error: null });
+            },
+          };
+          return q;
+        },
+      };
+    },
+  };
+  return { supabase, deletes };
+}
+
+describe('deleteGarminMapping (delete.ts)', () => {
+  it('deregisters at Garmin before deleting the row', async () => {
+    const order: string[] = [];
+    const { supabase, deletes } = fakeMappingsClient();
+    const result = await deleteGarminMapping(supabase, 'u1', 'g1', {
+      deregister: (userId) => {
+        order.push(`deregister:${userId}`);
+        return Promise.resolve('deregistered' as const);
+      },
+    });
+    assertEquals(result.ok, true);
+    if (result.ok) {
+      assertEquals(result.garmin, 'deregistered');
+      assertEquals(result.remaining, 0);
+    }
+    assertEquals(order, ['deregister:u1']);
+    assertEquals(deletes.length, 1);
+    assertEquals(deletes[0], [['user_id', 'u1'], ['garmin_user_id', 'g1']]);
+  });
+
+  it('still deletes the row when Garmin refuses the deregistration', async () => {
+    const { supabase, deletes } = fakeMappingsClient();
+    const result = await deleteGarminMapping(supabase, 'u1', undefined, {
+      deregister: () => Promise.resolve('failed' as const),
+    });
+    assertEquals(result.ok, true);
+    if (result.ok) assertEquals(result.garmin, 'failed');
+    assertEquals(deletes.length, 1);
+    assertEquals(deletes[0], [['user_id', 'u1']]);
+  });
+
+  it('still deletes the row when the deregistration throws', async () => {
+    const { supabase, deletes } = fakeMappingsClient();
+    const original = console.error;
+    console.error = () => {};
+    try {
+      const result = await deleteGarminMapping(supabase, 'u1', 'g1', {
+        deregister: () => Promise.reject(new Error('boom')),
+      });
+      assertEquals(result.ok, true);
+    } finally {
+      console.error = original;
+    }
+    assertEquals(deletes.length, 1);
+  });
+
+  it('reports a failed row delete as a 500', async () => {
+    const { supabase } = fakeMappingsClient({ deleteError: { message: 'db down' } });
+    const original = console.error;
+    console.error = () => {};
+    try {
+      const result = await deleteGarminMapping(supabase, 'u1', 'g1', {
+        deregister: () => Promise.resolve('deregistered' as const),
+      });
+      assertEquals(result.ok, false);
+      if (!result.ok) assertEquals(result.details, 'db down');
+    } finally {
+      console.error = original;
+    }
+  });
+});

@@ -31,6 +31,7 @@
  */
 
 import { type ActivityType, type Food, type FoodResult } from "./types.ts";
+import { normalizeAllergen } from "./allergen-normalize.ts";
 import { buildFoodResult } from "./during-utils.ts";
 
 // ============================================================================
@@ -192,7 +193,7 @@ export function selectPostWorkoutTemplateCandidates(
   pinnedTemplateIds?: Set<string>,
 ): PostWorkoutTemplate[] {
   const mappedActivities = mapActivityTypeForTemplate(activityType);
-  const allergiesLower = (allergies ?? []).map((a) => a.toLowerCase());
+  const allergiesLower = (allergies ?? []).map(normalizeAllergen);
   const dietPrefLower = dietaryPreference?.toLowerCase() ?? "";
 
   console.log(
@@ -270,7 +271,7 @@ export function selectPostWorkoutTemplateCandidates(
     // Allergen overlap → skip
     if (allergiesLower.length > 0 && template.allergens.length > 0) {
       const hasAllergen = template.allergens.some((a) =>
-        allergiesLower.includes(a.toLowerCase())
+        allergiesLower.includes(normalizeAllergen(a))
       );
       if (hasAllergen) {
         console.log(

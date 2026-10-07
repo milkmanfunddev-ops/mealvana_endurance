@@ -130,24 +130,7 @@ class OnboardingStepScaffold extends StatelessWidget {
                 child: Row(
                   children: [
                     if (onBack != null)
-                      InkWell(
-                        key: backButtonKey,
-                        customBorder: const CircleBorder(),
-                        onTap: onBack,
-                        child: Container(
-                          width: 32,
-                          height: 32,
-                          decoration: BoxDecoration(
-                            color: OnbTokens.creamA(0.1),
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(
-                            Icons.chevron_left,
-                            size: 18,
-                            color: OnbTokens.creamA(0.8),
-                          ),
-                        ),
-                      )
+                      OnboardingBackCircle(key: backButtonKey, onTap: onBack!)
                     else
                       const SizedBox(height: 32),
                   ],

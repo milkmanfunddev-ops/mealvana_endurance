@@ -9,6 +9,13 @@ import '../../domain/meal_slot.dart';
 import '../providers/meal_log_providers.dart';
 import 'slot_chip_selector.dart';
 
+/// Parses a Calories field. The field accepts decimals (decimal keyboard and
+/// the `^\d*\.?\d*` filter), and `meal_logs.calories` is an integer column,
+/// so "250.5" rounds to 251 instead of failing `int.tryParse` and saving null
+/// (Finding 25-001). An empty or partial entry ("", ".") stays unknown (null),
+/// never 0. Shared with [ManualComponentForm] so both forms agree.
+int? parseCaloriesInput(String text) => double.tryParse(text.trim())?.round();
+
 /// Reusable manual meal-entry form.
 ///
 /// Hosts the name / optional slot / time eaten / macro fields and the Save
@@ -53,6 +60,8 @@ class _ManualLogFormState extends ConsumerState<ManualLogForm> {
 
   final _formKey = GlobalKey<FormState>();
   final _nameCtrl = TextEditingController();
+  final _nameFocus = FocusNode();
+  final _nameFieldKey = GlobalKey();
   final _calCtrl = TextEditingController();
   final _carbCtrl = TextEditingController();
   final _protCtrl = TextEditingController();
@@ -72,6 +81,7 @@ class _ManualLogFormState extends ConsumerState<ManualLogForm> {
 
   @override
   void dispose() {
+    _nameFocus.dispose();
     _nameCtrl.dispose();
     _calCtrl.dispose();
     _carbCtrl.dispose();
@@ -101,7 +111,20 @@ class _ManualLogFormState extends ConsumerState<ManualLogForm> {
   }
 
   Future<void> _submit() async {
-    if (!_formKey.currentState!.validate()) return;
+    if (!_formKey.currentState!.validate()) {
+      // The only validator is the name's, and Save sits below the fold:
+      // "Name is required" was showing above the scrolled view (113-005).
+      final fieldContext = _nameFieldKey.currentContext;
+      if (fieldContext != null) {
+        await Scrollable.ensureVisible(
+          fieldContext,
+          alignment: 0.2,
+          duration: const Duration(milliseconds: 200),
+        );
+      }
+      if (mounted) _nameFocus.requestFocus();
+      return;
+    }
     FocusScope.of(context).unfocus();
 
     await ref
@@ -110,7 +133,7 @@ class _ManualLogFormState extends ConsumerState<ManualLogForm> {
           name: _nameCtrl.text.trim(),
           slot: _slot,
           logDate: widget.logDate,
-          calories: int.tryParse(_calCtrl.text),
+          calories: parseCaloriesInput(_calCtrl.text),
           carbsG: double.tryParse(_carbCtrl.text),
           proteinG: double.tryParse(_protCtrl.text),
           fatG: double.tryParse(_fatCtrl.text),
@@ -154,17 +177,21 @@ class _ManualLogFormState extends ConsumerState<ManualLogForm> {
           const SizedBox(height: AppSpacing.md),
 
           // Name
-          TextFormField(
-            key: const ValueKey('manual_log.name_field'),
-            controller: _nameCtrl,
-            decoration: const InputDecoration(
-              labelText: 'Meal name',
-              hintText: 'e.g. Oatmeal with banana',
-              border: OutlineInputBorder(),
+          KeyedSubtree(
+            key: _nameFieldKey,
+            child: TextFormField(
+              key: const ValueKey('manual_log.name_field'),
+              controller: _nameCtrl,
+              focusNode: _nameFocus,
+              decoration: const InputDecoration(
+                labelText: 'Meal name',
+                hintText: 'e.g. Oatmeal with banana',
+                border: OutlineInputBorder(),
+              ),
+              textCapitalization: TextCapitalization.sentences,
+              validator: (v) =>
+                  (v == null || v.trim().isEmpty) ? 'Name is required' : null,
             ),
-            textCapitalization: TextCapitalization.sentences,
-            validator: (v) =>
-                (v == null || v.trim().isEmpty) ? 'Name is required' : null,
           ),
           const SizedBox(height: AppSpacing.md),
 

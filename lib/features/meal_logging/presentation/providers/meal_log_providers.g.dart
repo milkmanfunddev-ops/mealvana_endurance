@@ -66,7 +66,9 @@ String _$mealLoggingServiceHash() =>
 ///
 /// Automatically re-emits whenever the underlying Drift table changes, so the
 /// Daily Macros tab always reflects the latest local state (including entries
-/// written while offline).
+/// written while offline). Kicks a `meal_logs` sync in the background on
+/// build (never blocks on the network): the local table answers first and
+/// the server's rows re-emit through the same stream when they land.
 ///
 /// Returns an empty list when there is no authenticated user (no throws —
 /// callers handle the empty-state UI).
@@ -79,7 +81,9 @@ const mealLogsForDateProvider = MealLogsForDateFamily._();
 ///
 /// Automatically re-emits whenever the underlying Drift table changes, so the
 /// Daily Macros tab always reflects the latest local state (including entries
-/// written while offline).
+/// written while offline). Kicks a `meal_logs` sync in the background on
+/// build (never blocks on the network): the local table answers first and
+/// the server's rows re-emit through the same stream when they land.
 ///
 /// Returns an empty list when there is no authenticated user (no throws —
 /// callers handle the empty-state UI).
@@ -97,7 +101,9 @@ final class MealLogsForDateProvider
   ///
   /// Automatically re-emits whenever the underlying Drift table changes, so the
   /// Daily Macros tab always reflects the latest local state (including entries
-  /// written while offline).
+  /// written while offline). Kicks a `meal_logs` sync in the background on
+  /// build (never blocks on the network): the local table answers first and
+  /// the server's rows re-emit through the same stream when they land.
   ///
   /// Returns an empty list when there is no authenticated user (no throws —
   /// callers handle the empty-state UI).
@@ -145,14 +151,16 @@ final class MealLogsForDateProvider
   }
 }
 
-String _$mealLogsForDateHash() => r'2f7d0a733498335eb0d4f87a06a5e480ae811d56';
+String _$mealLogsForDateHash() => r'66d1c810478bf27e2648d5a435127c5febdfce81';
 
 /// Streams [MealLog] entries for [date] (formatted as `'yyyy-MM-dd'`) for the
 /// current user.
 ///
 /// Automatically re-emits whenever the underlying Drift table changes, so the
 /// Daily Macros tab always reflects the latest local state (including entries
-/// written while offline).
+/// written while offline). Kicks a `meal_logs` sync in the background on
+/// build (never blocks on the network): the local table answers first and
+/// the server's rows re-emit through the same stream when they land.
 ///
 /// Returns an empty list when there is no authenticated user (no throws —
 /// callers handle the empty-state UI).
@@ -173,7 +181,9 @@ final class MealLogsForDateFamily extends $Family
   ///
   /// Automatically re-emits whenever the underlying Drift table changes, so the
   /// Daily Macros tab always reflects the latest local state (including entries
-  /// written while offline).
+  /// written while offline). Kicks a `meal_logs` sync in the background on
+  /// build (never blocks on the network): the local table answers first and
+  /// the server's rows re-emit through the same stream when they land.
   ///
   /// Returns an empty list when there is no authenticated user (no throws —
   /// callers handle the empty-state UI).
@@ -398,29 +408,53 @@ final class ConsumedTotalsForDateFamily extends $Family
 
 /// Most recent 25 distinct meal names for the current user.
 ///
-/// Used by the "Recent" section of the meal picker. Rebuilds on invalidation
-/// (not a stream — recents don't need real-time updates within a session).
+/// Used by the "Recent" section of the meal picker. Streams from Drift, so a
+/// meal just logged (re-logged from Recent, or from a recipe) moves to the
+/// top at once, whichever write path logged it (testing-wave 26-005: the
+/// controller's invalidate was skipped whenever the auto-dispose controller
+/// had been disposed mid-write, and `logRecipe` never asked).
+///
+/// The `meal_logs` sync is awaited before the first emission rather than
+/// kicked, so a fresh sign-in shows the spinner, not an empty Recent that
+/// fills in under the athlete's finger; a sync that fails answers from the
+/// local table.
 
 @ProviderFor(recentMeals)
 const recentMealsProvider = RecentMealsProvider._();
 
 /// Most recent 25 distinct meal names for the current user.
 ///
-/// Used by the "Recent" section of the meal picker. Rebuilds on invalidation
-/// (not a stream — recents don't need real-time updates within a session).
+/// Used by the "Recent" section of the meal picker. Streams from Drift, so a
+/// meal just logged (re-logged from Recent, or from a recipe) moves to the
+/// top at once, whichever write path logged it (testing-wave 26-005: the
+/// controller's invalidate was skipped whenever the auto-dispose controller
+/// had been disposed mid-write, and `logRecipe` never asked).
+///
+/// The `meal_logs` sync is awaited before the first emission rather than
+/// kicked, so a fresh sign-in shows the spinner, not an empty Recent that
+/// fills in under the athlete's finger; a sync that fails answers from the
+/// local table.
 
 final class RecentMealsProvider
     extends
         $FunctionalProvider<
           AsyncValue<List<MealLog>>,
           List<MealLog>,
-          FutureOr<List<MealLog>>
+          Stream<List<MealLog>>
         >
-    with $FutureModifier<List<MealLog>>, $FutureProvider<List<MealLog>> {
+    with $FutureModifier<List<MealLog>>, $StreamProvider<List<MealLog>> {
   /// Most recent 25 distinct meal names for the current user.
   ///
-  /// Used by the "Recent" section of the meal picker. Rebuilds on invalidation
-  /// (not a stream — recents don't need real-time updates within a session).
+  /// Used by the "Recent" section of the meal picker. Streams from Drift, so a
+  /// meal just logged (re-logged from Recent, or from a recipe) moves to the
+  /// top at once, whichever write path logged it (testing-wave 26-005: the
+  /// controller's invalidate was skipped whenever the auto-dispose controller
+  /// had been disposed mid-write, and `logRecipe` never asked).
+  ///
+  /// The `meal_logs` sync is awaited before the first emission rather than
+  /// kicked, so a fresh sign-in shows the spinner, not an empty Recent that
+  /// fills in under the athlete's finger; a sync that fails answers from the
+  /// local table.
   const RecentMealsProvider._()
     : super(
         from: null,
@@ -437,22 +471,23 @@ final class RecentMealsProvider
 
   @$internal
   @override
-  $FutureProviderElement<List<MealLog>> $createElement(
+  $StreamProviderElement<List<MealLog>> $createElement(
     $ProviderPointer pointer,
-  ) => $FutureProviderElement(pointer);
+  ) => $StreamProviderElement(pointer);
 
   @override
-  FutureOr<List<MealLog>> create(Ref ref) {
+  Stream<List<MealLog>> create(Ref ref) {
     return recentMeals(ref);
   }
 }
 
-String _$recentMealsHash() => r'2bba979839f8ff0194eb072d61d4b05dfb7c917c';
+String _$recentMealsHash() => r'fb672550d2800bc919a4a79e7ebae506ea92ebc8';
 
 /// Streams all non-deleted saved meals for the current user, ordered by
 /// [SavedMeal.lastUsedAt] descending.
 ///
-/// Used by the "My Meals" section of the meal picker.
+/// Used by the "My Meals" section of the meal picker. Kicks a `saved_meals`
+/// sync in the background on build, like [mealLogsForDate].
 
 @ProviderFor(savedMeals)
 const savedMealsProvider = SavedMealsProvider._();
@@ -460,7 +495,8 @@ const savedMealsProvider = SavedMealsProvider._();
 /// Streams all non-deleted saved meals for the current user, ordered by
 /// [SavedMeal.lastUsedAt] descending.
 ///
-/// Used by the "My Meals" section of the meal picker.
+/// Used by the "My Meals" section of the meal picker. Kicks a `saved_meals`
+/// sync in the background on build, like [mealLogsForDate].
 
 final class SavedMealsProvider
     extends
@@ -473,7 +509,8 @@ final class SavedMealsProvider
   /// Streams all non-deleted saved meals for the current user, ordered by
   /// [SavedMeal.lastUsedAt] descending.
   ///
-  /// Used by the "My Meals" section of the meal picker.
+  /// Used by the "My Meals" section of the meal picker. Kicks a `saved_meals`
+  /// sync in the background on build, like [mealLogsForDate].
   const SavedMealsProvider._()
     : super(
         from: null,
@@ -500,7 +537,7 @@ final class SavedMealsProvider
   }
 }
 
-String _$savedMealsHash() => r'3f23104e9acf558a4575686dfbf93f773937fdf4';
+String _$savedMealsHash() => r'1599f2b1ca35aba5cd918a7bd9d44af3b816ca41';
 
 /// Controller for meal log mutations.
 ///
@@ -551,7 +588,7 @@ final class MealLogControllerProvider
   MealLogController create() => MealLogController();
 }
 
-String _$mealLogControllerHash() => r'b8a1eb2f667172e797feea741153f2103bbdc5b7';
+String _$mealLogControllerHash() => r'41f97513fce9b63e46267520f05673484e363f4a';
 
 /// Controller for meal log mutations.
 ///

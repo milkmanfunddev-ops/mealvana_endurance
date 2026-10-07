@@ -18,9 +18,9 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:mealvana_endurance/features/macro_dashboard/domain/dashboard_models.dart';
-import 'package:mealvana_endurance/features/macro_dashboard/presentation/me_tokens.dart';
 import 'package:mealvana_endurance/features/macro_dashboard/presentation/widgets/energy_summary_card.dart';
 import 'package:mealvana_endurance/features/macro_dashboard/presentation/widgets/workout_card.dart';
+import 'package:mealvana_endurance/theme/kyle_design/app_colors.dart';
 
 Future<void> _loadFont(String family, List<String> paths) async {
   final loader = FontLoader(family);
@@ -94,7 +94,7 @@ const _energy = EnergyCardData(
 Widget _frame(Widget child) => MaterialApp(
   debugShowCheckedModeBanner: false,
   home: Scaffold(
-    backgroundColor: MeTokens.blackberry,
+    backgroundColor: AppColors.blackberry,
     body: Center(
       child: SizedBox(
         width: 380,

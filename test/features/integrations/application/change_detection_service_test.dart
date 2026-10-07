@@ -1149,6 +1149,98 @@ void main() {
     });
 
     // =========================================================================
+    // DELETION WINDOW (Finding 30-001)
+    // =========================================================================
+    // A provider fetch covers a date window (FinalSurge: upcoming only). A
+    // local row scheduled outside that window was never in the response, so
+    // its absence says nothing about the provider. Only rows inside the
+    // window can be flagged as deleted upstream.
+    group('Deletion window', () {
+      final windowStart = DateTime(2026, 9, 24);
+      final windowEnd = DateTime(2026, 9, 30, 23, 59, 59, 999);
+
+      test('a past workout outside the window is NOT flagged when absent', () {
+        final local = [
+          createActivity(
+            id: 'local-past',
+            providerWorkoutId: 'workout-past',
+            scheduledDateTime: DateTime(2026, 9, 23, 7, 28),
+          ),
+        ];
+
+        final result = service.detectChanges(
+          localActivities: local,
+          remoteWorkouts: const [],
+          provider: testProvider,
+          deletionWindowStart: windowStart,
+          deletionWindowEnd: windowEnd,
+        );
+
+        expect(result.deletedActivityIds, isEmpty);
+        expect(result.hasChanges, isFalse);
+      });
+
+      test('a workout inside the window that vanished IS flagged', () {
+        final local = [
+          createActivity(
+            id: 'local-past',
+            providerWorkoutId: 'workout-past',
+            scheduledDateTime: DateTime(2026, 9, 23, 7, 28),
+          ),
+          createActivity(
+            id: 'local-today',
+            providerWorkoutId: 'workout-today',
+            scheduledDateTime: DateTime(2026, 9, 24, 6, 0),
+          ),
+          createActivity(
+            id: 'local-in-window',
+            providerWorkoutId: 'workout-in-window',
+            scheduledDateTime: DateTime(2026, 9, 27, 8, 0),
+          ),
+          createActivity(
+            id: 'local-beyond',
+            providerWorkoutId: 'workout-beyond',
+            scheduledDateTime: DateTime(2026, 10, 1, 8, 0),
+          ),
+        ];
+
+        final result = service.detectChanges(
+          localActivities: local,
+          remoteWorkouts: const [],
+          provider: testProvider,
+          deletionWindowStart: windowStart,
+          deletionWindowEnd: windowEnd,
+        );
+
+        expect(
+          result.deletedActivityIds,
+          unorderedEquals(['local-today', 'local-in-window']),
+          reason:
+              'Only rows the fetch could have returned may be flagged; the '
+              'past row and the row past the window end were never fetched.',
+        );
+      });
+
+      test('no window keeps the old behaviour (every absent row flagged)', () {
+        final local = [
+          createActivity(
+            id: 'local-past',
+            providerWorkoutId: 'workout-past',
+            scheduledDateTime: DateTime(2026, 9, 23, 7, 28),
+          ),
+        ];
+
+        final result = service.detectChanges(
+          localActivities: local,
+          remoteWorkouts: const [],
+          provider: testProvider,
+        );
+
+        expect(result.deletedActivityIds, ['local-past']);
+      });
+    });
+
+    // =========================================================================
     // NULL/EDGE CASE HANDLING
     // =========================================================================
     group('Null and edge case handling', () {

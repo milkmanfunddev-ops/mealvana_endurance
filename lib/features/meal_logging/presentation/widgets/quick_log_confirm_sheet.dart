@@ -48,6 +48,9 @@ Future<QuickLogConfirmResult?> showQuickLogConfirmSheet(
   double servings = initialServings;
   DateTime eatenAt = eatenAtForLogDate(logDate);
   MealSlot? slot = initialSlot;
+  // Log it answers once: a second tap while the sheet closes must neither
+  // pop the screen under it nor log again (testing-wave 112-006).
+  var submitted = false;
 
   return showModalBottomSheet<QuickLogConfirmResult>(
     context: context,
@@ -210,13 +213,17 @@ Future<QuickLogConfirmResult?> showQuickLogConfirmSheet(
                 const SizedBox(height: AppSpacing.lg),
                 KylePrimaryButton(
                   text: 'Log it',
-                  onPressed: () => Navigator.of(ctx).pop(
-                    QuickLogConfirmResult(
-                      servings: servings,
-                      eatenAt: eatenAt,
-                      slot: slot,
-                    ),
-                  ),
+                  onPressed: () {
+                    if (submitted) return;
+                    submitted = true;
+                    Navigator.of(ctx).pop(
+                      QuickLogConfirmResult(
+                        servings: servings,
+                        eatenAt: eatenAt,
+                        slot: slot,
+                      ),
+                    );
+                  },
                 ),
               ],
             ),

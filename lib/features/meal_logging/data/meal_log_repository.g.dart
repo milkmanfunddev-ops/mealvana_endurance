@@ -54,4 +54,4 @@ final class MealLogRepositoryProvider
   }
 }
 
-String _$mealLogRepositoryHash() => r'1539e7334cf30bae006e6c900a72ae9c1b52d473';
+String _$mealLogRepositoryHash() => r'52efc26b01cc0b0b988b057910a25f0ac7f743a4';

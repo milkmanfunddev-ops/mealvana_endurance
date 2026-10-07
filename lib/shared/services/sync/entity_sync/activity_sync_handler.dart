@@ -193,6 +193,7 @@ class ActivitySyncHandler {
             (data['actual_distance_miles'] as num?)?.toDouble(),
           ),
           actualDurationMinutes: Value(data['actual_duration_minutes'] as int?),
+          completionType: Value(data['completion_type'] as String?),
           nutritionPlanData: Value(
             _encodeJsonIfNeeded(data['nutrition_plan_data']),
           ),
@@ -382,6 +383,10 @@ class ActivitySyncHandler {
       'completed_at': activity.completedAt?.toIso8601String(),
       'actual_distance_miles': activity.actualDistanceMiles,
       'actual_duration_minutes': activity.actualDurationMinutes,
+      // Only when set: a null must never overwrite a server 'provider' with
+      // 'manual' (ticket 101).
+      if (activity.completionType != null)
+        'completion_type': activity.completionType,
       'completion_rating': activity.completionRating,
       'completion_notes': activity.completionNotes,
       'nutrition_plan_data': _decodeJsonIfNeeded(activity.nutritionPlanData),
@@ -389,13 +394,21 @@ class ActivitySyncHandler {
       'synced_from_provider': activity.syncedFromProvider,
       'provider_workout_id': activity.providerWorkoutId,
       'provider_workout_url': activity.providerWorkoutUrl,
-      'last_synced_at': activity.lastSyncedAt?.toIso8601String(),
+      // timestamptz columns: UTC with offset, never the bare local wall clock
+      // (Finding 30-002). The wall-clock columns above and below stay naive.
+      'last_synced_at': activity.lastSyncedAt?.toUtc().toIso8601String(),
       'workout_subtype': activity.workoutSubtype,
       'pace_min_minutes_per_mile': activity.paceMinMinutesPerMile,
       'pace_max_minutes_per_mile': activity.paceMaxMinutesPerMile,
-      'provider_deleted_at': activity.providerDeletedAt?.toIso8601String(),
-      'provider_scheduled_at': activity.providerScheduledAt?.toIso8601String(),
-      'schedule_changed_at': activity.scheduleChangedAt?.toIso8601String(),
+      'provider_deleted_at': activity.providerDeletedAt
+          ?.toUtc()
+          .toIso8601String(),
+      'provider_scheduled_at': activity.providerScheduledAt
+          ?.toUtc()
+          .toIso8601String(),
+      'schedule_changed_at': activity.scheduleChangedAt
+          ?.toUtc()
+          .toIso8601String(),
       'brick_metadata': _decodeJsonIfNeeded(activity.brickMetadata),
       'brick_id': activity.brickId,
       'created_at': activity.createdAt.toIso8601String(),

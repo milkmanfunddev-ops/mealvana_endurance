@@ -44,6 +44,7 @@ class WorkoutCardData {
     this.verifiedSourceName = 'Garmin',
     this.skipActive = false,
     this.markDoneAllowed = true,
+    this.completionFinal = false,
   });
 
   final String activityId;
@@ -85,7 +86,18 @@ class WorkoutCardData {
   /// Skip (G4/G5) stays available on any non-verified card.
   final bool markDoneAllowed;
 
+  /// True when a training platform reported the workout completed
+  /// (`completion_type = 'provider'`). Such a completion is final for the
+  /// athlete (Lee, 2026-09-25): the card offers no Mark undone and no Skip,
+  /// the same as a verified card, even where the chip reads self-reported
+  /// (a brick without every leg stamp, B-3).
+  final bool completionFinal;
+
   bool get isVerified => state == WorkoutCardState.doneVerified;
+
+  /// No gesture may change this card's state (G3): verified, or a
+  /// platform-reported completion.
+  bool get isLocked => isVerified || completionFinal;
   bool get isDone =>
       state == WorkoutCardState.doneConfirmed ||
       state == WorkoutCardState.doneVerified;
@@ -104,6 +116,10 @@ class WorkoutCardData {
 }
 
 /// One logged (or suggested) meal item.
+///
+/// The four numbers are null when the log never had them (a Manual entry
+/// with the field left blank): the card shows "—", and the day's sums skip
+/// the row for that macro. `null ≠ 0` (testing-wave 113-004).
 class MealItemData {
   const MealItemData({
     required this.id,
@@ -118,10 +134,10 @@ class MealItemData {
 
   final String id;
   final String name;
-  final double kcal;
-  final double carbsG;
-  final double proteinG;
-  final double fatG;
+  final double? kcal;
+  final double? carbsG;
+  final double? proteinG;
+  final double? fatG;
   final bool suggested;
 
   /// Scheduled but not yet eaten (§3: reduces nothing until eaten; feeds
@@ -211,10 +227,12 @@ class BreakdownMealRow {
 
   final String name;
   final String timeLabel;
-  final double kcal;
-  final double carbsG;
-  final double proteinG;
-  final double fatG;
+
+  /// Null when the log never had the number (see [MealItemData]).
+  final double? kcal;
+  final double? carbsG;
+  final double? proteinG;
+  final double? fatG;
   final bool planned;
 }
 
@@ -355,6 +373,16 @@ class EnergyWorkoutRow {
 
 /// Locale-stable thousands formatting matching the reference rendering
 /// (1,205 / 4,152).
+/// The face of an unknown number: a log that never had it (113-004).
+const String unknownNumberStr = '\u2014';
+
+/// [kcalStr] for a number that may be unknown.
+String kcalStrOrUnknown(num? v) => v == null ? unknownNumberStr : kcalStr(v);
+
+/// A rounded macro gram count, or "—" when unknown.
+String macroStrOrUnknown(double? v) =>
+    v == null ? unknownNumberStr : v.round().toString();
+
 String kcalStr(num v) {
   final s = v.round().abs().toString();
   final b = StringBuffer();
