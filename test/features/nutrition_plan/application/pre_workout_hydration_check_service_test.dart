@@ -327,7 +327,7 @@ void main() {
       expect(d.fluids.target, 16); // round(472.5 / 29.5735)
       expect(d.fluids.bandLow, 10); // floor(315 / 29.5735)
       expect(d.fluids.bandHigh, 26); // ceil(756 / 29.5735)
-      expect(d.feedings.first.fluidOz, 16); // meal tier fluid
+      expect(d.feedings.first.fluidOz, 16); // meal rows: 2 cups water
       expect(d.feedings[1].fluidOz, isNull); // snack carries none (pale)
       expect(d.feedings[2].fluidOz, isNull);
     });
@@ -368,7 +368,7 @@ void main() {
         expect(z.carbs.bandHigh, 0);
         expect(z.carbs.showBand, isFalse);
         expect(z.carbs.absentLine, isNull);
-        expect(z.feedings.single.fluidOz, 8); // f(0) = 250 ml → 8 oz
+        expect(z.feedings.single.fluidOz, 8); // 1 cup water row → 8 oz
       },
     );
 
