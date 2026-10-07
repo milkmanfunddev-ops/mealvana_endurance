@@ -9,9 +9,9 @@
  * Requires: Valid JWT token from authenticated user.
  *
  * Secrets:
- *   REVENUECAT_SECRET_KEY  RevenueCat v2 secret API key (the one redeem-code
- *                          and the webhook use). Without it the account is
- *                          still deleted and the skipped customer is logged.
+ *   REVENUECAT_SECRET_KEY  RevenueCat v2 secret API key. Without it the
+ *                          account is still deleted and the skipped customer
+ *                          is logged.
  *   REVENUECAT_PROJECT_ID  optional, defaults to proj77b3c48f
  */
 import { serve } from 'https://deno.land/std@0.224.0/http/server.ts';
