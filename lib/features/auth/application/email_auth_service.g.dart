@@ -42,7 +42,7 @@ final class EmailAuthServiceProvider
   EmailAuthService create() => EmailAuthService();
 }
 
-String _$emailAuthServiceHash() => r'a82d06fa74390f7f4bd3d2f7e96ff1b7c503f1c2';
+String _$emailAuthServiceHash() => r'ade2b875b31916ca23bdd7eba3e4a4a6cf22a6e5';
 
 /// Service for handling Email/Password authentication
 /// Uses Supabase's built-in updateUser() to link email to anonymous account
