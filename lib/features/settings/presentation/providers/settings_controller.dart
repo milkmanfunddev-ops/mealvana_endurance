@@ -2,7 +2,8 @@ import 'dart:async';
 import 'package:mealvana_endurance/shared/database/database_provider.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../../integrations/presentation/providers/athlete_zones_provider.dart';
-import 'package:supabase_flutter/supabase_flutter.dart' show HttpMethod;
+import 'package:supabase_flutter/supabase_flutter.dart'
+    show FunctionResponse, HttpMethod;
 import '../../../../shared/services/app_external_deps.dart';
 import '../../../../shared/services/report/report.dart';
 import '../../../activities/data/activities_repository.dart';
@@ -35,6 +36,7 @@ import '../../../onboarding/data/onboarding_survey_repository.dart';
 import '../../../personal_templates/data/personal_templates_repository.dart';
 import '../../../user_foods/data/user_foods_repository.dart';
 import '../../application/sign_out_notice.dart';
+import '../../domain/account_deletion_exceptions.dart';
 import '../../domain/settings_state.dart';
 
 part 'settings_controller.g.dart';
@@ -948,6 +950,21 @@ class SettingsController extends _$SettingsController {
   /// 1. Call delete-user Edge Function to delete from auth.users and public.users
   /// 2. Clear user's local data (with WHERE user_id filter)
   /// 3. Sign out to trigger auth state change which rebuilds UI
+  ///
+  /// The server's answer is the ack (testing-wave 121-007, 121-009): when
+  /// `delete-user` cannot be reached or answers anything but 200, nothing
+  /// else runs. The local rows, the RevenueCat identity and the session all
+  /// stay, the state shown is left as it was, and
+  /// [AccountDeletionNeedsConnectionException] reaches the screen, which
+  /// says the delete needs a connection. This is the one write path that
+  /// rethrows past `AsyncValue.guard`: a half-deleted account (rows gone,
+  /// account alive) is worse than a delete that did not happen.
+  ///
+  /// Running twice: a second tap while the first is in flight sends a second
+  /// `delete-user`; the function deletes once and the second call answers
+  /// 401 (no user for the token), which stops that second run before it
+  /// touches anything, while the first finishes the wipe. A retry after a
+  /// failure repeats only the function call, which is idempotent.
   Future<void> deleteAccount() async {
     final result = await AsyncValue.guard(() async {
       final supabaseClient = ref.read(appExternalDepsProvider).supabaseClient;
@@ -967,43 +984,42 @@ class SettingsController extends _$SettingsController {
       // Track delete account event
       await analytics.track('settings_delete_account_tapped');
 
-      // If authenticated, call the delete-user Edge Function
-      // This deletes from both auth.users and public.users (with CASCADE)
+      // The delete-user Edge Function deletes auth.users and public.users
+      // (with CASCADE). Its 200 is the ack everything below waits for.
+      report.info('Calling delete-user Edge Function', area: 'settings');
+      final FunctionResponse response;
       try {
-        report.info('Calling delete-user Edge Function', area: 'settings');
-
-        final response = await supabaseClient.functions.invoke(
+        response = await supabaseClient.functions.invoke(
           'delete-user',
           method: HttpMethod.post,
           body: {}, // No body needed - user ID comes from JWT
         );
-
-        if (response.status != 200) {
-          final errorData = response.data;
-          final errorMessage = errorData?['message'] ?? 'Unknown error';
-          report.fault(
-            LoggedFault(
-              'delete-user Edge Function failed',
-              context: 'SETTINGS',
-            ),
-            area: 'settings',
-            extra: {'status': response.status, 'message': errorMessage},
-          );
-          // Continue with local cleanup even if server deletion fails
-        } else {
-          report.info(
-            'User deleted from Supabase successfully',
-            area: 'settings',
-          );
-        }
-      } catch (e) {
-        report.fault(
+      } catch (e, st) {
+        // Unreachable, or the SDK raised the non-2xx itself.
+        await report.degraded(
           e,
+          stackTrace: st,
           area: 'settings',
           message: 'Error calling delete-user Edge Function',
         );
-        // Continue with local cleanup even if edge function call fails
+        throw AccountDeletionNeedsConnectionException(e.toString());
       }
+
+      if (response.status != 200) {
+        final errorData = response.data;
+        final errorMessage = errorData is Map
+            ? errorData['message'] ?? 'Unknown error'
+            : 'Unknown error';
+        await report.fault(
+          LoggedFault('delete-user Edge Function failed', context: 'SETTINGS'),
+          area: 'settings',
+          extra: {'status': response.status, 'message': errorMessage},
+        );
+        throw AccountDeletionNeedsConnectionException(
+          'delete-user answered ${response.status}: $errorMessage',
+        );
+      }
+      report.info('User deleted from Supabase successfully', area: 'settings');
 
       // Log the RevenueCat SDK out, as sign-out does: the deleted account's
       // customer must not linger. logOut reports its own failures.
@@ -1042,6 +1058,13 @@ class SettingsController extends _$SettingsController {
       // to the state captured before the first await.
       return ref.mounted ? state.requireValue : stateBefore.requireValue;
     });
+
+    // The server did not confirm: nothing local changed, so the shown state
+    // stays as it was and the screen hears why (121-007).
+    if (result.error case final AccountDeletionNeedsConnectionException e) {
+      throw e;
+    }
+
     // The save above completed; only the UI state is dropped when this
     // auto-dispose controller was disposed during it.
     if (ref.mounted) state = result;

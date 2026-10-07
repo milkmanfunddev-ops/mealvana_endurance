@@ -183,7 +183,8 @@
     "delete_confirm_title": "Delete account?",
     "delete_confirm_body": "This permanently deletes your account and all of its data. This cannot be undone.",
     "delete_confirm_action": "Delete",
-    "sign_out_unsynced_kept": "You're offline, so your unsynced changes stay on this phone and sync the next time you sign in."
+    "sign_out_unsynced_kept": "You're offline, so your unsynced changes stay on this phone and sync the next time you sign in.",
+    "delete_needs_connection": "Deleting your account needs a connection. Nothing was deleted; try again when you're online."
   },
   "cycling_preferences": {
     "ftp_label": "FTP (Functional Threshold Power)",

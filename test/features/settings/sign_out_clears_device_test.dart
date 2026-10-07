@@ -9,6 +9,7 @@
 /// Ticket 102 (Finding 86-007): an offline sign-out keeps the unsynced rows,
 /// their parents and the local-only tables, and says so; an online sign-out
 /// uploads every syncable repository before the wipe.
+/// Ticket 139 (121-007): a delete the server did not confirm changes nothing.
 ///
 /// `build()` is seeded with a fixed state, as the settings suites do; the
 /// sign-out path itself is the real one, against a real in-memory Drift
@@ -16,6 +17,7 @@
 library;
 
 import 'dart:async';
+import 'dart:io';
 
 import 'package:drift/drift.dart' show Value, Variable;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -42,6 +44,7 @@ import 'package:mealvana_endurance/features/meal_logging/data/saved_meals_reposi
 import 'package:mealvana_endurance/features/onboarding/data/onboarding_survey_repository.dart';
 import 'package:mealvana_endurance/features/personal_templates/data/personal_templates_repository.dart';
 import 'package:mealvana_endurance/features/settings/application/sign_out_notice.dart';
+import 'package:mealvana_endurance/features/settings/domain/account_deletion_exceptions.dart';
 import 'package:mealvana_endurance/features/settings/domain/settings_state.dart';
 import 'package:mealvana_endurance/features/settings/presentation/providers/settings_controller.dart';
 import 'package:mealvana_endurance/features/user_foods/data/user_foods_repository.dart';
@@ -65,6 +68,8 @@ class _MockAnalytics extends Mock implements AnalyticsTracker {}
 class _MockPrefs extends Mock implements SharedPreferences {}
 
 class _MockRevenueCat extends Mock implements RevenueCatService {}
+
+class _MockFunctionsClient extends Mock implements FunctionsClient {}
 
 class _MockActivitiesRepo extends Mock implements ActivitiesRepository {}
 
@@ -129,9 +134,11 @@ void main() {
   late RecordingReport report;
   late _MockPrefs prefs;
   late _MockRevenueCat revenueCat;
+  late _MockFunctionsClient functions;
 
   setUpAll(() {
     registerFallbackValue(StackTrace.empty);
+    registerFallbackValue(HttpMethod.post);
   });
 
   setUp(() async {
@@ -161,6 +168,18 @@ void main() {
 
     revenueCat = _MockRevenueCat();
     when(() => revenueCat.logOut()).thenAnswer((_) async {});
+
+    // delete-user answers 200 unless a test says otherwise (121-007).
+    functions = _MockFunctionsClient();
+    when(
+      () => functions.invoke(
+        any(),
+        method: any(named: 'method'),
+        body: any(named: 'body'),
+      ),
+    ).thenAnswer(
+      (_) async => FunctionResponse(status: 200, data: {'success': true}),
+    );
 
     await _seedTwoAccounts(db);
   });
@@ -225,7 +244,11 @@ void main() {
         appExternalDepsProvider.overrideWithValue(
           AppExternalDeps(
             analytics: analytics,
-            supabaseClient: fakeSupabaseClient(auth: auth),
+            supabaseClient: () {
+              final client = fakeSupabaseClient(auth: auth);
+              when(() => client.functions).thenReturn(functions);
+              return client;
+            }(),
             sharedPreferences: prefs,
             report: report,
           ),
@@ -403,6 +426,60 @@ void main() {
       expect(report.degradeds, isEmpty);
     },
   );
+
+  group('delete account waits for the server (121-007, 121-009)', () {
+    test('delete-user unreachable: rows, RevenueCat identity and session '
+        'stay, and the screen hears it needs a connection', () async {
+      final c = makeContainer();
+      when(
+        () => functions.invoke(
+          any(),
+          method: any(named: 'method'),
+          body: any(named: 'body'),
+        ),
+      ).thenThrow(const SocketException('Network is unreachable'));
+      final before = await _rowsFor(db, _outgoing);
+      expect(before, isNot(_allZero));
+
+      await expectLater(
+        c.read(settingsControllerProvider.notifier).deleteAccount(),
+        throwsA(isA<AccountDeletionNeedsConnectionException>()),
+      );
+
+      expect(await _rowsFor(db, _outgoing), before);
+      verifyNever(() => revenueCat.logOut());
+      verifyNever(() => auth.signOut());
+      verifyNever(() => prefs.remove(any()));
+      // The shown state is untouched: no error state for the screen to show.
+      expect(c.read(settingsControllerProvider).hasValue, isTrue);
+      expect(c.read(settingsControllerProvider).hasError, isFalse);
+    });
+
+    test('delete-user answers 500: the same, nothing half-deleted', () async {
+      final c = makeContainer();
+      when(
+        () => functions.invoke(
+          any(),
+          method: any(named: 'method'),
+          body: any(named: 'body'),
+        ),
+      ).thenAnswer(
+        (_) async => FunctionResponse(
+          status: 500,
+          data: {'success': false, 'message': 'Failed to delete auth account'},
+        ),
+      );
+
+      await expectLater(
+        c.read(settingsControllerProvider.notifier).deleteAccount(),
+        throwsA(isA<AccountDeletionNeedsConnectionException>()),
+      );
+
+      expect(await _rowsFor(db, _outgoing), isNot(_allZero));
+      verifyNever(() => revenueCat.logOut());
+      verifyNever(() => auth.signOut());
+    });
+  });
 }
 
 // ─── Seeds and counts ────────────────────────────────────────────────────────
