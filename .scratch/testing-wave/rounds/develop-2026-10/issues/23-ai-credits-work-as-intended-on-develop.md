@@ -1,6 +1,6 @@
 # 23: AI credits work as intended on develop
 
-**Status:** ready (round develop-2026-10, fix)
+**Status:** in-progress (wave 2c, 2026-10-07)
 **Labels:** fix, round:develop-2026-10, area:ai-credits
 **Branch:** `develop-next` (fix-wave worktree)
 **Blocked by:** 29 (the backport ticket runs first, alone).
