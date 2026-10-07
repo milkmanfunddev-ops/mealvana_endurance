@@ -251,6 +251,29 @@ class ContentKeys {
   static const String barcodeScannerEnterSubmit =
       'barcode_scanner.enter_submit';
 
+  // Barcode entry sheet (testing-wave 136: 113-006 typed length and words)
+  static const String barcodeScannerEnterLength =
+      'barcode_scanner.enter_length';
+  static const String barcodeScannerTypedInvalid =
+      'barcode_scanner.typed_invalid';
+
+  // Logged and saved meal actions (testing-wave 136: 112-005, 112-008)
+  static const String mealLogActionsSavedMealRemoved =
+      'meal_log_actions.saved_meal_removed';
+  static const String mealLogActionsUndo = 'meal_log_actions.undo';
+  static const String mealLogActionsSaveAsFavorite =
+      'meal_log_actions.save_as_favorite';
+  static const String mealLogActionsSavedAsFavorite =
+      'meal_log_actions.saved_as_favorite';
+  static const String mealLogActionsSaveAsFavoriteFailed =
+      'meal_log_actions.save_as_favorite_failed';
+
+  // Build a Meal leave guard (testing-wave 136: 113-007)
+  static const String buildMealDiscardTitle = 'build_meal.discard_title';
+  static const String buildMealDiscardBody = 'build_meal.discard_body';
+  static const String buildMealDiscard = 'build_meal.discard';
+  static const String buildMealKeepBuilding = 'build_meal.keep_building';
+
   /// Interpolates `{name}` placeholders in a content value:
   /// `format('Give me {n} seconds', {'n': 30})`. (From mealplanning 7b206f04;
   /// the code screens' countdown reads it.)

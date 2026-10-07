@@ -570,7 +570,7 @@ class EnergySummaryCard extends StatelessWidget {
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  kcalStr(r.kcal),
+                  kcalStrOrUnknown(r.kcal),
                   style: TextStyle(
                     fontFamily: 'Apercu Mono',
                     fontSize: 11.5,
