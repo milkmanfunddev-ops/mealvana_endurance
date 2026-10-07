@@ -30,6 +30,22 @@ class OAuthAccountNotFoundException implements Exception {
       'OAuthAccountNotFoundException: no existing account for $provider';
 }
 
+/// The athlete closed the provider's sheet without signing in (testing-wave
+/// 125-003): Google's picker dismissed (`signIn()` answered null), or Apple's
+/// `ASAuthorizationError.canceled` (1001). A *control-flow* signal, never an
+/// error: the service throws it in place of a generic failure, the controller
+/// logs it at info, and the screen returns quietly with no "Sign in failed".
+/// The simulator's `unknown` Apple error is not a cancel and stays a failure.
+class OAuthCancelledException implements Exception {
+  const OAuthCancelledException({required this.provider});
+
+  /// Lowercase provider slug ('apple' | 'google').
+  final String provider;
+
+  @override
+  String toString() => 'OAuthCancelledException: $provider sign-in cancelled';
+}
+
 /// Signup succeeded but the address must be verified before a session exists.
 ///
 /// Supabase returns a user with a null session when email confirmation is

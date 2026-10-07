@@ -251,7 +251,7 @@ class AuthMigrationService {
         'typical_swim_cap_type': anonymousProfile.typicalSwimCapType,
         'first_name': anonymousProfile.firstName,
         'last_name': anonymousProfile.lastName,
-        'updated_at': DateTime.now().toIso8601String(),
+        'updated_at': DateTime.now().toUtc().toIso8601String(),
       }, onConflict: 'id');
 
       report.breadcrumb(

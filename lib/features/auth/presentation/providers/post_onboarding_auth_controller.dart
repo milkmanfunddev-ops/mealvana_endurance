@@ -59,6 +59,12 @@ class PostOnboardingAuthController extends _$PostOnboardingAuthController {
           'auth_account_already_exists',
           properties: {'provider': 'apple', 'source': 'post_onboarding'},
         );
+      } else if (error is OAuthCancelledException) {
+        // The sheet was closed (125-003): not a failure, nothing to report.
+        report.info(
+          'Post-onboarding auth: Apple sign-in cancelled',
+          area: 'auth',
+        );
       } else {
         report.fault(
           error!,
@@ -122,6 +128,12 @@ class PostOnboardingAuthController extends _$PostOnboardingAuthController {
           'auth_account_already_exists',
           properties: {'provider': 'google', 'source': 'post_onboarding'},
         );
+      } else if (error is OAuthCancelledException) {
+        // The sheet was closed (125-003): not a failure, nothing to report.
+        report.info(
+          'Post-onboarding auth: Google sign-in cancelled',
+          area: 'auth',
+        );
       } else {
         report.fault(
           error!,
@@ -176,6 +188,12 @@ class PostOnboardingAuthController extends _$PostOnboardingAuthController {
           'Post-onboarding auth: no existing account for this Apple identity',
           area: 'auth',
         );
+      } else if (result.error is OAuthCancelledException) {
+        // The sheet was closed (125-003): not a failure, nothing to report.
+        report.info(
+          'Post-onboarding auth: Apple sign-in cancelled',
+          area: 'auth',
+        );
       } else {
         report.fault(
           result.error!,
@@ -211,6 +229,12 @@ class PostOnboardingAuthController extends _$PostOnboardingAuthController {
           'Post-onboarding auth: no existing account for this Google identity',
           area: 'auth',
         );
+      } else if (result.error is OAuthCancelledException) {
+        // The sheet was closed (125-003): not a failure, nothing to report.
+        report.info(
+          'Post-onboarding auth: Google sign-in cancelled',
+          area: 'auth',
+        );
       } else {
         report.fault(
           result.error!,
@@ -244,10 +268,7 @@ class PostOnboardingAuthController extends _$PostOnboardingAuthController {
     );
 
     final result = await AsyncValue.guard(() async {
-      await emailAuth.linkEmailAccount(
-        email: email,
-        password: password,
-      );
+      await emailAuth.linkEmailAccount(email: email, password: password);
     });
     if (ref.mounted) state = result;
 

@@ -70,6 +70,24 @@ class OAuthService extends _$OAuthService {
     });
   }
 
+  /// Whether [error] is the athlete closing the provider's sheet (125-003):
+  /// Apple's `ASAuthorizationError.canceled` (code 1001, which the plugin
+  /// types as [AuthorizationErrorCode.canceled]), or Google's cancel codes.
+  /// Anything else, the simulator's Apple `unknown` included, is a failure.
+  @visibleForTesting
+  static bool isCancellation(Object error) {
+    if (error is OAuthCancelledException) return true;
+    if (error is SignInWithAppleAuthorizationException) {
+      return error.code == AuthorizationErrorCode.canceled;
+    }
+    final message = error.toString();
+    return message.contains('sign_in_canceled') ||
+        message.contains('SIGN_IN_CANCELLED') ||
+        message.contains('12501') || // Google Sign-In: user cancelled
+        message.contains('AuthorizationErrorCode.canceled') ||
+        message.contains('1001'); // ASAuthorizationError.canceled
+  }
+
   /// Initialize Google Sign-In with platform-specific configuration
   GoogleSignIn _getGoogleSignIn() {
     if (_googleSignIn != null) return _googleSignIn!;
@@ -244,30 +262,28 @@ class OAuthService extends _$OAuthService {
         throw error;
       }
 
-      _report.fault(
-        error!,
-        area: 'auth',
-        message: 'Apple Sign-In failed',
-      );
+      // A closed sheet is not a failure (125-003): no error log, a typed
+      // cancel for the screen to swallow.
+      if (isCancellation(error!)) {
+        _report.info('Apple Sign-In cancelled by user', area: 'auth');
+        await _analytics.track(
+          'auth_apple_native_cancelled',
+          properties: {'platform': PlatformInfo.operatingSystem},
+        );
+        throw const OAuthCancelledException(provider: 'apple');
+      }
 
-      // Distinguish user cancellation from errors
-      final errorMessage = error.toString();
-      final wasCancelled =
-          errorMessage.contains("The operation couldn't be completed") ||
-          errorMessage.contains('CANCELED') ||
-          errorMessage.contains('1001'); // ASAuthorizationError.canceled
+      _report.fault(error, area: 'auth', message: 'Apple Sign-In failed');
 
       await _analytics.track(
-        wasCancelled
-            ? 'auth_apple_native_cancelled'
-            : 'auth_apple_native_failed',
+        'auth_apple_native_failed',
         properties: {
-          'error': errorMessage,
+          'error': error.toString(),
           'platform': PlatformInfo.operatingSystem,
         },
       );
 
-      throw state.error!;
+      throw error;
     }
   }
 
@@ -317,14 +333,9 @@ class OAuthService extends _$OAuthService {
       // Launch native Google Sign-In
       final GoogleSignInAccount? account = await googleSignIn.signIn();
 
-      // User cancelled sign-in
+      // User closed the picker: a cancel, not a failure (125-003).
       if (account == null) {
-        _report.info('Google Sign-In cancelled by user', area: 'auth');
-        await _analytics.track(
-          'auth_google_native_cancelled',
-          properties: {'platform': PlatformInfo.operatingSystem},
-        );
-        throw Exception('Google Sign-In was cancelled');
+        throw const OAuthCancelledException(provider: 'google');
       }
 
       _report.info(
@@ -427,30 +438,28 @@ class OAuthService extends _$OAuthService {
         throw error;
       }
 
-      _report.fault(
-        error!,
-        area: 'auth',
-        message: 'Google Sign-In failed',
-      );
+      // A closed picker is not a failure (125-003): no error log, a typed
+      // cancel for the screen to swallow.
+      if (isCancellation(error!)) {
+        _report.info('Google Sign-In cancelled by user', area: 'auth');
+        await _analytics.track(
+          'auth_google_native_cancelled',
+          properties: {'platform': PlatformInfo.operatingSystem},
+        );
+        throw const OAuthCancelledException(provider: 'google');
+      }
 
-      // Map Google Sign-In error codes
-      final errorMessage = error.toString();
-      final wasCancelled =
-          errorMessage.contains('sign_in_canceled') ||
-          errorMessage.contains('SIGN_IN_CANCELLED') ||
-          errorMessage.contains('12501'); // Google Sign-In error code
+      _report.fault(error, area: 'auth', message: 'Google Sign-In failed');
 
       await _analytics.track(
-        wasCancelled
-            ? 'auth_google_native_cancelled'
-            : 'auth_google_native_failed',
+        'auth_google_native_failed',
         properties: {
-          'error': errorMessage,
+          'error': error.toString(),
           'platform': PlatformInfo.operatingSystem,
         },
       );
 
-      throw state.error!;
+      throw error;
     }
   }
 
@@ -691,28 +700,29 @@ class OAuthService extends _$OAuthService {
             area: 'auth',
           );
         } catch (e) {
-          _report.fault(
-            e,
-            area: 'auth',
-            message: 'Post-sign-in sync failed',
-          );
+          _report.fault(e, area: 'auth', message: 'Post-sign-in sync failed');
           // Don't rethrow - sign-in was successful, sync can be retried
         }
       }
     });
 
     if (state.hasError) {
-      final error = state.error;
+      final error = state.error!;
       // Expected control-flow signal (no existing account) — not a failure.
       if (error is OAuthAccountNotFoundException) {
         throw error;
       }
-      _report.fault(
-        error!,
-        area: 'auth',
-        message: 'Apple Sign-In failed',
-      );
-      throw state.error!;
+      // Neither is a closed sheet (125-003).
+      if (isCancellation(error)) {
+        _report.info('Apple Sign-In cancelled by user', area: 'auth');
+        await _analytics.track(
+          'auth_apple_signin_cancelled',
+          properties: {'platform': PlatformInfo.operatingSystem},
+        );
+        throw const OAuthCancelledException(provider: 'apple');
+      }
+      _report.fault(error, area: 'auth', message: 'Apple Sign-In failed');
+      throw error;
     }
   }
 
@@ -767,7 +777,8 @@ class OAuthService extends _$OAuthService {
       final GoogleSignInAccount? account = await googleSignIn.signIn();
 
       if (account == null) {
-        throw Exception('Google Sign-In cancelled');
+        // The picker was closed: a cancel, not a failure (125-003).
+        throw const OAuthCancelledException(provider: 'google');
       }
 
       final GoogleSignInAuthentication auth = await account.authentication;
@@ -898,28 +909,29 @@ class OAuthService extends _$OAuthService {
             area: 'auth',
           );
         } catch (e) {
-          _report.fault(
-            e,
-            area: 'auth',
-            message: 'Post-sign-in sync failed',
-          );
+          _report.fault(e, area: 'auth', message: 'Post-sign-in sync failed');
           // Don't rethrow - sign-in was successful, sync can be retried
         }
       }
     });
 
     if (state.hasError) {
-      final error = state.error;
+      final error = state.error!;
       // Expected control-flow signal (no existing account) — not a failure.
       if (error is OAuthAccountNotFoundException) {
         throw error;
       }
-      _report.fault(
-        error!,
-        area: 'auth',
-        message: 'Google Sign-In failed',
-      );
-      throw state.error!;
+      // Neither is a closed picker (125-003).
+      if (isCancellation(error)) {
+        _report.info('Google Sign-In cancelled by user', area: 'auth');
+        await _analytics.track(
+          'auth_google_signin_cancelled',
+          properties: {'platform': PlatformInfo.operatingSystem},
+        );
+        throw const OAuthCancelledException(provider: 'google');
+      }
+      _report.fault(error, area: 'auth', message: 'Google Sign-In failed');
+      throw error;
     }
   }
 
@@ -942,10 +954,7 @@ class OAuthService extends _$OAuthService {
     state = const AsyncLoading();
 
     state = await AsyncValue.guard(() async {
-      _report.info(
-        'Starting web Apple OAuth flow (linking)',
-        area: 'auth',
-      );
+      _report.info('Starting web Apple OAuth flow (linking)', area: 'auth');
 
       await _analytics.track(
         'auth_apple_web_started',
@@ -1005,11 +1014,7 @@ class OAuthService extends _$OAuthService {
       if (error is AccountAlreadyExistsException) {
         throw error;
       }
-      _report.fault(
-        error!,
-        area: 'auth',
-        message: 'Apple web OAuth failed',
-      );
+      _report.fault(error!, area: 'auth', message: 'Apple web OAuth failed');
       throw state.error!;
     }
   }
@@ -1019,10 +1024,7 @@ class OAuthService extends _$OAuthService {
     state = const AsyncLoading();
 
     state = await AsyncValue.guard(() async {
-      _report.info(
-        'Starting web Google OAuth flow (linking)',
-        area: 'auth',
-      );
+      _report.info('Starting web Google OAuth flow (linking)', area: 'auth');
 
       await _analytics.track(
         'auth_google_web_started',
@@ -1082,11 +1084,7 @@ class OAuthService extends _$OAuthService {
       if (error is AccountAlreadyExistsException) {
         throw error;
       }
-      _report.fault(
-        error!,
-        area: 'auth',
-        message: 'Google web OAuth failed',
-      );
+      _report.fault(error!, area: 'auth', message: 'Google web OAuth failed');
       throw state.error!;
     }
   }
@@ -1096,10 +1094,7 @@ class OAuthService extends _$OAuthService {
     state = const AsyncLoading();
 
     state = await AsyncValue.guard(() async {
-      _report.info(
-        'Starting web Apple OAuth flow (sign-in)',
-        area: 'auth',
-      );
+      _report.info('Starting web Apple OAuth flow (sign-in)', area: 'auth');
 
       await _analytics.track(
         'auth_apple_web_signin_started',
@@ -1147,10 +1142,7 @@ class OAuthService extends _$OAuthService {
     state = const AsyncLoading();
 
     state = await AsyncValue.guard(() async {
-      _report.info(
-        'Starting web Google OAuth flow (sign-in)',
-        area: 'auth',
-      );
+      _report.info('Starting web Google OAuth flow (sign-in)', area: 'auth');
 
       await _analytics.track(
         'auth_google_web_signin_started',
@@ -1180,10 +1172,7 @@ class OAuthService extends _$OAuthService {
 
       // Note: The OAuth flow will redirect the browser, so we won't reach this
       // point immediately. The auth state change listener will handle the result.
-      _report.info(
-        'Google OAuth sign-in redirect initiated',
-        area: 'auth',
-      );
+      _report.info('Google OAuth sign-in redirect initiated', area: 'auth');
     });
 
     if (state.hasError) {
