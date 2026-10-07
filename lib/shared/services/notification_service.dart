@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart' show AppLifecycleListener;
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:onesignal_flutter/onesignal_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -14,11 +15,83 @@ import 'launch_trail.dart';
 import 'analytics/analytics_tracker.dart';
 import 'report/report.dart';
 
+/// The slice of the OneSignal SDK [NotificationService] drives, behind a
+/// seam so tests can see when the permission ask happens (mealplanning
+/// tickets 79 and 138, backported by develop-2026-10 ticket 29). develop's
+/// opt-out heal reads and flips the push subscription through it too.
+abstract class RemotePushClient {
+  /// Starts the SDK and wires tap and foreground-display handling.
+  void start(String appId, void Function(Map<String, dynamic>) onClickData);
+
+  /// Registers for remote notifications and refreshes the APNs token. On an
+  /// install that has never answered, this raises the iOS prompt. Returns
+  /// whether notifications are allowed afterwards.
+  Future<bool> requestPermission({required bool fallbackToSettings});
+
+  /// Whether the OS currently allows notifications for this app.
+  Future<bool> permissionGranted();
+
+  /// The SDK's push-subscription opt state; null until it has hydrated.
+  bool? get optedIn;
+
+  /// Flips the SDK opt state back on (promptless when permission is held).
+  Future<void> optIn();
+
+  void login(String externalId);
+  void logout();
+}
+
+class OneSignalRemotePush implements RemotePushClient {
+  const OneSignalRemotePush();
+
+  @override
+  void start(String appId, void Function(Map<String, dynamic>) onClickData) {
+    OneSignal.initialize(appId);
+    OneSignal.Notifications.addClickListener((event) {
+      final data = event.notification.additionalData;
+      if (data == null) return;
+      onClickData(data);
+    });
+
+    // Show push banners while the app is in the foreground. Without this,
+    // iOS suppresses the alert entirely when Mealvana is open.
+    OneSignal.Notifications.addForegroundWillDisplayListener((event) {
+      event.preventDefault();
+      event.notification.display();
+    });
+  }
+
+  @override
+  Future<bool> requestPermission({required bool fallbackToSettings}) =>
+      OneSignal.Notifications.requestPermission(fallbackToSettings);
+
+  @override
+  Future<bool> permissionGranted() async {
+    final native = await OneSignal.Notifications.permissionNative();
+    return native == OSNotificationPermission.authorized ||
+        native == OSNotificationPermission.provisional ||
+        native == OSNotificationPermission.ephemeral;
+  }
+
+  @override
+  bool? get optedIn => OneSignal.User.pushSubscription.optedIn;
+
+  @override
+  Future<void> optIn() => OneSignal.User.pushSubscription.optIn();
+
+  @override
+  void login(String externalId) => OneSignal.login(externalId);
+
+  @override
+  void logout() => OneSignal.logout();
+}
+
 class NotificationService {
   static final FlutterLocalNotificationsPlugin _plugin =
       FlutterLocalNotificationsPlugin();
   static bool _isInitialized = false;
   static bool _isOneSignalInitialized = false;
+  static bool _remotePushRegistered = false;
   static String? _pendingNavigationActivityId;
   static String? _pendingNavigationType;
   static String? _pendingRemoteUserId;
@@ -39,6 +112,44 @@ class NotificationService {
     _report = report;
   }
 
+  /// Receives the OS's answer to the notification ask, and any later change
+  /// seen on app resume (ticket 138, Finding 125-004). The startup flow
+  /// wires it to `users.notifications_enabled` through the user repository.
+  static Future<void> Function(bool granted)? _onPermissionAnswer;
+  static bool? _lastReportedPermission;
+  static AppLifecycleListener? _resumeListener;
+
+  @visibleForTesting
+  static RemotePushClient remotePush = const OneSignalRemotePush();
+
+  /// Returns the static state to a fresh launch, for tests.
+  @visibleForTesting
+  static void debugReset() {
+    _isInitialized = false;
+    _isOneSignalInitialized = false;
+    _remotePushRegistered = false;
+    _pendingNavigationActivityId = null;
+    _pendingNavigationType = null;
+    _pendingRemoteUserId = null;
+    _lastSyncedRemoteUserId = null;
+    _navigationHandler = null;
+    _dailyMacroCacheInvalidator = null;
+    _analytics = const NoopAnalyticsTracker();
+    _oneSignalAppId = '';
+    _onPermissionAnswer = null;
+    _lastReportedPermission = null;
+    _resumeListener?.dispose();
+    _resumeListener = null;
+    remotePush = const OneSignalRemotePush();
+  }
+
+  /// A guard bail in the push path, written down (rule D9): the tape for the
+  /// device, a breadcrumb for the next Sentry event.
+  static void _trailBail(String line) {
+    LaunchTrail.add(line);
+    _r.breadcrumb(line, category: 'push');
+  }
+
   /// Registers a callback invoked when a Garmin activity-upload notification
   /// carries a [scheduled_date]. The callback should invalidate the macro
   /// cache for that date so the next calculation re-runs with fresh data.
@@ -51,9 +162,81 @@ class NotificationService {
   static void configure(
     AnalyticsTracker tracker, {
     String oneSignalAppId = '',
+    Future<void> Function(bool granted)? onPermissionAnswer,
   }) {
     _analytics = tracker;
     configureRemotePush(oneSignalAppId: oneSignalAppId);
+    if (onPermissionAnswer != null) {
+      configurePermissionAnswer(onPermissionAnswer);
+    }
+  }
+
+  /// Where the OS's answer to the notification ask goes (ticket 138, Finding
+  /// 125-004), and the resume watch that follows later changes made in iOS
+  /// Settings. Separate from [configure] because that one waits for
+  /// analytics consent, and storing the answer is not tracking.
+  static void configurePermissionAnswer(
+    Future<void> Function(bool granted) onPermissionAnswer,
+  ) {
+    _onPermissionAnswer = onPermissionAnswer;
+    if (_resumeListener == null) {
+      try {
+        // A change made in iOS Settings shows up on the next resume.
+        _resumeListener = AppLifecycleListener(
+          onResume: () => unawaited(refreshPermission()),
+        );
+      } catch (_) {
+        // No widgets binding (tests without one): resume is not watched.
+        _trailBail('notification permission: resume not watched (no binding)');
+      }
+    }
+  }
+
+  /// Re-reads the OS permission and reports it when it differs from the last
+  /// answer reported this launch. Safe to run twice at once: both read the
+  /// same value and the second finds nothing new.
+  static Future<void> refreshPermission() async {
+    if (kIsWeb || !_isOneSignalInitialized || _onPermissionAnswer == null) {
+      _trailBail(
+        'notification permission re-read skipped: '
+        'web=$kIsWeb oneSignal=$_isOneSignalInitialized '
+        'handler=${_onPermissionAnswer != null}',
+      );
+      return;
+    }
+    // The answer belongs to a signed-in athlete; nobody attached, nothing
+    // to store.
+    if (_pendingRemoteUserId == null) {
+      _trailBail('notification permission re-read skipped: no athlete id');
+      return;
+    }
+    try {
+      final granted = await remotePush.permissionGranted();
+      await _reportPermission(granted);
+    } catch (e, st) {
+      await _r.degraded(
+        e,
+        stackTrace: st,
+        area: 'push',
+        message: 'notification permission re-read failed',
+      );
+    }
+  }
+
+  static Future<void> _reportPermission(bool granted) async {
+    if (_lastReportedPermission == granted) return;
+    _lastReportedPermission = granted;
+    LaunchTrail.add('notification permission answer: granted=$granted');
+    try {
+      await _onPermissionAnswer?.call(granted);
+    } catch (e, st) {
+      await _r.fault(
+        e,
+        stackTrace: st,
+        area: 'push',
+        message: 'storing the notification permission answer failed',
+      );
+    }
   }
 
   /// Hands the OneSignal app id to this service — and, if `initialize()` has
@@ -229,100 +412,17 @@ class NotificationService {
     }
 
     try {
-      OneSignal.initialize(_oneSignalAppId);
-      OneSignal.Notifications.addClickListener((event) {
-        final data = event.notification.additionalData;
-        if (data == null) return;
-        _handleRemoteNotificationData(data);
-      });
+      remotePush.start(_oneSignalAppId, _handleRemoteNotificationData);
 
-      // Show push banners while the app is in the foreground. Without this,
-      // iOS suppresses the alert entirely when Mealvana is open.
-      OneSignal.Notifications.addForegroundWillDisplayListener((event) {
-        event.preventDefault();
-        event.notification.display();
-      });
-
-      // Trigger registerForRemoteNotifications and refresh the APNs token.
-      // OneSignal v5.x does not auto-register on iOS — without this call the
-      // SDK will sit on a stale (or missing) token even when iOS permission
-      // is already granted, and OneSignal eventually flags the subscription
-      // invalid_identifier:true after APNs rejects a delivery. fallbackToSettings
-      // is false so previously-denied users don't get hijacked into Settings.
-      try {
-        final granted = await OneSignal.Notifications.requestPermission(false);
-
-        // HEAL THE ONE-WAY OPT-OUT DOOR (2026-10-01, the unreachable-player
-        // Critical's mechanism — a player with a VALID APNs token but
-        // enabled=false / notification_types=-30, i.e. SDK-level opted out).
-        //
-        // The app's only optOut() lives in the settings reset button, whose
-        // own comment admits its optOut→optIn sequence can race; and until
-        // this line, NOTHING outside that same button ever called optIn().
-        // So a device that ever landed opted out — through the race, or
-        // through SDK state inherited from an older install — stayed
-        // unreachable forever, every session faithfully re-reporting
-        // enabled=false on a perfectly good token.
-        //
-        // The permission gate is load-bearing, not hygiene: the SDK's optIn()
-        // "will prompt the user for push notifications permission" when it is
-        // missing, and this init deliberately never hijacks previously-denied
-        // users (fallbackToSettings: false above). With permission granted,
-        // optIn() only flips the opt flag — idempotent, promptless, and it
-        // silently heals the fleet on next app open.
-        //
-        // `optedIn == false` on purpose (it is a bool?): null means the SDK
-        // has not reported state yet — do nothing on unknown; the next launch
-        // sees cached state and heals then.
-        // THE READ MUST WAIT FOR HYDRATION (patch #2's lesson, 2026-10-01).
-        // This app calls OneSignal.initialize() without await, and the Dart
-        // side hydrates `optedIn` inside initialize's own lifecycle futures on
-        // a DIFFERENT method channel than requestPermission — so a one-shot
-        // read here can land before hydration, see null, and skip the heal
-        // deterministically on fast launches. Poll briefly instead: bounded at
-        // ~3s, exits on first non-null, and still never acts on unknown.
-        var optedIn = OneSignal.User.pushSubscription.optedIn;
-        var waitedMs = 0;
-        while (optedIn == null && waitedMs < 3000) {
-          await Future<void>.delayed(const Duration(milliseconds: 300));
-          waitedMs += 300;
-          optedIn = OneSignal.User.pushSubscription.optedIn;
-        }
-
-        // TAPED, NOT debugPrint'd — the first patch's heal was invisible in
-        // release, which made "patch not applied" and "heal did not fire"
-        // indistinguishable from outside: the silent-path rule biting the fix
-        // that exists because of the silent-path rule. The tape answers, on
-        // the device, with nothing attached: did it run, what did it read,
-        // what did it do, what was the state afterwards.
-        LaunchTrail.add(
-          'push heal: permission=$granted optedIn=$optedIn '
-          '(hydration wait ${waitedMs}ms)',
-        );
-        if (shouldHealPushOptOut(
-          permissionGranted: granted,
-          optedIn: optedIn,
-        )) {
-          await OneSignal.User.pushSubscription.optIn();
-          await Future<void>.delayed(const Duration(milliseconds: 500));
-          LaunchTrail.add(
-            'push heal: optIn() called → post optedIn='
-            '${OneSignal.User.pushSubscription.optedIn}',
-          );
-        } else {
-          LaunchTrail.add('push heal: no action');
-        }
-      } catch (e, st) {
-        // Permission + heal is the opt-out door; a failure here leaves a
-        // device with a valid token unreachable.
-        await _r.fault(
-          e,
-          stackTrace: st,
-          area: 'push',
-          message: 'OneSignal requestPermission / opt-out heal failed',
-        );
-      }
-
+      // No permission request here: this runs in deferred startup, before
+      // Welcome or sign-in, and on an install that has never answered the
+      // request IS the iOS prompt (mealplanning ticket 79, Finding 03-004).
+      // The APNs registration it also performs, and the opt-out heal that
+      // reads its answer, wait for an athlete's id; see
+      // [_registerForRemotePush].
+      LaunchTrail.add(
+        'onesignal started; permission ask + heal wait for an athlete id',
+      );
       _isOneSignalInitialized = true;
       await _syncRemotePushUserIdentity();
     } catch (e, st) {
@@ -431,26 +531,121 @@ class NotificationService {
     if (!_isOneSignalInitialized || kIsWeb) return;
 
     final targetUserId = _pendingRemoteUserId;
-    if (targetUserId == _lastSyncedRemoteUserId) {
-      return;
+    if (targetUserId != _lastSyncedRemoteUserId) {
+      try {
+        if (targetUserId == null) {
+          remotePush.logout();
+        } else {
+          remotePush.login(targetUserId);
+        }
+        _lastSyncedRemoteUserId = targetUserId;
+      } catch (e, st) {
+        // An unsynced alias is the `invalid_aliases` bug: every server push
+        // to this athlete fails while OneSignal answers 200.
+        await _r.fault(
+          e,
+          stackTrace: st,
+          area: 'push',
+          message: 'OneSignal user identity sync failed',
+          extra: {'detach': targetUserId == null},
+        );
+      }
     }
 
+    if (targetUserId != null) await _registerForRemotePush();
+  }
+
+  /// Triggers registerForRemoteNotifications and refreshes the APNs token,
+  /// once per launch, as soon as an athlete's id is attached to the device:
+  /// right after sign-in, or at launch for a restored session. OneSignal
+  /// v5.x does not auto-register on iOS; without this call the SDK sits on a
+  /// stale (or missing) token even when iOS permission is already granted,
+  /// and OneSignal eventually flags the subscription invalid_identifier:true
+  /// after APNs rejects a delivery.
+  ///
+  /// On an install that has never answered, this is also where iOS asks:
+  /// after sign-in, never over the splash (mealplanning ticket 79).
+  /// fallbackToSettings is false so previously-denied athletes don't get
+  /// hijacked into Settings. The answer is stored (ticket 138, Finding
+  /// 125-004) through [_onPermissionAnswer]; a later change in iOS Settings
+  /// is picked up by [refreshPermission] on resume.
+  ///
+  /// develop's opt-out heal (2026-10-01) moved here with the ask, since it
+  /// reads the ask's answer: it now runs once per launch with an athlete
+  /// attached instead of at every OneSignal start.
+  static Future<void> _registerForRemotePush() async {
+    if (_remotePushRegistered) return;
+    _remotePushRegistered = true;
     try {
-      if (targetUserId == null) {
-        OneSignal.logout();
-      } else {
-        OneSignal.login(targetUserId);
+      final granted = await remotePush.requestPermission(
+        fallbackToSettings: false,
+      );
+      await _reportPermission(granted);
+
+      // HEAL THE ONE-WAY OPT-OUT DOOR (2026-10-01, the unreachable-player
+      // Critical's mechanism — a player with a VALID APNs token but
+      // enabled=false / notification_types=-30, i.e. SDK-level opted out).
+      //
+      // The app's only optOut() lives in the settings reset button, whose
+      // own comment admits its optOut→optIn sequence can race; and until
+      // this line, NOTHING outside that same button ever called optIn().
+      // So a device that ever landed opted out — through the race, or
+      // through SDK state inherited from an older install — stayed
+      // unreachable forever, every session faithfully re-reporting
+      // enabled=false on a perfectly good token.
+      //
+      // The permission gate is load-bearing, not hygiene: the SDK's optIn()
+      // "will prompt the user for push notifications permission" when it is
+      // missing, and this ask deliberately never hijacks previously-denied
+      // users (fallbackToSettings: false above). With permission granted,
+      // optIn() only flips the opt flag — idempotent, promptless, and it
+      // silently heals the fleet on next app open.
+      //
+      // `optedIn == false` on purpose (it is a bool?): null means the SDK
+      // has not reported state yet — do nothing on unknown; the next launch
+      // sees cached state and heals then.
+      // THE READ MUST WAIT FOR HYDRATION (patch #2's lesson, 2026-10-01).
+      // This app calls OneSignal.initialize() without await, and the Dart
+      // side hydrates `optedIn` inside initialize's own lifecycle futures on
+      // a DIFFERENT method channel than requestPermission — so a one-shot
+      // read here can land before hydration, see null, and skip the heal
+      // deterministically on fast launches. Poll briefly instead: bounded at
+      // ~3s, exits on first non-null, and still never acts on unknown.
+      var optedIn = remotePush.optedIn;
+      var waitedMs = 0;
+      while (optedIn == null && waitedMs < 3000) {
+        await Future<void>.delayed(const Duration(milliseconds: 300));
+        waitedMs += 300;
+        optedIn = remotePush.optedIn;
       }
-      _lastSyncedRemoteUserId = targetUserId;
+
+      // TAPED, NOT debugPrint'd — the first patch's heal was invisible in
+      // release, which made "patch not applied" and "heal did not fire"
+      // indistinguishable from outside: the silent-path rule biting the fix
+      // that exists because of the silent-path rule. The tape answers, on
+      // the device, with nothing attached: did it run, what did it read,
+      // what did it do, what was the state afterwards.
+      LaunchTrail.add(
+        'push heal: permission=$granted optedIn=$optedIn '
+        '(hydration wait ${waitedMs}ms)',
+      );
+      if (shouldHealPushOptOut(permissionGranted: granted, optedIn: optedIn)) {
+        await remotePush.optIn();
+        await Future<void>.delayed(const Duration(milliseconds: 500));
+        LaunchTrail.add(
+          'push heal: optIn() called → post optedIn=${remotePush.optedIn}',
+        );
+      } else {
+        LaunchTrail.add('push heal: no action');
+      }
     } catch (e, st) {
-      // An unsynced alias is the `invalid_aliases` bug: every server push
-      // to this athlete fails while OneSignal answers 200.
+      // Permission + heal is the opt-out door; a failure here leaves a
+      // device with a valid token unreachable.
       await _r.fault(
         e,
         stackTrace: st,
         area: 'push',
-        message: 'OneSignal user identity sync failed',
-        extra: {'detach': targetUserId == null},
+        message: 'OneSignal requestPermission / opt-out heal failed',
       );
     }
   }
@@ -713,7 +908,7 @@ class NotificationService {
       // bouncing to Settings on prior denial is the expected UX.
       if (_isOneSignalInitialized) {
         try {
-          await OneSignal.Notifications.requestPermission(true);
+          await remotePush.requestPermission(fallbackToSettings: true);
         } catch (e, st) {
           await _r.fault(
             e,

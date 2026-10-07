@@ -1,4 +1,3 @@
-import 'package:drift/drift.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -199,10 +198,9 @@ class UserSyncHandler {
       // Upsert to Supabase using primary key (id) for conflict resolution
       await _supabase.from('users').upsert(userData, onConflict: 'id');
 
-      // Mark as synced in local database
-      await (_database.update(_database.userProfilesTable)
-            ..where((tbl) => tbl.id.equals(profile.id)))
-          .write(const UserProfilesTableCompanion(needsUpload: Value(false)));
+      // Mark as synced, unless a local write landed during the upload: that
+      // row stays dirty for the next pass.
+      await _database.userDao.clearNeedsUploadIfUnchanged(profile);
     } catch (e, stackTrace) {
       // Don't rethrow - allow other uploads to continue. The row stays
       // dirty for the next pass.

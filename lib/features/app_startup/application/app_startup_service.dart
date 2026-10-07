@@ -26,6 +26,7 @@ import '../../../shared/models/dirty_record_backup.dart';
 import '../presentation/widgets/dirty_record_recovery_dialog.dart';
 import '../../ai_credits/data/revenuecat_service.dart';
 import '../../auth/application/auth_service.dart';
+import '../../auth/data/user_repository.dart';
 import '../../../shared/services/launch_trail.dart';
 import '../../auth/presentation/providers/password_recovery_controller.dart';
 
@@ -324,6 +325,13 @@ class AppStartupService {
           NotificationService.configureRemotePush(
             oneSignalAppId: ref.read(appConfigProvider).oneSignalAppId,
           );
+          // Ticket 138 (125-004): the OS's answer lands on the profile, local
+          // first, and follows later changes in iOS Settings on resume. Wired
+          // here, not in configure(), because configure() waits for
+          // analytics consent and storing the answer is not tracking.
+          NotificationService.configurePermissionAnswer(
+            _storeNotificationPermission,
+          );
           await NotificationService.initialize();
         });
 
@@ -404,6 +412,27 @@ class AppStartupService {
 
   /// Initialize analytics service with proper user identification
   /// Called after first frame to avoid Android DeviceInfoPlugin deadlock
+  /// Stores the OS's notification answer on the signed-in athlete's
+  /// profile (`users.notifications_enabled`, ticket 138). Runs on the ask
+  /// after sign-in and on a resume that finds the answer changed; repeating
+  /// it is safe, the same value lands again.
+  Future<void> _storeNotificationPermission(bool granted) async {
+    final users = await ref.read(userRepositoryProvider.future);
+    final user = await users.getCurrentUser();
+    if (user == null) {
+      // D9: the answer is dropped until a profile exists; the next resume
+      // that sees a change, or the next launch's ask, stores it.
+      LaunchTrail.add('notification answer not stored: no local profile');
+      await _report.note(
+        'Notification permission answer not stored: no local profile',
+        area: 'push',
+        data: {'granted': granted},
+      );
+      return;
+    }
+    await users.setNotificationsEnabled(user.id, granted);
+  }
+
   Future<void> _initializeAnalytics() async {
     // CONSENT GATE. Nothing may reach Mixpanel until the user has said yes —
     // this method both initializes the SDK and fires `app_opened`, so an
