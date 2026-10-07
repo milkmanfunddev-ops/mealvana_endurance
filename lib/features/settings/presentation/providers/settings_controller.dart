@@ -6,6 +6,7 @@ import 'package:supabase_flutter/supabase_flutter.dart' show HttpMethod;
 import '../../../../shared/services/app_external_deps.dart';
 import '../../../../shared/services/report/report.dart';
 import '../../../activities/data/activities_repository.dart';
+import '../../../ai_credits/data/revenuecat_service.dart';
 import '../../../auth/application/supabase_auth_service.dart';
 import '../../../auth/data/user_repository.dart';
 import '../../../auth/domain/user_preferences.dart';
@@ -748,29 +749,40 @@ class SettingsController extends _$SettingsController {
     );
   }
 
-  /// Sign out the current user
-  /// This triggers the auth state listener which will:
-  /// 1. Invalidate user-specific providers
-  /// 2. Notify GoRouter to redirect to /welcome
-  /// Note: This controller will be disposed after signOut, so we must not
-  /// access ref or state after the signOut call completes.
+  /// Sign out the current user, leaving nothing of the account on the phone.
+  ///
+  /// Order: upload what is still dirty, drop the onboarding prefs, log the
+  /// RevenueCat SDK out, delete the account's local rows, then sign out of
+  /// Supabase (whose `signedOut` event invalidates the user providers and
+  /// sends GoRouter to /welcome).
+  ///
+  /// **Every `ref.read` happens before the first `await`.** This controller
+  /// is auto-dispose; a caller holding only `ref.read(...notifier)` loses the
+  /// Ref by the time the analytics call returns, and reading it after that
+  /// threw "Cannot use the Ref of settingsControllerProvider after it has
+  /// been disposed", silently skipping the pre-logout upload (Finding 02-003
+  /// on mealplanning). Nothing here touches `ref` or `state` after the first
+  /// await.
   Future<void> signOut() async {
-    // Capture all dependencies BEFORE signOut (which disposes this controller)
-    final supabaseClient = ref.read(appExternalDepsProvider).supabaseClient;
-    final analytics = ref.read(appExternalDepsProvider).analytics;
+    final deps = ref.read(appExternalDepsProvider);
+    final supabaseClient = deps.supabaseClient;
+    final analytics = deps.analytics;
     final report = ref.read(reportProvider);
     final prefs = ref.read(sharedPreferencesProvider);
+    final database = ref.read(appDatabaseProvider);
+    // keepAlive: the service outlives this controller.
+    final revenueCat = ref.read(revenueCatServiceProvider);
+    final currentUser = supabaseClient.auth.currentUser;
+    // The repository reads run now; only the two async providers are awaited
+    // later, by which time their futures no longer need the Ref.
+    final syncRepos = currentUser == null ? null : _captureSyncRepositories();
 
-    // Track sign out event
     await analytics.track('settings_sign_out_tapped');
 
-    // CRITICAL: Upload dirty records to Supabase BEFORE sign-out
-    // This prevents data loss when local database is cleared
-    // No download needed - just upload dirty records directly per-repository
-    final currentUser = supabaseClient.auth.currentUser;
-    if (currentUser != null) {
+    // Upload dirty records BEFORE the local rows are deleted below.
+    if (currentUser != null && syncRepos != null) {
       try {
-        await _uploadDirtyBeforeLogout(currentUser.id);
+        await _uploadDirtyBeforeLogout(currentUser.id, await syncRepos, report);
       } catch (e) {
         // Log error but continue with sign-out
         report.fault(e, area: 'settings', message: 'Pre-logout upload failed');
@@ -785,10 +797,56 @@ class SettingsController extends _$SettingsController {
     // would let a later startup resurrect it under a different account.
     await prefs.remove(OnboardingSnapshotService.prefsKey);
 
+    // Return the RevenueCat SDK (identified for AI credits) to an anonymous
+    // customer, so the next account on this device never reads the outgoing
+    // user's customer (Finding 03-002). logOut reports its own failures.
+    await revenueCat.logOut();
+
+    // Delete the account's local rows (Finding 14-004). After the upload
+    // above nothing is lost; the next sign-in syncs from the server.
+    if (currentUser != null) {
+      try {
+        await database.clearUserData(currentUser.id);
+      } catch (e, st) {
+        await report.fault(
+          e,
+          stackTrace: st,
+          area: 'settings',
+          message: 'Local data clear failed',
+        );
+      }
+    }
+
     // Sign out from Supabase (triggers AuthChangeEvent.signedOut)
-    // IMPORTANT: After this call, the auth listener will invalidate this controller
-    // and GoRouter will navigate to /welcome. Do NOT access ref or state after this.
     await supabaseClient.auth.signOut();
+  }
+
+  /// Reads every syncable repository synchronously (no `await` before the
+  /// reads) so the list can be awaited after this controller is disposed.
+  Future<List<SyncableRepository>> _captureSyncRepositories() {
+    final activitiesRepo = ref.read(activitiesRepositoryProvider);
+    final eventsRepo = ref.read(eventsRepositoryProvider);
+    final carbLoadingRepo = ref.read(carbLoadingRepositoryProvider);
+    final feedbackRepo = ref.read(feedbackRepositoryProvider);
+    final foodPrefsRepoFuture = ref.read(
+      foodPreferencesRepositoryProvider.future,
+    );
+    final userRepoFuture = ref.read(userRepositoryProvider.future);
+    final mealLogRepo = ref.read(mealLogRepositoryProvider);
+    final savedMealsRepo = ref.read(savedMealsRepositoryProvider);
+
+    return Future.wait([foodPrefsRepoFuture, userRepoFuture]).then(
+      (resolved) => <SyncableRepository>[
+        activitiesRepo,
+        eventsRepo,
+        carbLoadingRepo,
+        feedbackRepo,
+        resolved[0],
+        resolved[1],
+        mealLogRepo,
+        savedMealsRepo,
+      ],
+    );
   }
 
   /// Upload dirty records from all repositories before logout.
@@ -797,34 +855,13 @@ class SettingsController extends _$SettingsController {
   /// `uploadDirtyRecords()` swallows exceptions into a silent
   /// `UploadResult.failed()`, so every result is checked here and the
   /// failures reported — an unchecked call looks identical to a success.
-  Future<void> _uploadDirtyBeforeLogout(String userId) async {
-    final report = ref.read(reportProvider);
-    final activitiesRepo = ref.read(activitiesRepositoryProvider);
-    final eventsRepo = ref.read(eventsRepositoryProvider);
-    final carbLoadingRepo = ref.read(carbLoadingRepositoryProvider);
-    final feedbackRepo = ref.read(feedbackRepositoryProvider);
-    final mealLogRepo = ref.read(mealLogRepositoryProvider);
-    final savedMealsRepo = ref.read(savedMealsRepositoryProvider);
-    // Both futures are taken before either await, so no `ref` use follows
-    // an async gap.
-    final foodPrefsRepoFuture = ref.read(
-      foodPreferencesRepositoryProvider.future,
-    );
-    final userRepoFuture = ref.read(userRepositoryProvider.future);
-    final foodPrefsRepo = await foodPrefsRepoFuture;
-    final userRepo = await userRepoFuture;
-
-    final repos = <SyncableRepository>[
-      activitiesRepo,
-      eventsRepo,
-      carbLoadingRepo,
-      feedbackRepo,
-      foodPrefsRepo,
-      userRepo,
-      mealLogRepo,
-      savedMealsRepo,
-    ];
-
+  /// Takes its collaborators as arguments: it runs after the controller may
+  /// have been disposed (see [signOut]).
+  Future<void> _uploadDirtyBeforeLogout(
+    String userId,
+    List<SyncableRepository> repos,
+    Report report,
+  ) async {
     final results = await Future.wait(
       repos.map((repo) => repo.uploadDirtyRecords(userId)),
     );
@@ -857,6 +894,8 @@ class SettingsController extends _$SettingsController {
       final report = ref.read(reportProvider);
       final database = ref.read(appDatabaseProvider);
       final prefs = ref.read(sharedPreferencesProvider);
+      // keepAlive: the service outlives this controller.
+      final revenueCat = ref.read(revenueCatServiceProvider);
       final stateBefore = state;
       final currentUserId = supabaseClient.auth.currentUser?.id;
 
@@ -905,12 +944,12 @@ class SettingsController extends _$SettingsController {
         // Continue with local cleanup even if edge function call fails
       }
 
-      // Clear user's local data with forceDelete = true
-      // This deletes ONLY this user's data (WHERE user_id = currentUserId)
-      await database.diagnosticDao.clearUserScopedData(
-        userId: currentUserId,
-        forceDelete: true,
-      );
+      // Log the RevenueCat SDK out, as sign-out does: the deleted account's
+      // customer must not linger. logOut reports its own failures.
+      await revenueCat.logOut();
+
+      // Delete ONLY this user's local rows, across every user-scoped table.
+      await database.clearUserData(currentUserId);
 
       // Clear the temp user ID from SharedPreferences
       // This ensures a new user won't inherit the previous user's integration status

@@ -128,6 +128,12 @@ void main() {
       final svc = _service(enabled: true, appleKey: '', googleKey: '');
       await expectLater(svc.logIn('user-001'), completes);
     });
+
+    test('logOut is safe when API key is empty (not configured)', () async {
+      // Sign-out calls this on every device, configured or not.
+      final svc = _service(enabled: true, appleKey: '', googleKey: '');
+      await expectLater(svc.logOut(), completes);
+    });
   });
 
   // ---------------------------------------------------------------------------
