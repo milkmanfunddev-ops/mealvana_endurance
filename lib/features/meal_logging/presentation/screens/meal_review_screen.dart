@@ -118,6 +118,9 @@ class _MealReviewScreenState extends ConsumerState<MealReviewScreen> {
     if (name.isEmpty || _logDate == null) return;
 
     final source = MealLogSource.fromWireValue(_source) ?? MealLogSource.photo;
+    // The note shown above the button is what the estimate assumed; it is
+    // kept with the meal so Edit Meal shows it later (testing-wave 23-002).
+    final note = _result?.notes?.trim();
 
     await ref
         .read(mealLogControllerProvider.notifier)
@@ -128,6 +131,7 @@ class _MealReviewScreenState extends ConsumerState<MealReviewScreen> {
           source: source,
           components: _components,
           photoPath: _photoPath,
+          notes: (note == null || note.isEmpty) ? null : note,
           eatenAt: eatenAtForLogDate(_logDate!),
         );
 
