@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'dart:async';
 import 'package:mealvana_endurance/shared/database/database_provider.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -8,6 +9,11 @@ import '../../../../shared/services/app_external_deps.dart';
 import '../../../../shared/services/report/report.dart';
 import '../../../activities/data/activities_repository.dart';
 import '../../../ai_credits/data/revenuecat_service.dart';
+import '../../../../shared/domain/activity_type.dart';
+import '../../../../shared/providers/user_id_provider.dart';
+import '../../../activities/domain/activity.dart';
+import '../../../nutrition_plan/application/resolved_during_target_resolver.dart';
+import '../../../nutrition_plan/data/macro_repository.dart';
 import '../../../auth/application/supabase_auth_service.dart';
 import '../../../auth/data/user_repository.dart';
 import '../../../auth/domain/user_preferences.dart';
@@ -566,8 +572,8 @@ class SettingsController extends _$SettingsController {
   }
 
   /// Save nutrition target overrides (null clears all overrides).
-  /// Bypasses _saveProfile() to handle the null/clearing case directly,
-  /// since copyWith with `??` would preserve existing values when null is passed.
+  /// Bypasses _saveProfile() so it can say "clear", which the rest of the
+  /// screen's `??`-shaped save cannot express.
   Future<void> saveNutritionTargetOverrides(
     NutritionTargetOverrides? overrides,
   ) async {
@@ -582,51 +588,36 @@ class SettingsController extends _$SettingsController {
         throw Exception('No user profile found to update.');
       }
 
-      // Use a sentinel empty override to distinguish "set to null" from "don't change"
-      // We create the profile with a non-null value first, then null it out manually
-      final updatedProfile = UserProfile(
-        id: existingProfile.id,
-        deviceId: existingProfile.deviceId,
-        authUserId: existingProfile.authUserId,
-        authProvider: existingProfile.authProvider,
-        isAnonymous: existingProfile.isAnonymous,
-        gender: existingProfile.gender,
-        birthday: existingProfile.birthday,
-        heightFeet: existingProfile.heightFeet,
-        heightInches: existingProfile.heightInches,
-        weightPounds: existingProfile.weightPounds,
-        runsWithWaterBottle: existingProfile.runsWithWaterBottle,
-        createdAt: existingProfile.createdAt,
-        updatedAt: DateTime.now(),
-        gutTraining: existingProfile.gutTraining,
-        sweatRate: existingProfile.sweatRate,
-        onboardingCompleted: existingProfile.onboardingCompleted,
-        appVersion: existingProfile.appVersion,
-        swipeHintShown: existingProfile.swipeHintShown,
-        unitSystem: existingProfile.unitSystem,
-        giSensitivity: existingProfile.giSensitivity,
-        ftpWatts: existingProfile.ftpWatts,
-        typicalBikeBottles: existingProfile.typicalBikeBottles,
-        hasAeroBottle: existingProfile.hasAeroBottle,
-        hasBentoBox: existingProfile.hasBentoBox,
-        cssPacePer100mSeconds: existingProfile.cssPacePer100mSeconds,
-        typicalWetsuit: existingProfile.typicalWetsuit,
-        typicalSwimCapType: existingProfile.typicalSwimCapType,
-        defaultRunningPaceMinPerMile:
-            existingProfile.defaultRunningPaceMinPerMile,
-        defaultCyclingSpeedMph: existingProfile.defaultCyclingSpeedMph,
-        defaultSwimmingPacePer100Sec:
-            existingProfile.defaultSwimmingPacePer100Sec,
-        dietaryPreference: existingProfile.dietaryPreference,
-        allergies: existingProfile.allergies,
-        senderName: existingProfile.senderName,
-        firstName: existingProfile.firstName,
-        lastName: existingProfile.lastName,
-        email: existingProfile.email,
-        nutritionTargetOverrides: overrides, // Explicitly set (can be null)
-      );
+      // copyWith owns the "clear" case (`clearNutritionTargetOverrides`),
+      // because `??` cannot distinguish it from "leave them alone". This
+      // used to rebuild UserProfile field by field instead, and that
+      // hand-rolled list silently reset every field it did not mention —
+      // body fat, lifestyle, training phase, the sweat test, the Garmin
+      // timestamps (mealplanning e663c3bb).
+      final updatedProfile = overrides == null
+          ? existingProfile.copyWith(
+              updatedAt: DateTime.now(),
+              clearNutritionTargetOverrides: true,
+            )
+          : existingProfile.copyWith(
+              updatedAt: DateTime.now(),
+              nutritionTargetOverrides: overrides,
+            );
 
       await userRepository.updateUserProfile(updatedProfile);
+
+      // A during rate that just left the settings leaves its stored plans
+      // behind (Finding 116-003): flag them so they re-plan without it.
+      final removed = removedDuringRates(
+        existingProfile.nutritionTargetOverrides,
+        overrides,
+      );
+      if (removed.isNotEmpty && ref.mounted) {
+        await _flagPlansBuiltOnRemovedOverrides(
+          removed,
+          deviceId: existingProfile.deviceId,
+        );
+      }
 
       // Guard against the notifier being disposed during the async gap above.
       if (ref.mounted) {
@@ -642,6 +633,110 @@ class SettingsController extends _$SettingsController {
     // The save above completed; only the UI state is dropped when this
     // auto-dispose controller was disposed during it.
     if (ref.mounted) state = result;
+  }
+
+  /// The during carb rates (g/h, by sport) present in [before] and gone or
+  /// changed in [after]. A stored plan built on one of these is stale.
+  @visibleForTesting
+  static Map<ActivityType, double> removedDuringRates(
+    NutritionTargetOverrides? before,
+    NutritionTargetOverrides? after,
+  ) {
+    final removed = <ActivityType, double>{};
+    for (final sport in const [
+      ActivityType.running,
+      ActivityType.cycling,
+      ActivityType.swimming,
+    ]) {
+      final was = before?.getDuring(sport)?.carbRateGPerH;
+      if (was == null || was <= 0) continue;
+      final now = after?.getDuring(sport)?.carbRateGPerH;
+      final kept =
+          now != null &&
+          (now - was).abs() <=
+              ResolvedDuringTargetResolver.defaultToleranceGPerH;
+      if (!kept) removed[sport] = was;
+    }
+    return removed;
+  }
+
+  /// Marks every not-yet-done activity whose stored plan carries a removed
+  /// override rate `needs_nutrition_refresh`, so the Activity detail shows
+  /// its stale-plan notice and the next regeneration plans without the
+  /// override. Without this the plan kept 50.4 g/h and the screen showed
+  /// 92 g below its band with nothing explaining why (Finding 116-003).
+  ///
+  /// Runs after the profile save and never fails it: a miss here leaves a
+  /// stale plan, which the athlete can still regenerate by hand. Running it
+  /// twice (two saves, or a save after a refresh) sets the same flag on the
+  /// same rows; the flag is cleared only by a regeneration.
+  Future<void> _flagPlansBuiltOnRemovedOverrides(
+    Map<ActivityType, double> removed, {
+    required String deviceId,
+  }) async {
+    final report = ref.read(reportProvider);
+    try {
+      final userId = await ref.read(userIdProvider.future);
+      final activitiesRepo = ref.read(activitiesRepositoryProvider);
+      final macroRepo = ref.read(macroRepositoryProvider);
+      final now = DateTime.now();
+      final today = DateTime(now.year, now.month, now.day);
+      final candidates = await activitiesRepo.getActivitiesForDateRange(
+        userId,
+        today,
+        today.add(const Duration(days: 730)),
+      );
+      var flagged = 0;
+      for (final a in candidates) {
+        if (a.status != ActivityStatus.planned) continue;
+        if (a.nutritionPlanData == null || a.needsNutritionRefresh) continue;
+        final was = removed[a.activityType];
+        if (was == null) continue;
+        final targets = await macroRepo.getCachedMacroTargetsForActivity(
+          a.id,
+          expectedActivityType: a.activityType,
+        );
+        final planRate =
+            targets?.duringRun.carbRateGPerH ??
+            _duringRateFromPlanData(a.nutritionPlanData);
+        if (planRate == null) continue;
+        if ((planRate - was).abs() >
+            ResolvedDuringTargetResolver.defaultToleranceGPerH) {
+          continue;
+        }
+        await activitiesRepo.updateActivity(
+          deviceId: deviceId,
+          activity: a.copyWith(needsNutritionRefresh: true),
+        );
+        flagged++;
+      }
+      report.info(
+        'Flagged plans built on a removed during override',
+        area: 'settings',
+        data: {'removed': removed.toString(), 'flagged': flagged},
+      );
+    } catch (e, stackTrace) {
+      // The save stands; a stale plan stays regenerable by hand.
+      await report.degraded(
+        e,
+        stackTrace: stackTrace,
+        area: 'settings',
+        message: 'Could not flag plans built on a removed during override',
+        extra: {'removed': removed.toString()},
+      );
+    }
+  }
+
+  /// The stored plan's during carb rate, read from the plan JSON the way
+  /// ActivityDetailController reads it (`detailedMacroTargets.duringRun`).
+  static double? _duringRateFromPlanData(Map<String, dynamic>? planData) {
+    final detailed =
+        planData?['detailedMacroTargets'] ?? planData?['macroTargetsDetailed'];
+    if (detailed is! Map) return null;
+    final during = detailed['duringRun'];
+    if (during is! Map) return null;
+    final rate = during['carbRateGPerH'];
+    return rate is num ? rate.toDouble() : null;
   }
 
   /// Save profile changes (both local and Supabase)

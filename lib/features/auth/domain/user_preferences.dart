@@ -631,6 +631,11 @@ class UserProfile {
     bool clearFirstName = false,
     bool clearLastName = false,
     bool clearEmail = false,
+    // Set the overrides back to "use algorithm defaults". `??` cannot say
+    // that — passing null means "leave them alone" — and the settings screen
+    // used to work around it by rebuilding the whole profile field by field,
+    // which silently reset every field that list forgot.
+    bool clearNutritionTargetOverrides = false,
   }) {
     return UserProfile(
       id: id ?? this.id,
@@ -682,8 +687,9 @@ class UserProfile {
       // Contact information
       email: clearEmail ? null : (email ?? this.email),
       // Nutrition target overrides
-      nutritionTargetOverrides:
-          nutritionTargetOverrides ?? this.nutritionTargetOverrides,
+      nutritionTargetOverrides: clearNutritionTargetOverrides
+          ? null
+          : (nutritionTargetOverrides ?? this.nutritionTargetOverrides),
       // Daily macro calculation fields
       bodyFatPct: bodyFatPct ?? this.bodyFatPct,
       lifestyle: lifestyle ?? this.lifestyle,

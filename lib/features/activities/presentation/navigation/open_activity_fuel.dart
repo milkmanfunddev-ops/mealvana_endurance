@@ -8,10 +8,19 @@ import '../../domain/activity.dart';
 /// nutrition plan open **Activity Detail**; plan-less ones go straight to the
 /// **New Activity** flow pre-filled, instead of a Detail screen whose only
 /// content is a "Generate Plan" placeholder. Import-only activities never get
-/// a plan and still land on Detail (read-only).
+/// a plan and still land on Detail (read-only). A COMPLETED activity (the
+/// athlete's mark-done, or a training platform's completion) opens Detail
+/// too, plan or no plan: the form would offer to plan a workout that is
+/// over, and opening it spent the location prompt (Lee, 2026-09-26,
+/// Findings 100-003 and 100-004). Detail without a plan shows its
+/// Generate Plan state.
 void openActivityFuel(BuildContext context, Activity activity) {
+  final completed =
+      activity.status == ActivityStatus.completed ||
+      activity.completionType == Activity.providerCompletionType;
   if (activity.activityType.isImportOnly ||
-      activity.nutritionPlanData != null) {
+      activity.nutritionPlanData != null ||
+      completed) {
     context.push('/plan', extra: {'mode': 'view', 'activityId': activity.id});
     return;
   }
