@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:mealvana_endurance/features/events/presentation/screens/event_form_screen.dart';
 import '../../domain/event.dart';
+import '../../domain/event_countdown.dart';
 import '../../../../theme/kyle_design/app_colors.dart';
 import '../screens/event_detail_screen.dart';
 
@@ -229,33 +230,8 @@ class UpcomingEventCardKyle extends ConsumerWidget {
     );
   }
 
-  String _formatCountdown(DateTime eventDate) {
-    // Compare dates at day level only, ignoring time components
-    final today = DateTime.now();
-    final todayDateOnly = DateTime(today.year, today.month, today.day);
-    final eventDateOnly = DateTime(
-      eventDate.year,
-      eventDate.month,
-      eventDate.day,
-    );
-    final daysDifference = eventDateOnly.difference(todayDateOnly).inDays;
+  // One formula for every countdown surface (117-007).
+  String _formatCountdown(DateTime eventDate) =>
+      eventCountdownText(eventDate, today: DateTime.now());
 
-    if (daysDifference < 0) {
-      return 'Event passed';
-    }
-
-    if (daysDifference == 0) {
-      return 'Today!';
-    } else if (daysDifference == 1) {
-      return 'Tomorrow';
-    } else if (daysDifference < 7) {
-      return '$daysDifference days away';
-    } else if (daysDifference < 30) {
-      final weeks = (daysDifference / 7).floor();
-      return '$weeks ${weeks == 1 ? 'week' : 'weeks'} away';
-    } else {
-      final months = (daysDifference / 30).floor();
-      return '$months ${months == 1 ? 'month' : 'months'} away';
-    }
-  }
 }
