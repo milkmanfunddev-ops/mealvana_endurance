@@ -342,9 +342,7 @@ class AppStartupService {
             // first, and follows later changes in iOS Settings on resume. Wired
             // here, not in configure(), because configure() waits for
             // analytics consent and storing the answer is not tracking.
-            NotificationService.configurePermissionAnswer(
-              _storeNotificationPermission,
-            );
+            armPermissionAnswer();
             await NotificationService.initialize();
           },
           userWait: () =>
@@ -432,17 +430,37 @@ class AppStartupService {
   /// profile (`users.notifications_enabled`, ticket 138). Runs on the ask
   /// after sign-in and on a resume that finds the answer changed; repeating
   /// it is safe, the same value lands again.
+  /// Points the OS's notification answer at [_storeNotificationPermission]
+  /// (ticket 138). A method of its own so a test can reach the no-profile
+  /// path through NotificationService's callback (ticket 41).
+  @visibleForTesting
+  void armPermissionAnswer() =>
+      NotificationService.configurePermissionAnswer(
+        _storeNotificationPermission,
+      );
+
   Future<void> _storeNotificationPermission(bool granted) async {
     final users = await ref.read(userRepositoryProvider.future);
     final user = await users.getCurrentUser();
     if (user == null) {
       // D9: the answer is dropped until a profile exists; the next resume
-      // that sees a change, or the next launch's ask, stores it.
+      // that sees a change, or the next launch's ask, stores it. A signed-out
+      // launch is the normal state, so this is a breadcrumb plus the
+      // LaunchTrail line, not a `push` note: `push` is a promoted area and a
+      // note there is a warning event on every signed-out launch (ticket 41,
+      // 30-011). One `expected_failure` count; before analytics starts it is
+      // held (`ExpectedFailureCounts`), never read ahead of consent.
       LaunchTrail.add('notification answer not stored: no local profile');
-      await _report.note(
+      _report.breadcrumb(
         'Notification permission answer not stored: no local profile',
-        area: 'push',
+        category: 'push',
         data: {'granted': granted},
+      );
+      await trackExpectedFailure(
+        null,
+        area: 'push',
+        reason: 'no_profile',
+        report: _report,
       );
       return;
     }
@@ -526,6 +544,14 @@ class AppStartupService {
           'session_id': sessionId,
           'timestamp': DateTime.now().toIso8601String(),
         },
+      );
+
+      // Ticket 41: `expected_failure` counts taken before analytics started
+      // (offline version check, region lookup) go out now, and later ones
+      // with no tracker in hand follow. Read per count, so a consent
+      // withdrawal (a Noop tracker) is honoured.
+      await ExpectedFailureCounts.attach(
+        () => ref.mounted ? _analytics : null,
       );
     } catch (e, stackTrace) {
       // Allow a later attempt (e.g. the post-consent call) to retry.

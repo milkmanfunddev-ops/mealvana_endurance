@@ -122,10 +122,14 @@ class PrivacyRegionService {
 
       onResolved?.call();
     } catch (e, stackTrace) {
-      // Offline, DNS failure, timeout, malformed body — all the same to us
-      // (the consent regime falls back to device signals); `fault` keeps
-      // the offline cases as warnings and a malformed body as an error.
-      await _r.fault(
+      // Offline, DNS failure, timeout, malformed body — all the same to the
+      // consent regime, which falls back to device signals. For the report,
+      // offline and the timeout are weather (ticket 41, 32-007): a
+      // breadcrumb and one `expected_failure` count, no event. A malformed
+      // body is still a fault. No tracker is passed: this runs before
+      // consent is resolved, so the count waits for analytics to start
+      // (`ExpectedFailureCounts`).
+      await _r.faultUnlessWeather(
         e,
         stackTrace: stackTrace,
         area: 'privacy',

@@ -1,5 +1,12 @@
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
+import 'package:mealvana_endurance/shared/services/launch_trail.dart';
+import 'package:mealvana_endurance/shared/services/report/report.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:mealvana_endurance/shared/services/version_check_service.dart';
 import 'package:mealvana_endurance/shared/models/version_check_result.dart';
@@ -283,6 +290,96 @@ void main() {
         container.dispose();
       },
     );
+
+    // develop-2026-10 ticket 41 (32-007): an offline cold start is weather.
+    // The real postgrest builder runs; only the wire is replaced, by what
+    // dart:io throws offline, or by an app_config row the parser refuses.
+    group('when app_config cannot be read', () {
+      setUp(() {
+        LaunchTrail.debugReset();
+        ExpectedFailureCounts.debugReset();
+        SharedPreferences.setMockInitialValues({
+          'cached_min_app_version': '1.0.0',
+          'cached_remote_schema_version': 3,
+          'cached_min_supported_schema_version': 3,
+          'version_check_cache_timestamp':
+              DateTime.now().millisecondsSinceEpoch,
+        });
+      });
+      tearDown(ExpectedFailureCounts.debugReset);
+
+      Future<(VersionCheckResult, RecordingReport)> check(
+        Future<http.Response> Function(http.Request) wire,
+      ) async {
+        final supabase = SupabaseClient(
+          'http://app-config.test',
+          'anon-key',
+          httpClient: MockClient(wire),
+          authOptions: const AuthClientOptions(autoRefreshToken: false),
+        );
+        final report = RecordingReport();
+        final container = ProviderContainer();
+        addTearDown(container.dispose);
+        final service = container.read(
+          Provider(
+            (ref) => VersionCheckService(
+              supabase: supabase,
+              database: FakeAppDatabase(),
+              report: report,
+              backupService: MockDirtyRecordBackupService(),
+              ref: ref,
+            ),
+          ),
+        );
+        return (await service.checkVersion(), report);
+      }
+
+      test('offline: the cached result, a startup.weather breadcrumb, a '
+          'LaunchTrail line, a held count, and no fault', () async {
+        final (result, report) = await check(
+          (_) async => throw const SocketException(
+            "Failed host lookup: 'vlmtsdzpnjnavdgytcmi.supabase.co'",
+          ),
+        );
+
+        expect(result, isA<VersionCheckOk>());
+        expect(report.faults, isEmpty);
+        expect(report.degradeds, isEmpty);
+        final crumbs = report.calls.where(
+          (c) => c.severity == 'breadcrumb' && c.area == 'startup.weather',
+        );
+        expect(crumbs, hasLength(1));
+        expect(crumbs.single.data?['expected_failure'], 'offline');
+        expect(
+          LaunchTrail.text,
+          contains('version check offline: cached result'),
+        );
+        expect(ExpectedFailureCounts.pending, [
+          (area: 'startup', reason: 'offline'),
+        ]);
+      });
+
+      test('a schema error in app_config still faults', () async {
+        final (result, report) = await check(
+          (request) async => http.Response(
+            jsonEncode([
+              {'key': 'min_app_version', 'value': '1.0.0'},
+              {'key': 'latest_schema_version', 'value': 'four'},
+            ]),
+            200,
+            headers: {'content-type': 'application/json'},
+            request: request,
+          ),
+        );
+
+        expect(result, isA<VersionCheckOk>(), reason: 'still the cache');
+        expect(report.faults, hasLength(1));
+        expect(report.faults.single.area, 'startup');
+        expect(report.faults.single.error, isA<FormatException>());
+        expect(LaunchTrail.text, isNot(contains('version check')));
+        expect(ExpectedFailureCounts.pending, isEmpty);
+      });
+    });
 
     // NOTE: Tests that require mocking the full Supabase fluent API chain
     // (checkVersion with various responses) are deferred to integration tests

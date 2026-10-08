@@ -262,8 +262,9 @@ class EmailAuthService extends _$EmailAuthService {
           reportMessage: 'Email account linking failed',
           analyticsEvent: 'email_account_linking_failed',
         );
-      } finally {
-        if (ref.mounted) state = result;
+      } catch (thrown, stack) {
+        _writeFailedCreation(result, thrown, stack);
+        rethrow;
       }
     }
 
@@ -295,11 +296,20 @@ class EmailAuthService extends _$EmailAuthService {
     if (error is AuthApiException &&
         (error.message.contains('already registered') ||
             error.message.contains('already been registered'))) {
-      report.info('$reportMessage: email already registered', area: 'auth');
-      throw AccountAlreadyExistsException(
+      // An athlete's own turn, not a failure (ticket 41, 30-005): a note and
+      // one `expected_failure` count, no event. The caller writes the
+      // outcome, not GoTrue's 422, into state.
+      final outcome = AccountAlreadyExistsException(
         'This email is already registered',
         email: email,
       );
+      await report.noteExpected(
+        '$reportMessage: email already registered',
+        area: 'auth',
+        reason: authOutcomeReason(outcome),
+        analytics: analytics,
+      );
+      throw outcome;
     }
 
     report.fault(
@@ -315,6 +325,23 @@ class EmailAuthService extends _$EmailAuthService {
     );
 
     Error.throwWithStackTrace(error, trace);
+  }
+
+  /// The state a failed signup or link leaves (ticket 41, 30-005): the
+  /// [AccountAlreadyExistsException] [_failAccountCreation] threw in place of
+  /// GoTrue's 422, so the Riverpod net files an `auth.flow` breadcrumb and
+  /// not a fault with no area; for anything else the original [result],
+  /// which [_failAccountCreation] has already reported, so the net skips it.
+  /// Runs after the report, never before it.
+  void _writeFailedCreation(
+    AsyncValue<void> result,
+    Object thrown,
+    StackTrace stack,
+  ) {
+    if (!ref.mounted) return;
+    state = thrown is AccountAlreadyExistsException
+        ? AsyncError<void>(thrown, stack)
+        : result;
   }
 
   /// Finish an anonymous -> email upgrade once the uid-preserving link is real.
@@ -474,8 +501,9 @@ class EmailAuthService extends _$EmailAuthService {
           reportMessage: 'Email signup failed',
           analyticsEvent: 'email_signup_failed',
         );
-      } finally {
-        if (ref.mounted) state = result;
+      } catch (thrown, stack) {
+        _writeFailedCreation(result, thrown, stack);
+        rethrow;
       }
     }
 
@@ -902,24 +930,45 @@ class EmailAuthService extends _$EmailAuthService {
       }
     });
 
-    if (ref.mounted) state = result;
-
     // Re-throw errors for UI to handle, told apart (125-002, 125-007).
+    // Map and report BEFORE writing state (ticket 41, 30-005, 32-007): the
+    // Riverpod net then sees the mapped outcome (a breadcrumb) or an error
+    // already captured with `area: auth`, never GoTrue's raw exception.
     if (result.hasError) {
       final mapped = mapSignInError(result.error!, email: email);
-      if (mapped is EmailNotConfirmedException) {
-        // Not a failure of the athlete's: the account exists and wants its
-        // code (124-001). The screen resends it and opens Verify your email.
-        report.info('Email sign in: address not confirmed yet', area: 'auth');
+      if (mapped is AuthFlowOutcome) {
+        // A wrong password, no connection, or an address that wants its
+        // code (124-001): the athlete's turn, not a failure. One note, one
+        // `expected_failure` count, no event.
+        await report.noteExpected(
+          'Email sign in: ${mapped.runtimeType}',
+          area: 'auth',
+          reason: authOutcomeReason(mapped),
+          analytics: analytics,
+        );
+        if (ref.mounted) {
+          state = AsyncError<void>(
+            mapped,
+            result.stackTrace ?? StackTrace.current,
+          );
+        }
       } else {
         report.fault(
           result.error!,
+          stackTrace: result.stackTrace,
           area: 'auth',
           message: 'Email sign in failed',
         );
+        // The wrapper is the same failure as its cause: the controller and
+        // the Riverpod net, which only ever see the wrapper, must not send a
+        // second event for it.
+        SentryReport.markReported(mapped);
+        if (ref.mounted) state = result;
       }
       throw mapped;
     }
+
+    if (ref.mounted) state = result;
   }
 
   /// GoTrue's answer to a password sign-in, as one of the

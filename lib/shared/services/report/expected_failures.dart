@@ -146,8 +146,10 @@ expectedFailureNeedles = <MapEntry<String, ExpectedFailure>>[
   // into an `auth.flow` breadcrumb, so it never reaches `Report`.
   MapEntry('email_not_confirmed', ExpectedFailure.verificationPending),
   // 2026-10-06 (DEV-8D): the address or provider is already registered; the
-  // signup screen offers "sign in instead".
-  MapEntry('AccountAlreadyExistsException', ExpectedFailure.accountExists),
+  // signup screen offers "sign in instead". `AccountAlreadyExistsException`
+  // and `OAuthAccountNotFoundException` are no longer listed (develop-2026-10
+  // ticket 41): both are `AuthFlowOutcome`s, which the Riverpod net turns
+  // into an `auth.flow` breadcrumb, and no site reports them.
   MapEntry('User already registered', ExpectedFailure.accountExists),
   // 2026-10-06 (DEV-8G): `userIdProvider` signed out with no cached profile.
   MapEntry(
@@ -161,8 +163,6 @@ expectedFailureNeedles = <MapEntry<String, ExpectedFailure>>[
   MapEntry('Invalid Refresh Token', ExpectedFailure.expiredSession),
   MapEntry('JWT expired', ExpectedFailure.expiredSession),
   MapEntry('session_expired', ExpectedFailure.expiredSession),
-  // --- Sign-in with a provider account that has no Mealvana account ---
-  MapEntry('OAuthAccountNotFoundException', ExpectedFailure.accountNotFound),
   // --- RevenueCat / StoreKit: cancelled purchase, store unreachable ---
   // Qualified enum names so a bare "networkError" elsewhere is not swept up;
   // the upper-case forms are the PlatformException codes.
@@ -178,6 +178,17 @@ expectedFailureNeedles = <MapEntry<String, ExpectedFailure>>[
   ),
   MapEntry('PurchasesErrorCode.networkError', ExpectedFailure.storeNetwork),
   MapEntry('NETWORK_ERROR', ExpectedFailure.storeNetwork),
+  // --- iOS's own offline wording (develop-2026-10 ticket 41, 32-007) ---
+  // As AVPlayer puts it inside `PlatformException(VideoError, Failed to load
+  // video: ...)`: NSURLErrorCannotConnectToHost and
+  // NSURLErrorNotConnectedToInternet. Listed after the store entries on
+  // purpose: RevenueCat's NETWORK_ERROR carries the same "Could not connect
+  // to the server" text and must stay store_network.
+  MapEntry('Could not connect to the server', ExpectedFailure.offline),
+  MapEntry(
+    'The Internet connection appears to be offline',
+    ExpectedFailure.offline,
+  ),
   // --- Debug-only Flutter assertions (never fire in release builds) ---
   MapEntry('ink splashes may be invisible', ExpectedFailure.debugAssertion),
   // --- Benign Flutter-web engine DOM teardown races ---

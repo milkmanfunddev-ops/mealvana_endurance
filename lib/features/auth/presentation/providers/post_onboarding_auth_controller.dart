@@ -44,8 +44,6 @@ class PostOnboardingAuthController extends _$PostOnboardingAuthController {
     final result = await AsyncValue.guard(() async {
       await oauth.linkAppleAccount();
     });
-    if (ref.mounted) state = result;
-
     if (result.hasError) {
       final error = result.error;
 
@@ -93,6 +91,10 @@ class PostOnboardingAuthController extends _$PostOnboardingAuthController {
       );
     }
 
+    // State last (ticket 41): the failure is reported above, so the
+    // Riverpod net finds it already captured, or files an outcome as an
+    // `auth.flow` breadcrumb.
+    if (ref.mounted) state = result;
     return !result.hasError;
   }
 
@@ -113,8 +115,6 @@ class PostOnboardingAuthController extends _$PostOnboardingAuthController {
     final result = await AsyncValue.guard(() async {
       await oauth.linkGoogleAccount();
     });
-    if (ref.mounted) state = result;
-
     if (result.hasError) {
       final error = result.error;
 
@@ -162,6 +162,10 @@ class PostOnboardingAuthController extends _$PostOnboardingAuthController {
       );
     }
 
+    // State last (ticket 41): the failure is reported above, so the
+    // Riverpod net finds it already captured, or files an outcome as an
+    // `auth.flow` breadcrumb.
+    if (ref.mounted) state = result;
     return !result.hasError;
   }
 
@@ -178,8 +182,6 @@ class PostOnboardingAuthController extends _$PostOnboardingAuthController {
     final result = await AsyncValue.guard(() async {
       await oauth.signInWithApple();
     });
-    if (ref.mounted) state = result;
-
     if (result.hasError) {
       // Expected control-flow signal: this Apple identity has no account.
       // The screen turns it into "try the provider you signed up with".
@@ -203,6 +205,10 @@ class PostOnboardingAuthController extends _$PostOnboardingAuthController {
       }
     }
 
+    // State last (ticket 41): the failure is reported above, so the
+    // Riverpod net finds it already captured, or files an outcome as an
+    // `auth.flow` breadcrumb.
+    if (ref.mounted) state = result;
     return !result.hasError;
   }
 
@@ -219,8 +225,6 @@ class PostOnboardingAuthController extends _$PostOnboardingAuthController {
     final result = await AsyncValue.guard(() async {
       await oauth.signInWithGoogle();
     });
-    if (ref.mounted) state = result;
-
     if (result.hasError) {
       // Expected control-flow signal: this Google identity has no account.
       // The screen turns it into "try the provider you signed up with".
@@ -244,6 +248,10 @@ class PostOnboardingAuthController extends _$PostOnboardingAuthController {
       }
     }
 
+    // State last (ticket 41): the failure is reported above, so the
+    // Riverpod net finds it already captured, or files an outcome as an
+    // `auth.flow` breadcrumb.
+    if (ref.mounted) state = result;
     return !result.hasError;
   }
 
@@ -270,17 +278,19 @@ class PostOnboardingAuthController extends _$PostOnboardingAuthController {
     final result = await AsyncValue.guard(() async {
       await emailAuth.linkEmailAccount(email: email, password: password);
     });
-    if (ref.mounted) state = result;
-
     if (result.hasError) {
-      return _emailCreationFailed(
+      final ok = await _emailCreationFailed(
         result,
         report: report,
         analytics: analytics,
         source: 'post_onboarding',
         verb: 'link',
       );
+      // State last (ticket 41): see [linkAppleAccount].
+      if (ref.mounted) state = result;
+      return ok;
     }
+    if (ref.mounted) state = result;
 
     report.info(
       'Post-onboarding auth: Email account created successfully',
@@ -378,17 +388,19 @@ class PostOnboardingAuthController extends _$PostOnboardingAuthController {
     final result = await AsyncValue.guard(() async {
       await emailAuth.signUpWithEmail(email: email, password: password);
     });
-    if (ref.mounted) state = result;
-
     if (result.hasError) {
-      return _emailCreationFailed(
+      final ok = await _emailCreationFailed(
         result,
         report: report,
         analytics: analytics,
         source: 'post_onboarding_signup',
         verb: 'signup',
       );
+      // State last (ticket 41): see [linkAppleAccount].
+      if (ref.mounted) state = result;
+      return ok;
     }
+    if (ref.mounted) state = result;
 
     report.info('Post-onboarding auth: Email signup successful', area: 'auth');
 
@@ -420,21 +432,35 @@ class PostOnboardingAuthController extends _$PostOnboardingAuthController {
     final result = await AsyncValue.guard(() async {
       await emailAuth.signInWithEmail(email: email, password: password);
     });
-    if (ref.mounted) state = result;
-
     if (result.hasError) {
-      report.fault(
-        result.error!,
-        area: 'auth',
-        message: 'Post-onboarding auth: Email sign in failed',
-      );
+      final error = result.error!;
+      if (error is AuthFlowOutcome) {
+        // A wrong password, no connection, an unconfirmed address: the
+        // athlete's turn (ticket 41, 30-005). The service already sent its
+        // `expected_failure` count; this is the controller's breadcrumb.
+        await report.note(
+          'Post-onboarding auth: Email sign in: ${error.runtimeType}',
+          area: 'auth',
+        );
+      } else {
+        // The service reported the cause and marked its wrapper; reporting
+        // the cause again only leaves an "already captured" breadcrumb.
+        report.fault(
+          error is SignInFailedException ? error.cause : error,
+          stackTrace: result.stackTrace,
+          area: 'auth',
+          message: 'Post-onboarding auth: Email sign in failed',
+        );
+      }
 
       await analytics.track(
         'auth_flow_failed',
         properties: {
           'provider': 'email',
           'source': 'post_onboarding_login',
-          'error': result.error.toString(),
+          'error': error is AuthFlowOutcome
+              ? error.runtimeType.toString()
+              : error.toString(),
         },
       );
     } else {
@@ -449,6 +475,10 @@ class PostOnboardingAuthController extends _$PostOnboardingAuthController {
       );
     }
 
+    // State last (ticket 41): the failure is reported above, so the
+    // Riverpod net finds it already captured, or files an outcome as an
+    // `auth.flow` breadcrumb.
+    if (ref.mounted) state = result;
     return !result.hasError;
   }
 

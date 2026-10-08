@@ -88,6 +88,45 @@ class OAuthService extends _$OAuthService {
         message.contains('1001'); // ASAuthorizationError.canceled
   }
 
+  /// Ends a sign-in or link: [onError] reports the failure (or notes the
+  /// outcome) and throws what the caller gets; only then is [state] written
+  /// (ticket 41, 30-005). Writing state first let the Riverpod net capture
+  /// the raw plugin or GoTrue error with no area, ahead of this service's own
+  /// `area: auth` report. An [AuthFlowOutcome] that [onError] threw (a cancel
+  /// mapped from Apple's 1001, an existing account) is what state holds, so
+  /// the net files an `auth.flow` breadcrumb; anything else leaves [result],
+  /// already reported, which the net skips.
+  Future<void> _settle(
+    AsyncValue<void> result,
+    Future<Never> Function(Object error) onError,
+  ) async {
+    final error = result.error;
+    if (error == null) {
+      if (ref.mounted) state = result;
+      return;
+    }
+    try {
+      await onError(error);
+    } catch (thrown, stack) {
+      if (ref.mounted) {
+        state = thrown is AuthFlowOutcome && !identical(thrown, error)
+            ? AsyncError<void>(thrown, stack)
+            : result;
+      }
+      rethrow;
+    }
+  }
+
+  /// An athlete's own turn ([outcome]): one `auth` note and one
+  /// `expected_failure` count, no event (ticket 41).
+  Future<void> _expectedOutcome(String flow, AuthFlowOutcome outcome) =>
+      _report.noteExpected(
+        '$flow: ${outcome.runtimeType}',
+        area: 'auth',
+        reason: authOutcomeReason(outcome),
+        analytics: _analytics,
+      );
+
   /// Initialize Google Sign-In with platform-specific configuration
   GoogleSignIn _getGoogleSignIn() {
     if (_googleSignIn != null) return _googleSignIn!;
@@ -135,7 +174,7 @@ class OAuthService extends _$OAuthService {
 
     state = const AsyncLoading();
 
-    state = await AsyncValue.guard(() async {
+    final result = await AsyncValue.guard(() async {
       _report.info('Starting native Apple Sign-In flow', area: 'auth');
 
       // Track analytics
@@ -211,11 +250,10 @@ class OAuthService extends _$OAuthService {
       } on supabase.AuthException catch (e) {
         if (e.message.contains('already linked') ||
             e.message.contains('Identity is already linked')) {
-          _report.degraded(
-            LoggedFault(
-              'Apple account already linked to another user',
-              context: 'OAUTH_NATIVE',
-            ),
+          // An existing account is the athlete's turn, not a failure
+          // (ticket 41): the error branch below writes its note and count.
+          _report.info(
+            'Apple account already linked to another user',
             area: 'auth',
           );
           throw AccountAlreadyExistsException(
@@ -254,23 +292,24 @@ class OAuthService extends _$OAuthService {
       );
     });
 
-    // Handle errors
-    if (state.hasError) {
-      final error = state.error;
-      // Don't log expected exceptions as errors
+    // Handle errors. Report first, state last (ticket 41): see [_settle].
+    await _settle(result, (error) async {
+      // An existing account is the athlete's turn, not a failure.
       if (error is AccountAlreadyExistsException) {
+        await _expectedOutcome('Apple link', error);
         throw error;
       }
 
       // A closed sheet is not a failure (125-003): no error log, a typed
       // cancel for the screen to swallow.
-      if (isCancellation(error!)) {
-        _report.info('Apple Sign-In cancelled by user', area: 'auth');
+      if (isCancellation(error)) {
+        const cancel = OAuthCancelledException(provider: 'apple');
+        await _expectedOutcome('Apple link', cancel);
         await _analytics.track(
           'auth_apple_native_cancelled',
           properties: {'platform': PlatformInfo.operatingSystem},
         );
-        throw const OAuthCancelledException(provider: 'apple');
+        throw cancel;
       }
 
       _report.fault(error, area: 'auth', message: 'Apple Sign-In failed');
@@ -284,7 +323,7 @@ class OAuthService extends _$OAuthService {
       );
 
       throw error;
-    }
+    });
   }
 
   /// Link Google account using native Google Sign-In (mobile) or Supabase OAuth (web)
@@ -297,7 +336,7 @@ class OAuthService extends _$OAuthService {
 
     state = const AsyncLoading();
 
-    state = await AsyncValue.guard(() async {
+    final result = await AsyncValue.guard(() async {
       _report.info('Starting native Google Sign-In flow', area: 'auth');
 
       // Track analytics
@@ -386,11 +425,10 @@ class OAuthService extends _$OAuthService {
       } on supabase.AuthException catch (e) {
         if (e.message.contains('already linked') ||
             e.message.contains('Identity is already linked')) {
-          _report.degraded(
-            LoggedFault(
-              'Google account already linked to another user',
-              context: 'OAUTH_NATIVE',
-            ),
+          // An existing account is the athlete's turn, not a failure
+          // (ticket 41): the error branch below writes its note and count.
+          _report.info(
+            'Google account already linked to another user',
             area: 'auth',
           );
           throw AccountAlreadyExistsException(
@@ -430,23 +468,24 @@ class OAuthService extends _$OAuthService {
       );
     });
 
-    // Handle errors
-    if (state.hasError) {
-      final error = state.error;
-      // Don't log expected exceptions as errors
+    // Handle errors. Report first, state last (ticket 41): see [_settle].
+    await _settle(result, (error) async {
+      // An existing account is the athlete's turn, not a failure.
       if (error is AccountAlreadyExistsException) {
+        await _expectedOutcome('Google link', error);
         throw error;
       }
 
       // A closed picker is not a failure (125-003): no error log, a typed
       // cancel for the screen to swallow.
-      if (isCancellation(error!)) {
-        _report.info('Google Sign-In cancelled by user', area: 'auth');
+      if (isCancellation(error)) {
+        const cancel = OAuthCancelledException(provider: 'google');
+        await _expectedOutcome('Google link', cancel);
         await _analytics.track(
           'auth_google_native_cancelled',
           properties: {'platform': PlatformInfo.operatingSystem},
         );
-        throw const OAuthCancelledException(provider: 'google');
+        throw cancel;
       }
 
       _report.fault(error, area: 'auth', message: 'Google Sign-In failed');
@@ -460,7 +499,7 @@ class OAuthService extends _$OAuthService {
       );
 
       throw error;
-    }
+    });
   }
 
   /// True when [user] was created BY the very sign-in call that returned it —
@@ -544,7 +583,7 @@ class OAuthService extends _$OAuthService {
 
     state = const AsyncLoading();
 
-    state = await AsyncValue.guard(() async {
+    final result = await AsyncValue.guard(() async {
       _report.info(
         'Starting native Apple Sign-In (Sign In mode)',
         area: 'auth',
@@ -706,24 +745,26 @@ class OAuthService extends _$OAuthService {
       }
     });
 
-    if (state.hasError) {
-      final error = state.error!;
+    // Report first, state last (ticket 41): see [_settle].
+    await _settle(result, (error) async {
       // Expected control-flow signal (no existing account) — not a failure.
       if (error is OAuthAccountNotFoundException) {
+        await _expectedOutcome('Apple sign in', error);
         throw error;
       }
       // Neither is a closed sheet (125-003).
       if (isCancellation(error)) {
-        _report.info('Apple Sign-In cancelled by user', area: 'auth');
+        const cancel = OAuthCancelledException(provider: 'apple');
+        await _expectedOutcome('Apple sign in', cancel);
         await _analytics.track(
           'auth_apple_signin_cancelled',
           properties: {'platform': PlatformInfo.operatingSystem},
         );
-        throw const OAuthCancelledException(provider: 'apple');
+        throw cancel;
       }
       _report.fault(error, area: 'auth', message: 'Apple Sign-In failed');
       throw error;
-    }
+    });
   }
 
   /// Sign in with Google (replaces current anonymous user)
@@ -737,7 +778,7 @@ class OAuthService extends _$OAuthService {
 
     state = const AsyncLoading();
 
-    state = await AsyncValue.guard(() async {
+    final result = await AsyncValue.guard(() async {
       _report.info(
         'Starting native Google Sign-In (Sign In mode)',
         area: 'auth',
@@ -915,24 +956,26 @@ class OAuthService extends _$OAuthService {
       }
     });
 
-    if (state.hasError) {
-      final error = state.error!;
+    // Report first, state last (ticket 41): see [_settle].
+    await _settle(result, (error) async {
       // Expected control-flow signal (no existing account) — not a failure.
       if (error is OAuthAccountNotFoundException) {
+        await _expectedOutcome('Google sign in', error);
         throw error;
       }
       // Neither is a closed picker (125-003).
       if (isCancellation(error)) {
-        _report.info('Google Sign-In cancelled by user', area: 'auth');
+        const cancel = OAuthCancelledException(provider: 'google');
+        await _expectedOutcome('Google sign in', cancel);
         await _analytics.track(
           'auth_google_signin_cancelled',
           properties: {'platform': PlatformInfo.operatingSystem},
         );
-        throw const OAuthCancelledException(provider: 'google');
+        throw cancel;
       }
       _report.fault(error, area: 'auth', message: 'Google Sign-In failed');
       throw error;
-    }
+    });
   }
 
   // ============================================================================
@@ -953,7 +996,7 @@ class OAuthService extends _$OAuthService {
   Future<void> _linkAppleAccountWeb() async {
     state = const AsyncLoading();
 
-    state = await AsyncValue.guard(() async {
+    final result = await AsyncValue.guard(() async {
       _report.info('Starting web Apple OAuth flow (linking)', area: 'auth');
 
       await _analytics.track(
@@ -993,11 +1036,10 @@ class OAuthService extends _$OAuthService {
       } on supabase.AuthException catch (e) {
         if (e.message.contains('already linked') ||
             e.message.contains('Identity is already linked')) {
-          _report.degraded(
-            LoggedFault(
-              'Apple account already linked to another user (web)',
-              context: 'OAUTH_WEB',
-            ),
+          // An existing account is the athlete's turn, not a failure
+          // (ticket 41): the error branch below writes its note and count.
+          _report.info(
+            'Apple account already linked to another user (web)',
             area: 'auth',
           );
           throw AccountAlreadyExistsException(
@@ -1009,21 +1051,22 @@ class OAuthService extends _$OAuthService {
       }
     });
 
-    if (state.hasError) {
-      final error = state.error;
+    // Report first, state last (ticket 41): see [_settle].
+    await _settle(result, (error) async {
       if (error is AccountAlreadyExistsException) {
+        await _expectedOutcome('Apple web link', error);
         throw error;
       }
-      _report.fault(error!, area: 'auth', message: 'Apple web OAuth failed');
-      throw state.error!;
-    }
+      _report.fault(error, area: 'auth', message: 'Apple web OAuth failed');
+      throw error;
+    });
   }
 
   /// Link Google account using Supabase web OAuth flow
   Future<void> _linkGoogleAccountWeb() async {
     state = const AsyncLoading();
 
-    state = await AsyncValue.guard(() async {
+    final result = await AsyncValue.guard(() async {
       _report.info('Starting web Google OAuth flow (linking)', area: 'auth');
 
       await _analytics.track(
@@ -1063,11 +1106,10 @@ class OAuthService extends _$OAuthService {
       } on supabase.AuthException catch (e) {
         if (e.message.contains('already linked') ||
             e.message.contains('Identity is already linked')) {
-          _report.degraded(
-            LoggedFault(
-              'Google account already linked to another user (web)',
-              context: 'OAUTH_WEB',
-            ),
+          // An existing account is the athlete's turn, not a failure
+          // (ticket 41): the error branch below writes its note and count.
+          _report.info(
+            'Google account already linked to another user (web)',
             area: 'auth',
           );
           throw AccountAlreadyExistsException(
@@ -1079,21 +1121,22 @@ class OAuthService extends _$OAuthService {
       }
     });
 
-    if (state.hasError) {
-      final error = state.error;
+    // Report first, state last (ticket 41): see [_settle].
+    await _settle(result, (error) async {
       if (error is AccountAlreadyExistsException) {
+        await _expectedOutcome('Google web link', error);
         throw error;
       }
-      _report.fault(error!, area: 'auth', message: 'Google web OAuth failed');
-      throw state.error!;
-    }
+      _report.fault(error, area: 'auth', message: 'Google web OAuth failed');
+      throw error;
+    });
   }
 
   /// Sign in with Apple using Supabase web OAuth flow
   Future<void> _signInWithAppleWeb() async {
     state = const AsyncLoading();
 
-    state = await AsyncValue.guard(() async {
+    final result = await AsyncValue.guard(() async {
       _report.info('Starting web Apple OAuth flow (sign-in)', area: 'auth');
 
       await _analytics.track(
@@ -1127,21 +1170,22 @@ class OAuthService extends _$OAuthService {
       _report.info('Apple OAuth sign-in redirect initiated', area: 'auth');
     });
 
-    if (state.hasError) {
+    // Report first, state last (ticket 41): see [_settle].
+    await _settle(result, (error) async {
       _report.fault(
-        state.error!,
+        error,
         area: 'auth',
         message: 'Apple web OAuth sign-in failed',
       );
-      throw state.error!;
-    }
+      throw error;
+    });
   }
 
   /// Sign in with Google using Supabase web OAuth flow
   Future<void> _signInWithGoogleWeb() async {
     state = const AsyncLoading();
 
-    state = await AsyncValue.guard(() async {
+    final result = await AsyncValue.guard(() async {
       _report.info('Starting web Google OAuth flow (sign-in)', area: 'auth');
 
       await _analytics.track(
@@ -1175,13 +1219,14 @@ class OAuthService extends _$OAuthService {
       _report.info('Google OAuth sign-in redirect initiated', area: 'auth');
     });
 
-    if (state.hasError) {
+    // Report first, state last (ticket 41): see [_settle].
+    await _settle(result, (error) async {
       _report.fault(
-        state.error!,
+        error,
         area: 'auth',
         message: 'Google web OAuth sign-in failed',
       );
-      throw state.error!;
-    }
+      throw error;
+    });
   }
 }

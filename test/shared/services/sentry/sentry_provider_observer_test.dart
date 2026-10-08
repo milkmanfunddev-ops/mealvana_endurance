@@ -14,7 +14,6 @@ import 'package:sentry_flutter/sentry_flutter.dart';
 
 import 'package:mealvana_endurance/features/auth/domain/auth_exceptions.dart';
 import 'package:mealvana_endurance/shared/services/analytics/analytics_tracker.dart';
-import 'package:mealvana_endurance/shared/services/report/report_log.dart';
 import 'package:mealvana_endurance/shared/services/report/report.dart';
 import 'package:mealvana_endurance/shared/services/sentry/sentry_provider_observer.dart';
 
@@ -473,5 +472,76 @@ void main() {
         );
       },
     );
+
+    // develop-2026-10 ticket 41 (30-005, 32-007): the rest of the auth
+    // flows' outcomes are marked too.
+    final outcomes = <Object>[
+      AccountAlreadyExistsException('This email is already registered'),
+      const OAuthAccountNotFoundException(provider: 'google'),
+      const OAuthCancelledException(provider: 'apple'),
+      const WrongCredentialsException(),
+      const NoConnectionException('offline'),
+      const EmailNotConfirmedException('a@b.com'),
+    ];
+    for (final outcome in outcomes) {
+      final type = outcome.runtimeType.toString();
+
+      test('$type bare is one auth.flow breadcrumb and no event', () async {
+        final failing = Provider<int>(
+          (ref) => throw outcome,
+          retry: (_, _) => null,
+          name: 'authProvider$type',
+        );
+        expect(() => container.read(failing), throwsA(anything));
+        await flush();
+
+        expect(transport.events, isEmpty);
+        final flow = ofCategory(await breadcrumbs(), authFlowCategory);
+        expect(flow, hasLength(1));
+        expect(flow.single.data, containsPair('type', type));
+      });
+
+      test('$type inside a ProviderException is a breadcrumb too', () async {
+        final unobserved = ProviderContainer();
+        addTearDown(unobserved.dispose);
+        final upstream = Provider<int>(
+          (ref) => throw outcome,
+          name: 'upstream$type',
+        );
+        late final ProviderException wrapper;
+        try {
+          unobserved.read(upstream);
+          fail('expected the failed provider to throw');
+        } on ProviderException catch (e) {
+          wrapper = e;
+        }
+        final downstream = Provider<int>(
+          (ref) => throw wrapper,
+          name: 'downstream$type',
+        );
+        expect(
+          () => container.read(downstream),
+          throwsA(isA<ProviderException>()),
+        );
+        await flush();
+
+        expect(transport.events, isEmpty);
+        final flow = ofCategory(await breadcrumbs(), authFlowCategory);
+        expect(flow, hasLength(1));
+        expect(flow.single.data, containsPair('type', type));
+      });
+    }
+
+    test('SignInFailedException stays a failure', () async {
+      final failing = Provider<int>(
+        (ref) => throw const SignInFailedException('500'),
+        retry: (_, _) => null,
+        name: 'signInFailedProvider',
+      );
+      expect(() => container.read(failing), throwsA(anything));
+      await flush();
+
+      expect(transport.events, hasLength(1));
+    });
   });
 }

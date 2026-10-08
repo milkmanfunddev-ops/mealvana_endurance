@@ -10,6 +10,7 @@ import '../models/version_check_result.dart';
 import '../models/dirty_record_backup.dart';
 import '../models/upload_error.dart';
 import 'dirty_record_backup_service.dart';
+import 'launch_trail.dart';
 import 'report/report.dart';
 import 'sync/sync_dependency_graph.dart';
 
@@ -162,14 +163,21 @@ class VersionCheckService {
         compatibilityWindowEnabled: compatibilityWindowEnabled,
       );
     } catch (e, stackTrace) {
-      // On failure, use the cached result. Offline is a warning; a parse or
-      // schema error in app_config is a real fault.
-      await _r.fault(
+      // On failure, use the cached result. Offline at a cold start is
+      // weather (ticket 41, 32-007): a breadcrumb, one `expected_failure`
+      // count and, this being the startup chain, a LaunchTrail line (D9). A
+      // parse or schema error in app_config is still a real fault. No
+      // tracker is passed: this runs before consent is resolved, so the
+      // count is held until analytics starts (`ExpectedFailureCounts`).
+      final weather = await _r.faultUnlessWeather(
         e,
         stackTrace: stackTrace,
         area: 'startup',
         message: 'Version check failed; using cached result',
       );
+      if (weather != null) {
+        LaunchTrail.add('version check ${weather.tag}: cached result');
+      }
       return await _getCachedResult();
     }
   }
