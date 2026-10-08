@@ -2137,6 +2137,9 @@ class _AiTabState extends ConsumerState<_AiTab> {
                     'e.g. Oatmeal with blueberries, a tablespoon of honey, large coffee with oat milk.',
                 border: OutlineInputBorder(),
                 alignLabelWithHint: true,
+                // Both error lines (too short, not food) wrap rather than
+                // ellipsise at one line (testing-wave 49-002).
+                errorMaxLines: 3,
               ),
               forceErrorText: _notFoodError,
               // The minimum is named in the line, from content (31-007).
