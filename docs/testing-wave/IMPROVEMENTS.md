@@ -89,6 +89,26 @@ Their dates come from the wave each entry names.
   the skill and the sheet come back into the repo, or CLAUDE.md's rule names what to read instead. For Lee.
 
 
+- 2026-10-08 · develop-2026-10 · done · **#124 the wave's base carried a stale generated file, and three agents each had
+  to notice and revert it (wave 6).** `describe_analysis_controller.g.dart` was stale at `876ca27e`; every agent's
+  unfiltered codegen rewrote it, and 56, 58 and 55 each spent a step reverting a file outside their Touches. Rule: the
+  lead runs unfiltered codegen and commits what changes BEFORE cutting the worktrees (beside the IMPROVEMENTS fixes in
+  "before the wave" step 1). Done 2026-10-08: this entry; the skill's step 1 says it from the next wave.
+- 2026-10-08 · develop-2026-10 · open · **#125 a ruling that adds work surfaces a new risk the ruling never saw (wave 6).**
+  Ticket 65's ruling added a unique index on events; the agent then found that the index makes one in-app duplicate
+  wedge an athlete's whole event upload batch (Q3). The fix wave applied the index on dev as ruled and the risk went to
+  the close-out questions. Rule to consider: a "Questions for Lee" that names a risk of a ruling is answered before the
+  lead runs that ruling's SQL on dev, or the dev step waits for the next triage.
+- 2026-10-08 · develop-2026-10 · open · **#126 `secrets/` is not in a worktree (wave 6).** A fix-wave agent allowed a
+  read-only Management API query (65) looked for `secrets/supabase_management_api.env` in its worktree and had to
+  guess the main clone's path. The prompt should name the absolute path of any secret file an agent may read, and
+  nothing else under `secrets/`.
+- 2026-10-08 · develop-2026-10 · done · **#127 nine fix agents at once was fine; three passes by Touches cost one hour
+  of lead waiting (wave 6).** Pass A (9 agents) took 5 to 16 minutes each; B and C were two serial waits of 6 to 10
+  minutes. The chains came from shared files (`connect_training_controller.dart` in four tickets,
+  `post_onboarding_auth_screen.dart` in two). Done: the batching order is in the TRIAGE wave log; a future draft pass
+  should split a shared file's hunks into one ticket where the hunks are small (60's three lines could have ridden on 63).
+
 ## Done
 
 - 2026-10-08 · develop-2026-10 · done · **#115 wave 3's three retest tickets each carried 13 checks and took
