@@ -1,6 +1,6 @@
 # 59: A notification tap held after an in-session login is replayed
 
-**Status:** ready (round develop-2026-10, fix wave 6)
+**Status:** in-progress (wave 6, 2026-10-08) (round develop-2026-10, fix wave 6)
 **Labels:** fix, round:develop-2026-10, area:notifications
 **Branch:** `develop-next` (fix-wave worktree)
 **Blocked by:** 56. 56 keeps `appStartupProvider`'s snapshot live after an in-session login (`AppStartup.refreshSession`). This ticket's guard reads that snapshot, and its replay fires on that snapshot's change. Run after 56 merges and re-read the line numbers then.
