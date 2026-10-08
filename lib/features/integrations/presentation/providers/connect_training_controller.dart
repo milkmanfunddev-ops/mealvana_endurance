@@ -9,6 +9,7 @@ import 'package:uuid/uuid.dart';
 import '../../../../shared/database/database_provider.dart';
 import '../../../../shared/providers/user_id_provider.dart';
 import '../../../../shared/services/app_external_deps.dart';
+import '../../../../shared/services/device_info_service.dart';
 import '../../../../shared/services/analytics/analytics_events.dart';
 import '../../../../shared/services/analytics/analytics_tracker.dart';
 import '../../../../shared/services/preferences_service.dart';
@@ -1432,7 +1433,7 @@ class ConnectTrainingController extends _$ConnectTrainingController {
     );
 
     try {
-      _trackIntegrationConnectStarted('vdot');
+      _trackIntegrationSyncStarted('vdot');
       final result = await _vdotSync.syncWorkouts(_currentUserId!);
 
       if (!ref.mounted) return result;
@@ -1781,7 +1782,7 @@ class ConnectTrainingController extends _$ConnectTrainingController {
     );
 
     try {
-      _trackIntegrationConnectStarted('runna');
+      _trackIntegrationSyncStarted('runna');
       final result = await _runnaSync.syncWorkouts(_currentUserId!);
 
       if (!ref.mounted) return result;
@@ -1955,7 +1956,7 @@ class ConnectTrainingController extends _$ConnectTrainingController {
     );
 
     try {
-      _trackIntegrationConnectStarted(providerId); // Sync started
+      _trackIntegrationSyncStarted(providerId);
       final result = await syncWorkouts();
 
       // Check if still mounted after async operation
@@ -2383,7 +2384,7 @@ class ConnectTrainingController extends _$ConnectTrainingController {
         properties: {
           'provider': provider,
           'source': source,
-          'device_id': _currentUserId ?? 'unknown',
+          'device_id': _analyticsDeviceId,
           'timestamp': DateTime.now().toIso8601String(),
         },
       ),
@@ -2396,21 +2397,36 @@ class ConnectTrainingController extends _$ConnectTrainingController {
       (analytics) => analytics.track(
         'integration_connect_skipped',
         properties: {
-          'device_id': _currentUserId ?? 'unknown',
+          'device_id': _analyticsDeviceId,
           'timestamp': DateTime.now().toIso8601String(),
         },
       ),
     );
   }
 
-  /// Helper to get analytics tracker with device ID
-  /// Uses _currentUserId which is set from the database user profile
+  /// The device id every integration event sends as `device_id`: the same id
+  /// `app_opened` sends, never the user id (ticket 60). Read inside
+  /// [_trackSafely]'s callback, after its `ref.mounted` check.
+  String get _analyticsDeviceId => ref.read(deviceInfoServiceProvider).deviceId;
+
   void _trackIntegrationConnectStarted(String provider) {
     _trackSafely(
       'integration_connect_started',
       (analytics) => analytics.trackIntegrationConnectStarted(
         provider: provider,
-        deviceId: _currentUserId ?? 'unknown',
+        deviceId: _analyticsDeviceId,
+      ),
+    );
+  }
+
+  /// A sync (Sync Now or a background import), not a connect: the connect
+  /// funnel must not count it (ticket 60, 50-010).
+  void _trackIntegrationSyncStarted(String provider) {
+    _trackSafely(
+      'integration_sync_started',
+      (analytics) => analytics.trackIntegrationSyncStarted(
+        provider: provider,
+        deviceId: _analyticsDeviceId,
       ),
     );
   }
@@ -2420,7 +2436,7 @@ class ConnectTrainingController extends _$ConnectTrainingController {
       'integration_connect_success',
       (analytics) => analytics.trackIntegrationConnectSuccess(
         provider: provider,
-        deviceId: _currentUserId ?? 'unknown',
+        deviceId: _analyticsDeviceId,
         athleteName: athleteName,
       ),
     );
@@ -2435,7 +2451,7 @@ class ConnectTrainingController extends _$ConnectTrainingController {
       'integration_connect_failed',
       (analytics) => analytics.trackIntegrationConnectFailed(
         provider: provider,
-        deviceId: _currentUserId ?? 'unknown',
+        deviceId: _analyticsDeviceId,
         errorType: errorType,
         errorMessage: errorMessage,
       ),
@@ -2447,7 +2463,7 @@ class ConnectTrainingController extends _$ConnectTrainingController {
       'integration_disconnected',
       (analytics) => analytics.trackIntegrationDisconnected(
         provider: provider,
-        deviceId: _currentUserId ?? 'unknown',
+        deviceId: _analyticsDeviceId,
         reason: reason,
       ),
     );
@@ -2463,7 +2479,7 @@ class ConnectTrainingController extends _$ConnectTrainingController {
       'integration_sync_success',
       (analytics) => analytics.trackIntegrationSyncSuccess(
         provider: provider,
-        deviceId: _currentUserId ?? 'unknown',
+        deviceId: _analyticsDeviceId,
         workoutsSynced: workoutsSynced,
         skippedCount: skippedCount,
         eventsCount: eventsCount,
@@ -2480,7 +2496,7 @@ class ConnectTrainingController extends _$ConnectTrainingController {
       'integration_sync_failed',
       (analytics) => analytics.trackIntegrationSyncFailed(
         provider: provider,
-        deviceId: _currentUserId ?? 'unknown',
+        deviceId: _analyticsDeviceId,
         errorType: errorType,
         errorMessage: errorMessage,
       ),
