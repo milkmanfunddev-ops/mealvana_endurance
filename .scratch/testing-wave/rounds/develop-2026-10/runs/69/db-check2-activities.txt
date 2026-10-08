@@ -1,0 +1,7 @@
+{"id": "1dac1410-3322-41aa-b44e-38ec554e97bd", "title": "Swim", "activity_type": "swimming", "scheduled_date_time": "2026-10-09 07:00:00", "synced_from_provider": "final_surge", "hidden_by_disconnect": null, "deleted_at": null}
+{"id": "d934c5c9-98b1-43b7-b8c4-ab53b0df89ba", "title": "R-CORE Routine", "activity_type": "other", "scheduled_date_time": "2026-10-09 07:00:00", "synced_from_provider": "final_surge", "hidden_by_disconnect": null, "deleted_at": null}
+{"id": "be55a023-b878-4a32-a166-2ab92b9a4815", "title": "Run - Long Run", "activity_type": "running", "scheduled_date_time": "2026-10-10 07:00:00", "synced_from_provider": "final_surge", "hidden_by_disconnect": null, "deleted_at": null}
+{"id": "f357e7cd-fa79-47b5-88ce-c5a4586bd661", "title": "Foam Rolling Routine", "activity_type": "other", "scheduled_date_time": "2026-10-10 07:00:00", "synced_from_provider": "final_surge", "hidden_by_disconnect": null, "deleted_at": null}
+{"id": "2658e48c-4176-43ed-a202-b0f29c9e713b", "title": "Bike - Long Ride", "activity_type": "cycling", "scheduled_date_time": "2026-10-11 07:00:00", "synced_from_provider": "final_surge", "hidden_by_disconnect": null, "deleted_at": null}
+{"id": "4d6390d7-4bf6-47f2-854a-0c6687b24488", "title": "Foam Rolling Routine", "activity_type": "other", "scheduled_date_time": "2026-10-11 07:00:00", "synced_from_provider": "final_surge", "hidden_by_disconnect": null, "deleted_at": null}
+(6 rows)

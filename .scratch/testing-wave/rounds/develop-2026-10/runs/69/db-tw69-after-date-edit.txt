@@ -1,0 +1,2 @@
+{"id": "f06c36ae-dcfd-4b26-8b05-1b1584cb1db1", "event_name": "Tw69 2330", "event_date": "2026-11-14", "start_time": "2026-11-14T23:30:00.000", "origin": "manual", "location": null, "updated_at": "2026-10-08 18:30:26.597245"}
+(1 rows)

@@ -1,0 +1,2 @@
+{"id": "dc939aa5-79f1-46e9-b059-7a8764117bd4", "email": "lee+e2e-69-20261008t2316z@rightpathprogramming.com", "email_confirmed_at": "2026-10-08 23:21:15.997167+00", "created_at": "2026-10-08 23:16:56.772785+00"}
+(1 rows)

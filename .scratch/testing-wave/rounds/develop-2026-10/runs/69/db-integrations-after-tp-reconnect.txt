@@ -1,0 +1,5 @@
+{"provider": "final_surge", "is_active": true, "last_sync_status": "success", "last_sync_error": null, "last_sync_at": "2026-10-08 23:24:26+00", "updated_at": "2026-10-08 23:24:27.044175+00"}
+{"provider": "garmin", "is_active": true, "last_sync_status": "requires_reauth", "last_sync_error": "reauth_required", "last_sync_at": "2026-09-19 08:56:12+00", "updated_at": "2026-10-08 23:38:08.834212+00"}
+{"provider": "training_peaks", "is_active": true, "last_sync_status": "pending", "last_sync_error": null, "last_sync_at": null, "updated_at": "2026-10-08 23:40:30.441119+00"}
+{"provider": "vdot", "is_active": false, "last_sync_status": null, "last_sync_error": null, "last_sync_at": "2026-10-07 06:16:58+00", "updated_at": "2026-10-08 20:46:53.006321+00"}
+(4 rows)

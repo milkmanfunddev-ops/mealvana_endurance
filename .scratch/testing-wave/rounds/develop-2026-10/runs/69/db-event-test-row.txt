@@ -1,0 +1,2 @@
+{"id": "65379d67-b5a5-4a8f-8145-8386271115cc", "event_name": "Test", "event_date": "2026-06-20", "start_time": "2026-06-20T08:58:00.000", "origin": null, "location": null, "updated_at": "2026-10-08 20:47:04.828996"}
+(1 rows)

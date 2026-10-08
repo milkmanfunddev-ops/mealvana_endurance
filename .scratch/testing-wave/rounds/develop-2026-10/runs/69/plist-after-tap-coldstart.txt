@@ -1,0 +1,13 @@
+flutter.ios_un_response_payload present: False
+flutter.ios_legacy_resume_payload present: False
+launch_trail_current notification lines:
+   18:25:27.257 ios_un_response_payload payload=reminder:be55a023-b878-4a32-a166-2ab92b9a4815 (consumed)
+   18:25:27.261 routing id=be55a023-b878-4a32-a166-2ab92b9a4815 type=reminder
+   18:25:27.271 deepLinkTo /plan (seeded / beneath)
+launch_trail_previous notification lines:
+   18:23:34.859 ios_un_response_payload payload=reminder:be55a023-b878-4a32-a166-2ab92b9a4815 (consumed)
+   18:23:34.867 HELD id=be55a023-b878-4a32-a166-2ab92b9a4815 type=reminder (no session)
+   18:24:20.542 DROPPED id=be55a023-b878-4a32-a166-2ab92b9a4815 type=reminder (session changed: signed in)
+   18:24:43.694 ios_un_response_payload payload=reminder:be55a023-b878-4a32-a166-2ab92b9a4815 (consumed)
+   18:24:43.695 routing id=be55a023-b878-4a32-a166-2ab92b9a4815 type=reminder
+   18:24:43.699 deepLinkTo /plan (seeded / beneath)
