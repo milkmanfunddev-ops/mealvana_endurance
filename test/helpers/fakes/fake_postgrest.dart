@@ -24,6 +24,10 @@ class FakePostgrest {
   /// Every write, in order: (method, table, decoded body).
   final List<({String method, String table, Object? body})> writes = [];
 
+  /// The URL of each write in [writes], same order: its query carries
+  /// PostgREST's `on_conflict` target.
+  final List<Uri> writeUris = [];
+
   late final SupabaseClient client = SupabaseClient(
     'http://fake-postgrest.test',
     'anon-key',
@@ -76,6 +80,7 @@ class FakePostgrest {
 
     final body = request.body.isEmpty ? null : jsonDecode(request.body);
     writes.add((method: request.method, table: table, body: body));
+    writeUris.add(request.url);
     if (rejectWrites.contains(table)) {
       return _json(request, 403, {
         'code': '42501',

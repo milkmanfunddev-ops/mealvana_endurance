@@ -51,6 +51,11 @@ class FoodItem {
   final String? displayOverride; // Deprecated - to be removed
   final bool toExcludeFromSolver;
 
+  /// `template_foods.name` (snake_case, e.g. `energy_chews`) for a catalog
+  /// food; null for a user food. This is the key food preferences are stored
+  /// under (ticket 58); [name] stays the display name.
+  final String? catalogName;
+
   FoodItem({
     required this.id,
     required this.name,
@@ -85,6 +90,7 @@ class FoodItem {
     this.displayNamePlural,
     this.displayOverride,
     this.toExcludeFromSolver = false,
+    this.catalogName,
   });
 
   /// Get the full image URL for this food item

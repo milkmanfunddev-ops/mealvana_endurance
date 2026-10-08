@@ -296,11 +296,7 @@ void main() {
 
   test('meal_logs', () async {
     await expectPullKeepsDirtyRow(
-      MealLogRepository(
-        supabase: server.client,
-        database: db,
-        report: logger,
-      ),
+      MealLogRepository(supabase: server.client, database: db, report: logger),
       table: 'meal_logs',
       serverRow: {
         'id': '9162543b-1022-4462-8c4b-00ef7cf926c4',
@@ -511,16 +507,26 @@ void main() {
       'updated_at': _created,
     };
 
+    // A user edit (Settings' save path): marks the pending flag, writes
+    // Drift and starts the immediate upload, which the server refuses.
+    Future<void> editOffline(Map<String, FoodPreference> prefs) async {
+      await repo().saveFoodPreferences(
+        _user,
+        prefs,
+        mergeMode: true,
+        upload: true,
+      );
+      await FoodPreferencesRepository.inFlightUploadFor(_user);
+    }
+
     test('after a refused upload, the pull keeps unsent local values and '
         'only adds foods the phone does not have', () async {
       server.tables['food_preferences'] = [pref('banana', 'like')];
       expect((await repo().syncFromRemote(_user)).success, isTrue);
 
       // Offline edit: banana flips to dislike; the upload is refused.
-      await db.foodPreferencesDao.saveFoodPreferences(_user, {
-        'banana': FoodPreference.dislike,
-      });
       server.rejectWrites.add('food_preferences');
+      await editOffline({'banana': FoodPreference.dislike});
       final upload = await repo().uploadDirtyRecords(_user);
       expect(upload.success, isFalse);
 
@@ -539,11 +545,8 @@ void main() {
     test('once the upload lands, the pull applies the server again', () async {
       server.tables['food_preferences'] = [pref('banana', 'like')];
       await repo().syncFromRemote(_user);
-      await db.foodPreferencesDao.saveFoodPreferences(_user, {
-        'banana': FoodPreference.dislike,
-      });
       server.rejectWrites.add('food_preferences');
-      await repo().uploadDirtyRecords(_user);
+      await editOffline({'banana': FoodPreference.dislike});
 
       server.rejectWrites.clear();
       expect((await repo().uploadDirtyRecords(_user)).success, isTrue);

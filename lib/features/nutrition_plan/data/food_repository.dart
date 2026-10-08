@@ -557,6 +557,7 @@ class FoodRepository with SyncableRepository {
       displayName: displayName,
       displayNamePlural: json['display_name_plural'] as String?,
       toExcludeFromSolver: json['to_exclude_from_solver'] == true,
+      catalogName: rawName,
     );
   }
 

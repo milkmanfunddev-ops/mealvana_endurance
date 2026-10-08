@@ -1,20 +1,20 @@
-/**
- * Regression test for #23: getLikedFoods / getDislikedFoods must not silently
- * return [] when the local Drift cache is empty. The Drift-first / Supabase-
- * fallback policy lives in UserRepository; this test exercises both paths.
- *
- * Mocking the Supabase fluent API end-to-end is brittle (see the note in
- * test/new_sync/food_preferences_repository_test.dart), so we cover the
- * Drift-populated path directly and verify the Drift-empty path doesn't
- * throw — the fallback call to fetchAndCacheRemoteFoodPreferences will fail
- * because the Supabase mock has no stubs, and _safeHydrateFoodPreferencesFromRemote
- * must swallow that and return [].
- */
+// Regression test for #23: getLikedFoods / getDislikedFoods must not silently
+// return [] when the local Drift cache is empty. The Drift-first / Supabase-
+// fallback policy lives in UserRepository; this test exercises both paths.
+//
+// Mocking the Supabase fluent API end-to-end is brittle (see the note in
+// test/new_sync/food_preferences_repository_test.dart), so we cover the
+// Drift-populated path directly and verify the Drift-empty path doesn't
+// throw — the fallback call to fetchAndCacheRemoteFoodPreferences will fail
+// because the Supabase mock has no stubs, and _safeHydrateFoodPreferencesFromRemote
+// must swallow that and return [].
 
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mealvana_endurance/features/auth/data/user_repository.dart';
 import 'package:mealvana_endurance/features/auth/domain/user_preferences.dart';
+import 'package:mealvana_endurance/features/food_preferences/data/food_preferences_repository.dart'
+    show foodPreferencesUploadPendingKey;
 import 'package:mealvana_endurance/shared/database/app_database.dart';
 import 'package:mocktail/mocktail.dart';
 import '../../helpers/fakes/recording_report.dart';
@@ -27,6 +27,7 @@ void main() {
   late AppDatabase database;
   late MockSupabaseClient mockSupabase;
   late UserRepository repository;
+  late RecordingReport report;
 
   const testUserId = 'test-user-23';
 
@@ -35,10 +36,11 @@ void main() {
     database = AppDatabase.forTesting(NativeDatabase.memory());
     mockSupabase = MockSupabaseClient();
 
+    report = RecordingReport();
     repository = UserRepository(
       database: database,
       supabase: mockSupabase,
-      report: RecordingReport(),
+      report: report,
     );
   });
 
@@ -99,5 +101,32 @@ void main() {
         expect(likes, isEmpty);
       },
     );
+  });
+
+  // develop-2026-10 ticket 58: the plan path's reconcile used to replace the
+  // local rows with the server set, wiping a Settings edit whose upload had
+  // not landed.
+  group('reconcile while a local upload is pending', () {
+    test('keeps the local rows, never reads the server, and says so', () async {
+      await database.foodPreferencesDao.saveFoodPreferences(testUserId, {
+        'sports_drink': FoodPreference.dislike,
+      });
+      SharedPreferences.setMockInitialValues({
+        foodPreferencesUploadPendingKey(testUserId): true,
+      });
+
+      final remote = await repository.fetchAndCacheRemoteFoodPreferences(
+        testUserId,
+      );
+      final dislikes = await repository.getDislikedFoods(testUserId);
+
+      expect(remote, {'sports_drink': FoodPreference.dislike});
+      expect(dislikes, ['sports_drink']);
+      verifyNever(() => mockSupabase.from(any()));
+      expect(
+        report.notes.map((n) => n.message),
+        contains('Food preference reconcile skipped: local upload pending'),
+      );
+    });
   });
 }
