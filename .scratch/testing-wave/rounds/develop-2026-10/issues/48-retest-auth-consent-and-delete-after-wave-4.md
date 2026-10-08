@@ -1,6 +1,6 @@
 # 48: Retest: auth, consent and delete after wave 4
 
-**Status:** ready (round develop-2026-10, retest, wave 5)
+**Status:** in-progress (wave 5, 2026-10-08)
 **Labels:** retest, round:develop-2026-10, area:account
 **Branch:** `develop-next` (worktree per ticket, branched from the round's base after fix wave 4 lands)
 **Source:** TRIAGE.md rulings of 2026-10-08 (wave 3 triage): followups 30-013, 30-014, 30-015; fix retests for tickets 35, 36, 40 (30-001 screens), 41 (30-005, 30-011), 42 (30-007, 30-008), 43 (30-002, 30-010)

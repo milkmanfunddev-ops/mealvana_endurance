@@ -1,6 +1,6 @@
 # 49: Retest: meal logging after wave 4
 
-**Status:** ready (round develop-2026-10, retest, wave 5)
+**Status:** in-progress (wave 5, 2026-10-08)
 **Labels:** retest, round:develop-2026-10, area:meal-logging, ai-call
 **Branch:** `develop-next` (worktree per ticket, branched from the round's base after fix wave 4 lands)
 **Source:** TRIAGE.md rulings of 2026-10-08 (wave 3 triage): followups 31-006, 31-009, 31-010, 31-011; fix retests for tickets 38 (swap quantity), 45 (31-002, 31-003, 31-004, 31-005, 31-007), 39 (one food_preferences row's updated_at offset)
