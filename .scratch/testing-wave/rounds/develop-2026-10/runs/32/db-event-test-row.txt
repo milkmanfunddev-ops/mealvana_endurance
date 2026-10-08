@@ -1,0 +1,2 @@
+-- 2026-10-08T13:29:52Z event 'Test' server row (app showed Sat June 20 2026, e01/e05)
+[{"id":"65379d67-b5a5-4a8f-8145-8386271115cc","event_name":"Test","event_date":"2026-07-17","start_time":"2026-06-20T08:58:00.000","event_type":"running","updated_at":"2026-06-17 08:59:29.310184","local_updated_at":"2026-06-17 13:58:58.810443","needs_upload":false,"origin":null}]

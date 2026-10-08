@@ -1,0 +1,13 @@
+-- Supabase MCP query_logs, project vlmtsdzpnjnavdgytcmi, window 2026-10-08T12:57:00Z..13:32:00Z
+-- 1) select timestamp, event_message, log_attributes['level'] from logs where source='function_edge_logs'
+All requests 200. Functions: sync-all-data (12:57:59, 13:07:19, 13:17:08, 13:21:19, 13:25:27),
+calculate-daily-macros-v6 (12:58:03, 12:58:08, 13:02:21 x2, 13:07:25, 13:17:07, 13:17:08, 13:20:01, 13:20:02,
+13:21:20, 13:25:07, 13:25:08, 13:25:29), garmin-push (13:00:43 ... 13:26:32, 19 requests, not this run),
+describe-meal (13:02:50, 13:12:03: ticket 31), delete-user (13:04:38, 13:22:07, 13:26:00: ticket 30),
+ensure-credits (13:18:10 x2: opening the Log a Meal sheet, this run).
+-- 2) function_logs with level in (error, warning, warn)
+- sessionCost: unknown sport "other" — F4a zero-with-estimate-flag (session-demand.md F4a, RULED 2026-09-10)
+  x7 per calculate-daily-macros call (12:58:03, 12:58:08, 13:07:21, 13:07:25, 13:25:29, 13:30:29). Ruled behaviour.
+- 13:00:46 [garmin-push] OneSignal accepted the request but reached no device for user c2c7e005-6041-4b6c-b7ae-ae25c97b049b
+  (recipients=0) — not counting it as sent: ["All included players are not subscribed"]  (another user; not this run)
+No error-level lines.

@@ -1,0 +1,2 @@
+-- 2026-10-08T13:12:07Z events count after step 7 (swipe cancelled)
+[{"events":5}]
