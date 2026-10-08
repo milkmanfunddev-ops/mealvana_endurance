@@ -102,7 +102,7 @@ class UserSyncHandler {
       final userData = localUser.toJson()
         ..['id'] = userId
         ..['device_id'] = userId
-        ..['updated_at'] = DateTime.now().toIso8601String();
+        ..['updated_at'] = DateTime.now().toUtc().toIso8601String();
 
       // Upsert user profile to Supabase
       await _supabase
@@ -193,7 +193,7 @@ class UserSyncHandler {
   Future<void> uploadUserProfile(UserProfileEntry profile) async {
     try {
       final userData = _database.userDao.toDomainProfile(profile).toJson()
-        ..['updated_at'] = DateTime.now().toIso8601String();
+        ..['updated_at'] = DateTime.now().toUtc().toIso8601String();
 
       // Upsert to Supabase using primary key (id) for conflict resolution
       await _supabase.from('users').upsert(userData, onConflict: 'id');
@@ -236,8 +236,8 @@ class UserSyncHandler {
               'food_name': entry.foodName,
               'preference': entry.preference,
               'preference_level': entry.preferenceLevel,
-              'created_at': entry.createdAt.toIso8601String(),
-              'updated_at': entry.updatedAt.toIso8601String(),
+              'created_at': entry.createdAt.toUtc().toIso8601String(),
+              'updated_at': entry.updatedAt.toUtc().toIso8601String(),
             },
           )
           .toList();

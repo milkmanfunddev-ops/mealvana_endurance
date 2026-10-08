@@ -270,9 +270,9 @@ class FeedbackRepository with SyncableRepository {
       'plan_name': response.planName,
       'user_name': response.deviceId, // Using deviceId as user identifier
       'timestamp':
-          response.timestamp?.toIso8601String() ??
-          DateTime.now().toIso8601String(),
-      'created_at': DateTime.now().toIso8601String(),
+          response.timestamp?.toUtc().toIso8601String() ??
+          DateTime.now().toUtc().toIso8601String(),
+      'created_at': DateTime.now().toUtc().toIso8601String(),
     };
 
     try {
@@ -436,7 +436,7 @@ class FeedbackRepository with SyncableRepository {
       'suggestions': entry.suggestions,
       'plan_name': entry.planName,
       'user_name': entry.deviceId, // Drift deviceId -> Supabase user_name
-      'timestamp': entry.timestamp?.toIso8601String(),
+      'timestamp': entry.timestamp?.toUtc().toIso8601String(),
       'confidence_level': entry.confidenceLevel,
       'confidence_label': entry.confidenceLabel,
       'reuse_intent': entry.reuseIntent,
@@ -447,7 +447,7 @@ class FeedbackRepository with SyncableRepository {
       'reminder_hour': entry.reminderHour,
       'reminder_minute': entry.reminderMinute,
       'reminder_recurring': entry.reminderRecurring,
-      'created_at': entry.createdAt.toIso8601String(),
+      'created_at': entry.createdAt.toUtc().toIso8601String(),
     };
   }
 }

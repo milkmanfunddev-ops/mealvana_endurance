@@ -550,10 +550,10 @@ class CoachRepository with SyncableRepository {
           'athlete_user_id': athleteUserId,
           'status': status,
           'requested_by': requestedBy,
-          'requested_at': now.toIso8601String(),
-          if (isCoachInitiated) 'accepted_at': now.toIso8601String(),
-          'created_at': now.toIso8601String(),
-          'updated_at': now.toIso8601String(),
+          'requested_at': now.toUtc().toIso8601String(),
+          if (isCoachInitiated) 'accepted_at': now.toUtc().toIso8601String(),
+          'created_at': now.toUtc().toIso8601String(),
+          'updated_at': now.toUtc().toIso8601String(),
         });
       } catch (e, stackTrace) {
         _r.degraded(
@@ -623,8 +623,8 @@ class CoachRepository with SyncableRepository {
             .from('coach_athlete_relationships')
             .update({
               'status': 'active',
-              'accepted_at': now.toIso8601String(),
-              'updated_at': now.toIso8601String(),
+              'accepted_at': now.toUtc().toIso8601String(),
+              'updated_at': now.toUtc().toIso8601String(),
             })
             .eq('id', relationshipId);
       } catch (e, stackTrace) {
@@ -681,8 +681,8 @@ class CoachRepository with SyncableRepository {
             .from('coach_athlete_relationships')
             .update({
               'status': 'declined',
-              'declined_at': now.toIso8601String(),
-              'updated_at': now.toIso8601String(),
+              'declined_at': now.toUtc().toIso8601String(),
+              'updated_at': now.toUtc().toIso8601String(),
             })
             .eq('id', relationshipId);
       } catch (e, stackTrace) {
@@ -739,8 +739,8 @@ class CoachRepository with SyncableRepository {
             .from('coach_athlete_relationships')
             .update({
               'status': 'archived',
-              'archived_at': now.toIso8601String(),
-              'updated_at': now.toIso8601String(),
+              'archived_at': now.toUtc().toIso8601String(),
+              'updated_at': now.toUtc().toIso8601String(),
             })
             .eq('id', relationshipId);
       } catch (e, stackTrace) {
@@ -1273,7 +1273,7 @@ class CoachRepository with SyncableRepository {
   }) async {
     try {
       final updates = <String, dynamic>{
-        'updated_at': DateTime.now().toIso8601String(),
+        'updated_at': DateTime.now().toUtc().toIso8601String(),
       };
 
       if (firstName != null) updates['first_name'] = firstName;
@@ -1353,7 +1353,7 @@ class CoachRepository with SyncableRepository {
           .from('users')
           .update({
             'nutrition_target_overrides': overridesJson,
-            'updated_at': DateTime.now().toIso8601String(),
+            'updated_at': DateTime.now().toUtc().toIso8601String(),
           })
           .eq('id', athleteUserId);
 
@@ -1639,9 +1639,9 @@ class CoachRepository with SyncableRepository {
           'email': email,
           'bio': bio,
           'application_status': 'pending',
-          'submitted_at': now.toIso8601String(),
-          'created_at': now.toIso8601String(),
-          'updated_at': now.toIso8601String(),
+          'submitted_at': now.toUtc().toIso8601String(),
+          'created_at': now.toUtc().toIso8601String(),
+          'updated_at': now.toUtc().toIso8601String(),
         });
         return true;
       } catch (e, stackTrace) {

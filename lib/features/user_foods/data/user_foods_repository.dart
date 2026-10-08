@@ -121,9 +121,11 @@ class UserFoodsRepository with SyncableRepository {
               'is_electrolyte': food.isElectrolyte,
               'to_exclude_from_solver': food.toExcludeFromSolver,
               'is_deleted': food.isDeleted,
-              'created_at': food.createdAt.toIso8601String(),
-              'updated_at': food.updatedAt.toIso8601String(),
-              'client_updated_at': food.clientUpdatedAt?.toIso8601String(),
+              'created_at': food.createdAt.toUtc().toIso8601String(),
+              'updated_at': food.updatedAt.toUtc().toIso8601String(),
+              'client_updated_at': food.clientUpdatedAt
+                  ?.toUtc()
+                  .toIso8601String(),
             },
           )
           .toList();

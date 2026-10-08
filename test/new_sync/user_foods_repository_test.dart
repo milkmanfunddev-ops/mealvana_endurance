@@ -1,3 +1,4 @@
+import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mealvana_endurance/features/user_foods/data/user_foods_repository.dart';
@@ -6,6 +7,7 @@ import 'package:mocktail/mocktail.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../helpers/fakes/fake_postgrest.dart';
 import '../helpers/fakes/recording_report.dart';
 
 // Mocks
@@ -149,4 +151,52 @@ void main() {
       },
     );
   });
+
+  // develop-2026-10 ticket 39: user_foods.created_at, updated_at and
+  // client_updated_at are timestamptz. Drift reads them back local; the
+  // upload now sends UTC.
+  test(
+    'uploadDirtyRecords sends the stored instants in UTC, ending in Z',
+    () async {
+      // Whole seconds: Drift keeps epoch seconds.
+      final createdAtUtc = DateTime.utc(2026, 10, 7, 11, 11, 3);
+      final updatedAtUtc = DateTime.utc(2026, 10, 8, 2, 40, 9);
+      final clientUpdatedAtUtc = DateTime.utc(2026, 10, 8, 2, 40, 7);
+      final server = FakePostgrest();
+      final repository = UserFoodsRepository(
+        database: database,
+        supabase: server.client,
+        report: report,
+      );
+      await database
+          .into(database.userFoodsTable)
+          .insert(
+            UserFoodsTableCompanion.insert(
+              id: '11111111-2222-4333-8444-555555555555',
+              deviceId: testUserId,
+              userId: testUserId,
+              name: 'Rice cake',
+              createdAt: Value(createdAtUtc),
+              updatedAt: Value(updatedAtUtc),
+              clientUpdatedAt: Value(clientUpdatedAtUtc),
+              needsUpload: const Value(true),
+            ),
+          );
+
+      final result = await repository.uploadDirtyRecords(testUserId);
+      expect(result.success, isTrue);
+
+      final write = server.writes.singleWhere((w) => w.table == 'user_foods');
+      final sent = ((write.body as List).single as Map).cast<String, dynamic>();
+      for (final (key, instant) in [
+        ('created_at', createdAtUtc),
+        ('updated_at', updatedAtUtc),
+        ('client_updated_at', clientUpdatedAtUtc),
+      ]) {
+        final value = sent[key] as String;
+        expect(value, endsWith('Z'), reason: '$key carries its offset');
+        expect(DateTime.parse(value).isAtSameMomentAs(instant), isTrue);
+      }
+    },
+  );
 }

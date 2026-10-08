@@ -1,3 +1,4 @@
+import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mealvana_endurance/features/coach_mode/data/coach_repository.dart';
 import 'package:mealvana_endurance/shared/database/app_database.dart';
@@ -5,6 +6,7 @@ import 'package:mocktail/mocktail.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../helpers/fakes/fake_postgrest.dart';
 import '../helpers/fakes/recording_report.dart';
 
 // Mocks
@@ -93,4 +95,153 @@ void main() {
   // 3. Handles empty responses correctly
   // 4. Updates last sync timestamp
   // 5. Returns appropriate SyncResult on success/failure
+
+  // develop-2026-10 ticket 39: every coach write into a `timestamptz` column
+  // goes out in UTC. A naive local string (no offset) was stored by Postgres
+  // as if it were UTC, hours off in any zone west or east of it.
+  group('timestamptz writes go out in UTC', () {
+    const coachId = 'c0c0c0c0-0000-4000-8000-000000000001';
+    const athleteId = 'a0a0a0a0-0000-4000-8000-000000000002';
+
+    late AppDatabase database;
+    late FakePostgrest server;
+    late CoachRepository repo;
+
+    setUp(() {
+      database = AppDatabase.forTesting(NativeDatabase.memory());
+      addTearDown(database.close);
+      server = FakePostgrest();
+      repo = CoachRepository(
+        supabase: server.client,
+        database: database,
+        report: RecordingReport(),
+      );
+    });
+
+    Map<String, dynamic> lastBody(String table) {
+      final write = server.writes.lastWhere((w) => w.table == table);
+      final body = write.body is List
+          ? (write.body as List).single
+          : write.body;
+      return (body as Map).cast<String, dynamic>();
+    }
+
+    void expectUtcWithin(
+      Map<String, dynamic> body,
+      List<String> keys,
+      DateTime before,
+      DateTime after,
+    ) {
+      for (final key in keys) {
+        final sent = body[key] as String;
+        expect(sent, endsWith('Z'), reason: '$key carries its offset');
+        final at = DateTime.parse(sent);
+        expect(at.isBefore(before), isFalse, reason: key);
+        expect(at.isAfter(after), isFalse, reason: key);
+      }
+    }
+
+    test('createRelationship sends the same instant it returns', () async {
+      final created = await repo.createRelationship(
+        coachUserId: coachId,
+        athleteUserId: athleteId,
+        requestedBy: 'coach',
+      );
+
+      final body = lastBody('coach_athlete_relationships');
+      for (final key in [
+        'requested_at',
+        'accepted_at',
+        'created_at',
+        'updated_at',
+      ]) {
+        final sent = body[key] as String;
+        expect(sent, endsWith('Z'), reason: '$key carries its offset');
+        expect(
+          DateTime.parse(sent).isAtSameMomentAs(created.requestedAt),
+          isTrue,
+          reason: key,
+        );
+      }
+    });
+
+    test('accept, decline and archive send UTC', () async {
+      final created = await repo.createRelationship(
+        coachUserId: coachId,
+        athleteUserId: athleteId,
+        requestedBy: 'athlete',
+      );
+
+      var before = DateTime.now();
+      await repo.acceptRelationship(created.id);
+      expectUtcWithin(
+        lastBody('coach_athlete_relationships'),
+        ['accepted_at', 'updated_at'],
+        before,
+        DateTime.now(),
+      );
+
+      before = DateTime.now();
+      await repo.declineRelationship(created.id);
+      expectUtcWithin(
+        lastBody('coach_athlete_relationships'),
+        ['declined_at', 'updated_at'],
+        before,
+        DateTime.now(),
+      );
+
+      before = DateTime.now();
+      await repo.archiveRelationship(created.id);
+      expectUtcWithin(
+        lastBody('coach_athlete_relationships'),
+        ['archived_at', 'updated_at'],
+        before,
+        DateTime.now(),
+      );
+    });
+
+    test('athlete profile and nutrition-target edits send users.updated_at '
+        'in UTC', () async {
+      var before = DateTime.now();
+      await repo.updateAthleteProfile(
+        athleteUserId: athleteId,
+        firstName: 'Ana',
+      );
+      expectUtcWithin(
+        lastBody('users'),
+        ['updated_at'],
+        before,
+        DateTime.now(),
+      );
+
+      before = DateTime.now();
+      await repo.updateAthleteNutritionTargets(
+        athleteUserId: athleteId,
+        overridesJson: null,
+      );
+      expectUtcWithin(
+        lastBody('users'),
+        ['updated_at'],
+        before,
+        DateTime.now(),
+      );
+    });
+
+    test('submitCoachApplication sends UTC', () async {
+      final before = DateTime.now();
+      final ok = await repo.submitCoachApplication(
+        userId: coachId,
+        firstName: 'Cora',
+        lastName: 'Coach',
+        email: 'cora@example.com',
+      );
+      expect(ok, isTrue);
+      expectUtcWithin(
+        lastBody('coaches'),
+        ['submitted_at', 'created_at', 'updated_at'],
+        before,
+        DateTime.now(),
+      );
+    });
+  });
 }
