@@ -247,6 +247,11 @@ class ContentKeys {
   // 119-010 Discard changes? on leaving)
   static const String profileEditEmailLoginLabel =
       'profile_edit.email_login_label';
+  // Ticket 36: editable contact email when auth has no readable address.
+  static const String profileEditContactEmailLabel =
+      'profile_edit.contact_email_label';
+  static const String profileEditContactEmailHint =
+      'profile_edit.contact_email_hint';
   static const String profileEditDiscardTitle = 'profile_edit.discard_title';
   static const String profileEditDiscardBody = 'profile_edit.discard_body';
   static const String profileEditDiscard = 'profile_edit.discard';

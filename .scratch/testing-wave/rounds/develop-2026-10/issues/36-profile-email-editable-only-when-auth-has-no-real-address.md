@@ -28,11 +28,25 @@
 
 No edge-function or schema change. Nothing to deploy.
 
-- [ ] Widget tests (`preferences_clear_text_fields_test.dart`, seeded through `_SeededSettingsController` at `:40-59`): with `authEmail: 'alice@example.com'` the field is read-only, labelled "Your login email", and a save leaves `saved!.email` unchanged (the existing test at `:148-164`); with `authEmail: 'x1y2@privaterelay.appleid.com'` the field is editable, empty, labelled "Contact email", typing `lee@example.com` and saving writes `saved!.email == 'lee@example.com'`; with `authEmail: null` the same. `preferences_accessibility_test.dart:141-146` adds the editable label case.
-- [ ] Controller seam: a save with the field read-only does not write `email` into the profile row (the echo in item 3 is gone): assert the `updateUserProfile` call keeps `existingProfile.email`.
-- [ ] `support_identity_test.dart`: relay, plain and empty addresses.
-- [ ] `fresh_login_keeps_contact_email_test.dart`: a fresh login with a relay session address keeps a stored `lee@example.com`; a real session address still replaces an empty profile email.
-- [ ] `flutter analyze` clean on touched files.
+- [x] Widget tests (`preferences_clear_text_fields_test.dart`, seeded through `_SeededSettingsController` at `:40-59`): with `authEmail: 'alice@example.com'` the field is read-only, labelled "Your login email", and a save leaves `saved!.email` unchanged (the existing test at `:148-164`); with `authEmail: 'x1y2@privaterelay.appleid.com'` the field is editable, empty, labelled "Contact email", typing `lee@example.com` and saving writes `saved!.email == 'lee@example.com'`; with `authEmail: null` the same. `preferences_accessibility_test.dart:141-146` adds the editable label case.
+- [x] Controller seam: a save with the field read-only does not write `email` into the profile row (the echo in item 3 is gone): assert the `updateUserProfile` call keeps `existingProfile.email`.
+- [x] `support_identity_test.dart`: relay, plain and empty addresses.
+- [x] `fresh_login_keeps_contact_email_test.dart`: a fresh login with a relay session address keeps a stored `lee@example.com`; a real session address still replaces an empty profile email.
+- [x] `flutter analyze` clean on touched files.
 - [ ] Retest on a simulator (retest ticket 30, next test wave): email/password account shows read-only; the relay case needs a real Apple hidden-address account (device check, Lee's phone) and is noted as such.
+
+**Fix notes (wave 4).**
+- `SettingsState` gains `authEmail` (+ `copyWith`) and a derived `emailEditable` getter; the display rule is one static, `SettingsState.displayEmailFor(authEmail:, profileEmail:)`, used by `SettingsController.build` and the tests (a stored relay value reads as empty).
+- `_saveProfile` writes `email` only when `emailEditable`; read-only saves keep `existingProfile.email` with `clearEmail: false`. The screen sends `email:` (trimmed, empty = clear) only when editable.
+- `_handleFreshLogin` routes through `_freshLoginEmail`: a relay session address over a stored non-relay address keeps the stored one, tapes `LaunchTrail.add(...)` and sends `report.note(..., area: 'auth')` (Sentry breadcrumb, no address logged).
+- Tests: `preferences_clear_text_fields_test.dart` 9/9, `preferences_accessibility_test.dart` 6/6, `settings_state_test.dart` 21/21, `support_identity_test.dart` 7/7 (new), `fresh_login_keeps_contact_email_test.dart` 4/4 (new). Codegen not needed (`build` signature unchanged).
+
+**Async paths: run twice at once, or after a refresh.**
+- `_freshLoginEmail` (awaits `report.note`): pure on its inputs; two concurrent fresh logins each read the same remote row and session and pick the same address, so the result is the same either way. The note fires once per guarded login (two lines if it really ran twice, which is the honest record).
+- Preferences save with an editable email: the existing `saveAllPreferences` path. Two saves at once both read `existingProfile` and write the same typed value, last write wins, same value. After a refresh (`invalidate(currentUserProvider)` / `build` rerun) `email` is recomputed from auth and the row, so a just-saved contact email shows from the row; a read-only save never touches the column, so a refresh cannot surface an echoed auth address.
+
+**Questions for Lee.**
+1. The Settings Account section (`settings_screen.dart` `_buildAccountSection`) shows `state.email` under the provider. For a relay Apple user it now shows the contact email they typed (or nothing) instead of the relay string. Keep that, or show nothing there for Apple-relay accounts? (Not changed in this ticket; that file is outside its Touches.)
+2. Anonymous accounts have no auth address, so by the ticket's rule they get the editable "Contact email" field too. Intended?
 
 Next: /testing-wave develop-2026-10 (fix wave 4)

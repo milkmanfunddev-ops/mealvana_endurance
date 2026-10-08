@@ -3,6 +3,7 @@ import '../../nutrition_plan/domain/run_parameters.dart';
 import '../../nutrition_plan/domain/nutrition_target_overrides.dart';
 import '../../onboarding/domain/dietary_preference.dart';
 import '../../onboarding/domain/allergy.dart';
+import '../../../shared/services/support/support_identity.dart';
 
 /// State for the settings screen
 class SettingsState {
@@ -68,7 +69,39 @@ class SettingsState {
   final bool isAnonymous;
   final String authProvider; // 'anonymous', 'email', 'google', 'apple'
   final String? authUserId; // Supabase auth.uid()
-  final String? email; // User's email (if available)
+  /// The Email field's value. When [emailEditable] it is the athlete's
+  /// contact email from the profile row (may be null); otherwise the login
+  /// address from auth (ticket 36).
+  final String? email;
+
+  /// The login address as Supabase Auth holds it (`auth.users.email`), or
+  /// null when auth has none.
+  final String? authEmail;
+
+  /// Whether the Email field is an editable contact email: auth has no
+  /// address, or only an Apple private-relay one nobody can read (ticket 36,
+  /// Lee 2026-10-08). Otherwise the field shows the login address read-only.
+  bool get emailEditable => isEmailEditableFor(authEmail);
+
+  /// Whether an auth address of [authEmail] leaves the Email field editable.
+  static bool isEmailEditableFor(String? authEmail) {
+    final a = authEmail?.trim();
+    return a == null || a.isEmpty || isPrivateRelayEmail(a);
+  }
+
+  /// The Email field's value for an auth address and the profile row's copy:
+  /// the auth address when read-only; when editable, the profile copy as a
+  /// contact email, with a stored relay string (echoed there by the old
+  /// save) read as empty.
+  static String? displayEmailFor({
+    required String? authEmail,
+    required String? profileEmail,
+  }) {
+    if (!isEmailEditableFor(authEmail)) return authEmail!.trim();
+    final p = profileEmail?.trim();
+    if (p == null || p.isEmpty || isPrivateRelayEmail(p)) return null;
+    return p;
+  }
 
   // Coach mode
   final bool isCoach;
@@ -149,6 +182,7 @@ class SettingsState {
     this.authProvider = 'anonymous',
     this.authUserId,
     this.email,
+    this.authEmail,
     this.isCoach = false,
     this.firstName,
     this.lastName,
@@ -206,6 +240,7 @@ class SettingsState {
     String? authProvider,
     String? authUserId,
     String? email,
+    String? authEmail,
     bool? isCoach,
     String? firstName,
     String? lastName,
@@ -265,6 +300,7 @@ class SettingsState {
       authProvider: authProvider ?? this.authProvider,
       authUserId: authUserId ?? this.authUserId,
       email: email ?? this.email,
+      authEmail: authEmail ?? this.authEmail,
       isCoach: isCoach ?? this.isCoach,
       firstName: firstName ?? this.firstName,
       lastName: lastName ?? this.lastName,

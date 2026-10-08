@@ -117,6 +117,8 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
     });
 
     final controller = ref.read(settingsControllerProvider.notifier);
+    final emailEditable =
+        ref.read(settingsControllerProvider).value?.emailEditable ?? false;
     // Before the first await: a catch after unmount cannot touch `ref`.
     final report = ref.read(reportProvider);
 
@@ -134,8 +136,9 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
         // "leave it alone" (31-004).
         firstName: _firstNameController.text.trim(),
         lastName: _lastNameController.text.trim(),
-        // Email is the login email and read-only here (119-002, Lee
-        // 2026-09-26); a change-email flow can come later.
+        // Only an editable contact email is sent (ticket 36); the login
+        // email is read-only here (119-002) and never written back.
+        email: emailEditable ? _emailController.text.trim() : null,
       );
 
       if (mounted) {
@@ -398,16 +401,36 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
 
           const SizedBox(height: AppSpacing.md),
 
-          // Email: the login email, read-only (119-002, Lee 2026-09-26).
-          _buildReadOnlyField(
-            context: context,
-            label: ref
-                .watch(contentServiceProvider)
-                .getValue(ContentKeys.profileEditEmailLoginLabel),
-            value: _emailController.text,
-            icon: FontAwesomeIcons.envelope.data,
-            valueKey: const ValueKey('profile_edit.email_value'),
-          ),
+          // Email: an editable contact email when auth has no readable
+          // address (none, or an Apple private relay); otherwise the login
+          // email, read-only (119-002; ticket 36, Lee 2026-10-08).
+          if (ref.watch(settingsControllerProvider).value?.emailEditable ??
+              false)
+            _buildTextField(
+              fieldKey: const ValueKey('profile_edit.email_field'),
+              context: context,
+              controller: _emailController,
+              label: ref
+                  .watch(contentServiceProvider)
+                  .getValue(ContentKeys.profileEditContactEmailLabel),
+              hint: ref
+                  .watch(contentServiceProvider)
+                  .getValue(ContentKeys.profileEditContactEmailHint),
+              icon: FontAwesomeIcons.envelope.data,
+              keyboardType: TextInputType.emailAddress,
+              autocorrect: false,
+              autofillHints: const [AutofillHints.email],
+            )
+          else
+            _buildReadOnlyField(
+              context: context,
+              label: ref
+                  .watch(contentServiceProvider)
+                  .getValue(ContentKeys.profileEditEmailLoginLabel),
+              value: _emailController.text,
+              icon: FontAwesomeIcons.envelope.data,
+              valueKey: const ValueKey('profile_edit.email_value'),
+            ),
 
           const SizedBox(height: AppSpacing.md),
 

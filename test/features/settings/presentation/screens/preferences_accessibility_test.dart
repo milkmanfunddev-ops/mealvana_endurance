@@ -21,8 +21,16 @@ import '../../../../helpers/test_content.dart';
 import '../../../../helpers/widget_test_harness.dart';
 
 class _SeededSettingsController extends SettingsController {
+  _SeededSettingsController({
+    this.authEmail = 'xuan@example.com',
+    this.email = 'xuan@example.com',
+  });
+
+  final String? authEmail;
+  final String? email;
+
   @override
-  FutureOr<SettingsState> build() => const SettingsState(
+  FutureOr<SettingsState> build() => SettingsState(
     title: 'Settings',
     profileSectionTitle: 'Profile',
     preferenceSectionTitle: 'Preferences',
@@ -35,15 +43,22 @@ class _SeededSettingsController extends SettingsController {
     paceUnitLabel: 'Pace',
     gutTrainingLabel: 'Gut Training',
     saveButtonText: 'Save',
-    email: 'xuan@example.com',
+    authEmail: authEmail,
+    email: email,
   );
 }
 
-Future<void> _pumpPreferences(WidgetTester tester) => smokeScreen(
+Future<void> _pumpPreferences(
+  WidgetTester tester, {
+  String? authEmail = 'xuan@example.com',
+  String? email = 'xuan@example.com',
+}) => smokeScreen(
   tester,
   const PreferencesScreen(),
   overrides: [
-    settingsControllerProvider.overrideWith(_SeededSettingsController.new),
+    settingsControllerProvider.overrideWith(
+      () => _SeededSettingsController(authEmail: authEmail, email: email),
+    ),
     // develop's harness serves no content by default; the read-only email
     // row reads its label from the content system.
     contentServiceProvider.overrideWith(testContentService),
@@ -167,6 +182,25 @@ void main() {
         hasTapAction: true,
       ),
     );
+    handle.dispose();
+  });
+
+  // Ticket 36: with an Apple private relay the Email field is an editable
+  // contact email, named by its label.
+  testWidgets('an editable contact email is named Contact email', (
+    tester,
+  ) async {
+    final handle = tester.ensureSemantics();
+    await _pumpPreferences(
+      tester,
+      authEmail: 'x1y2@privaterelay.appleid.com',
+      email: null,
+    );
+    final email = find.byKey(const ValueKey('profile_edit.email_field'));
+    final node = await _visibleSemantics(tester, _editable(email));
+    expect(node, isSemantics(isTextField: true));
+    // Empty, the field reads its label then its hint.
+    expect(node.label, startsWith('Contact email'));
     handle.dispose();
   });
 

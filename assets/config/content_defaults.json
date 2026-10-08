@@ -342,6 +342,8 @@
   },
   "profile_edit": {
     "email_login_label": "Your login email",
+    "contact_email_label": "Contact email",
+    "contact_email_hint": "Where we can reach you",
     "discard_title": "Discard changes?",
     "discard_body": "Your edits to your profile will be lost.",
     "discard": "Discard",

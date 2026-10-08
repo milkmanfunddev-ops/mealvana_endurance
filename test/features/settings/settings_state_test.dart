@@ -183,4 +183,58 @@ void main() {
       expect(updated.firstName, 'Bob');
     });
   });
+
+  // Ticket 36: the Email field is editable only when auth has no readable
+  // address; a stored relay string reads as an empty contact email.
+  group('SettingsState — email editability (ticket 36)', () {
+    test('a real auth address is read-only and shown as is', () {
+      final s = _baseState().copyWith(authEmail: 'alice@example.com');
+      expect(s.emailEditable, isFalse);
+      expect(
+        SettingsState.displayEmailFor(
+          authEmail: 'alice@example.com',
+          profileEmail: 'contact@example.com',
+        ),
+        'alice@example.com',
+      );
+    });
+
+    test('a private-relay auth address is editable', () {
+      final s = _baseState().copyWith(
+        authEmail: 'x1y2@privaterelay.appleid.com',
+      );
+      expect(s.emailEditable, isTrue);
+      expect(
+        SettingsState.displayEmailFor(
+          authEmail: 'x1y2@privaterelay.appleid.com',
+          profileEmail: 'lee@example.com',
+        ),
+        'lee@example.com',
+      );
+    });
+
+    test('no auth address (null or blank) is editable', () {
+      expect(_baseState().emailEditable, isTrue);
+      expect(_baseState().copyWith(authEmail: '  ').emailEditable, isTrue);
+      expect(
+        SettingsState.displayEmailFor(authEmail: null, profileEmail: null),
+        isNull,
+      );
+    });
+
+    test('a stored relay string reads as an empty contact email', () {
+      expect(
+        SettingsState.displayEmailFor(
+          authEmail: 'x1y2@privaterelay.appleid.com',
+          profileEmail: 'x1y2@privaterelay.appleid.com',
+        ),
+        isNull,
+      );
+    });
+
+    test('copyWith keeps authEmail', () {
+      final s = _baseState().copyWith(authEmail: 'alice@example.com');
+      expect(s.copyWith(firstName: 'A').authEmail, 'alice@example.com');
+    });
+  });
 }

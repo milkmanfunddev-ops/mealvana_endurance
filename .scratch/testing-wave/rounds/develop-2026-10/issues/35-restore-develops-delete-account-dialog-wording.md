@@ -1,6 +1,6 @@
 # 35: Restore develop's Delete Account dialog wording
 
-**Status:** in-progress (wave 4, 2026-10-08)
+**Status:** fixed (wave 4, 769cdddd) awaiting retest
 **Labels:** fix, round:develop-2026-10, area:settings, copy
 **Branch:** `develop-next` (fix-wave worktree)
 **Blocked by:** nothing. Runs in the same agent as 36 (both touch `assets/config/content_defaults.json`).

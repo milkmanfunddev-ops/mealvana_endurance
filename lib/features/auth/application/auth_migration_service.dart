@@ -3,7 +3,9 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../shared/database/app_database.dart';
 import '../../../shared/database/database_provider.dart';
 import '../../../shared/services/app_external_deps.dart';
+import '../../../shared/services/launch_trail.dart';
 import '../../../shared/services/report/report.dart';
+import '../../../shared/services/support/support_identity.dart';
 import '../data/user_repository.dart';
 import '../domain/user_preferences.dart';
 
@@ -752,6 +754,36 @@ class AuthMigrationService {
     }
   }
 
+  /// The email a fresh login writes onto the profile row (ticket 36).
+  ///
+  /// The session's address replaces the stored one, except when the session
+  /// address is an Apple private relay and the row already holds a real
+  /// (non-relay) address: that is the athlete's contact email, kept. The
+  /// guard writes down that it fired (D9) without logging either address.
+  Future<String?> _freshLoginEmail({
+    required String? sessionEmail,
+    required String? storedEmail,
+    required String authProvider,
+  }) async {
+    final session = sessionEmail?.trim();
+    if (session == null || session.isEmpty) return storedEmail;
+    final stored = storedEmail?.trim();
+    if (isPrivateRelayEmail(session) &&
+        stored != null &&
+        stored.isNotEmpty &&
+        !isPrivateRelayEmail(stored)) {
+      LaunchTrail.add('fresh login: relay email kept stored contact email');
+      await report.note(
+        'Fresh login kept the stored contact email over a private-relay '
+        'session email',
+        area: 'auth',
+        data: {'auth_provider': authProvider},
+      );
+      return storedEmail;
+    }
+    return sessionEmail;
+  }
+
   /// Handle fresh login (fetch remote profile or create new in Supabase)
   Future<void> _handleFreshLogin(String userId, String authProvider) async {
     report.breadcrumb(
@@ -783,15 +815,19 @@ class AuthMigrationService {
       // This avoids calling updateAuthProvider() which does a getCurrentUser() lookup
       // that can fail if authUserId doesn't match the new session yet
       final sessionEmail = supabase.auth.currentUser?.email;
+      final profileEmail = await _freshLoginEmail(
+        sessionEmail: sessionEmail,
+        storedEmail: remoteProfile.email,
+        authProvider: authProvider,
+      );
       final updatedProfile = remoteProfile.copyWith(
         authUserId:
             userId, // Ensure authUserId matches current Supabase session
         authProvider: authProvider,
         isAnonymous: false,
-        // Carry the address the user just proved onto the profile row.
-        email: (sessionEmail != null && sessionEmail.isNotEmpty)
-            ? sessionEmail
-            : remoteProfile.email,
+        // Carry the address the user just proved onto the profile row,
+        // unless it is a relay that would bury a contact email (ticket 36).
+        email: profileEmail,
         updatedAt: DateTime.now(),
       );
 
