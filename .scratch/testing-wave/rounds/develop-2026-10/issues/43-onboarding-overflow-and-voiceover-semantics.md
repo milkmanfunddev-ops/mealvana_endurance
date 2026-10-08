@@ -1,6 +1,6 @@
 # 43: Onboarding: the 971 px overflow and VoiceOver semantics
 
-**Status:** in-progress (wave 4, 2026-10-08)
+**Status:** partly fixed (wave 4, baffce26) awaiting retest (overflow not reproduced)
 **Labels:** fix, round:develop-2026-10, area:onboarding, area:accessibility
 **Branch:** `develop-next` (fix-wave worktree)
 **Blocked by:** 40 (runs first, alone). Not alongside 42, which also edits `post_onboarding_auth_screen.dart`.
@@ -21,6 +21,37 @@
 3. **Reproduce first, then fix where it reproduces.** Write the widget test in the checklist before changing any layout. Pump `OnboardingPageViewScreen` (the real PageView, `onboarding_pageview_screen.dart:300-335`, with its keep-alive pages) at 402×874 and at iPhone SE 375×667 (`smallPhoneSize` in `test/helpers/widget_test_harness.dart:129`). Jump to page 4, focus First name, and set `tester.view.viewInsets` to a keyboard (336 px on the 402×874 device; 260 on SE). Collect overflow errors from `tester.takeException()` and `FlutterError.onError`, and record the creator chain and pixel count in this ticket. Repeat on pages 3 and 5, and on the swipe between 4 and 5.
 4. **Fix at the site the test names.** If it is the shared chrome, fix it once in that widget, not per screen. The fixed children must fit at the smallest height the test reaches, with the content area still scrolling, and nothing may change visually with the keyboard down (the chrome is a spec port: `OnboardingStepScaffold`'s doc comments quote the HTML-spec values). If the only fix that holds changes how the footer behaves with the keyboard up (for example the CTA hidden behind it), stop and write that into this ticket for Lee. Do not ship a visible change on your own.
 5. **If nothing reproduces.** Write what was tried and the measured heights into this ticket and close item A as "not reproduced; DEV-B1 left open". Do not guess-fix.
+
+**A, result (wave 4, 2026-10-08): not reproduced; DEV-B1 left open.** No layout change was made.
+`test/features/onboarding/onboarding_overflow_test.dart` pumps the real `OnboardingPageViewScreen`
+(keep-alive pages, real PageView, connect controller seeded idle, empty integration profile) with
+the device's safe-area padding set: 402×874 (62 top, 34 bottom, 336 keyboard) and 375×667 (20 top,
+0 bottom, 260 keyboard). It runs page 3 keyboard down then up, page 4 with First name focused and
+typed into with the keyboard up then down, page 5 keyboard down then up, and a slow frame-by-frame
+drag from 4 to 5 with the keyboard up. No vertical overflow fired in any of the eight runs, so there
+is no creator chain or pixel count to record. Measured heights of the step chrome's outer `Column`:
+
+| Device | State | Column | Header | Footer | Scroll body |
+|---|---|---|---|---|---|
+| 402×874 | keyboard down (pages 3, 4, 5) | 812 | 54 | 92 (page 3) / 98 | 666 / 660 |
+| 402×874 | keyboard up (pages 3, 4, 5, after the swipe) | 476 | 54 | 92 / 98 | 330 / 324 |
+| 375×667 | keyboard down | 548 | 54 | 92 / 98 | 402 / 396 |
+| 375×667 | keyboard up | 288 | 54 | 92 / 98 | 142 / 136 |
+
+The fixed children add up to 146 to 152 px in every state. A Column overflows by its non-flex
+children minus its own height, and its height cannot go below zero, so a 971 px overflow needs a
+non-flex child at least 971 px tall. None of the three onboarding chromes has one: header and footer
+are the only non-flex children, and the content sits in `Expanded(SingleChildScrollView)`. The
+overflowing Column is therefore most likely not one of these three, or it was laid out in a state
+the widget test does not model (the dev-only `DevTestingTools` wrapper around the app, or a
+transient platform inset). The test stays as a guard: it fails on any "overflowed by … on the
+bottom/top", and the retest (ticket 48) should look for a new DEV-B1 event and its creator chain.
+
+One thing the test did see: on 375×667, body composition's unit toggle row
+(`body_composition_screen.dart:236`) overflows 9.5 px **on the right**. That is not DEV-B1's
+shape, and widget tests load no app fonts (every glyph is a full em wide in the test font), so it
+is most likely a test-font artifact. The test logs horizontal overflows and does not fail on them.
+Not fixed; outside this ticket's Touches.
 
 **B. VoiceOver (30-010).** The pattern already in the codebase is `OnboardingSpecCta` (`onboarding_multi_select_step.dart:265-296`): `Semantics(container: true, button: true, enabled:, label:)` around the `InkWell`, with the visible text in `ExcludeSemantics` so it is read once.
 
@@ -45,10 +76,29 @@
 
 No edge-function or schema change. Nothing to deploy.
 
-- [ ] Overflow test (`onboarding_overflow_test.dart`, written first): the real `OnboardingPageViewScreen`, using the harness and provider overrides `personal_info_screen_test.dart` uses, at 402×874 and 375×667, keyboard down and up (`tester.view.viewInsets`), on pages 3, 4 and 5 and the swipe from 4 to 5. Assert no `FlutterError` whose message contains "overflowed". Before the fix, it must fail at the site that reproduces DEV-B1 (record the creator chain here). After the fix, it passes. If nothing reproduces, the test stays as a guard and item 5 applies.
-- [ ] Semantics (`onboarding_accessibility_test.dart`, extended; it already pins the back circle and the Continue pill the same way): with `tester.ensureSemantics()`, Welcome's CTA `matchesSemantics(isButton: true, hasTapAction: true, hasEnabledState: true, isEnabled: true, label: 'Build My Plan')`. On Create account, each of the three `_SpecAuthButton`s is a button with its label, enabled and disabled (`isBusy`), and the loading Google button is still named.
-- [ ] Semantics (`privacy_consent_semantics_test.dart`): the usage switch's node `matchesSemantics(hasToggledState: true, isToggled: false, label: 'Share usage data', hasTapAction: true, hasEnabledState: true, isEnabled: true)`. Tapping it flips `isToggled`.
-- [ ] `flutter analyze` clean on touched files; run `test/features/onboarding/` and `welcome_get_started_navigates_test.dart`.
+- [x] Overflow test (`onboarding_overflow_test.dart`, written first): the real `OnboardingPageViewScreen`, using the harness and provider overrides `personal_info_screen_test.dart` uses, at 402×874 and 375×667, keyboard down and up (`tester.view.viewInsets`), on pages 3, 4 and 5 and the swipe from 4 to 5. Assert no `FlutterError` whose message contains "overflowed". Before the fix, it must fail at the site that reproduces DEV-B1 (record the creator chain here). After the fix, it passes. If nothing reproduces, the test stays as a guard and item 5 applies.
+- [x] Semantics (`onboarding_accessibility_test.dart`, extended; it already pins the back circle and the Continue pill the same way): with `tester.ensureSemantics()`, Welcome's CTA `matchesSemantics(isButton: true, hasTapAction: true, hasEnabledState: true, isEnabled: true, label: 'Build My Plan')`. On Create account, each of the three `_SpecAuthButton`s is a button with its label, enabled and disabled (`isBusy`), and the loading Google button is still named.
+- [x] Semantics (`privacy_consent_semantics_test.dart`): the usage switch's node `matchesSemantics(hasToggledState: true, isToggled: false, label: 'Share usage data', hasTapAction: true, hasEnabledState: true, isEnabled: true)`. Tapping it flips `isToggled`.
+- [x] `flutter analyze` clean on touched files; run `test/features/onboarding/` and `welcome_get_started_navigates_test.dart`.
 - [ ] Retest on device: wave 5 retest ticket 48 (onboarding with the keyboard up on every text page, dev Sentry checked for a new overflow event; `idb ui describe-all` on Welcome, Create account and Your privacy).
+
+**Wave 4 notes.**
+- Overflow: item 5 applied (see "A, result" above). Only vertical overflows fail the test; the
+  ticket asked for any "overflowed", but the one horizontal hit is the test font's.
+- Semantics: Build My Plan and the three `_SpecAuthButton`s are `Semantics(container, button,
+  enabled, label)` with the drawn content in `ExcludeSemantics`. A busy Apple or Google pill
+  (spinner only) keeps its name. The privacy row is wrapped in `MergeSemantics` at the call site;
+  `KyleSwitch` is untouched, so `/design-sync` is not owed. The pill's label is the string the
+  content system returns, which today is "Sign up with Email" (capital E, from
+  `content_defaults.json`), not the code fallback "Sign up with email". The tests take the drawn
+  string as the expected name.
+- All four new semantics tests fail with the lib changes reverted and pass with them.
+  `matchesSemantics` also lists `isFocusable` and the focus action, which the InkWell and Switch
+  contribute.
+- Runs: `onboarding_overflow_test.dart` 8/8; `test/features/onboarding/` (includes
+  `welcome_get_started_navigates_test.dart` and the extended `onboarding_accessibility_test.dart`)
+  plus `test/privacy/privacy_consent_semantics_test.dart`: 198/198. `flutter analyze` on the six
+  touched files shows only two existing `use_build_context_synchronously` infos in
+  `post_onboarding_auth_screen.dart` (lines 482, 616; not in the changed class).
 
 Next: /testing-wave develop-2026-10 (fix wave 4)

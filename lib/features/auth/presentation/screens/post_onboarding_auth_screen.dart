@@ -1106,52 +1106,65 @@ class _SpecAuthButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: background,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(OnbTokens.rPill),
-        side: outlineColor != null
-            ? BorderSide(color: outlineColor!)
-            : BorderSide.none,
-      ),
-      child: InkWell(
-        onTap: onPressed,
-        borderRadius: BorderRadius.circular(OnbTokens.rPill),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 14),
-          child: isLoading
-              ? Center(
-                  child: SizedBox(
-                    width: 18,
-                    height: 18,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: foreground,
-                    ),
-                  ),
-                )
-              : Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    if (icon != null) ...[
-                      Icon(icon, size: 16, color: foreground),
-                      const SizedBox(width: 10),
-                    ],
-                    Flexible(
-                      child: Text(
-                        label,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontFamily: OnbTokens.fontDisplay,
-                          fontSize: 15,
-                          fontWeight: FontWeight.w700,
+    // One named button to a screen reader (testing-wave 30-010): the pill
+    // was a bare InkWell, read as static text, and while [isLoading] shows
+    // only a spinner it had no name at all. Same pattern as
+    // OnboardingSpecCta: the label is the visible string, the drawn
+    // content is excluded so it is read once.
+    return Semantics(
+      container: true,
+      button: true,
+      enabled: onPressed != null,
+      label: label,
+      child: Material(
+        color: background,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(OnbTokens.rPill),
+          side: outlineColor != null
+              ? BorderSide(color: outlineColor!)
+              : BorderSide.none,
+        ),
+        child: InkWell(
+          onTap: onPressed,
+          borderRadius: BorderRadius.circular(OnbTokens.rPill),
+          child: ExcludeSemantics(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              child: isLoading
+                  ? Center(
+                      child: SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
                           color: foreground,
                         ),
                       ),
+                    )
+                  : Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        if (icon != null) ...[
+                          Icon(icon, size: 16, color: foreground),
+                          const SizedBox(width: 10),
+                        ],
+                        Flexible(
+                          child: Text(
+                            label,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontFamily: OnbTokens.fontDisplay,
+                              fontSize: 15,
+                              fontWeight: FontWeight.w700,
+                              color: foreground,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
+            ),
+          ),
         ),
       ),
     );
