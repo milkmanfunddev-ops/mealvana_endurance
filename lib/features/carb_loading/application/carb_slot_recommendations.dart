@@ -180,6 +180,16 @@ Future<CarbFoodResolution?> carbRecommendationResolution(
   String query,
 ) async {
   final database = ref.watch(appDatabaseProvider);
+  // Everything `ref` must hand over is taken BEFORE the first await. This
+  // provider is autoDispose and the slot page only `read`s it, so once the
+  // mirror query yields to the event loop the element is already scheduled
+  // for disposal and any later `ref.read` throws "Ref used after dispose".
+  // The first cut read them after the await inside the catch-all below, so
+  // on a device (background-isolate Drift) the refresh silently never ran
+  // (simulator, 2026-10-07); the in-memory test database answered within
+  // microtasks and hid it. Nothing below touches `ref` again.
+  final userIdFuture = ref.read(userIdProvider.future)..ignore();
+  final foodRepository = ref.read(foodRepositoryProvider);
   final exact = await resolveCarbRecommendation(
     database,
     query,
@@ -188,8 +198,8 @@ Future<CarbFoodResolution?> carbRecommendationResolution(
   if (exact != null) return exact;
 
   try {
-    final userId = await ref.read(userIdProvider.future);
-    await ref.read(foodRepositoryProvider).refreshAfterMiss(userId);
+    final userId = await userIdFuture;
+    await foodRepository.refreshAfterMiss(userId);
   } catch (_) {
     // No user profile yet, or a refresh failure the repository did not
     // swallow: the local mirror is untouched, resolve against it as-is.

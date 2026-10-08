@@ -19,6 +19,7 @@
 //  (b) refresh reports false (offline, fail-closed) → the token-pass
 //      result ('Rice pudding') comes back, nothing throws;
 //  (c) exact hit present → refresh count == 0.
+import 'dart:io';
 import 'package:drift/native.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -71,7 +72,17 @@ void main() {
   late MockAppLogger logger;
 
   setUp(() {
-    db = AppDatabase.forTesting(NativeDatabase.memory());
+    db = AppDatabase.forTesting(
+      // A background-isolate executor, like the app's (connection_native.dart):
+      // every query crosses an event-loop turn. An autoDispose provider that
+      // only gets `read` is scheduled for disposal at the next turn, so a
+      // resolver that still touches `ref` after its first await throws there
+      // (and did, silently, on the simulator). A plain in-memory executor
+      // answers within microtasks and never sees it.
+      NativeDatabase.createInBackground(
+        File('${Directory.systemTemp.createTempSync('carb_resync').path}/t.db'),
+      ),
+    );
     addTearDown(db.close);
     logger = MockAppLogger();
     when(() => logger.error(any(),
