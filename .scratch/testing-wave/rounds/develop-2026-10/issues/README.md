@@ -46,6 +46,12 @@ code, unverified": the screen decides.
 | 31 | Retest: meal logging | 02-006..012 + 24 retests | test@test.com | wave 3, 3 spends |
 | 32 | Retest: startup, tabs and deep links | 08-016..023 + 26/27/28/22 retests | test@test.com | wave 3, 13 checks |
 | 33 | Retest: cross-device and leftovers | 08-024, 01-012 | test@test.com + new | wave 3, two simulators |
+| 34 | Backgrounded notification taps are collected on resume | fix: 22-001 | — | wave 4 |
+| 35 | Restore develop's Delete Account dialog wording | wave 2 question a | — | wave 4; same agent as 36 |
+| 36 | Profile Email editable only when auth has no real address (Apple relay) | wave 2 question g | — | wave 4; same agent as 35 |
+| 37 | Sync-error text becomes a code mapped to content keys | wave 2 question k | — | wave 4; after 35+36 merge |
+| 38 | Swap path keeps quantity apart; MealItemsEditor archived | wave 2 question l (02-005 follow-on) | — | wave 4 |
+| 39 | The five remaining timestamptz writers send UTC | wave 2 question m (ticket 22 note) | — | wave 4 |
 
 Ordering: 10 after 09; 14 after 13. Fix wave (2026-10-07 triage): 29 alone first, then 21–28 by their Overlaps lines; wave 3 = 30–33 plus the untouched test tickets 03–07, 09–19. Tickets 02–07, 09, 10 and 18 share test@test.com; their prompts
 must say which rows each one writes (runbook, "The wave lead's routine", step 5).

@@ -342,7 +342,8 @@ the above and follows this instead:
    them too: some assert the exact list of calls (#76). A logic ticket's prompt adds: "for every
    async path you add, write down what happens if it runs twice at once or after a refresh" (#77).
 2. No SSOT or decisions-page writes during a wave, not even open questions. A product question an
-   agent raises goes in its ticket file or a Finding; the lead takes it to the review queue.
+   agent raises goes in its ticket file under a `**Questions for Lee.**` heading, never only in a
+   commit body (#111); the lead's close-out lists them and takes them to Lee, then to the review queue.
 3. Batch small work. Copy fixes and one-line guards go to one agent as a list; only real logic gets
    its own agent. Give each ticket that may write a migration its own timestamp (`<date>16NN00`,
    NN = ticket) so two never collide (#60). Tell agents which files another open wave is editing
@@ -353,7 +354,7 @@ the above and follows this instead:
 4. Merge as agents finish. Make the merge worktree when the first report arrives and merge each
    branch in when its agent reports; do not wait for the slowest.
 5. At the end, once: merge the working branch in (it may have moved, #59), one unfiltered codegen,
-   `flutter analyze`, deno tests for touched functions, and ONE full suite (the CI gate's command,
+   `flutter analyze`, deno tests for touched functions (`deno test --allow-all <files>`, never `--allow-sys`: the garmin and discard-signup suites read env and hrtime, #109), and ONE full suite (the CI gate's command,
    `docs/test/README.md`). A failure is fixed and re-checked with the affected test folders only,
    never a second full suite. If the working branch moves again before landing, re-merge and run
    the touched folders only.

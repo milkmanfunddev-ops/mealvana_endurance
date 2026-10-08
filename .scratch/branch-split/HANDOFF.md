@@ -226,3 +226,11 @@ Related, not a Sentry row: mealplanning's Drift ladder reaches v24 without `acti
 (its v22 is `users.home_*`; develop-next's v22 is `duration_source`). A device crossing between the two
 lineages fails schema validation and resets (DEV-A5/A6/A7 on 2026-10-06). Phase B must renumber
 develop-next's `duration_source` step above mealplanning's 24 (idempotent `addColumn`) when the lines merge.
+
+## Rulings from the develop-2026-10 triage that Phase B must carry (2026-10-08)
+
+- **Drift gap on branch-hopping devices (Lee, wontfix in code).** develop-next adds `activities.duration_source`
+  in a migration step that mealplanning's v23/v24 never ran. A device that ran a mealplanning build is already
+  at v24, so the step is skipped and the column is missing there. Fresh installs and real users are unaffected.
+  Before any internal device (Lee's and Xuan's dev phones, the dev simulator) takes a post-merge build, wipe
+  the app on it. No column guard, no v25.

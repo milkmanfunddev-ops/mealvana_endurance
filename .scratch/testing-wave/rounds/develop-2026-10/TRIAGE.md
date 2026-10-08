@@ -70,3 +70,17 @@ One line per Finding decision, made with Lee in the terminal: id, decision, who 
 - 29 (rulings) · predecessors: bring the mealplanning predecessor tickets along (t42, t99, t101, t76, t102, t103, t79, t81, t83, t98, t44, 31-004, t94, t65, t68, t95), shared paths only · Drift: v23 (t99) then v24 (servings), same numbering as mealplanning · Lee, 2026-10-07
 - 23 (ruling) · the dev wallet conversion SQL (item 1) runs now on dev; mealplanning's Vana on dev is refused until Phase B, which owns it · Lee, 2026-10-07
 - 27 (ruling, item 7) · jade-chat's source moves to the archive; the dev deployment stays as it is · Lee, 2026-10-07
+- 22-001 · triaged · fix ticket 34, wave 4 (notification-testing skill first): consumeLegacyResumeTap is called from the root widget on every foreground resume; retest in the test wave after · Lee, 2026-10-08
+- wave 2 question a · ruling · restore develop's old Sign out / Delete account dialog wording under the same settings.* keys (fix ticket 35, copy) · Lee, 2026-10-08
+- wave 2 question b · ruling · accepted: Log In on an unconfirmed account that is then verified finishes as a login and keeps the onboarding draft (mealplanning's behaviour) · Lee, 2026-10-08
+- wave 2 question c · ruling · accepted as backported: RevenueCat logOut before the Supabase sign-out, and delete-user deletes the RevenueCat customer (t95) · Lee, 2026-10-08
+- wave 2 question d · wontfix in code · a device that ran mealplanning's Drift v23/v24 lacks activities.duration_source; reinstall the app on the few internal devices that switched branches (noted in .scratch/branch-split/HANDOFF.md for Phase B) · Lee, 2026-10-08
+- wave 2 question e · ruling · accepted: the OneSignal opt-out heal runs once signed in, not on every launch · Lee, 2026-10-08
+- wave 2 question f · ruling · accepted: a permission answer given before a local profile exists is not stored; the OS setting is the source and the Note satisfies D9 · Lee, 2026-10-08
+- wave 2 question g · ruling · Supabase Auth owns the login address; public.users.email is a copy written at signup/upgrade. Fix ticket 36: the profile Email field is read-only when auth holds a real address and an editable contact email (saved to public.users.email) when the auth address is an Apple private relay or empty · Lee, 2026-10-08
+- wave 2 question h · ruling · the three Verify-your-email strings (refused code after a Resend, error_resend_failed, error_generic) are approved as written; text may be added to Xuan's wording where a state needs it; a 429 keeps the silent countdown · Lee, 2026-10-08
+- wave 2 question i · ruling · a rule-based formula-kit insight stays free; only a model call costs one token · Lee, 2026-10-08
+- wave 2 question j · wontfix · Learn's Notify Me stays as it is (event recorded, nothing reads it) · Lee, 2026-10-08
+- wave 2 question k · ruling · fix ticket 37, wave 4: sync-error text (plainSyncErrorMessage, Garmin reauth) becomes a code on the row mapped to a content key at display time · Lee, 2026-10-08
+- wave 2 question l · ruling · fix ticket 38, wave 4: the swap path and MealItemsEditor keep quantity apart from the portion text, as ticket 24 did for the item editor · Lee, 2026-10-08
+- wave 2 question m · ruling · fix ticket 39, wave 4: the nine remaining writers (coach, food_preferences, feedback, user foods, carb loading, activities, events, nutrition_plans, personal templates) send UTC or let the server default · Lee, 2026-10-08

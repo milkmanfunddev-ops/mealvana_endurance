@@ -1,11 +1,11 @@
 # 22-001 · consumeLegacyResumeTap has no caller: backgrounded notification taps are never collected and their payload keys never cleared
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 22
 - run: w2-20261007T1340Z
 - screen: none (startup chain, NotificationService)
-- decision: 
+- decision: fix ticket 34, wave 4 (Lee, 2026-10-08)
 
 **Steps.**
 1. Build the dev app, sign in, send yourself a local or OneSignal notification and background the app.
@@ -26,5 +26,5 @@ Filed by the wave lead from the wave 2 code review (ticket 22's startup telemetr
 > 
 
 **Triage.**
-lead-filed; needs Lee's ruling (fix ticket for wave 4, with the notification-testing skill first).
+lead-filed. Lee, 2026-10-08: fix ticket 34 (wave 4), notification-testing skill first; retest on a simulator in the test wave after.
 

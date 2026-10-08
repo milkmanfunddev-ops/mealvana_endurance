@@ -25,17 +25,19 @@ Their dates come from the wave each entry names.
   agents would have fought over `app_database.dart`, the schema guard and `content_defaults.json`.
   Suggested rule for the runbook: a ticket whose items share generated files or a schema bump is
   sequential by area; only independent areas run at once.
-- 2026-10-07 · develop-2026-10 · open · **#109 Deno tests: `--allow-all`, not `--allow-sys`.** Agents lost
+- 2026-10-07 · develop-2026-10 · done · **#109 Deno tests: `--allow-all`, not `--allow-sys`.** Agents lost
   time on permission prompts; the garmin token and discard-signup suites read env and hrtime. The
   runbook's Deno line should say `deno test --allow-all <files>` for function tests.
+  Done 2026-10-08 (before wave 3): fix-wave step 5 names the command.
 - 2026-10-07 · develop-2026-10 · open · **#110 `tearDown` runs after the pending-timer check.** The one
   red in wave 2's full suite (macro_dashboard transient threshold) was a timer the test's `tearDown`
   cancelled too late: flutter_test checks pending timers before `tearDown`. Rule for agents: cancel
   timers inside the test body (or `addTearDown` before the pump), never in a `tearDown` alone.
-- 2026-10-07 · develop-2026-10 · open · **#111 agents report product questions in their commit bodies.**
+- 2026-10-07 · develop-2026-10 · done · **#111 agents report product questions in their commit bodies.**
   Wave 2's agents put thirteen product questions (handoff a–m) in commit messages, where the lead
   found them only by reading `git log`. Rule: a product question goes in the ticket file under a
   `**Questions for Lee.**` heading (fix wave, runbook rule 2), and the lead's close-out lists them.
+  Done 2026-10-08 (before wave 3): fix-wave rule 2 says so; wave 2's thirteen questions were answered by Lee at the 10-08 triage (TRIAGE.md).
 
 ## Done
 
