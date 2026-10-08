@@ -485,11 +485,11 @@ class FinalSurgeSyncService {
           userId,
           'final_surge',
           status: 'requires_reauth',
-          error: 'Please reconnect your Final Surge account',
+          error: reauthRequiredCode, // ticket 37
         );
         return SyncResult.requiresReauth();
       }
-      return SyncResult.error(e.message);
+      return SyncResult.error(syncErrorCode(e)); // ticket 37
     } on NetworkException catch (e, st) {
       // Network issues - don't update status, user can retry
       await _r.degraded(
@@ -505,7 +505,7 @@ class FinalSurgeSyncService {
         userId,
         'final_surge',
         status: 'error',
-        error: plainSyncErrorMessage(e, providerName: 'Final Surge'),
+        error: syncErrorCode(e), // ticket 37: a code, not English
       );
 
       await _r.fault(
@@ -515,7 +515,7 @@ class FinalSurgeSyncService {
         message: 'Final Surge sync failed',
       );
 
-      return SyncResult.error(e.toString());
+      return SyncResult.error(syncErrorCode(e)); // ticket 37
     }
   }
 
@@ -819,11 +819,11 @@ class FinalSurgeSyncService {
           userId,
           'final_surge',
           status: 'requires_reauth',
-          error: 'Please reconnect your Final Surge account',
+          error: reauthRequiredCode, // ticket 37
         );
         return SyncResult.requiresReauth();
       }
-      return SyncResult.error(e.message);
+      return SyncResult.error(syncErrorCode(e)); // ticket 37
     } on NetworkException catch (e, st) {
       await _r.degraded(
         e,
@@ -837,7 +837,7 @@ class FinalSurgeSyncService {
         userId,
         'final_surge',
         status: 'error',
-        error: plainSyncErrorMessage(e, providerName: 'Final Surge'),
+        error: syncErrorCode(e), // ticket 37: a code, not English
       );
 
       await _r.fault(
@@ -847,7 +847,7 @@ class FinalSurgeSyncService {
         message: 'Final Surge date-range sync failed',
       );
 
-      return SyncResult.error(e.toString());
+      return SyncResult.error(syncErrorCode(e)); // ticket 37
     }
   }
 

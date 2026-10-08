@@ -193,11 +193,11 @@ class VdotSyncService {
           userId,
           _provider,
           status: 'requires_reauth',
-          error: 'Please reconnect your V.O2 account',
+          error: reauthRequiredCode, // ticket 37
         );
         return VdotSyncResult.requiresReauth();
       }
-      return VdotSyncResult.error(e.message);
+      return VdotSyncResult.error(syncErrorCode(e)); // ticket 37
     } on NetworkException catch (e, st) {
       await _r.degraded(
         e,
@@ -211,7 +211,7 @@ class VdotSyncService {
         userId,
         _provider,
         status: 'error',
-        error: plainSyncErrorMessage(e, providerName: 'V.O2'),
+        error: syncErrorCode(e), // ticket 37: a code, not English
       );
       await _r.fault(
         e,
@@ -219,7 +219,7 @@ class VdotSyncService {
         area: _provider,
         message: 'V.O2 sync failed',
       );
-      return VdotSyncResult.error(e.toString());
+      return VdotSyncResult.error(syncErrorCode(e)); // ticket 37
     }
   }
 

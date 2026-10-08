@@ -7,6 +7,8 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../../content/application/content_service.dart';
 import '../../../content/domain/content_keys.dart';
+import '../../../integrations/domain/integration_exceptions.dart'
+    show syncFailureCode;
 import '../../../integrations/domain/runna_defaults.dart';
 import '../../../integrations/presentation/integration_sync_helpers.dart';
 import '../../../integrations/presentation/providers/connect_training_controller.dart';
@@ -543,7 +545,16 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
                 const SizedBox(width: AppSpacing.sm),
                 Expanded(
                   child: Text(
-                    data.errorMessage!,
+                    key: const ValueKey('connected_apps.error_line'),
+                    // Ticket 37: a failed sync leaves a code; show its
+                    // content text, never the code. Other messages show as is.
+                    syncFailureText(
+                      content,
+                      providerName: integrationProviderName(
+                        data.errorProvider ?? '',
+                      ),
+                      stateMessage: data.errorMessage,
+                    ),
                     style: AppTextStyles.bodySmall.copyWith(
                       color: AppColors.dragonfruit,
                     ),
@@ -1066,7 +1077,17 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
         } else if (!result.success || state?.errorMessage != null) {
           MealvanaSnackbar.showError(
             context,
-            'Sync failed: ${state?.errorMessage ?? result.error ?? 'Unknown error'}',
+            // Ticket 37: content text for the code, never the code or English.
+            syncFailureText(
+              ref.read(contentServiceProvider),
+              providerName: integrationProviderName('final_surge'),
+              stateMessage: state?.errorMessage,
+              resultCode: syncFailureCode(
+                error: result.error,
+                needsReauth: result.needsReauth,
+                isNetworkError: result.isNetworkError,
+              ),
+            ),
           );
         } else {
           MealvanaSnackbar.showInfo(context, message);
@@ -1129,7 +1150,16 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
         } else if (!result.success || state?.errorMessage != null) {
           MealvanaSnackbar.showError(
             context,
-            'Sync failed: ${state?.errorMessage ?? result.error ?? 'Unknown error'}',
+            // Ticket 37: content text for the code, never the code or English.
+            syncFailureText(
+              ref.read(contentServiceProvider),
+              providerName: integrationProviderName('training_peaks'),
+              stateMessage: state?.errorMessage,
+              resultCode: syncFailureCode(
+                error: result.error,
+                needsReauth: result.tokenExpired,
+              ),
+            ),
           );
         } else {
           MealvanaSnackbar.showInfo(context, '$message$eventInfo');
@@ -1298,7 +1328,17 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
     if (!result.success) {
       MealvanaSnackbar.showError(
         context,
-        'Sync failed: ${state?.errorMessage ?? result.error ?? 'Unknown error'}',
+        // Ticket 37: content text for the code, never the code or English.
+        syncFailureText(
+          ref.read(contentServiceProvider),
+          providerName: integrationProviderName('vdot'),
+          stateMessage: state?.errorMessage,
+          resultCode: syncFailureCode(
+            error: result.error,
+            needsReauth: result.needsReauth,
+            isNetworkError: result.isNetworkError,
+          ),
+        ),
       );
     } else if (state?.errorMessage != null) {
       // Synced into the app, but the upload to Supabase didn't finish. Surface
@@ -1353,7 +1393,17 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
     if (!result.success) {
       MealvanaSnackbar.showError(
         context,
-        'Sync failed: ${state?.errorMessage ?? result.error ?? 'Unknown error'}',
+        // Ticket 37: content text for the code, never the code or English.
+        syncFailureText(
+          ref.read(contentServiceProvider),
+          providerName: integrationProviderName('vdot'),
+          stateMessage: state?.errorMessage,
+          resultCode: syncFailureCode(
+            error: result.error,
+            needsReauth: result.needsReauth,
+            isNetworkError: result.isNetworkError,
+          ),
+        ),
       );
     } else if (state?.errorMessage != null) {
       // Synced into the app, but the upload to Supabase didn't finish. Surface
@@ -1442,7 +1492,16 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
     if (!result.success) {
       MealvanaSnackbar.showError(
         context,
-        'Sync failed: ${state?.errorMessage ?? result.error ?? 'Unknown error'}',
+        // Ticket 37: content text for the code, never the code or English.
+        syncFailureText(
+          ref.read(contentServiceProvider),
+          providerName: integrationProviderName('runna'),
+          stateMessage: state?.errorMessage,
+          resultCode: syncFailureCode(
+            error: result.error,
+            isNetworkError: result.isNetworkError,
+          ),
+        ),
       );
     } else if (state?.errorMessage != null) {
       // Synced locally, but the Supabase upload didn't finish — surface it

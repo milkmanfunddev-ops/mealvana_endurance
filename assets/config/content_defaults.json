@@ -396,5 +396,12 @@
     "out_body": "You've used all your AI credits. Get more to keep using AI features.",
     "out_not_now": "Not now",
     "out_get_credits": "Get credits"
+  },
+  "integrations": {
+    "sync_error_network": "Could not reach {provider}. Check your connection and try again.",
+    "sync_error_rate_limited": "{provider} is busy. Try again later.",
+    "sync_error_http": "{provider} sync failed (status {status}).",
+    "sync_error_reauth": "{provider} needs you to sign in again. Please reconnect.",
+    "sync_error_unknown": "{provider} sync failed. Please try again."
   }
 }

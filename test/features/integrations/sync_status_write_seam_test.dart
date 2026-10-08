@@ -1,5 +1,6 @@
 // Ticket 138 (Findings 118-002, 118-007, 117-001): what a sync status write
-// leaves on the integrations row and sends to the server.
+// leaves on the integrations row and sends to the server. Ticket 37
+// (develop-2026-10): `last_sync_error` holds a wire code, never English.
 //
 // Seam: a provider's answer → TrainingPeaksSyncService → the REAL
 // IntegrationsRepository on in-memory Drift → the REAL postgrest builder
@@ -19,6 +20,7 @@ import 'package:mealvana_endurance/features/integrations/data/integrations_repos
 import 'package:mealvana_endurance/features/integrations/data/training_peaks_api_client.dart';
 import 'package:mealvana_endurance/features/integrations/data/http_retry_client.dart';
 import 'package:mealvana_endurance/features/integrations/domain/integration.dart';
+import 'package:mealvana_endurance/features/integrations/domain/integration_exceptions.dart';
 import 'package:mealvana_endurance/shared/database/app_database.dart';
 
 import '../../helpers/fakes/fake_postgrest.dart';
@@ -115,7 +117,7 @@ void main() {
       await repository.upsertIntegration(
         _tp(
           status: requiresReauthStatus,
-          error: 'Token refresh refused. Please reconnect.',
+          error: reauthRequiredCode,
         ),
       );
 
@@ -125,13 +127,13 @@ void main() {
       final row = await repository.getIntegration(_userId, 'training_peaks');
       expect(row!.lastSyncStatus, requiresReauthStatus);
       expect(row.needsReconnect, isTrue);
-      expect(row.lastSyncError, 'Token refresh refused. Please reconnect.');
+      expect(row.lastSyncError, 'reauth_required');
       // The hook hears the status the row KEEPS, never the overwritten one.
       expect(statusWrites, isNotEmpty);
       expect(statusWrites.every((w) => w.$2 == requiresReauthStatus), isTrue);
     });
 
-    test('on an ordinary row the same error is stored as a plain message',
+    test('on an ordinary row the same error is stored as the network code',
         () async {
       await repository.upsertIntegration(_tp());
 
@@ -139,11 +141,56 @@ void main() {
 
       final row = await repository.getIntegration(_userId, 'training_peaks');
       expect(row!.lastSyncStatus, 'error');
-      expect(row.lastSyncError, isNotNull);
-      expect(row.lastSyncError, isNot(contains('SocketException')));
-      expect(row.lastSyncError, isNot(contains('203.0.113.7')));
-      expect(row.lastSyncError, isNot(contains('443')));
-      expect(row.lastSyncError, contains('TrainingPeaks'));
+      // Ticket 37: the code, never English or the raw exception.
+      expect(row.lastSyncError, 'network');
+      // The server row carries the same code.
+      expect(lastIntegrationUpsert()['last_sync_error'], 'network');
+    });
+
+    test('a stored reauth_required code is kept over a later network code',
+        () async {
+      await repository.upsertIntegration(_tp());
+      await repository.updateSyncStatus(
+        _userId,
+        'training_peaks',
+        status: requiresReauthStatus,
+        error: reauthRequiredCode,
+      );
+      expect(lastIntegrationUpsert()['last_sync_error'], 'reauth_required');
+
+      await repository.updateSyncStatus(
+        _userId,
+        'training_peaks',
+        status: 'error',
+        error: SyncErrorCode.network.wire,
+      );
+
+      final row = await repository.getIntegration(_userId, 'training_peaks');
+      expect(row!.lastSyncStatus, requiresReauthStatus);
+      expect(row.lastSyncError, 'reauth_required');
+      expect(lastIntegrationUpsert()['last_sync_error'], 'reauth_required');
+      expect(lastIntegrationUpsert()['last_sync_status'], requiresReauthStatus);
+    });
+
+    test('a legacy English reauth row still keeps its reconnect', () async {
+      // A row written before ticket 37: requires_reauth with English text.
+      await repository.upsertIntegration(
+        _tp(
+          status: requiresReauthStatus,
+          error: 'Token refresh refused. Please reconnect.',
+        ),
+      );
+
+      await repository.updateSyncStatus(
+        _userId,
+        'training_peaks',
+        status: 'error',
+        error: SyncErrorCode.network.wire,
+      );
+
+      final row = await repository.getIntegration(_userId, 'training_peaks');
+      expect(row!.lastSyncStatus, requiresReauthStatus);
+      expect(SyncError.parse(row.lastSyncError).code, SyncErrorCode.unknown);
     });
   });
 
@@ -160,7 +207,7 @@ void main() {
         _userId,
         'training_peaks',
         status: 'error',
-        error: 'Could not reach TrainingPeaks.',
+        error: 'network',
       );
       expect(
         (await repository.getIntegration(_userId, 'training_peaks'))!
@@ -186,7 +233,7 @@ void main() {
         _userId,
         'training_peaks',
         status: 'error',
-        error: 'Could not reach TrainingPeaks.',
+        error: 'network',
       );
       final after = await repository.getIntegration(_userId, 'training_peaks');
       expect(after!.lastSyncAt, row.lastSyncAt);

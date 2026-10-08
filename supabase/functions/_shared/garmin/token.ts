@@ -215,9 +215,14 @@ export function isGarminTokenInactive(status: number, body: string): boolean {
 /**
  * Marks the garmin integrations row `requires_reauth`, so Connected Apps
  * shows Reconnect (Finding 118-016; same status ticket 64 uses for
- * TrainingPeaks and V.O2). Stores a plain message, never the raw answer.
+ * TrainingPeaks and V.O2). Stores the wire code `reauth_required`, never
+ * text or the raw answer: the app maps the code to its content text at
+ * display time (testing-wave develop-2026-10 ticket 37; the app's
+ * `SyncErrorCode` in `integration_exceptions.dart` holds the code list).
  * Never throws; a failed write is logged.
  */
+export const GARMIN_REAUTH_REQUIRED_CODE = 'reauth_required';
+
 export async function markGarminRequiresReauth(
   supabase: SupabaseLike,
   userId: string,
@@ -228,7 +233,7 @@ export async function markGarminRequiresReauth(
       .from('integrations')
       .update({
         last_sync_status: 'requires_reauth',
-        last_sync_error: 'Garmin needs you to sign in again. Please reconnect.',
+        last_sync_error: GARMIN_REAUTH_REQUIRED_CODE,
         updated_at: new Date().toISOString(),
       })
       .eq('user_id', userId)
