@@ -22,24 +22,6 @@ void main() {
 
   const testUserId = 'user-abc-123';
 
-  domain.Activity _makeActivity({
-    required String id,
-    required DateTime scheduledDateTime,
-    ActivityType type = ActivityType.running,
-    domain.ActivityStatus status = domain.ActivityStatus.planned,
-  }) {
-    return domain.Activity(
-      id: id,
-      userId: testUserId,
-      activityType: type,
-      title: 'Test Activity $id',
-      scheduledDateTime: scheduledDateTime,
-      status: status,
-      createdAt: DateTime(2026, 1, 1),
-      updatedAt: DateTime(2026, 1, 1),
-    );
-  }
-
   setUp(() async {
     db = AppDatabase.forTesting(NativeDatabase.memory());
     mockActivitiesService = MockActivitiesService();
@@ -116,6 +98,36 @@ void main() {
       expect(event.startTime, '2026-09-15T07:00:00.000');
       expect(event.userId, testUserId);
       expect(event.id, isNotEmpty);
+      // Ticket 65: the date only, never startTime's time of day. Read from
+      // Drift: CalendarService's own mapper does not carry eventDate.
+      final row = await (db.select(
+        db.eventsTable,
+      )..where((t) => t.id.equals(event.id))).getSingle();
+      expect(row.eventDate, DateTime(2026, 9, 15));
+    });
+
+    test('updateEvent moves eventDate with startTime (ticket 65)', () async {
+      final created = await service.createEvent(
+        userId: testUserId,
+        eventType: ActivityType.running,
+        eventName: 'Test',
+        startTime: '2026-06-20T08:58:00.000',
+      );
+
+      // The event handed in still carries the stale date, as an edit form's
+      // copyWith of the loaded event would.
+      await service.updateEvent(
+        created.copyWith(
+          startTime: '2026-07-04T23:30:00.000',
+          eventDate: DateTime(2026, 6, 20),
+        ),
+      );
+
+      final row = await (db.select(
+        db.eventsTable,
+      )..where((t) => t.id.equals(created.id))).getSingle();
+      expect(row.startTime, '2026-07-04T23:30:00.000');
+      expect(row.eventDate, DateTime(2026, 7, 4));
     });
 
     test('handles empty startTime gracefully (no crash)', () async {

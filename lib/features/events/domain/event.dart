@@ -104,6 +104,25 @@ class Event {
   /// re-sync overwrite.
   final String? origin;
 
+  /// The calendar `eventDate` is ALWAYS the date written in `startTime`
+  /// (ticket 65, round develop-2026-10): `startTime` is the source and
+  /// `eventDate` its derived copy. `startTime` is stored naive local, so the
+  /// wall-clock date in the string is the athlete's local date; no
+  /// `toLocal()`. Returns null for null, empty or unparseable input.
+  static DateTime? dateFromStartTime(String? startTime) {
+    if (startTime == null || startTime.isEmpty) return null;
+    final parsed = DateTime.tryParse(startTime);
+    if (parsed == null) return null;
+    return DateTime(parsed.year, parsed.month, parsed.day);
+  }
+
+  /// This event with `eventDate` re-derived from `startTime`. A row with no
+  /// parseable `startTime` keeps the `eventDate` it was given.
+  /// `EventsRepository` applies this on every create and update, so every
+  /// writer (service, provider import, activity link) stores the same date.
+  Event withDerivedEventDate() =>
+      copyWith(eventDate: dateFromStartTime(startTime) ?? eventDate);
+
   /// Serialize event to JSON for edge function payload
   Map<String, dynamic> toJson() {
     return {

@@ -281,7 +281,9 @@ class AuthMigrationService {
     required String toUserId,
   }) async {
     // ============ EVENTS ============
-    // Events have UNIQUE constraint on (user_id, event_date, event_name) - delete OAuth's first
+    // Events have a unique index on (user_id, event_date, event_name), added by
+    // migration 20261008166500_events_unique_user_date_name (ticket 65, after a
+    // duplicate sweep; before it, nothing enforced this) - delete OAuth's first
     try {
       await supabase.from('events').delete().eq('user_id', toUserId);
     } catch (e) {

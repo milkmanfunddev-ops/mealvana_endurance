@@ -122,12 +122,14 @@ class EventsRepository with SyncableRepository {
     final dirtyIds = dirtyRows.map((row) => row.id).toSet();
 
     var upsertedCount = 0;
+    var rederivedCount = 0;
     await _database.batch((batch) {
       for (final entry in remoteById.entries) {
         if (dirtyIds.contains(entry.key)) {
           continue;
         }
 
+        if (_serverEventDateDisagrees(entry.value)) rederivedCount++;
         final companion = _mapSupabaseJsonToCompanion(entry.value);
         batch.insert(
           _database.eventsTable,
@@ -137,6 +139,17 @@ class EventsRepository with SyncableRepository {
         upsertedCount++;
       }
     });
+
+    // D9: the download quietly corrects a stale server event_date (ticket 65);
+    // say so once per batch. The row is not marked dirty: the server is healed
+    // by SQL, and a coach device must never upload an athlete's row.
+    if (rederivedCount > 0) {
+      await _report.note(
+        'Events download: event_date re-derived from start_time',
+        area: 'events',
+        data: {'count': rederivedCount},
+      );
+    }
 
     if (dirtyIds.isNotEmpty) {
       _report.degraded(
@@ -229,8 +242,11 @@ class EventsRepository with SyncableRepository {
     bool requireRemoteAck = false,
   }) async {
     try {
+      // eventDate is derived from startTime on every write (ticket 65), so
+      // no writer (service, provider import, activity link) can store a date
+      // the start time disagrees with.
       // OFFLINE-FIRST: Save to Drift IMMEDIATELY with dirty flag
-      final eventWithDirtyFlag = event.copyWith(
+      final eventWithDirtyFlag = event.withDerivedEventDate().copyWith(
         needsUpload: true,
         localUpdatedAt: DateTime.now(),
       );
@@ -304,8 +320,9 @@ class EventsRepository with SyncableRepository {
     bool requireRemoteAck = false,
   }) async {
     try {
+      // eventDate is derived from startTime on every write (ticket 65).
       // OFFLINE-FIRST: Save to Drift IMMEDIATELY with dirty flag
-      final eventWithDirtyFlag = event.copyWith(
+      final eventWithDirtyFlag = event.withDerivedEventDate().copyWith(
         needsUpload: true,
         localUpdatedAt: DateTime.now(),
         updatedAt: DateTime.now(),
@@ -814,11 +831,10 @@ class EventsRepository with SyncableRepository {
       eventName: Value(json['event_name'] as String?),
       location: Value(json['location'] as String?),
       registrationUrl: Value(json['registration_url'] as String?),
-      eventDate: Value(
-        json['event_date'] != null
-            ? DateTime.parse(json['event_date'] as String)
-            : null,
-      ),
+      // Re-derived from start_time (ticket 65): a stale server event_date
+      // must not reach the calendar dot or coach surfaces. Kept as sent only
+      // when start_time is missing or unparseable.
+      eventDate: Value(_downloadedEventDate(json)),
       startTime: Value(json['start_time'] as String?),
       goalTimeMinutes: Value(json['goal_time_minutes'] as int?),
       goalPaceMinutesPerMile: Value(
@@ -849,5 +865,29 @@ class EventsRepository with SyncableRepository {
       createdAt: DateTime.parse(json['created_at'] as String),
       updatedAt: DateTime.parse(json['updated_at'] as String),
     );
+  }
+
+  /// The server's `event_date` as sent (null when absent).
+  static DateTime? _serverEventDate(Map<String, dynamic> json) {
+    final raw = json['event_date'];
+    return raw != null ? DateTime.parse(raw as String) : null;
+  }
+
+  /// The `event_date` a downloaded row is stored with: derived from
+  /// `start_time`, else the server's value.
+  static DateTime? _downloadedEventDate(Map<String, dynamic> json) =>
+      domain.Event.dateFromStartTime(json['start_time'] as String?) ??
+      _serverEventDate(json);
+
+  /// True when the download will store a different `event_date` than the
+  /// server sent (the row is re-derived).
+  static bool _serverEventDateDisagrees(Map<String, dynamic> json) {
+    final derived = domain.Event.dateFromStartTime(
+      json['start_time'] as String?,
+    );
+    if (derived == null) return false;
+    final server = _serverEventDate(json);
+    if (server == null) return true;
+    return DateTime(server.year, server.month, server.day) != derived;
   }
 }

@@ -11,6 +11,7 @@ import '../../../shared/database/database_provider.dart';
 import '../../../shared/services/report/report.dart';
 import '../../../shared/services/sync/sync_dependency_graph.dart';
 import '../../../shared/data/syncable_repository.dart';
+import '../../events/domain/event.dart' as events_domain;
 import '../domain/coach.dart';
 import '../domain/coach_athlete_relationship.dart';
 import '../domain/pairing_code_connection_result.dart';
@@ -1194,6 +1195,16 @@ class CoachRepository with SyncableRepository {
     try {
       final id = _uuid.v4();
       final now = DateTime.now();
+      // start_time is the source and event_date its derived copy (ticket 65):
+      // write the picked day's local midnight (the shape the provider import
+      // uses) and derive the date from it.
+      final startTime = DateTime(
+        eventDate.year,
+        eventDate.month,
+        eventDate.day,
+      ).toIso8601String();
+      final derivedEventDate =
+          events_domain.Event.dateFromStartTime(startTime) ?? eventDate;
 
       final eventData = {
         'id': id,
@@ -1201,7 +1212,8 @@ class CoachRepository with SyncableRepository {
         'event_name': eventName,
         'event_type': eventType,
         'event_subtype': eventSubtype,
-        'event_date': eventDate.toIso8601String(),
+        'event_date': derivedEventDate.toIso8601String(),
+        'start_time': startTime,
         'location': location,
         'goal_pace_minutes_per_mile': goalPaceMinutesPerMile,
         'goal_time_minutes': goalTimeMinutes,
@@ -1223,7 +1235,8 @@ class CoachRepository with SyncableRepository {
               eventType: eventType,
               eventSubtype: Value(eventSubtype),
               eventName: Value(eventName),
-              eventDate: Value(eventDate),
+              eventDate: Value(derivedEventDate),
+              startTime: Value(startTime),
               location: Value(location),
               goalPaceMinutesPerMile: Value(goalPaceMinutesPerMile),
               goalTimeMinutes: Value(goalTimeMinutes),

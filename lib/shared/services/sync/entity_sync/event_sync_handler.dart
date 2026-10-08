@@ -1,6 +1,7 @@
 import 'package:drift/drift.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
+import '../../../../features/events/domain/event.dart' as domain;
 import '../../../database/app_database.dart';
 import '../../../database/database_provider.dart';
 import '../../../utils/sync_type_converters.dart';
@@ -48,6 +49,27 @@ class EventSyncHandler {
         // The activity might be synced later, and the foreign key relationship will be valid
         final activityId = SyncTypeConverters.toStringId(data['activity_id']);
 
+        // event_date is re-derived from start_time (ticket 65): a stale server
+        // row must not reach the calendar dot or coach surfaces. The row is
+        // NOT marked dirty (a coach device must never upload an athlete's
+        // row); the server is healed by SQL. D9: write the correction down.
+        final serverEventDate = data['event_date'] != null
+            ? DateTime.parse(data['event_date'] as String)
+            : null;
+        final derivedEventDate = domain.Event.dateFromStartTime(
+          data['start_time'] as String?,
+        );
+        final eventDate = derivedEventDate ?? serverEventDate;
+        final rederived =
+            derivedEventDate != null &&
+            (serverEventDate == null ||
+                DateTime(
+                      serverEventDate.year,
+                      serverEventDate.month,
+                      serverEventDate.day,
+                    ) !=
+                    derivedEventDate);
+
         final companion = EventsTableCompanion.insert(
           id: Value(eventId),
           userId: SyncTypeConverters.toStringId(data['user_id']) ?? userId,
@@ -57,11 +79,7 @@ class EventSyncHandler {
           eventName: Value(data['event_name'] as String?),
           location: Value(data['location'] as String?),
           registrationUrl: Value(data['registration_url'] as String?),
-          eventDate: Value(
-            data['event_date'] != null
-                ? DateTime.parse(data['event_date'] as String)
-                : null,
-          ),
+          eventDate: Value(eventDate),
           startTime: Value(data['start_time'] as String?),
           goalTimeMinutes: Value(data['goal_time_minutes'] as int?),
           goalPaceMinutesPerMile: Value(
@@ -97,6 +115,14 @@ class EventSyncHandler {
         await _database
             .into(_database.eventsTable)
             .insert(companion, mode: InsertMode.insertOrReplace);
+
+        if (rederived) {
+          await _r.note(
+            'Events download: event_date re-derived from start_time',
+            area: 'sync',
+            data: {'eventId': eventId},
+          );
+        }
       }
     } catch (e, stackTrace) {
       // One bad row must not stop the rest of the download.
@@ -144,7 +170,9 @@ class EventSyncHandler {
       'event_name': event.eventName,
       'location': event.location,
       'registration_url': event.registrationUrl,
-      'event_date': event.eventDate?.toIso8601String(),
+      'event_date':
+          (domain.Event.dateFromStartTime(event.startTime) ?? event.eventDate)
+              ?.toIso8601String(),
       'start_time': event.startTime,
       'goal_time_minutes': event.goalTimeMinutes,
       'goal_pace_minutes_per_mile': event.goalPaceMinutesPerMile,
