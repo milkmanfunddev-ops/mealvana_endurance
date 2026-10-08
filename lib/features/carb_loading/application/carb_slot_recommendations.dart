@@ -9,7 +9,7 @@ import '../../meal_logging/domain/meal_component.dart';
 // The plain Provider<FoodRepository>; a differently-typed generated
 // `foodRepositoryProvider` also exists elsewhere, hence the explicit `show`.
 import '../../nutrition_plan/data/food_repository.dart'
-    show foodRepositoryProvider;
+    show FoodRepository, foodRepositoryProvider;
 import '../data/carb_loading_food_repository.dart';
 import '../domain/carb_loading_food.dart';
 import '../domain/meal_type.dart';
@@ -188,8 +188,17 @@ Future<CarbFoodResolution?> carbRecommendationResolution(
   // on a device (background-isolate Drift) the refresh silently never ran
   // (simulator, 2026-10-07); the in-memory test database answered within
   // microtasks and hid it. Nothing below touches `ref` again.
-  final userIdFuture = ref.read(userIdProvider.future)..ignore();
-  final foodRepository = ref.read(foodRepositoryProvider);
+  Future<String>? userIdFuture;
+  FoodRepository? foodRepository;
+  try {
+    final pending = ref.read(userIdProvider.future);
+    pending.ignore();
+    userIdFuture = pending;
+    foodRepository = ref.read(foodRepositoryProvider);
+  } catch (_) {
+    // Nothing wired behind them (no auth, no external deps in this scope):
+    // the mirror is all there is, resolve against it as-is.
+  }
   final exact = await resolveCarbRecommendation(
     database,
     query,
@@ -197,12 +206,14 @@ Future<CarbFoodResolution?> carbRecommendationResolution(
   );
   if (exact != null) return exact;
 
-  try {
-    final userId = await userIdFuture;
-    await foodRepository.refreshAfterMiss(userId);
-  } catch (_) {
-    // No user profile yet, or a refresh failure the repository did not
-    // swallow: the local mirror is untouched, resolve against it as-is.
+  if (userIdFuture != null && foodRepository != null) {
+    try {
+      final userId = await userIdFuture;
+      await foodRepository.refreshAfterMiss(userId);
+    } catch (_) {
+      // No user profile yet, or a refresh failure the repository did not
+      // swallow: the local mirror is untouched, resolve against it as-is.
+    }
   }
   return resolveCarbRecommendation(database, query);
 }
