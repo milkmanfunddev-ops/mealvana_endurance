@@ -1,6 +1,6 @@
 # 34: Backgrounded notification taps are collected on resume
 
-**Status:** in-progress (wave 4, 2026-10-08)
+**Status:** fixed (wave 4, b2546610) awaiting retest
 **Labels:** fix, round:develop-2026-10, area:notifications
 **Branch:** `develop-next` (fix-wave worktree)
 **Blocked by:** nothing. Not with 36 in the same agent (both touch nothing in common, but 36 is a settings ticket; keep areas apart).
