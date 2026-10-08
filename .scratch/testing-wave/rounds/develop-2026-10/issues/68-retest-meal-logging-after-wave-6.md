@@ -1,6 +1,6 @@
 # 68: Retest: meal logging after wave 6
 
-**Status:** ready (round develop-2026-10, retest, wave 7)
+**Status:** in-progress (wave 7, 2026-10-08)
 **Labels:** retest, round:develop-2026-10, area:meal-logging, ai-call
 **Branch:** `develop-next` (worktree per ticket, branched from the round's base after fix wave 6 lands)
 **Source:** TRIAGE.md rulings of 2026-10-08 (wave 5 triage): followups 49-004, 49-007, 49-008, 49-009, 50-013; fix retests for tickets 58 (49-010, and ticket 39's UTC retest that rides on it), 55 (49-005), 60 (49-006), 66 (49-002, 49-003)
