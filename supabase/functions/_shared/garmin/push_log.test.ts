@@ -18,6 +18,7 @@ import {
   GarminMappingMisses,
   logGarminMappingMiss,
   logGarminRecordFailure,
+  logInboundGarminPayload,
 } from "./push_log.ts";
 
 function captureConsoleLog(run: () => void): string[] {
@@ -208,5 +209,126 @@ describe("GarminMappingMisses", () => {
     assertEquals(lines.length, 2);
     assertStringIncludes(lines[0], "reason=mapping_read_failed");
     assertStringIncludes(lines[0], "errorKind=57014");
+  });
+});
+
+// ============================================================================
+// logInboundGarminPayload (testing-wave ticket 61, Finding 49-011)
+// ============================================================================
+
+async function captureConsoleWarn(run: () => Promise<void>): Promise<string[]> {
+  const lines: string[] = [];
+  const original = console.warn;
+  console.warn = (...args: unknown[]) => {
+    lines.push(
+      args.map((a) => typeof a === "string" ? a : JSON.stringify(a)).join(" "),
+    );
+  };
+  try {
+    await run();
+  } finally {
+    console.warn = original;
+  }
+  return lines;
+}
+
+interface UpsertCall {
+  table: string;
+  // deno-lint-ignore no-explicit-any
+  row: Record<string, any>;
+  // deno-lint-ignore no-explicit-any
+  options: Record<string, any>;
+}
+
+/**
+ * Stub for `client.from(table).upsert(row, options).select(cols)`, the chain
+ * logInboundGarminPayload uses. Shaped after `buildSupabaseInsertStub` in
+ * garmin-push/index.test.ts.
+ */
+function buildUpsertStub(
+  // deno-lint-ignore no-explicit-any
+  behaviour: { response?: { data: any; error: any }; throws?: boolean } = {},
+  // deno-lint-ignore no-explicit-any
+): { client: any; calls: UpsertCall[] } {
+  const calls: UpsertCall[] = [];
+  const client = {
+    from: (table: string) => ({
+      // deno-lint-ignore no-explicit-any
+      upsert: (row: Record<string, any>, options: Record<string, any>) => {
+        calls.push({ table, row, options });
+        if (behaviour.throws) throw new Error("network down");
+        return {
+          select: (_cols: string) =>
+            Promise.resolve(
+              behaviour.response ?? { data: [{ summary_id: row.summary_id }], error: null },
+            ),
+        };
+      },
+    }),
+  };
+  return { client, calls };
+}
+
+describe("logInboundGarminPayload", () => {
+  const UNMAPPED_GARMIN = "05fec9ca-1bde-4c7b-b2fe-8b8b852298a3";
+  const SUMMARY = "24654452703";
+  const MAPPED_USER = "550e8400-e29b-41d4-a716-446655440000";
+  // A payload carrying fields that must never reach the log line.
+  const payload = {
+    summaryId: SUMMARY,
+    activityType: "RUNNING",
+    averageHeartRateInBeatsPerMinute: 151,
+    deviceName: "forerunner955",
+    startTimeInSeconds: 1759944539,
+  };
+
+  const kinds = [
+    ["activity", "act"],
+    ["activity_detail", "actdet"],
+    ["activity_detail_full", "actdetfull"],
+  ] as const;
+
+  for (const [kind, prefix] of kinds) {
+    it(`skips the write for an unmapped Garmin user and warns once (${kind})`, async () => {
+      const { client, calls } = buildUpsertStub();
+      const lines = await captureConsoleWarn(() =>
+        logInboundGarminPayload(client, kind, UNMAPPED_GARMIN, null, SUMMARY, payload)
+      );
+      assertEquals(calls.length, 0, "no upsert for an unmapped user");
+      assertEquals(lines.length, 1, lines.join("\n"));
+      assertStringIncludes(lines[0], `key=${prefix}:${SUMMARY}`);
+      assertStringIncludes(lines[0], `garminUserId=${UNMAPPED_GARMIN}`);
+      assertStringIncludes(lines[0], "reason=no_user_mapping");
+      for (const field of ["RUNNING", "151", "forerunner955", "1759944539"]) {
+        assertEquals(lines[0].includes(field), false, `payload field ${field} leaked: ${lines[0]}`);
+      }
+    });
+  }
+
+  it("writes the mapped user's payload as today", async () => {
+    const { client, calls } = buildUpsertStub();
+    const lines = await captureConsoleWarn(() =>
+      logInboundGarminPayload(client, "activity", UNMAPPED_GARMIN, MAPPED_USER, SUMMARY, payload)
+    );
+    assertEquals(lines, []);
+    assertEquals(calls.length, 1);
+    assertEquals(calls[0].table, "garmin_health_data");
+    assertEquals(calls[0].row.user_id, MAPPED_USER);
+    assertEquals(calls[0].row.garmin_user_id, UNMAPPED_GARMIN);
+    assertEquals(calls[0].row.summary_id, `act:${SUMMARY}`);
+    assertEquals(calls[0].row.data_type, "activity_raw");
+    assertEquals(calls[0].row.data, payload);
+    assertEquals(calls[0].options.onConflict, "summary_id");
+    assertEquals(calls[0].options.ignoreDuplicates, true);
+  });
+
+  it("resolves without throwing when the upsert throws", async () => {
+    const { client, calls } = buildUpsertStub({ throws: true });
+    const lines = await captureConsoleWarn(() =>
+      logInboundGarminPayload(client, "activity_detail", UNMAPPED_GARMIN, MAPPED_USER, SUMMARY, payload)
+    );
+    assertEquals(calls.length, 1);
+    assertEquals(lines.length, 1);
+    assertStringIncludes(lines[0], "inbound payload log failed (non-fatal)");
   });
 });

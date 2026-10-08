@@ -711,6 +711,31 @@ describe('garmin-push failure logging', () => {
   });
 });
 
+/**
+ * Ticket 64 decision, folded into ticket 61: the sync-health stamp writes
+ * only an ACTIVE garmin integrations row, so a disconnected row takes no
+ * status write. `stampIntegrationSyncHealth` cannot be imported (index.ts
+ * calls serve() at module load), so this guards the source: the update chain
+ * inside the function filters on is_active = true.
+ */
+describe('stampIntegrationSyncHealth', () => {
+  it('stamps only the active garmin integrations row', () => {
+    const source = Deno.readTextFileSync(
+      new URL('./index.ts', import.meta.url),
+    );
+    const start = source.indexOf('async function stampIntegrationSyncHealth(');
+    assertEquals(start >= 0, true, 'stampIntegrationSyncHealth not found');
+    const body = source.slice(start);
+    const update = body.match(/\.from\("integrations"\)[\s\S]*?;/);
+    assertEquals(update != null, true, 'integrations update not found');
+    assertEquals(
+      /\.update\(/.test(update![0]) && /\.eq\("is_active", true\)/.test(update![0]),
+      true,
+      update![0],
+    );
+  });
+});
+
 // ============================================================================
 // Endurance Sport Allowlist
 // ============================================================================

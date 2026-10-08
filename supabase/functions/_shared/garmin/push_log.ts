@@ -165,3 +165,110 @@ export class GarminMappingMisses {
 function cap(s: string): string {
   return s.length > MESSAGE_CAP ? `${s.slice(0, MESSAGE_CAP)}…` : s;
 }
+
+/**
+ * Persist an inbound Garmin payload verbatim, BEFORE any gate can drop it.
+ *
+ * Why this exists (2026-08-24): an athlete's pool swim was recorded natively by
+ * a Forerunner 955, reached Final Surge and Bevel Health through Garmin's API,
+ * and never appeared in our `activities` table. Every drop point in this
+ * function was audited and cleared — sport mapping normalizes case, no
+ * tombstone existed, the planned matcher would have matched, the insert
+ * fallback admits swimming — so the payload either never arrived or was
+ * discarded somewhere unlogged. We could not tell which, because inbound
+ * ACTIVITY payloads were never persisted (`garmin_health_data` held only
+ * daily/epoch/sleep/stress/body-composition) and the Supabase log tables
+ * return nothing through the Management API. That question must be a lookup,
+ * not archaeology.
+ * See ops/data/bug-reports/2026-08-24-final-surge-completed-workouts-import-as-planned.md
+ *
+ * Storage note: reuses `garmin_health_data`'s generic (data_type, data jsonb)
+ * shape rather than adding a table — deliberately, so this ships as a function
+ * deploy with no migration. Every existing reader of that table filters on
+ * data_type (app: body_composition; engine: daily / body_composition), so a new
+ * type is invisible to all of them. `summary_id` carries a GLOBAL unique, hence
+ * the `act:` / `actdet:` prefix and the conflict-ignore.
+ *
+ * MUST NOT THROW. This diagnoses a path that already loses activities silently;
+ * a logging failure that aborted the enclosing try would make the very bug it
+ * exists to catch worse.
+ *
+ * Unmapped Garmin user (ticket 61, Finding 49-011): `user_id` is NOT NULL
+ * with a foreign key to `users`, so a write with no mapped user 23502s. The
+ * payload belongs to nobody on this project, so it is not kept: one
+ * `console.warn` line names the key and the Garmin user id (never the
+ * payload) and the function returns. That line is the D9 record.
+ *
+ * Lives in `_shared/garmin/push_log.ts` rather than garmin-push/index.ts so a
+ * test can import it (index.ts calls serve() at module load).
+ */
+export async function logInboundGarminPayload(
+  // deno-lint-ignore no-explicit-any
+  supabase: any,
+  kind: "activity" | "activity_detail" | "activity_detail_full",
+  garminUserId: string | null | undefined,
+  userId: string | null,
+  summaryId: string | null | undefined,
+  payload: unknown,
+): Promise<void> {
+  try {
+    const prefix = kind === "activity"
+      ? "act"
+      : kind === "activity_detail"
+      ? "actdet"
+      : "actdetfull";
+    // The `nosummary` fallback reads startTimeInSeconds off the PAYLOAD, so it
+    // only ever produced a unique key when the payload was itself a summary.
+    // For `activity_detail_full` the payload is the whole detail object, whose
+    // startTimeInSeconds lives under `.summary` — so every full capture for an
+    // athlete keyed to `...:0` and `ignoreDuplicates` silently discarded all
+    // but the first (found 2026-09-22: three rows existed table-wide, one per
+    // athlete, all from the hours after deploy). Callers now pass an id derived
+    // from the activity itself; the fallback stays as a last resort only.
+    const key = summaryId
+      ? `${prefix}:${summaryId}`
+      : `${prefix}:nosummary:${garminUserId ?? "unknown"}:${
+        // deno-lint-ignore no-explicit-any
+        (payload as any)?.startTimeInSeconds ??
+          // deno-lint-ignore no-explicit-any
+          (payload as any)?.summary?.startTimeInSeconds ?? "0"
+      }`;
+    if (userId == null) {
+      console.warn(
+        `[garmin-push] inbound payload log skipped key=${key} ` +
+          `garminUserId=${garminUserId ?? "none"} reason=no_user_mapping`,
+      );
+      return;
+    }
+    const { data: inserted, error } = await supabase
+      .from("garmin_health_data")
+      .upsert({
+        user_id: userId,
+        garmin_user_id: garminUserId ?? null,
+        summary_id: key,
+        data_type: kind === "activity"
+          ? "activity_raw"
+          : kind === "activity_detail"
+          ? "activity_detail_raw"
+          : "activity_detail_full",
+        calendar_date: new Date().toISOString().slice(0, 10),
+        data: payload,
+      }, { onConflict: "summary_id", ignoreDuplicates: true })
+      .select("summary_id");
+
+    // A conflict-ignore that writes nothing is indistinguishable from a
+    // successful write unless we look. That indistinguishability is exactly
+    // what hid the collision above for a day, so say so out loud.
+    if (error) {
+      console.warn(`[garmin-push] inbound payload log error for ${key}:`, error);
+    } else if (Array.isArray(inserted) && inserted.length === 0) {
+      console.warn(
+        `[garmin-push] inbound payload log wrote NOTHING for ${key} ` +
+          `(duplicate summary_id) — payload not retained`,
+      );
+    }
+  } catch (err) {
+    // Swallow deliberately — see the contract above.
+    console.warn("[garmin-push] inbound payload log failed (non-fatal):", err);
+  }
+}
