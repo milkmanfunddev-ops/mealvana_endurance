@@ -1,6 +1,6 @@
 # 57: A login from Verify's hint lands on the Timeline, not back on Sign Up
 
-**Status:** in-progress (wave 6, 2026-10-08) (round develop-2026-10, fix wave 6)
+**Status:** landed (wave 6, 2026-10-08, develop-next `8dec4583`); open until its retest passes in test wave 7 (tickets 67-69; 61/62/64 server-side checks at the wave-7 close)
 **Labels:** fix, round:develop-2026-10, area:auth
 **Branch:** `develop-next` (fix-wave worktree)
 **Blocked by:** nothing in code. Never alongside 55 (both edit `post_onboarding_auth_screen.dart`); run after it or before it.

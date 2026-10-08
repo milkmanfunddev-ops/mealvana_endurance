@@ -1,6 +1,6 @@
 # 58: Food preferences: the Settings save uploads, the screen loads the server rows, one key shape
 
-**Status:** in-progress (wave 6, 2026-10-08) (round develop-2026-10, fix wave 6)
+**Status:** landed (wave 6, 2026-10-08, develop-next `8dec4583`); open until its retest passes in test wave 7 (tickets 67-69; 61/62/64 server-side checks at the wave-7 close)
 **Labels:** fix, round:develop-2026-10, area:settings, area:sync
 **Branch:** `develop-next` (fix-wave worktree)
 **Blocked by:** nothing in code. One dev SQL at the close, run by the lead (below).

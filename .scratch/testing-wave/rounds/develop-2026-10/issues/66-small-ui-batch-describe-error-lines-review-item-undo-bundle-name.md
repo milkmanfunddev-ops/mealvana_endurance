@@ -1,6 +1,6 @@
 # 66: Small UI batch: Describe's error lines wrap, a removed Review item has Undo, Back asks, the iOS bundle name
 
-**Status:** in-progress (wave 6, 2026-10-08) (round develop-2026-10, fix wave 6)
+**Status:** landed (wave 6, 2026-10-08, develop-next `8dec4583`); open until its retest passes in test wave 7 (tickets 67-69; 61/62/64 server-side checks at the wave-7 close)
 **Labels:** fix, round:develop-2026-10, area:meal-logging, area:ios
 **Branch:** `develop-next` (fix-wave worktree)
 **Blocked by:** nothing in code. Shares `log_meal_screen.dart` with 60 (see Overlaps).
