@@ -128,8 +128,8 @@ class PrivacyRegionService {
       // offline and the timeout are weather (ticket 41, 32-007): a
       // breadcrumb and one `expected_failure` count, no event. A malformed
       // body is still a fault. No tracker is passed: this runs before
-      // consent is resolved, so the count waits for analytics to start
-      // (`ExpectedFailureCounts`).
+      // consent is resolved, so the count is a Sentry counter, not
+      // analytics (ticket 54).
       final weather = await _r.faultUnlessWeather(
         e,
         stackTrace: stackTrace,

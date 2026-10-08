@@ -291,13 +291,13 @@ void main() {
       },
     );
 
-    // develop-2026-10 ticket 41 (32-007): an offline cold start is weather.
+    // develop-2026-10 ticket 41 (32-007): an offline cold start is weather;
+    // ticket 54: its count is a Sentry counter, not held for analytics.
     // The real postgrest builder runs; only the wire is replaced, by what
     // dart:io throws offline, or by an app_config row the parser refuses.
     group('when app_config cannot be read', () {
       setUp(() {
         LaunchTrail.debugReset();
-        ExpectedFailureCounts.debugReset();
         SharedPreferences.setMockInitialValues({
           'cached_min_app_version': '1.0.0',
           'cached_remote_schema_version': 3,
@@ -306,7 +306,6 @@ void main() {
               DateTime.now().millisecondsSinceEpoch,
         });
       });
-      tearDown(ExpectedFailureCounts.debugReset);
 
       Future<(VersionCheckResult, RecordingReport)> check(
         Future<http.Response> Function(http.Request) wire,
@@ -335,7 +334,7 @@ void main() {
       }
 
       test('offline: the cached result, a startup.weather breadcrumb, a '
-          'LaunchTrail line, a held count, and no fault', () async {
+          'LaunchTrail line, one Sentry count, and no event', () async {
         final (result, report) = await check(
           (_) async => throw const SocketException(
             "Failed host lookup: 'vlmtsdzpnjnavdgytcmi.supabase.co'",
@@ -354,9 +353,10 @@ void main() {
           LaunchTrail.text,
           contains('version check offline: cached result'),
         );
-        expect(ExpectedFailureCounts.pending, [
-          (area: 'startup', reason: 'offline'),
-        ]);
+        final count = report.counts.single;
+        expect(count.message, expectedFailureEvent);
+        expect(count.tags, {'area': 'startup', 'reason': 'offline'});
+        expect(report.notes, isEmpty, reason: 'no event of any kind');
       });
 
       test('a schema error in app_config still faults', () async {
@@ -377,7 +377,7 @@ void main() {
         expect(report.faults.single.area, 'startup');
         expect(report.faults.single.error, isA<FormatException>());
         expect(LaunchTrail.text, isNot(contains('version check')));
-        expect(ExpectedFailureCounts.pending, isEmpty);
+        expect(report.counts, isEmpty);
       });
     });
 

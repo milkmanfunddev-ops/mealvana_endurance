@@ -34,10 +34,15 @@ class CapturingTransport implements Transport {
       .whereType<SentryEvent>()
       .toList();
 
-  Future<List<Map<String, dynamic>>> logs() async {
+  Future<List<Map<String, dynamic>>> logs() => _items('log');
+
+  /// Metric items (`trace_metric`), as the SDK batched them.
+  Future<List<Map<String, dynamic>>> metrics() => _items('trace_metric');
+
+  Future<List<Map<String, dynamic>>> _items(String type) async {
     final out = <Map<String, dynamic>>[];
     for (final item in envelopes.expand((e) => e.items)) {
-      if (item.header.type != 'log') continue;
+      if (item.header.type != type) continue;
       final bytes = await item.dataFactory();
       final json = jsonDecode(utf8.decode(bytes)) as Map<String, dynamic>;
       out.addAll((json['items'] as List).cast<Map<String, dynamic>>());
@@ -270,35 +275,43 @@ void main() {
       expect(entry.error, isA<StateError>());
     });
 
-    test('the same error object is captured once; later reports are '
-        'breadcrumbs (repository faults + rethrows, controller faults again)',
-        () async {
-      final error = StateError('one object, many layers');
-      await report.fault(error, area: 'data');
-      await report.fault(error, area: 'presentation');
-      await report.degraded(error, area: 'observer');
-      expect(transport.events, hasLength(1));
-      expect(transport.events.single.tags?['area'], 'data');
-      expect(SentryReport.wasReported(error), isTrue);
-      // A fresh object with the same text is a new event.
-      await report.fault(StateError('one object, many layers'), area: 'x');
-      expect(transport.events, hasLength(2));
-    });
+    test(
+      'the same error object is captured once; later reports are '
+      'breadcrumbs (repository faults + rethrows, controller faults again)',
+      () async {
+        final error = StateError('one object, many layers');
+        await report.fault(error, area: 'data');
+        await report.fault(error, area: 'presentation');
+        await report.degraded(error, area: 'observer');
+        expect(transport.events, hasLength(1));
+        expect(transport.events.single.tags?['area'], 'data');
+        expect(SentryReport.wasReported(error), isTrue);
+        // A fresh object with the same text is a new event.
+        await report.fault(StateError('one object, many layers'), area: 'x');
+        expect(transport.events, hasLength(2));
+      },
+    );
 
-    test('a LoggedFault with an id in its message groups with its siblings',
-        () async {
-      await report.fault(
-        LoggedFault('No plan found for event: 3f2a1b2c-1111-2222-3333-444455556666'),
-      );
-      await report.fault(
-        LoggedFault('No plan found for event: 9e9e9e9e-aaaa-bbbb-cccc-dddddddddddd'),
-      );
-      await report.fault(LoggedFault('Vana HTTP 502'));
-      final prints = transport.events.map((e) => e.fingerprint).toList();
-      expect(prints[0], ['logged-fault', 'No plan found for event: <id>']);
-      expect(prints[1], prints[0]);
-      expect(prints[2], ['logged-fault', 'Vana HTTP <n>']);
-    });
+    test(
+      'a LoggedFault with an id in its message groups with its siblings',
+      () async {
+        await report.fault(
+          LoggedFault(
+            'No plan found for event: 3f2a1b2c-1111-2222-3333-444455556666',
+          ),
+        );
+        await report.fault(
+          LoggedFault(
+            'No plan found for event: 9e9e9e9e-aaaa-bbbb-cccc-dddddddddddd',
+          ),
+        );
+        await report.fault(LoggedFault('Vana HTTP 502'));
+        final prints = transport.events.map((e) => e.fingerprint).toList();
+        expect(prints[0], ['logged-fault', 'No plan found for event: <id>']);
+        expect(prints[1], prints[0]);
+        expect(prints[2], ['logged-fault', 'Vana HTTP <n>']);
+      },
+    );
 
     test('a LoggedFault groups on its message', () async {
       await report.fault(const LoggedFault('Plan generation returned null'));
@@ -455,6 +468,7 @@ void main() {
       noop.info('i');
       noop.debug('d');
       noop.breadcrumb('b');
+      noop.count(expectedFailureEvent, tags: {'area': 'startup'});
       await noop.setUser('u', role: 'athlete');
       await noop.clearUser();
       // ignore: invalid_use_of_internal_member
@@ -466,6 +480,48 @@ void main() {
     });
   });
 
+  // develop-2026-10 ticket 54: a count Sentry can sum, not a breadcrumb that
+  // only rides a later event. Through the SDK's metrics API (sentry 9.30.1).
+  group('count', () {
+    Future<List<Map<String, dynamic>>> flushedMetrics() async {
+      // Like logs: the metric pipeline clones the scope before it buffers.
+      await Future<void>.delayed(Duration.zero);
+      // ignore: invalid_use_of_internal_member
+      await Sentry.currentHub.options.telemetryProcessor.flush();
+      await Future<void>.delayed(Duration.zero);
+      return transport.metrics();
+    }
+
+    test(
+      'reaches the SDK as one counter with its tags as attributes',
+      () async {
+        report.count(
+          expectedFailureEvent,
+          tags: {'area': 'startup', 'reason': 'offline'},
+        );
+
+        final metrics = await flushedMetrics();
+        final metric = metrics.singleWhere(
+          (m) => m['name'] == expectedFailureEvent,
+        );
+        expect(metric['type'], 'counter');
+        expect(metric['value'], 1);
+        expect(metric['attributes']['area']['value'], 'startup');
+        expect(metric['attributes']['reason']['value'], 'offline');
+        expect(transport.events, isEmpty, reason: 'a count is not an event');
+        expect(tracked, isEmpty, reason: 'no error_reported fan-out');
+      },
+    );
+
+    test('mirrors into the debug screen log', () {
+      report.count(expectedFailureEvent, tags: {'area': 'privacy'});
+      expect(
+        storage.getLogs().map((e) => e.message),
+        contains('count $expectedFailureEvent'),
+      );
+    });
+  });
+
   test('isEnabled follows the hub', () {
     expect(report.isEnabled, isTrue);
   });
@@ -473,16 +529,11 @@ void main() {
   // develop-2026-10 ticket 41 (32-007): network weather at a site that
   // already falls back is a breadcrumb and one plain count, never an event.
   group('faultUnlessWeather', () {
-    setUp(ExpectedFailureCounts.debugReset);
-    tearDown(ExpectedFailureCounts.debugReset);
-
     /// The weather samples as their producers throw them: dart:io, a
     /// `Future.timeout`, and AVPlayer's offline wording on iOS (run 32
     /// console, 08:17:08).
     final weather = <String, Object>{
-      'offline': const SocketException(
-        "Failed host lookup: 'app.mealvana.io'",
-      ),
+      'offline': const SocketException("Failed host lookup: 'app.mealvana.io'"),
       'timeout': TimeoutException('Future not completed', Duration(seconds: 2)),
       'ios video offline': PlatformException(
         code: 'VideoError',
@@ -550,23 +601,26 @@ void main() {
       expect(transport.events.single.level, SentryLevel.warning);
     });
 
-    test('with no tracker the count is held until analytics attaches, '
-        'then sent', () async {
-      await report.faultUnlessWeather(
+    test('with no tracker in hand the count is one Sentry counter, held '
+        'for nothing (ticket 54)', () async {
+      final seen = await report.faultUnlessWeather(
         const SocketException('Network is unreachable'),
         area: 'startup',
         message: 'Version check failed; using cached result',
       );
-      expect(ExpectedFailureCounts.pending, hasLength(1));
+      expect(seen, ExpectedFailure.offline);
 
-      final counted = <({String name, Map<String, dynamic> properties})>[];
-      await ExpectedFailureCounts.attach(() => FakeAnalytics(counted));
-
-      expect(ExpectedFailureCounts.pending, isEmpty);
-      expect(counted.single.properties, {
-        'area': 'startup',
-        'reason': 'offline',
-      });
+      await Future<void>.delayed(Duration.zero);
+      // ignore: invalid_use_of_internal_member
+      await Sentry.currentHub.options.telemetryProcessor.flush();
+      await Future<void>.delayed(Duration.zero);
+      final metric = (await transport.metrics()).singleWhere(
+        (m) => m['name'] == expectedFailureEvent,
+      );
+      expect(metric['attributes']['area']['value'], 'startup');
+      expect(metric['attributes']['reason']['value'], 'offline');
+      expect(transport.events, isEmpty);
+      expect(tracked, isEmpty, reason: 'no analytics, no error_reported');
     });
 
     test('a tracker that throws costs the count, not the app', () async {
@@ -579,29 +633,30 @@ void main() {
       expect(transport.events, isEmpty);
     });
 
-    test('works on NoopReport too (an extension, not an interface change)',
-        () async {
-      const noop = NoopReport();
-      final counted = <({String name, Map<String, dynamic> properties})>[];
-      await noop.faultUnlessWeather(
-        const SocketException('Network is unreachable'),
-        area: 'startup',
-        message: 'm',
-        analytics: FakeAnalytics(counted),
-      );
-      await noop.noteExpected(
-        'Email sign in: WrongCredentialsException',
-        area: 'auth',
-        reason: 'wrong_credentials',
-        analytics: FakeAnalytics(counted),
-      );
-      expect(counted.map((c) => c.properties['reason']), [
-        'offline',
-        'wrong_credentials',
-      ]);
-    });
+    test(
+      'works on NoopReport too (an extension, not an interface change)',
+      () async {
+        const noop = NoopReport();
+        final counted = <({String name, Map<String, dynamic> properties})>[];
+        await noop.faultUnlessWeather(
+          const SocketException('Network is unreachable'),
+          area: 'startup',
+          message: 'm',
+          analytics: FakeAnalytics(counted),
+        );
+        await noop.noteExpected(
+          'Email sign in: WrongCredentialsException',
+          area: 'auth',
+          reason: 'wrong_credentials',
+          analytics: FakeAnalytics(counted),
+        );
+        expect(counted.map((c) => c.properties['reason']), [
+          'offline',
+          'wrong_credentials',
+        ]);
+      },
+    );
   });
-
 }
 
 class _NullOutput extends LogOutput {

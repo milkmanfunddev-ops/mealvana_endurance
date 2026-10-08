@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
+import 'package:mealvana_endurance/shared/services/launch_trail.dart';
 import 'package:mealvana_endurance/shared/services/privacy/privacy_region.dart';
 import 'package:mealvana_endurance/shared/services/privacy/privacy_region_service.dart';
 import 'package:mealvana_endurance/shared/services/report/report.dart';
@@ -71,15 +72,15 @@ void main() {
 
   // develop-2026-10 ticket 41 (32-007): offline and the 2 s timeout are
   // weather, a breadcrumb and a count, never an event. A malformed body is
-  // not weather and still faults.
+  // not weather and still faults. Ticket 54: the count is a Sentry counter
+  // (`Report.count`), never held for analytics.
   group('what a failure reports', () {
     late RecordingReport report;
 
     setUp(() {
       report = RecordingReport();
-      ExpectedFailureCounts.debugReset();
+      LaunchTrail.debugReset();
     });
-    tearDown(ExpectedFailureCounts.debugReset);
 
     Future<SharedPreferences> resolve(
       http.Client client, {
@@ -109,9 +110,11 @@ void main() {
       expect(report.faults, isEmpty);
       expect(report.degradeds, isEmpty);
       expect(weather().single.data?['expected_failure'], 'timeout');
-      expect(ExpectedFailureCounts.pending, [
-        (area: 'privacy', reason: 'timeout'),
-      ]);
+      expect(report.counts.single.message, expectedFailureEvent);
+      expect(report.counts.single.tags, {
+        'area': 'privacy',
+        'reason': 'timeout',
+      });
     });
 
     test('offline falls back to device signals with no fault', () async {
@@ -127,7 +130,18 @@ void main() {
 
       expect(prefs.getString(kRegionSourceKey), 'device');
       expect(report.faults, isEmpty);
+      expect(report.degradeds, isEmpty);
+      expect(report.notes, isEmpty);
       expect(weather().single.data?['expected_failure'], 'offline');
+      expect(report.counts.single.message, expectedFailureEvent);
+      expect(report.counts.single.tags, {
+        'area': 'privacy',
+        'reason': 'offline',
+      });
+      expect(
+        LaunchTrail.text,
+        contains('region lookup offline: device fallback'),
+      );
     });
 
     test('a malformed body still faults', () async {
@@ -139,7 +153,7 @@ void main() {
       expect(report.faults, hasLength(1));
       expect(report.faults.single.area, 'privacy');
       expect(weather(), isEmpty);
-      expect(ExpectedFailureCounts.pending, isEmpty);
+      expect(report.counts, isEmpty);
     });
   });
 

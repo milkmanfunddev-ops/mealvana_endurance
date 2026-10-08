@@ -449,8 +449,9 @@ class AppStartupService {
       // launch is the normal state, so this is a breadcrumb plus the
       // LaunchTrail line, not a `push` note: `push` is a promoted area and a
       // note there is a warning event on every signed-out launch (ticket 41,
-      // 30-011). One `expected_failure` count; before analytics starts it is
-      // held (`ExpectedFailureCounts`), never read ahead of consent.
+      // 30-011). One `expected_failure` count, as a Sentry counter: no
+      // tracker is read here, so consent is never read ahead of its time,
+      // and nothing waits for analytics (ticket 54).
       LaunchTrail.add('notification answer not stored: no local profile');
       _report.breadcrumb(
         'Notification permission answer not stored: no local profile',
@@ -546,12 +547,6 @@ class AppStartupService {
           'timestamp': DateTime.now().toIso8601String(),
         },
       );
-
-      // Ticket 41: `expected_failure` counts taken before analytics started
-      // (offline version check, region lookup) go out now, and later ones
-      // with no tracker in hand follow. Read per count, so a consent
-      // withdrawal (a Noop tracker) is honoured.
-      await ExpectedFailureCounts.attach(() => ref.mounted ? _analytics : null);
     } catch (e, stackTrace) {
       // Allow a later attempt (e.g. the post-consent call) to retry.
       _analyticsInitialized = false;
