@@ -1,0 +1,4 @@
+read with app terminated
+flutter.pending_signup_v1 present: False
+any key containing pending: []
+analytics_consent_status = denied

@@ -1,0 +1,3 @@
+analytics_consent_status = denied
+analytics_consent_at = 2026-10-08T18:20:09.494281
+analytics_consent_regime = strict

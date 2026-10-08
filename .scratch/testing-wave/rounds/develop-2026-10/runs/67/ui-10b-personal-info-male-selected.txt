@@ -1,0 +1,18 @@
+Application 'Endurance Dev' None x=0 y=0 w=402 h=874
+Button 'Back' None x=22 y=78 w=32 h=32
+StaticText 'Tell us about yourself' None x=24 y=164 w=242 h=27
+StaticText 'Age and gender help us determine the best fueling strategy.' None x=24 y=199 w=354 h=40
+StaticText 'PERSONAL INFORMATION  · optional' None x=41 y=281 w=286 h=24
+TextField 'First name' '' x=41 y=317 w=154 h=44
+TextField 'Last name' '' x=207 y=317 w=154 h=44
+TextField 'Email address' '' x=41 y=373 w=320 h=44
+StaticText 'Gender' None x=24 y=455 w=52 h=22
+StaticText 'MALE' None x=24 y=485 w=110 h=76
+StaticText 'FEMALE' None x=145 y=485 w=110 h=76
+StaticText 'NON-BINARY' None x=267 y=485 w=110 h=76
+StaticText 'Birth year' None x=24 y=581 w=60 h=19
+ScrollArea None None x=24 y=604 w=354 h=132
+StaticText '1993' None x=24 y=605 w=353 h=42
+StaticText '1994' None x=24 y=648 w=354 h=44
+StaticText '1995' None x=24 y=692 w=353 h=42
+Button 'Continue' None x=24 y=783 w=354 h=57

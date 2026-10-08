@@ -1,0 +1,9 @@
+Application 'Endurance Dev' None x=0 y=0 w=402 h=874
+ScrollArea None None x=0 y=62 w=402 h=705
+StaticText 'Your privacy' None x=20 y=130 w=144 h=26
+StaticText 'You choose what we can learn from how you use the app.' None x=20 y=176 w=362 h=48
+CheckBox 'Share usage data' '1' x=20 y=256 w=362 h=48
+StaticText 'Optional. Sends which screens you use, plus basic profile details (age, gender, weight), to Mixpanel. Never your meal logs.' None x=20 y=312 w=362 h=60
+Button 'Privacy Policy' None x=20 y=396 w=109 h=48
+Button 'Terms' None x=145 y=396 w=64 h=48
+Button 'Continue' None x=20 y=767 w=362 h=48

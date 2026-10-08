@@ -1,0 +1,5 @@
+pending_signup_v1 keys: ['anonymous_user_id', 'code_sent_at', 'draft', 'email', 'otp_type', 'pending_user_id', 'version']
+otp_type = emailChange
+code_sent_at = 2026-10-08T23:23:11.983447Z
+anonymous_user_id = f514bc05-1a9d-4c56-adce-e6060ec34ba0
+pending_user_id = None

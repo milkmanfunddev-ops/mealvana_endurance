@@ -1,0 +1,19 @@
+Application 'Endurance Dev' None x=0 y=0 w=402 h=874
+Button 'Back' None x=22 y=78 w=32 h=32
+ScrollArea None None x=0 y=116 w=402 h=659
+StaticText 'Nutrition Settings' None x=24 y=164 w=200 h=27
+StaticText 'Two dials that tune your per-hour targets.' None x=24 y=199 w=276 h=20
+StaticText 'GUT TRAINING LEVEL' None x=41 y=264 w=280 h=24
+StaticText "Your gut's ability to absorb carbs during exercise" None x=41 y=292 w=287 h=19
+StaticText 'LOW\n0.7×' None x=41 y=323 w=101 h=65
+StaticText 'MODERATE\n1.0×' None x=150 y=323 w=101 h=65
+StaticText 'HIGH\n1.2×' None x=259 y=323 w=101 h=65
+StaticText "I'M REGULARLY FUELING MY LONG WORKOUTS." None x=53 y=400 w=308 h=41
+StaticText 'SWEAT RATE' None x=41 y=495 w=172 h=24
+StaticText 'How much you typically sweat during exercise' None x=41 y=523 w=270 h=19
+StaticText 'LIGHT\n0.85×' None x=41 y=554 w=101 h=65
+StaticText 'MEDIUM\n1.0×' None x=150 y=554 w=101 h=65
+StaticText 'HEAVY\n1.2×' None x=259 y=554 w=101 h=65
+StaticText 'A NORMAL AMOUNT — DAMP AFTER A HARD SESSION.' None x=53 y=631 w=308 h=61
+StaticText "Not sure? Keep the defaults — we'll refine both as you log sessions." None x=24 y=731 w=354 h=34
+Button 'Continue' None x=24 y=783 w=354 h=57

@@ -1,0 +1,6 @@
+analytics_consent_status = granted
+analytics_consent_regime = strict
+analytics_consent_at = 2026-10-08T18:10:26.954256
+analytics_consent_version = 1
+privacy_geo_country = GB
+privacy_region_source = geo

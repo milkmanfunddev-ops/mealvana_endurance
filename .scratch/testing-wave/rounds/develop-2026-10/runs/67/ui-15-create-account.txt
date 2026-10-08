@@ -1,0 +1,13 @@
+Application 'Endurance Dev' None x=0 y=0 w=402 h=874
+Button 'Back' None x=16 y=74 w=32 h=32
+StaticText 'Create Your Account' None x=16 y=142 w=370 h=28
+StaticText 'Secure your data and sync across devices' None x=16 y=178 w=370 h=20
+StaticText '★★★★★' None x=33 y=229 w=76 h=23
+StaticText '“GETTING NUTRITION RIGHT IS HOW I FINISH MY TRAINING BLOCK STRONG AND TOE THE START LINE HEALTHY, FIT, AND READY.”' None x=120 y=229 w=248 h=189
+StaticText 'Xuan H. · 6x marathoner · 2x half IM' None x=120 y=425 w=194 h=17
+Button 'Continue with Apple' None x=16 y=475 w=370 h=50
+StaticText 'or' None x=195 y=537 w=11 h=17
+Button 'Continue with Google' None x=16 y=566 w=370 h=50
+Button 'Sign up with Email' None x=16 y=626 w=370 h=50
+Button 'Continue without signing in' None x=16 y=692 w=370 h=48
+StaticText 'You can always create an account later in Settings' None x=16 y=742 w=370 h=16

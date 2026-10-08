@@ -1,0 +1,22 @@
+Application 'Endurance Dev' None x=0 y=0 w=402 h=874
+Button 'Back' None x=22 y=78 w=32 h=32
+StaticText 'Basic body composition' None x=24 y=164 w=271 h=27
+StaticText 'We use the Mifflin-St Jeor model to estimate your resting metabolic rate.' None x=24 y=199 w=354 h=40
+StaticText 'Unit preferences' None x=24 y=265 w=102 h=19
+StaticText 'Imperial' None x=28 y=296 w=93 h=35
+StaticText 'Metric' None x=121 y=296 w=83 h=35
+StaticText 'Height' None x=24 y=355 w=39 h=19
+ScrollArea None None x=24 y=378 w=171 h=132
+StaticText '4' None x=24 y=379 w=170 h=42
+StaticText '5 ft' None x=24 y=422 w=171 h=44
+StaticText '6' None x=24 y=466 w=170 h=42
+ScrollArea None None x=207 y=378 w=171 h=132
+StaticText '7' None x=207 y=379 w=170 h=42
+StaticText '8 in' None x=207 y=422 w=171 h=44
+StaticText '9' None x=207 y=466 w=170 h=42
+StaticText 'Weight' None x=24 y=530 w=41 h=19
+ScrollArea None None x=24 y=553 w=354 h=132
+StaticText '149' None x=24 y=554 w=353 h=42
+StaticText '150 lb' None x=24 y=597 w=354 h=44
+StaticText '151' None x=24 y=641 w=353 h=42
+Button 'Build My Plan' None x=24 y=783 w=354 h=57
