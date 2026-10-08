@@ -10,6 +10,7 @@ One line per wave: number, base sha, tickets, start time, who led it.
 - wave 3 · base `a89ace2a` (app built from it) · tickets 30, 31, 32 · 2026-10-08T12:55Z–13:35Z · lead: Claude (Fable), test wave (rebuild); merged `e28df18a`; 43 Findings + 1 lead-filed; 30 old Findings closed
 - wave 4 · base `aab323b7` · fix wave: 34, 35+36 (one agent), 38, 39, 41, 43, 44 at once; then 37; then 45, 46, 47; then 42 · 2026-10-08T15:58Z · lead: Claude (Fable), fix wave (40 done earlier by the lead) · LANDED on develop-next `98b15919` (43 commits; suite 5333 pass after two harness/guard fixes; review fixes `98b15919`; dev deploy describe-meal, analyze-meal-photo, garmin-backfill, garmin-user-mapping, delete-user). 43 part A (971 px overflow) NOT reproduced: DEV-B1 stays open for retest 48.
 - wave 5 · base `50faeb19` (app built from `3cf7e2b9`, wave simulators wave-pool-1/2/3) · tickets 48, 49, 50 (51 is Lee's phone, no simulator; 33 needs two simulators and waits) · 2026-10-08T17:20Z · lead: Claude (Fable), test wave (rebuild)
+- wave 6 · base `17bb90b2` · fix wave: pass A at once: 54, 57, 56, 63+64 (one agent, 64 item 1 first), 66, 58, 61+62 (one agent), 65, 52+53 (one agent); pass B after A merges: 59 (after 56), 60 (after 66 and 63/64); pass C: 55 (after 54, 57, 60), 70 (after 60) · 2026-10-08T20:10Z · lead: Claude (Fable), fix wave (no simulators)
 
 ## Rulings
 

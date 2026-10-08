@@ -1,6 +1,6 @@
 # 64: Inactive integration rows carry no sync state, and a reconnect clears requires_reauth
 
-**Status:** ready (round develop-2026-10, fix wave 6)
+**Status:** in-progress (wave 6, 2026-10-08) (round develop-2026-10, fix wave 6)
 **Labels:** fix, round:develop-2026-10, area:integrations
 **Branch:** `develop-next` (fix-wave worktree)
 **Blocked by:** nothing in code. Shares `integrations_repository.dart` and the reconnect question with 63 (see Overlaps).

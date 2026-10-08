@@ -1,6 +1,6 @@
 # 65: An event's event_date is derived from its start_time on every write
 
-**Status:** ready (round develop-2026-10, fix wave 6)
+**Status:** in-progress (wave 6, 2026-10-08) (round develop-2026-10, fix wave 6)
 **Labels:** fix, round:develop-2026-10, area:events
 **Branch:** `develop-next` (fix-wave worktree)
 **Blocked by:** nothing.

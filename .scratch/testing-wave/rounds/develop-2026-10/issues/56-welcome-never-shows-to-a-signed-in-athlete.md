@@ -1,6 +1,6 @@
 # 56: Welcome never shows to a signed-in athlete; the startup snapshot follows an in-session login
 
-**Status:** ready (round develop-2026-10, fix wave 6)
+**Status:** in-progress (wave 6, 2026-10-08) (round develop-2026-10, fix wave 6)
 **Labels:** fix, round:develop-2026-10, area:startup, area:routing
 **Branch:** `develop-next` (fix-wave worktree)
 **Blocked by:** nothing in code. 59 is blocked by this ticket: its guard and its replay read the snapshot this ticket keeps live. Run 56 first, then 59, never at once.

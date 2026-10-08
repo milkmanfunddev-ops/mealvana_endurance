@@ -1,6 +1,6 @@
 # 63: Reconnecting a provider unhides what its disconnect hid; the hide uploads at once
 
-**Status:** ready (round develop-2026-10, fix wave 6)
+**Status:** in-progress (wave 6, 2026-10-08) (round develop-2026-10, fix wave 6)
 **Labels:** fix, round:develop-2026-10, area:integrations
 **Branch:** `develop-next` (fix-wave worktree)
 **Blocked by:** nothing in code. Shares `connect_training_controller.dart` with 64 and 60 (Overlaps).

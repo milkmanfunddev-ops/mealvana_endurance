@@ -1,6 +1,6 @@
 # 62: plan_generation_log takes numerics, and the 17:40Z 400s
 
-**Status:** ready (round develop-2026-10, fix wave 6)
+**Status:** in-progress (wave 6, 2026-10-08) (round develop-2026-10, fix wave 6)
 **Labels:** fix, round:develop-2026-10, area:nutrition, area:functions
 **Branch:** `develop-next` (fix-wave worktree)
 **Blocked by:** nothing.

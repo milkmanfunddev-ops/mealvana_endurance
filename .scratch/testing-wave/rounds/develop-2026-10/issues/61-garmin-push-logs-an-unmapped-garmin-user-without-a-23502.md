@@ -1,6 +1,6 @@
 # 61: garmin-push logs an unmapped Garmin user without a 23502
 
-**Status:** ready (round develop-2026-10, fix wave 6)
+**Status:** in-progress (wave 6, 2026-10-08) (round develop-2026-10, fix wave 6)
 **Labels:** fix, round:develop-2026-10, area:integrations, area:functions
 **Branch:** `develop-next` (fix-wave worktree)
 **Blocked by:** nothing.

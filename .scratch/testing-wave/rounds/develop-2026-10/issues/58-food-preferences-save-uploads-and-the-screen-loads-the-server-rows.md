@@ -1,6 +1,6 @@
 # 58: Food preferences: the Settings save uploads, the screen loads the server rows, one key shape
 
-**Status:** ready (round develop-2026-10, fix wave 6)
+**Status:** in-progress (wave 6, 2026-10-08) (round develop-2026-10, fix wave 6)
 **Labels:** fix, round:develop-2026-10, area:settings, area:sync
 **Branch:** `develop-next` (fix-wave worktree)
 **Blocked by:** nothing in code. One dev SQL at the close, run by the lead (below).

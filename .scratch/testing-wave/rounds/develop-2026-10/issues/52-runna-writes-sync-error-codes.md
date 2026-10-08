@@ -1,6 +1,6 @@
 # 52: Runna writes sync-error codes, not raw exception text
 
-**Status:** ready (round develop-2026-10, fix wave 6)
+**Status:** in-progress (wave 6, 2026-10-08) (round develop-2026-10, fix wave 6)
 **Labels:** fix, round:develop-2026-10, area:integrations
 **Branch:** `develop-next` (fix-wave worktree)
 **Blocked by:** nothing in code; runs in the fix wave after retest wave 5 (cut at the wave-4 close from ticket 37's question 2).
