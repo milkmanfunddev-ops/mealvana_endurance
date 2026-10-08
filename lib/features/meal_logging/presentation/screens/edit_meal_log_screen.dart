@@ -22,6 +22,7 @@ import '../../domain/meal_analysis_result.dart';
 import '../../domain/meal_component.dart';
 import '../../domain/meal_log.dart';
 import '../../domain/meal_slot.dart';
+import '../../domain/meal_swap.dart';
 import '../../../nutrition_plan/presentation/providers/swap_food_controller.dart';
 import '../providers/meal_log_providers.dart';
 import '../widgets/meal_analysis_skeleton.dart';
@@ -498,8 +499,8 @@ class _EditMealLogScreenState extends ConsumerState<EditMealLogScreen> {
       jsonEncode(components.map((c) => c.toJson()).toList());
 
   /// Opens the shared food-swap picker (returnSelection mode) and maps the
-  /// chosen food + quantity into a replacement [MealComponent]. Returns null if
-  /// the user cancels. Wired to [MealComponentEditor.onRequestSwap] so swiping
+  /// chosen food + quantity into a replacement [MealComponent] through
+  /// [swappedComponent]. Returns null if the user cancels. Wired to [MealComponentEditor.onRequestSwap] so swiping
   /// an item swaps it (mirrors the Activity Detail food rows).
   Future<MealComponent?> _swapComponentFood(MealComponent current) async {
     final selection = await context.push<SwapFoodSelection>(
@@ -513,27 +514,7 @@ class _EditMealLogScreenState extends ConsumerState<EditMealLogScreen> {
     );
     if (selection == null) return null;
 
-    final food = selection.food;
-    final qty = selection.quantity;
-    final qtyLabel = qty == qty.truncateToDouble()
-        ? qty.toInt().toString()
-        : qty.toStringAsFixed(1);
-    final unit = qty == 1
-        ? (food.servingUnit ?? 'serving')
-        : (food.servingUnitPlural ?? food.servingUnit ?? 'servings');
-    double? scale(num? v) => v == null ? null : v.toDouble() * qty;
-
-    return MealComponent(
-      name: food.displayName ?? food.name,
-      portion: '$qtyLabel $unit',
-      calories: food.caloriesPerServing != null
-          ? (food.caloriesPerServing! * qty).round()
-          : null,
-      carbG: scale(food.carbsPerServing),
-      proteinG: scale(food.proteinPerServing),
-      fatG: scale(food.fatPerServing),
-      sodiumMg: scale(food.sodiumMg),
-    );
+    return swappedComponent(selection.food, selection.quantity);
   }
 
   /// Prompts the user before discarding unsaved edits. Returns the chosen

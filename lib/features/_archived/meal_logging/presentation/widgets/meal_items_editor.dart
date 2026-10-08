@@ -1,9 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import '../../domain/meal_analysis_result.dart';
-import '../../domain/portion_quantity.dart';
+import 'package:mealvana_endurance/features/meal_logging/domain/meal_analysis_result.dart';
+import 'package:mealvana_endurance/features/meal_logging/domain/portion_quantity.dart';
 
+/// ARCHIVED (testing-wave develop-2026-10 ticket 38): no screen mounts this
+/// editor, and it folds the chosen Quantity into the portion text, which
+/// [MealComponent] no longer does. Kept per the orphan rule (08-010: archive,
+/// never delete); excluded from analysis like the rest of `_archived`.
+///
 /// An editable list of [MealAnalysisItem]s.
 ///
 /// Exposes an [onItemsChanged] callback so parent widgets can track the current
