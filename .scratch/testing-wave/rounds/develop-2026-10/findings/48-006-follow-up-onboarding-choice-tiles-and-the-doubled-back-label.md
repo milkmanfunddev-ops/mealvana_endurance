@@ -1,7 +1,7 @@
 # 48-006 · Follow-up: onboarding choice tiles and the doubled Back label with VoiceOver
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 48
 - run: w5-20261008T1718Z
 - screen: Tell us about yourself

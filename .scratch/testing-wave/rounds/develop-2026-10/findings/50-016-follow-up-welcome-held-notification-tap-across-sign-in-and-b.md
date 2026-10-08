@@ -1,7 +1,7 @@
 # 50-016 · Follow-up: Welcome — held notification tap across sign-in, and Build My Plan over a live session on a disposable account
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 50
 - run: w5-20261008T1720Z
 - screen: Welcome

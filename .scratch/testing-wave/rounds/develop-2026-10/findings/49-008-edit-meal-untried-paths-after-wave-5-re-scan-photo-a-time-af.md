@@ -1,7 +1,7 @@
 # 49-008 · Edit Meal: untried paths after wave 5 (Re-scan photo, a time after now or across midnight, Discard and Keep editing, Hide details alone)
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 49
 - run: w5-20261008T1719Z
 - screen: Edit Meal

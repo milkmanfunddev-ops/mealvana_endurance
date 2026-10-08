@@ -1,7 +1,7 @@
 # 50-011 · Follow-up: Events untried paths (edit-then-Back, editing or deleting a TrainingPeaks-imported event, then sync)
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 50
 - run: w5-20261008T1720Z
 - screen: Events, Event Details, Edit Event

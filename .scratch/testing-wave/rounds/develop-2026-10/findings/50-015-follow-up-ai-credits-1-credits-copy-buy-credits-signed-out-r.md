@@ -1,7 +1,7 @@
 # 50-015 · Follow-up: AI Credits ('1 Credits' copy, /buy-credits signed out, Restore with nothing to restore)
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 50
 - run: w5-20261008T1720Z
 - screen: AI Credits

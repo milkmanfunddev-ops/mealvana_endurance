@@ -1,7 +1,7 @@
 # 48-001 · Closing the Apple sheet still shows Sign in failed and sends error_reported plus a Sentry warning
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 48
 - run: w5-20261008T1718Z
 - screen: Create Your Account

@@ -1,7 +1,7 @@
 # 50-005 · Welcome renders for a signed-in athlete and offers Build My Plan and Log In over the live session (32-012)
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 50
 - run: w5-20261008T1720Z
 - screen: Welcome

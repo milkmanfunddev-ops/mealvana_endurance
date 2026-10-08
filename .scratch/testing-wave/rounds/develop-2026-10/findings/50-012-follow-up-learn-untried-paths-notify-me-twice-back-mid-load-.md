@@ -1,7 +1,7 @@
 # 50-012 · Follow-up: Learn untried paths (Notify Me twice, Back mid-load, scrub to the end, lessons 1.2 and 1.3)
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 50
 - run: w5-20261008T1720Z
 - screen: Learn, Video player

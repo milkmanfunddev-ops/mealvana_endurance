@@ -1,11 +1,11 @@
 # 48-002 · Resend on Verify your email (upgrade path) says New code sent but GoTrue sends nothing
 
 - kind: bug
-- status: open
+- status: wontfix
 - ticket: 48
 - run: w5-20261008T1718Z
 - screen: Verify your email
-- decision: 
+- decision: wontfix — Lee: the anonymous-upgrade path is being removed and Resend's silent 200 goes with it; noted in .scratch/branch-split/HANDOFF.md as a reason the removal must land
 
 **Steps.**
 1. Welcome → Build My Plan (anonymous session 1c31d98e-1413-4233-92ad-1991d1737355) → onboarding → Sign up with Email →

@@ -1,7 +1,7 @@
 # 49-002 · Describe's field errors are cut to one line with an ellipsis: "like what you at…", "Describe what …"
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 49
 - run: w5-20261008T1719Z
 - screen: Log a Meal (Describe tab)

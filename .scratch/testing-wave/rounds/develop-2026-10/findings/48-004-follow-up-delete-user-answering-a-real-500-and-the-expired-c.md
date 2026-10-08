@@ -1,7 +1,7 @@
 # 48-004 · Follow-up: delete-user answering a real 500, and the expired code at 60 min
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 48
 - run: w5-20261008T1718Z
 - screen: Settings

@@ -1,7 +1,7 @@
 # 50-001 · Backgrounded notification tap after an in-session login is HELD as 'startup not routable' and never routes (retest of 22-001)
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 50
 - run: w5-20261008T1720Z
 - screen: none (resume path; app was on Settings → Connected Apps)

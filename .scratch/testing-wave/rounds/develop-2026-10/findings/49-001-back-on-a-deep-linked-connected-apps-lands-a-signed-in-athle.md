@@ -1,7 +1,7 @@
 # 49-001 · Back on a deep-linked Connected Apps lands a signed-in athlete on Welcome (back fallback go('/') resolves to Welcome)
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 49
 - run: w5-20261008T1719Z
 - screen: Connected Apps

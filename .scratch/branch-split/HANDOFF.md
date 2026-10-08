@@ -242,6 +242,10 @@ develop-next's `duration_source` step above mealplanning's 24 (idempotent `addCo
   anonymous auth user with `users`, `daily_macro_targets` and `onboarding_surveys` rows and Settings offers it no
   Delete Account. The anonymous path is being removed; whoever removes it sweeps those rows on dev and prod
   (`select id from auth.users where is_anonymous` and the cascade through `public.users`).
+- **Resend on the anonymous-upgrade path sends nothing (Lee, wontfix, Finding 48-002, 2026-10-08).** With the
+  address in `email_change` and `email` null, GoTrue answers 200 to `/resend` without sending; the app says "New code
+  sent" and moves the stored send time. It goes away with the path's removal; until then every anonymous-upgrade
+  signup that taps Resend waits for an email that never comes.
 - **Xuan's merges after the develop rewrite (Lee, 2026-10-08).** develop is force-pushed from `develop-next`
   (release/1.29.0 + the included commits). Xuan's bugfix branches must be based on `release/1.29.0` or the new
   `develop`; a branch off the old develop (`develop-pre-split`, `fb4a97e9`) would merge the 53 excluded

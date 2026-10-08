@@ -1,7 +1,7 @@
 # 49-005 · A not-food describe (422, ruled free and expected) is sent to Sentry as a Degraded FunctionException
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 49
 - run: w5-20261008T1719Z
 - screen: Log a Meal (Describe tab)

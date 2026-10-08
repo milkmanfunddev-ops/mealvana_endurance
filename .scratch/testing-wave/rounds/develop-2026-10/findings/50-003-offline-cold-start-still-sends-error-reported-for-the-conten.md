@@ -1,7 +1,7 @@
 # 50-003 · Offline cold start still sends error_reported for the content fetch (x2) and the Learn lesson list (retest of 32-007)
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 50
 - run: w5-20261008T1720Z
 - screen: none (startup chain, offline cold start); Learn

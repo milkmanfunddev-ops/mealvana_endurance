@@ -1,7 +1,7 @@
 # 49-004 · Retest of 31-001 / 31-009: the Timeline reconnect notice never showed (no provider went to requires_reauth), so its words, Reconnect, X and relaunch went unchecked
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 49
 - run: w5-20261008T1719Z
 - screen: Timeline

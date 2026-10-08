@@ -1,7 +1,7 @@
 # 48-005 · Follow-up: consent ON afterwards, Settings Privacy and Mixpanel
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 48
 - run: w5-20261008T1718Z
 - screen: Your privacy

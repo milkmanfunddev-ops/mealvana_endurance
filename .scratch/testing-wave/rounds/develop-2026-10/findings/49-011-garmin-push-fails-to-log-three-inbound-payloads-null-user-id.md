@@ -1,7 +1,7 @@
 # 49-011 · garmin-push fails to log three inbound payloads: null user_id into garmin_health_data (23502) for Garmin user 05fec9ca…
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 49
 - run: w5-20261008T1719Z
 - screen: none

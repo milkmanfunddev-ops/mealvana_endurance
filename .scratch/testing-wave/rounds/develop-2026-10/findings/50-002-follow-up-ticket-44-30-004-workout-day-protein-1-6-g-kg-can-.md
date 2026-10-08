@@ -1,7 +1,7 @@
 # 50-002 · Follow-up: ticket 44 / 30-004 workout-day protein 1.6 g/kg can only be checked in a fresh signup's daily-plan preview, not signed in
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 50
 - run: w5-20261008T1720Z
 - screen: Onboarding → Your daily plan (daily-plan preview); Settings → Nutrition Targets

@@ -223,3 +223,38 @@ One line per Finding decision, made with Lee in the terminal: id, decision, who 
 - 32-007 · closed · retested in ticket 50 (wave 5): four paths converted, content fetch and lesson list not, re-filed as 50-003 · lead, 2026-10-08
 - 30-004 · closed · not reachable signed in (ticket 50, wave 5); carried in 50-002 · lead, 2026-10-08
 - wave 5 lead edge extract (runs/wave-5-edge-logs.txt) · garmin-push 23502 ×3 at 17:28:59Z = 49-011; plan-v3 400s + 22P02 at 17:40Z = 49-012, matched to no wave-5 run (no run was generating a plan then); F4a 'unknown sport other' = known noise (ruled 2026-09-10) · lead, 2026-10-08
+- 48-001 · triaged · fix ticket 55 (ticket 41 leftovers: Apple code 1000 with no account, not-food 422, web-auth CANCELED, offline content/lesson-list fetches are expected outcomes) · Lee, 2026-10-08
+- 49-005 · triaged · fix ticket 55 (ticket 41 leftovers) · Lee, 2026-10-08
+- 50-007 · triaged · fix ticket 55 (ticket 41 leftovers) · Lee, 2026-10-08
+- 50-003 · triaged · fix ticket 55 (ticket 41 leftovers) · Lee, 2026-10-08
+- 49-001 · triaged · fix ticket 56 (/welcome redirects a signed-in, onboarded athlete to /main; the back fallback goes to /main when signed in; every go('/welcome') caller listed) · Lee, 2026-10-08
+- 50-005 · triaged · fix ticket 56 (Welcome signed in) · Lee, 2026-10-08
+- 48-003 · triaged · fix ticket 57 (a login from Verify's hint pops the whole signup stack and goes to /main) · Lee, 2026-10-08
+- 48-002 · wontfix · Lee: the anonymous-upgrade path is being removed and Resend's silent 200 goes with it; noted in .scratch/branch-split/HANDOFF.md as a reason the removal must land · Lee, 2026-10-08
+- 49-010 · triaged · fix ticket 58 (Settings food-preferences save uploads through FoodPreferencesRepository with UTC updated_at; the screen hydrates from the synced rows; one key shape, snake_case, both sides); ticket 39's retest rides on it · Lee, 2026-10-08
+- 50-001 · triaged · fix ticket 59 (notification rule: routability reads the live auth/onboarding state, a held tap is replayed when it becomes routable; unit test on the guard; retest on a simulator and ticket 51) · Lee, 2026-10-08
+- 49-006 · triaged · fix ticket 60 (analytics guards: photo_attached only on a non-null pick; Sync Now tracks a sync event, not connect_started; device_id is the device id) · Lee, 2026-10-08
+- 50-010 · triaged · fix ticket 60 (analytics guards) · Lee, 2026-10-08
+- 49-011 · triaged · fix ticket 61 (garmin-push: an unmapped Garmin user is logged with a warning or keyed by garmin_user_id, never a 23502) · Lee, 2026-10-08
+- 49-012 · triaged · fix ticket 62 (plan_generation_log numeric columns by SQL migration; the 17:40Z 400s investigated from function_edge_logs) · Lee, 2026-10-08
+- 50-006 · triaged · fix ticket 63 (reconnecting a provider unhides every row its disconnect hid, not only fetched matches; the hide is uploaded immediately, not at sign-out) · Lee, 2026-10-08
+- 50-009 · triaged · fix ticket 64 (dev SQL nulls last_sync_error/last_sync_status on inactive rows; reconnect clears requires_reauth) · Lee, 2026-10-08
+- 50-004 · triaged · fix ticket 65 (event_date derived from start_time on every write path; one-off dev SQL re-derives existing rows; a test pins the columns together) · Lee, 2026-10-08
+- 49-002 · triaged · fix ticket 66 (small UI batch: Describe error lines wrap; a removed Review item gets a 3 s Undo and Back with edits asks; CFBundleName = Mealvana in both flavours) · Lee, 2026-10-08
+- 49-003 · triaged · fix ticket 66 (small UI batch) · Lee, 2026-10-08
+- 50-008 · triaged · fix ticket 66 (small UI batch) · Lee, 2026-10-08
+- 48-004 · triaged · retest ticket 67 (auth, consent, Welcome, delete 500), test wave 7 · Lee, 2026-10-08
+- 48-005 · triaged · retest ticket 67 (auth, consent, Welcome, delete 500), test wave 7 · Lee, 2026-10-08
+- 48-006 · triaged · retest ticket 67 (auth, consent, Welcome, delete 500), test wave 7 · Lee, 2026-10-08
+- 50-016 · triaged · retest ticket 67 (auth, consent, Welcome, delete 500), test wave 7 · Lee, 2026-10-08
+- 49-004 · triaged · retest ticket 68 (meal logging, swap picker, reconnect notice), test wave 7 · Lee, 2026-10-08
+- 49-007 · triaged · retest ticket 68 (meal logging, swap picker, reconnect notice), test wave 7 · Lee, 2026-10-08
+- 49-008 · triaged · retest ticket 68 (meal logging, swap picker, reconnect notice), test wave 7 · Lee, 2026-10-08
+- 49-009 · triaged · retest ticket 68 (meal logging, swap picker, reconnect notice), test wave 7 · Lee, 2026-10-08
+- 50-013 · triaged · retest ticket 68 (meal logging, swap picker, reconnect notice), test wave 7 · Lee, 2026-10-08
+- 50-002 · triaged · retest ticket 69 (preview protein via a fresh signup, Events, Learn, Connected Apps, AI Credits), test wave 7 · Lee, 2026-10-08
+- 50-011 · triaged · retest ticket 69 (preview protein via a fresh signup, Events, Learn, Connected Apps, AI Credits), test wave 7 · Lee, 2026-10-08
+- 50-012 · triaged · retest ticket 69 (preview protein via a fresh signup, Events, Learn, Connected Apps, AI Credits), test wave 7 · Lee, 2026-10-08
+- 50-014 · triaged · retest ticket 69 (preview protein via a fresh signup, Events, Learn, Connected Apps, AI Credits), test wave 7 · Lee, 2026-10-08
+- 50-015 · triaged · retest ticket 69 (preview protein via a fresh signup, Events, Learn, Connected Apps, AI Credits), test wave 7 · Lee, 2026-10-08
+- wave 5 scope ruling · fix wave 6 runs all fourteen tickets (52–54 + 55–66), batched by shared files; retest tickets 67–69 run in test wave 7 after the rebuild; ticket 33 (two simulators) still waits · Lee, 2026-10-08

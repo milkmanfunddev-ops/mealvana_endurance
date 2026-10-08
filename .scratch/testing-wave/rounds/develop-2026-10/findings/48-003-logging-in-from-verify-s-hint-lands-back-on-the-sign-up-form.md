@@ -1,7 +1,7 @@
 # 48-003 · Logging in from Verify's hint lands back on the Sign Up form, not the app
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 48
 - run: w5-20261008T1718Z
 - screen: Log In

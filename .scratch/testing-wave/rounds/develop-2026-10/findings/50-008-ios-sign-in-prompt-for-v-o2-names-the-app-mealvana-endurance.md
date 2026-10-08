@@ -1,7 +1,7 @@
 # 50-008 · iOS sign-in prompt for V.O2 names the app 'mealvana_endurance' (CFBundleName) instead of its display name
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 50
 - run: w5-20261008T1720Z
 - screen: Connected Apps (V.O2 Connect → iOS ASWebAuthenticationSession prompt)

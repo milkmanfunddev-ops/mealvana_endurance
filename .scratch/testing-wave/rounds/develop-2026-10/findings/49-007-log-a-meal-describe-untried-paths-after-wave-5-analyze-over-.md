@@ -1,7 +1,7 @@
 # 49-007 · Log a Meal Describe: untried paths after wave 5 (Analyze over 2000 characters, double-tap Analyze, Gallery pick with location, camera denied)
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 49
 - run: w5-20261008T1719Z
 - screen: Log a Meal (Describe tab)

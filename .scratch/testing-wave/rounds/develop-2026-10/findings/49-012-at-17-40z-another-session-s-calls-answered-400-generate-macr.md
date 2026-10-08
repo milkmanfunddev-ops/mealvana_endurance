@@ -1,7 +1,7 @@
 # 49-012 · At 17:40Z another session's calls answered 400 (generate-macros-v4, generate-nutrition-plan-v3, search-public-events, get-weather-forecast) and plan_generation_log inserts failed with 22P02
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 49
 - run: w5-20261008T1719Z
 - screen: none

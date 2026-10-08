@@ -1,7 +1,7 @@
 # 49-009 · Swap picker: untried paths after wave 5 (search, Create Custom Food and Scan barcode in swap mode, editing a swapped item's quantity)
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 49
 - run: w5-20261008T1719Z
 - screen: Add Food (swap picker)

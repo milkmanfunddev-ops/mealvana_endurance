@@ -1,7 +1,7 @@
 # 49-010 · Retest of ticket 39: a Settings Food Preferences save never reaches the food_preferences table (no row written after Save, a relaunch and a resume), so the UTC offset cannot be checked
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 49
 - run: w5-20261008T1719Z
 - screen: Food Preferences
