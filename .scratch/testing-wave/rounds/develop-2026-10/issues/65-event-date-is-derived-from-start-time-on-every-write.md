@@ -113,3 +113,6 @@ Next: /testing-wave develop-2026-10 (fix wave 6)
 4. Dump lines for `docs/dev_schema.txt` and `docs/prod_schema.txt` (I did not edit them; ticket 62 owns them now), in the `events` indexes:
    `CREATE UNIQUE INDEX events_user_date_name_unique ON public.events USING btree (user_id, event_date, event_name);`
 5. `.scratch/branch-split/HANDOFF.md` already carries the prod SQL owed for ticket 65. Optionally add the two script paths and the migration name to that line. I left it alone because tickets 58 and 64 share the line.
+
+**Rulings (Lee, 2026-10-08, at the wave-6 close).**
+- Q3 (Lee, 2026-10-08, at the wave-6 close): fix ticket 72 (form guard + per-row upload); prod index waits for it. Q4: the sweep repoints activities to the kept row (script extended).

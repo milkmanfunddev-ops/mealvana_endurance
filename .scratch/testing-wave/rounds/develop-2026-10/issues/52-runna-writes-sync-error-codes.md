@@ -52,3 +52,6 @@ Fix wave 6 pass A, branch `testing-wave/develop-2026-10/52-53`.
 2. Should "this link didn't return a calendar" get its own code (for example `not_a_calendar`) instead of the generic `unknown` line? It needs the Runna client and the display helper touched, so it would be a small follow-up ticket. Recommended: yes, as a follow-up, because the fix for the athlete (copy a fresh link from Runna) is different from "try again".
 
 Next: /testing-wave develop-2026-10
+
+**Rulings (Lee, 2026-10-08, at the wave-6 close).**
+- Q1+Q2 (Lee, 2026-10-08, at the wave-6 close): fix ticket 73 standardises sync-status writes across all providers; `not_a_calendar` lands there.

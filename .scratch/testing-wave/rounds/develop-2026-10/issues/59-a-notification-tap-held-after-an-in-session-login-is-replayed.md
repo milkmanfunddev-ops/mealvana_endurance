@@ -100,3 +100,5 @@ Next: /testing-wave develop-2026-10 (fix wave 6)
 **Questions for Lee.**
 1. A tap held for a reason that clears without a sign-in or sign-out is replayed in the same session. Examples: an anonymous guest who is not onboarded (`/welcome`) and then finishes onboarding, or a pending signup upgraded in place (uid kept). Is that right, or should only `startup loading` and `/privacy-consent` replay and every other held tap be dropped?
 
+**Rulings (Lee, 2026-10-08, at the wave-6 close).**
+- Q1 (Lee, 2026-10-08, at the wave-6 close): as built; same-session holds replay when the reason clears, any session change drops.

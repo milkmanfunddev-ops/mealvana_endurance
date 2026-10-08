@@ -13,8 +13,8 @@
 -- (created_at, then id, ascending); the rest are removed.
 --
 -- carb_loading_plans.event_id references events ON DELETE CASCADE, so a
--- removed row's plans would be deleted with it. Step 2 repoints them to the
--- kept row first. Nothing else references events (pg_constraint, dev and prod,
+-- removed row's plans would be deleted with it. Step 2 repoints them, and any
+-- activity linked to a removed row (activities.event_id, no FK), to the kept row first. Nothing else references events (pg_constraint, dev and prod,
 -- 2026-10-08).
 --
 -- Expected at 2026-10-08 (read-only listing, before the re-derive, which
@@ -82,6 +82,12 @@ select case when rn = 1 then 'keep' else 'remove' end as action,
 --    set event_id = s.keep_id
 --   from events_sweep s
 --  where c.event_id = s.remove_id;
+--
+-- Lee, 2026-10-08 (ticket 65 Q4): an activity linked to a removed row follows it to the kept row.
+-- update activities a
+--    set event_id = s.keep_id
+--   from events_sweep s
+--  where a.event_id = s.remove_id;
 --
 -- delete from events e
 --  using events_sweep s

@@ -1,7 +1,7 @@
 # 58-001 · Onboarding saves allergy avoids then diet avoids each with mergeMode false, so the diet save deletes the allergy rows locally
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 58
 - run: w6-lead
 - screen: Onboarding (allergies, then diet)
@@ -25,4 +25,4 @@ The diet save replaces the allergy rows locally, so only the diet avoids remain 
 > 
 
 **Triage.**
-
+fix ticket 71 · Lee, 2026-10-08: both avoid sets survive onboarding.

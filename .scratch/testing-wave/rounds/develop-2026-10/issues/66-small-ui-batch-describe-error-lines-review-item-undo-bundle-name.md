@@ -88,3 +88,5 @@ Next: /testing-wave develop-2026-10 (fix wave 6)
 - The "Log this meal after edits" test lets the Undo bar time out before tapping, because the floating bar covers the button at 390 × 844 (Question 2).
 - Retest box stays open for wave 7 (ticket 68 checks 4, 5, 9; the V.O2 prompt needs the rebuild).
 
+**Rulings (Lee, 2026-10-08, at the wave-6 close).**
+- Q2 (Lee, 2026-10-08, at the wave-6 close): accepted, wontfix.
