@@ -18,6 +18,12 @@ import '../../domain/auth_exceptions.dart';
 import '../../domain/pending_signup.dart';
 import 'verify_email_screen.dart';
 
+/// What the email-signup route pops besides `true` (account created and
+/// verified) and null (left): the athlete logged in to an existing account
+/// instead, from Verify's hint or the account-exists dialog (ticket 57,
+/// 48-003). The screen beneath finishes it as a login, not a signup.
+enum EmailSignupResult { loggedIn }
+
 /// Email Signup Screen
 /// Allows users to create an account with email and password
 /// Links email to existing anonymous account (preserves data)
@@ -144,7 +150,7 @@ class _EmailSignupScreenState extends ConsumerState<EmailSignupScreen> {
     if (!success && mounted) {
       final state = ref.read(postOnboardingAuthControllerProvider);
       if (state.error case final EmailVerificationRequiredException pending) {
-        final verified = await _openVerify(
+        final exit = await _openVerify(
           email: email,
           // A fresh signup's user, so leaving without a code can discard
           // it (121-003); the upgrade path keeps its uid.
@@ -156,7 +162,11 @@ class _EmailSignupScreenState extends ConsumerState<EmailSignupScreen> {
           // on an anonymous user whose email is still unconfirmed.
           pendingPassword: isAnonymousUpgrade ? password : null,
         );
-        if (verified != true) {
+        if (exit == VerifyEmailExit.logIn) {
+          await _logInInstead(email);
+          return;
+        }
+        if (exit != VerifyEmailExit.verified) {
           // User backed out to change address — leave them on the form. The
           // anonymous account is untouched and still fully usable.
           return;
@@ -194,15 +204,16 @@ class _EmailSignupScreenState extends ConsumerState<EmailSignupScreen> {
     }
   }
 
-  /// Verify your email for a code that went out; true once it is used.
-  Future<bool?> _openVerify({
+  /// Verify your email for a code that went out; says which way it was left
+  /// (null for a system back).
+  Future<VerifyEmailExit?> _openVerify({
     required String email,
     required OtpType otpType,
     String? pendingUserId,
     String? pendingPassword,
     DateTime? codeSentAt,
   }) {
-    return Navigator.of(context).push<bool>(
+    return Navigator.of(context).push<VerifyEmailExit>(
       MaterialPageRoute(
         builder: (_) => VerifyEmailScreen(
           email: email,
@@ -232,6 +243,25 @@ class _EmailSignupScreenState extends ConsumerState<EmailSignupScreen> {
     context.pop(true);
   }
 
+  /// Log In for [email], opened from here so its result comes back to this
+  /// screen (ticket 57, 48-003): a login hands [EmailSignupResult.loggedIn]
+  /// to the screen beneath, which finishes it as a login. Log In left
+  /// without signing in: stay on the form.
+  ///
+  /// This screen gone meanwhile (a system back while Log In is open): the
+  /// result is dropped; the athlete is signed in on whatever screen is left,
+  /// as a login with no parent always was.
+  Future<void> _logInInstead(String? email) async {
+    if (!mounted) return;
+    final loggedIn = await context.push<bool>(
+      '/auth/email-login',
+      extra: email == null ? null : {'email': email},
+    );
+    if (loggedIn == true && mounted) {
+      context.pop(EmailSignupResult.loggedIn);
+    }
+  }
+
   /// A signup quit on Verify your email (ticket 42): reopen Verify for the
   /// code the record names, with the upgrade path's deferred password from
   /// secure storage. Used: on as after a fresh code. Left: stay on the form.
@@ -240,14 +270,22 @@ class _EmailSignupScreenState extends ConsumerState<EmailSignupScreen> {
         .read(postOnboardingAuthControllerProvider.notifier)
         .resumedPassword(record);
     if (!mounted) return;
-    final verified = await _openVerify(
+    final exit = await _openVerify(
       email: record.email,
       otpType: record.isEmailChange ? OtpType.emailChange : OtpType.signup,
       pendingUserId: record.isEmailChange ? null : record.pendingUserId,
       pendingPassword: password,
       codeSentAt: record.codeSentAt.toLocal(),
     );
-    if (verified == true && mounted) _finishCreated();
+    if (!mounted) return;
+    switch (exit) {
+      case VerifyEmailExit.verified:
+        _finishCreated();
+      case VerifyEmailExit.logIn:
+        await _logInInstead(record.email);
+      case VerifyEmailExit.differentEmail || null:
+        break;
+    }
   }
 
   /// Create Account waits [seconds] (30-008). Across a rebuild the timer
@@ -299,8 +337,9 @@ class _EmailSignupScreenState extends ConsumerState<EmailSignupScreen> {
           TextButton(
             onPressed: () {
               Navigator.of(context).pop();
-              // Navigate to email login screen
-              context.push('/auth/email-login');
+              // Log In from here, so a login reaches the screen beneath
+              // (ticket 57).
+              unawaited(_logInInstead(null));
             },
             style: TextButton.styleFrom(foregroundColor: AppColors.electrolyte),
             child: Text(
