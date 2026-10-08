@@ -3,8 +3,13 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../../shared/database/app_database.dart' hide CarbLoadingFood;
 import '../../../shared/database/database_provider.dart';
+import '../../../shared/providers/user_id_provider.dart';
 import '../../../shared/utils/search_token_matcher.dart';
 import '../../meal_logging/domain/meal_component.dart';
+// The plain Provider<FoodRepository>; a differently-typed generated
+// `foodRepositoryProvider` also exists elsewhere, hence the explicit `show`.
+import '../../nutrition_plan/data/food_repository.dart'
+    show foodRepositoryProvider;
 import '../data/carb_loading_food_repository.dart';
 import '../domain/carb_loading_food.dart';
 import '../domain/meal_type.dart';
@@ -101,10 +106,18 @@ class CarbFoodResolution {
 /// would surface. Null = unresolved: the caller falls back to the search
 /// handoff, and the seam test enumerates every such curated row as a data
 /// finding (never a silent fallback).
+///
+/// Two passes, in order: the exact normalized-name pass (G26) and then the
+/// token pass (G25). [exactOnly] stops after the first — the provider uses
+/// it to tell "the row is missing from the mirror" apart from "the token
+/// pass found a sibling", so a curated row whose exact food was seeded
+/// server-side AFTER this device's first sync triggers a catalog re-sync
+/// instead of silently landing on a wrong food ('Rice' → 'Rice pudding').
 Future<CarbFoodResolution?> resolveCarbRecommendation(
   AppDatabase database,
-  String query,
-) async {
+  String query, {
+  bool exactOnly = false,
+}) async {
   final tokens = tokenizeSearchQuery(query);
   if (tokens.isEmpty) return null;
   final rows =
@@ -121,7 +134,7 @@ Future<CarbFoodResolution?> resolveCarbRecommendation(
     ...rows.where(
       (f) => normalizeSearchText(f.name ?? '') == normalizedQuery,
     ),
-    ...rows,
+    if (!exactOnly) ...rows,
   ];
   for (final food in ordered) {
     final searchText = [
@@ -152,8 +165,34 @@ Future<CarbFoodResolution?> resolveCarbRecommendation(
 }
 
 /// Provider face of [resolveCarbRecommendation] for the slot page's tap.
+///
+/// Exact hit → done. Otherwise the mirror may simply predate a server-side
+/// catalog seed (the `foods` sync only ever runs on an EMPTY mirror), so
+/// re-sync the catalog once ([FoodRepository.refreshAfterMiss], throttled)
+/// and run the FULL resolver again. Offline, throttled, or no signed-in
+/// user → the refresh is a no-op and the full resolver (exact then token,
+/// the ratified G25/G26 behaviour) still runs exactly once, so nothing
+/// regresses: the token pass stays the fallback, and null still hands off
+/// to search.
 @riverpod
 Future<CarbFoodResolution?> carbRecommendationResolution(
   Ref ref,
   String query,
-) => resolveCarbRecommendation(ref.watch(appDatabaseProvider), query);
+) async {
+  final database = ref.watch(appDatabaseProvider);
+  final exact = await resolveCarbRecommendation(
+    database,
+    query,
+    exactOnly: true,
+  );
+  if (exact != null) return exact;
+
+  try {
+    final userId = await ref.read(userIdProvider.future);
+    await ref.read(foodRepositoryProvider).refreshAfterMiss(userId);
+  } catch (_) {
+    // No user profile yet, or a refresh failure the repository did not
+    // swallow: the local mirror is untouched, resolve against it as-is.
+  }
+  return resolveCarbRecommendation(database, query);
+}
