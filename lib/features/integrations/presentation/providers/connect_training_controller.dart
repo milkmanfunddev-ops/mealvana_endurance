@@ -923,6 +923,8 @@ class ConnectTrainingController extends _$ConnectTrainingController {
       updateState: () => state.value!.copyWith(
         isFinalSurgeConnected: false,
         finalSurgeAthleteName: null,
+        // Ticket 47 (32-005): a disconnected card shows Connect at once.
+        finalSurgeNeedsReauth: false,
       ),
     );
   }
@@ -961,6 +963,8 @@ class ConnectTrainingController extends _$ConnectTrainingController {
       updateState: () => state.value!.copyWith(
         isGarminConnected: false,
         clearGarminAthleteName: true,
+        // Ticket 47 (32-005): a disconnected card shows Connect at once.
+        garminNeedsReauth: false,
       ),
     );
   }
@@ -1205,6 +1209,8 @@ class ConnectTrainingController extends _$ConnectTrainingController {
       updateState: () => state.value!.copyWith(
         isVdotConnected: false,
         clearVdotAthleteName: true,
+        // Ticket 47 (32-005): a disconnected card shows Connect at once.
+        vdotNeedsReauth: false,
       ),
     );
   }
@@ -1907,6 +1913,9 @@ class ConnectTrainingController extends _$ConnectTrainingController {
               clearSyncingProvider: true,
               importProgress: 1.0,
               importedWorkoutsCount: newWorkouts,
+              // Ticket 47 (32-006): the card's "Last synced" updates at once;
+              // the service stamped the row at the same moment.
+              finalSurgeLastSyncAt: DateTime.now(),
               finalSurgeNeedsReauth: false,
               isNetworkError: false,
               clearErrorMessage: true,
@@ -1916,6 +1925,8 @@ class ConnectTrainingController extends _$ConnectTrainingController {
               clearSyncingProvider: true,
               importProgress: 1.0,
               importedWorkoutsCount: newWorkouts,
+              // Ticket 47 (32-006): see the Final Surge branch above.
+              trainingPeaksLastSyncAt: DateTime.now(),
               trainingPeaksNeedsReauth: false,
               isNetworkError: false,
               clearErrorMessage: true,
@@ -2057,6 +2068,8 @@ class ConnectTrainingController extends _$ConnectTrainingController {
         trainingPeaksAthleteName: null,
         hasNextEvent: false,
         nextEventName: null,
+        // Ticket 47 (32-005): a disconnected card shows Connect at once.
+        trainingPeaksNeedsReauth: false,
       ),
     );
   }

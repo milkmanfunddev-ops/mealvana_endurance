@@ -14,9 +14,13 @@ import 'package:mealvana_endurance/features/activities/data/activities_repositor
 import 'package:mealvana_endurance/features/activities/domain/activity.dart'
     as domain;
 import 'package:mealvana_endurance/features/integrations/application/change_detection_service.dart';
+import 'package:mealvana_endurance/features/integrations/data/integrations_repository.dart';
+import 'package:mealvana_endurance/features/integrations/domain/integration.dart';
+import 'package:mealvana_endurance/features/integrations/domain/integration_exceptions.dart';
 import 'package:mealvana_endurance/shared/database/app_database.dart';
 import 'package:mealvana_endurance/shared/domain/activity_type.dart';
 
+import '../../helpers/fakes/fake_postgrest.dart';
 import '../../helpers/fakes/fake_supabase_client.dart';
 import '../../helpers/fakes/recording_report.dart';
 import '../../helpers/widget_test_harness.dart';
@@ -125,7 +129,8 @@ void main() {
     );
   });
 
-  test('DI-9: deactivating an integration clears every token field', () async {
+  test('DI-9: deactivating an integration clears every token field, and '
+      'the sync outcome with it (ticket 47, 32-005)', () async {
     await db.into(db.integrationsTable).insert(
           IntegrationsTableCompanion.insert(
             id: const Value('int-1'),
@@ -135,23 +140,23 @@ void main() {
             refreshToken: const Value('refresh-live'),
             tokenExpiresAt: Value(DateTime(2026, 9, 13)),
             providerAthleteId: 'ath-1',
+            // As ticket 37 leaves a refused refresh on the row.
+            lastSyncStatus: const Value(requiresReauthStatus),
+            lastSyncError: const Value(reauthRequiredCode),
             createdAt: DateTime(2026, 9, 1),
             updatedAt: DateTime(2026, 9, 1),
           ),
         );
 
-    // The repository write disconnect funnels through (Q-INT8: tokens
-    // cleared; integrations is the sole custodian).
-    await (db.update(db.integrationsTable)
-          ..where(
-            (t) => t.userId.equals(userId) & t.provider.equals('final_surge'),
-          ))
-        .write(const IntegrationsTableCompanion(
-          isActive: Value(false),
-          accessToken: Value(''),
-          refreshToken: Value(null),
-          tokenExpiresAt: Value(null),
-        ));
+    // The real repository write every OAuth disconnect funnels through
+    // (Q-INT8: tokens cleared; integrations is the sole custodian). No
+    // session, so the eager push is skipped and noted; the row stays dirty.
+    final repository = IntegrationsRepository(
+      database: db,
+      supabase: FakePostgrest().client,
+      report: RecordingReport(),
+    );
+    await repository.deactivateIntegration(userId, 'final_surge');
 
     final row = await (db.select(db.integrationsTable)
           ..where((t) => t.id.equals('int-1')))
@@ -160,6 +165,24 @@ void main() {
     expect(row.accessToken, isEmpty);
     expect(row.refreshToken, isNull);
     expect(row.tokenExpiresAt, isNull);
+    expect(row.lastSyncStatus, isNull);
+    expect(row.lastSyncError, isNull);
+    expect(row.needsUpload, isTrue);
+  });
+
+  test('an inactive row never needs a reconnect, even with requires_reauth '
+      'stored (ticket 47: rows written before disconnect cleared it)', () {
+    IntegrationModel row({required bool isActive}) => IntegrationModel(
+          userId: userId,
+          provider: 'training_peaks',
+          accessToken: '',
+          providerAthleteId: 'ath-1',
+          isActive: isActive,
+          lastSyncStatus: requiresReauthStatus,
+          lastSyncError: reauthRequiredCode,
+        );
+    expect(row(isActive: false).needsReconnect, isFalse);
+    expect(row(isActive: true).needsReconnect, isTrue);
   });
 
   test('a matching re-sync REVIVES a hidden row (id-keyed), while a '

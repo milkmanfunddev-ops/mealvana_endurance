@@ -359,6 +359,12 @@ class IntegrationsRepository with SyncableRepository {
             accessToken: const Value(''),
             refreshToken: const Value(null),
             tokenExpiresAt: const Value(null),
+            // Ticket 47 (32-005): disconnect also wipes the sync outcome, so
+            // a refused connection does not come back as "needs reconnect".
+            // Code-agnostic: clears ticket 37's `reauth_required` and any
+            // legacy text alike. Reconnect writes `pending`.
+            lastSyncStatus: const Value(null),
+            lastSyncError: const Value(null),
             needsUpload: const Value(true),
             updatedAt: Value(DateTime.now()),
           ),

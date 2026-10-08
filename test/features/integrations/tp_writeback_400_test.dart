@@ -27,6 +27,7 @@ import 'package:mealvana_endurance/features/integrations/data/http_retry_client.
 import 'package:mealvana_endurance/features/integrations/data/integrations_repository.dart';
 import 'package:mealvana_endurance/features/integrations/data/training_peaks_api_client.dart';
 import 'package:mealvana_endurance/features/integrations/domain/integration.dart';
+import 'package:mealvana_endurance/features/integrations/domain/integration_exceptions.dart';
 import 'package:mealvana_endurance/features/nutrition_plan/domain/nutrition_plan.dart';
 import 'package:mealvana_endurance/shared/database/app_database.dart'
     hide Activity;
@@ -77,16 +78,20 @@ Map<String, dynamic> _tpWorkout(String workoutDay) => {
 
 /// Fake transport for TP's API and PostgREST.
 class _Transport {
-  _Transport({required this.workoutDay});
+  _Transport({required this.workoutDay, this.putStatus = 400});
 
   final String workoutDay;
+  final int putStatus;
+  final List<http.Request> tpGets = [];
   final List<http.Request> tpPuts = [];
   final List<Map<String, dynamic>> ledgerCloses = [];
+  final List<http.Request> ledgerDeletes = [];
 
   late final http.Client client = MockClient((req) async {
     final path = req.url.path;
     if (req.url.host.contains('trainingpeaks.com')) {
       if (req.method == 'GET' && path == '/v2/workouts/id/$_workoutId') {
+        tpGets.add(req);
         return http.Response(
           jsonEncode(_tpWorkout(workoutDay)),
           200,
@@ -95,6 +100,9 @@ class _Transport {
       }
       if (req.method == 'PUT' && path == '/v2/workouts/plan/$_workoutId') {
         tpPuts.add(req);
+        if (putStatus != 400) {
+          return http.Response(req.body, putStatus, request: req);
+        }
         return http.Response(_tp400Body, 400, request: req);
       }
     }
@@ -112,6 +120,7 @@ class _Transport {
         return http.Response('', 204, request: req);
       }
       if (req.method == 'DELETE') {
+        ledgerDeletes.add(req);
         return http.Response('', 204, request: req);
       }
     }
@@ -155,8 +164,33 @@ NutritionPlan _plan() => NutritionPlan(
 void main() {
   setUpAll(() => registerFallbackValue(DateTime(2026)));
 
-  Future<({TpWritebackService service, RecordingReport report, AppDatabase db})>
-  build(_Transport transport, {required DateTime now}) async {
+  /// The row as the server sends it for a live connection.
+  IntegrationModel liveRow() => IntegrationModel(
+    id: 'i-tp',
+    userId: 'u1',
+    provider: 'training_peaks',
+    accessToken: 'tok',
+    refreshToken: 'refresh',
+    tokenExpiresAt: DateTime.now().add(const Duration(minutes: 59)),
+    providerAthleteId: '54321',
+    isActive: true,
+    lastSyncStatus: 'success',
+  );
+
+  Future<
+    ({
+      TpWritebackService service,
+      RecordingReport report,
+      AppDatabase db,
+      MockTpOAuthService oauth,
+    })
+  >
+  build(
+    _Transport transport, {
+    required DateTime now,
+    IntegrationModel? row,
+    bool useLiveRow = true,
+  }) async {
     SharedPreferences.setMockInitialValues({});
     final prefs = PreferencesService(await SharedPreferences.getInstance());
     final db = AppDatabase.forTesting(NativeDatabase.memory());
@@ -164,6 +198,10 @@ void main() {
     final report = RecordingReport();
     final oauth = MockTpOAuthService();
     when(() => oauth.getValidAccessToken(any())).thenAnswer((_) async => 'tok');
+    // Ticket 47: handleDisconnect reads the row before any token call.
+    when(
+      () => oauth.getIntegration(any()),
+    ).thenAnswer((_) async => useLiveRow ? (row ?? liveRow()) : row);
     final api = TrainingPeaksApiClient(
       clientId: 'mealvana',
       clientSecret: 'secret',
@@ -187,7 +225,24 @@ void main() {
       report: report,
       clock: () => now,
     );
-    return (service: service, report: report, db: db);
+    return (service: service, report: report, db: db, oauth: oauth);
+  }
+
+  Future<void> seedLedger(AppDatabase db, {required int count}) async {
+    for (var i = 0; i < count; i++) {
+      await db
+          .into(db.tpWritebackTable)
+          .insert(
+            TpWritebackTableCompanion(
+              userId: const Value('u1'),
+              activityId: Value('a-$i'),
+              tpWorkoutId: Value(int.parse(_workoutId) + i),
+              planHash: const Value('h'),
+              pushedAt: Value(DateTime(2026, 9, 20)),
+              status: const Value('active'),
+            ),
+          );
+    }
   }
 
   group(
@@ -264,6 +319,92 @@ void main() {
       expect(h.report.degradeds, isEmpty);
       expect(h.report.notes.single.data, containsPair('op', 'disconnect'));
       expect(await h.db.select(h.db.tpWritebackTable).get(), isEmpty);
+    });
+  });
+
+  group('ticket 47 (32-005): disconnect of a refused connection', () {
+    const skipNote =
+        'TP write-back: disconnect strip skipped; connection needs reconnect';
+
+    test('a requires_reauth row makes no token or TP call, notes the skip, '
+        'and still purges the local log and the server ledger', () async {
+      final transport = _Transport(workoutDay: '2026-09-25T00:00:00');
+      // As 37 leaves a refused refresh on the row.
+      final refused = IntegrationModel(
+        id: 'i-tp',
+        userId: 'u1',
+        provider: 'training_peaks',
+        accessToken: 'expired',
+        refreshToken: 'dead-refresh',
+        tokenExpiresAt: DateTime.now().subtract(const Duration(hours: 2)),
+        providerAthleteId: '54321',
+        isActive: true,
+        lastSyncStatus: requiresReauthStatus,
+        lastSyncError: reauthRequiredCode,
+      );
+      final h = await build(
+        transport,
+        now: DateTime(2026, 9, 26, 12),
+        row: refused,
+      );
+      await seedLedger(h.db, count: 2);
+
+      await h.service.handleDisconnect(userId: 'u1');
+
+      verifyNever(() => h.oauth.getValidAccessToken(any()));
+      expect(transport.tpGets, isEmpty, reason: 'no getWorkoutById');
+      expect(transport.tpPuts, isEmpty, reason: 'no updatePlannedWorkout');
+      expect(h.report.faults, isEmpty);
+      expect(h.report.degradeds, isEmpty);
+      final note = h.report.notes.singleWhere((n) => n.message == skipNote);
+      expect(note.data, containsPair('entries', 2));
+      expect(await h.db.select(h.db.tpWritebackTable).get(), isEmpty);
+      expect(transport.ledgerDeletes, hasLength(1));
+    });
+
+    for (final (label, rowOf) in <(String, IntegrationModel? Function())>[
+      ('a missing row', () => null),
+      ('an inactive row', () => liveRow().copyWith(isActive: false)),
+    ]) {
+      test('$label is skipped the same way', () async {
+        final row = rowOf();
+        final transport = _Transport(workoutDay: '2026-09-25T00:00:00');
+        final h = await build(
+          transport,
+          now: DateTime(2026, 9, 26, 12),
+          row: row,
+          useLiveRow: row != null,
+        );
+        await seedLedger(h.db, count: 1);
+
+        await h.service.handleDisconnect(userId: 'u1');
+
+        verifyNever(() => h.oauth.getValidAccessToken(any()));
+        expect(transport.tpGets, isEmpty);
+        expect(h.report.notes.map((n) => n.message), contains(skipNote));
+        expect(await h.db.select(h.db.tpWritebackTable).get(), isEmpty);
+        expect(transport.ledgerDeletes, hasLength(1));
+      });
+    }
+
+    test('a live row still strips the block as before', () async {
+      final transport = _Transport(
+        workoutDay: '2026-09-25T00:00:00',
+        putStatus: 200,
+      );
+      final h = await build(transport, now: DateTime(2026, 9, 26, 12));
+      await seedLedger(h.db, count: 1);
+
+      await h.service.handleDisconnect(userId: 'u1');
+
+      verify(() => h.oauth.getValidAccessToken('u1')).called(1);
+      expect(transport.tpGets, hasLength(1));
+      expect(transport.tpPuts, hasLength(1));
+      final put = jsonDecode(transport.tpPuts.single.body) as Map;
+      expect(put['Description'], 'Easy aerobic');
+      expect(h.report.notes.map((n) => n.message), isNot(contains(skipNote)));
+      expect(await h.db.select(h.db.tpWritebackTable).get(), isEmpty);
+      expect(transport.ledgerDeletes, hasLength(1));
     });
   });
 
