@@ -1,6 +1,6 @@
 # 21: Signup and verify-email fixes
 
-**Status:** in-progress — fixed, awaiting retest (wave 2, 2026-10-07)
+**Status:** done 2026-10-08: 01-003, 01-005, 01-009 passed in ticket 30 (wave 3); 01-002's logic is right and its raw key is 30-001 (content keys, separate cause)
 **Labels:** fix, round:develop-2026-10, area:auth
 **Branch:** `develop-next` (fix-wave worktree)
 **Blocked by:** 29 (the backport ticket runs first, alone, because its Touches cross every area).

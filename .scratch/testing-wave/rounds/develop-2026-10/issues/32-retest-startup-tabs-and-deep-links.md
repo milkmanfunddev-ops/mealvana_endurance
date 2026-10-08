@@ -1,6 +1,6 @@
 # 32: Retest: startup, tabs and deep links
 
-**Status:** in-progress (wave 3, 2026-10-08)
+**Status:** done 2026-10-08 (wave 3 run complete; see runs/32/notes.md)
 **Labels:** retest, round:develop-2026-10, area:startup, read-only
 **Branch:** `develop-next` (worktree per ticket, branched from the round's base after the fix wave lands)
 **Source:** TRIAGE.md rulings of 2026-10-07: followups 08-016 to 08-023; fix retests for ticket 28

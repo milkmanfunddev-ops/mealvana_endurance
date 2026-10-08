@@ -1,6 +1,6 @@
 # 25: Edge-function logs through the Supabase MCP; delete `scripts/edge_logs.sh`
 
-**Status:** in-progress — fixed, awaiting retest (wave 2, 2026-10-07)
+**Status:** done 2026-10-08: wave 3's three runs and the lead's wave extract all read edge logs through the Supabase MCP
 **Labels:** fix, round:develop-2026-10, area:harness
 **Branch:** `develop-next` (fix-wave worktree)
 **Blocked by:** none (no code overlap)

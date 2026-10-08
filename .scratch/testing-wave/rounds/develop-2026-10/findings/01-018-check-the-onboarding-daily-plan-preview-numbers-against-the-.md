@@ -1,7 +1,7 @@
 # 01-018 · Check the onboarding daily plan preview numbers against the nutrition SSOT
 
 - kind: followup-test
-- status: triaged
+- status: closed
 - ticket: 01
 - run: w1-20261007T1103Z
 - screen: Your daily plan
@@ -25,3 +25,5 @@ Not judged in this run. Seen: 154 lb (70 kg) → carbs 9.5 g/kg (666 g), protein
 
 **Triage.**
 retest ticket 30 (retest: auth and account), wave 3 (Lee: all 27 followups into four retest tickets)
+
+**Closed (wave 3, 2026-10-08).** run in ticket 30; the one conflict is 30-004

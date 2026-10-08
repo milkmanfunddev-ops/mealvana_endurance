@@ -1,7 +1,7 @@
 # 01-014 · Verify your email: other paths (different email, leave mid-verify, expired code, relaunch)
 
 - kind: followup-test
-- status: triaged
+- status: closed
 - ticket: 01
 - run: w1-20261007T1103Z
 - screen: Verify your email
@@ -28,3 +28,5 @@ Not run (look-around).
 
 **Triage.**
 retest ticket 30 (retest: auth and account), wave 3 (Lee: all 27 followups into four retest tickets)
+
+**Closed (wave 3, 2026-10-08).** run in ticket 30; what failed is re-filed as 30-007 and 30-008; part (e) expired code not seen live

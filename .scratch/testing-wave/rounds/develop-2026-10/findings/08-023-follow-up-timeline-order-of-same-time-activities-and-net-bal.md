@@ -1,7 +1,7 @@
 # 08-023 · Follow-up: Timeline order of same-time activities and net balance change between launches
 
 - kind: followup-test
-- status: triaged
+- status: closed
 - ticket: 08
 - run: w1-20261007T1105Z
 - screen: Timeline
@@ -26,3 +26,5 @@ Same-time rows keep one order; the balance moves only for a known reason.
 
 **Triage.**
 retest ticket 32 (retest: startup, tabs, deep links), wave 3 (Lee: all 27 followups into four retest tickets)
+
+**Closed (wave 3, 2026-10-08).** retest passed in ticket 32 (runs/32/notes.md)

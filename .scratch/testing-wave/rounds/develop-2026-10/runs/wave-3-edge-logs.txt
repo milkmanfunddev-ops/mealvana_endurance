@@ -1,0 +1,17 @@
+# Wave 3 edge-log extract, dev project vlmtsdzpnjnavdgytcmi, window 2026-10-08T12:50Z–13:40Z
+# Pulled by the lead through the Supabase MCP query_logs (function_logs + function_edge_logs).
+
+function_edge_logs with response.status_code >= 400: none.
+
+function_logs at level warn/error or mentioning error/exception/failed (80 rows):
+- sessionCost: unknown sport "other" — F4a zero-with-estimate-flag (warning) ×~50, at 12:58:03, 12:58:08,
+  13:07:21, 13:07:25, 13:25:29, 13:30:29. Known: F4a ruling 2026-09-10; fires on the test account's
+  "other" activities during 32's and 31's sign-ins and syncs. Known noise, no Finding.
+- [garmin-push] OneSignal accepted the request but reached no device for user c2c7e005-… (recipients=0),
+  13:00:46 (warning). Not a wave account; the real-zero case ticket 25 accepted. Known noise, no Finding.
+- [garmin-push] Processing complete … errors:0 (info) throughout: Garmin pushes for other users, no errors.
+- "Errors: 0" (info) ×6.
+
+Matched to runs: 12:58 and 13:07 = 31's and 32's test@test.com sign-ins (plan refresh); 13:25 and 13:30 =
+32's TrainingPeaks reconnect and relaunch. Nothing in the window belongs to 30 (new accounts, no "other"
+activities), and 31-013's photo call (13:1x) has no function_edge_logs row at all, which is 31-013's point.

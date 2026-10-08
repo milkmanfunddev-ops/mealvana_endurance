@@ -1,7 +1,7 @@
 # 08-004 · Seven deep-linked route-only screens have no Back or close control at all
 
 - kind: bug
-- status: triaged
+- status: closed
 - ticket: 08
 - run: w1-20261007T1105Z
 - screen: Sport Settings, Log a Meal, Photo, Describe to Mealvana, Recent & Saved, Choose a Recipe, AI Credits
@@ -31,3 +31,5 @@ None shows a Back or close control (idb element lists: heading only; no Button '
 
 **Triage.**
 fix ticket (orphans): comment out the routes and move the screens to _archived, never delete (Lee): /pro, /settings/sport-settings, /settings/food-preferences-consolidated, /settings/food-preferences/add-food, the five standalone /meal-log/* screens, plus the never-built classes. Carefully: mealplanning and a paywall are coming, so /pro will likely be needed again ; /buy-credits and the meal-log screens' Back: see the orphan ticket; /buy-credits itself is ruled separately below
+
+**Closed (wave 3, 2026-10-08).** retest passed in ticket 32 (runs/32/notes.md)

@@ -1,7 +1,7 @@
 # 01-017 · Welcome and onboarding: back navigation, skipped optional steps, accessibility labels
 
 - kind: followup-test
-- status: triaged
+- status: closed
 - ticket: 01
 - run: w1-20261007T1103Z
 - screen: Welcome
@@ -29,3 +29,5 @@ Not run (look-around), apart from the element-list observations in step 5.
 
 **Triage.**
 retest ticket 30 (retest: auth and account), wave 3 (Lee: all 27 followups into four retest tickets)
+
+**Closed (wave 3, 2026-10-08).** run in ticket 30; re-filed as 30-009 and 30-010

@@ -1,7 +1,7 @@
 # 01-002 · A wrong signup code is reported as "That code has expired"
 
 - kind: bug
-- status: triaged
+- status: closed
 - ticket: 01
 - run: w1-20261007T1103Z
 - screen: Verify your email
@@ -28,3 +28,5 @@ The console shows the same text as `InvalidVerificationCodeException`, and it wa
 
 **Triage.**
 fix ticket: a wrong code gets its own message; expired stays for expired
+
+**Closed (wave 3, 2026-10-08).** the wrong-code reason is right (ticket 21); the raw key it shows is 30-001 (content keys), which supersedes it

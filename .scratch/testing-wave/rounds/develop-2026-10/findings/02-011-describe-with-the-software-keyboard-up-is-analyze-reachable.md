@@ -1,7 +1,7 @@
 # 02-011 · Describe with the software keyboard up: is Analyze reachable
 
 - kind: followup-test
-- status: triaged
+- status: closed
 - ticket: 02
 - run: w1-20261007T1103Z
 - screen: Log a Meal (Describe tab)
@@ -26,3 +26,5 @@ Analyze stays reachable (scrolls above the keyboard) or the keyboard has a Done 
 
 **Triage.**
 retest ticket 31 (retest: meal logging), wave 3 (Lee: all 27 followups into four retest tickets)
+
+**Closed (wave 3, 2026-10-08).** retest passed in ticket 31 (runs/31/notes.md, PASS 02-011)

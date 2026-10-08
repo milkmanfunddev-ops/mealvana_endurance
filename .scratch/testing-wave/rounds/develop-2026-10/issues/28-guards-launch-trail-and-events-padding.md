@@ -1,6 +1,6 @@
 # 28: Guards batch: the dev launch-trail dialog, and Events padding
 
-**Status:** in-progress — fixed, awaiting retest (wave 2, 2026-10-07)
+**Status:** done 2026-10-08: 08-007, 01-011 and 08-008 passed in ticket 32 (wave 3)
 **Labels:** fix, round:develop-2026-10, area:startup
 **Branch:** `develop-next` (fix-wave worktree)
 **Blocked by:** 29 (the backport ticket runs first, alone, because its Touches cross every area).

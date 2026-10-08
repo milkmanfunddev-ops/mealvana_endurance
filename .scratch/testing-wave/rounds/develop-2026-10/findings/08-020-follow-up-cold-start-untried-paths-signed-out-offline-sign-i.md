@@ -1,7 +1,7 @@
 # 08-020 · Follow-up: cold start untried paths (signed out offline, sign-in offline, kill during sync)
 
 - kind: followup-test
-- status: triaged
+- status: closed
 - ticket: 08
 - run: w1-20261007T1105Z
 - screen: none (startup)
@@ -24,3 +24,5 @@ Each shows a clear state and no crash; nothing local is lost.
 
 **Triage.**
 retest ticket 32 (retest: startup, tabs, deep links), wave 3 (Lee: all 27 followups into four retest tickets)
+
+**Closed (wave 3, 2026-10-08).** retest passed in ticket 32 (runs/32/notes.md)

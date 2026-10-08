@@ -1,7 +1,7 @@
 # 02-003 · The AI note shown on Review is not saved: meal_logs.notes is null
 
 - kind: bug
-- status: triaged
+- status: closed
 - ticket: 02
 - run: w1-20261007T1103Z
 - screen: Review & Log
@@ -29,3 +29,5 @@ The note the athlete was shown is kept with the meal (`meal_logs.notes`), or the
 
 **Triage.**
 fix ticket: the AI note is saved to meal_logs.notes (meal-logging ticket with 02-005)
+
+**Closed (wave 3, 2026-10-08).** retest passed in ticket 31 (runs/31/notes.md, PASS 02-003)

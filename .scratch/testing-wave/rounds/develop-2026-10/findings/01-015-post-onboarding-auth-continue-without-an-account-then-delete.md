@@ -1,7 +1,7 @@
 # 01-015 · Post-onboarding auth: Continue without an account, then delete; Back; Apple and Google
 
 - kind: followup-test
-- status: triaged
+- status: closed
 - ticket: 01
 - run: w1-20261007T1103Z
 - screen: Post-Onboarding Auth
@@ -26,3 +26,5 @@ Not run (look-around).
 
 **Triage.**
 retest ticket 30 (retest: auth and account), wave 3 (Lee: all 27 followups into four retest tickets)
+
+**Closed (wave 3, 2026-10-08).** run in ticket 30; re-filed as 30-005 and 30-006

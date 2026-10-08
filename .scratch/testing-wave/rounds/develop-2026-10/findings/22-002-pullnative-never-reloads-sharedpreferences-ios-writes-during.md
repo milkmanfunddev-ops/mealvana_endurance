@@ -1,7 +1,7 @@
 # 22-002 · pullNative never reloads SharedPreferences: iOS writes during a session may never be seen
 
 - kind: followup-test
-- status: open
+- status: closed
 - ticket: 22
 - run: w2-20261007T1340Z
 - screen: none (startup chain, LaunchTrail)
@@ -28,3 +28,5 @@ Not yet tried. `LaunchTrail.pullNative()` (`lib/shared/services/launch_trail.dar
 **Triage.**
 lead-filed; goes into retest ticket 32.
 
+
+**Closed (wave 3, 2026-10-08).** run in ticket 32; re-filed as 32-008 (one resume late)

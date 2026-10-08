@@ -1,6 +1,6 @@
 # 22: Timestamps and startup telemetry
 
-**Status:** in-progress — fixed, awaiting retest (wave 2, 2026-10-07)
+**Status:** done 2026-10-08: 01-004, 01-006, 08-009 passed (tickets 30 + 32, wave 3); 22-001 → ticket 34, 22-002 → 32-008
 **Labels:** fix, round:develop-2026-10, area:telemetry
 **Branch:** `develop-next` (fix-wave worktree)
 **Blocked by:** 29 (the backport ticket runs first, alone, because its Touches cross every area).

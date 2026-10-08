@@ -1,6 +1,6 @@
 # 24: Meal review saves the note and keeps quantity separate
 
-**Status:** in-progress — fixed, awaiting retest (wave 2, 2026-10-07)
+**Status:** done 2026-10-08: 02-003 and 02-005 passed in ticket 31 (wave 3)
 **Labels:** fix, round:develop-2026-10, area:meal-logging
 **Branch:** `develop-next` (fix-wave worktree)
 **Blocked by:** 29 (the backport ticket runs first, alone).

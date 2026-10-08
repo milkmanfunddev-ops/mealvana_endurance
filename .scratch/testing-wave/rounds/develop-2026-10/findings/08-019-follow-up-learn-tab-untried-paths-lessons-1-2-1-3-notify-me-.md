@@ -1,7 +1,7 @@
 # 08-019 · Follow-up: Learn tab untried paths (lessons 1.2/1.3, Notify Me, video controls, offline)
 
 - kind: followup-test
-- status: triaged
+- status: closed
 - ticket: 08
 - run: w1-20261007T1105Z
 - screen: Learn; Mealvana 101 - 1.1 (video player)
@@ -26,3 +26,5 @@ Each lesson plays; Notify Me confirms; offline shows a clear message.
 
 **Triage.**
 retest ticket 32 (retest: startup, tabs, deep links), wave 3 (Lee: all 27 followups into four retest tickets)
+
+**Closed (wave 3, 2026-10-08).** retest passed in ticket 32 (runs/32/notes.md)

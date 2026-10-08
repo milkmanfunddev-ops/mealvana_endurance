@@ -1,6 +1,6 @@
 # 26: Archive the route-only orphan screens
 
-**Status:** in-progress — fixed, awaiting retest (wave 2, 2026-10-07)
+**Status:** done 2026-10-08: all nine archived routes answer Page Not Found, nothing in the app lost its way in (ticket 32, wave 3)
 **Labels:** fix, round:develop-2026-10, area:navigation
 **Branch:** `develop-next` (fix-wave worktree)
 **Blocked by:** 29 (runs first and alone; see Overlaps)

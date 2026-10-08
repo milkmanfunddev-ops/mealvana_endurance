@@ -1,7 +1,7 @@
 # 08-008 · Events tab: New Event button cannot be scrolled clear of the floating tab bar
 
 - kind: bug
-- status: triaged
+- status: closed
 - ticket: 08
 - run: w1-20261007T1105Z
 - screen: My Events (Events tab)
@@ -26,3 +26,5 @@ At the end of the scroll the orange New Event button still sits under the tab ba
 
 **Triage.**
 fix ticket (guards batch): the Events list's bottom padding clears the floating tab bar; retest taps New Event
+
+**Closed (wave 3, 2026-10-08).** retest passed in ticket 32 (runs/32/notes.md)

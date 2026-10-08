@@ -1,7 +1,7 @@
 # 01-005 · Normal signup outcomes (code sent, wrong code) are reported to Sentry as errors
 
 - kind: bug
-- status: triaged
+- status: closed
 - ticket: 01
 - run: w1-20261007T1103Z
 - screen: Verify your email
@@ -26,3 +26,5 @@ Each signup logs `EmailVerificationRequiredException: verification code sent` as
 
 **Triage.**
 fix ticket: expected signup outcomes become breadcrumbs, not Sentry errors; real auth failures tagged area auth
+
+**Closed (wave 3, 2026-10-08).** retest passed in ticket 30 (runs/30/notes.md, PASS 01-005)

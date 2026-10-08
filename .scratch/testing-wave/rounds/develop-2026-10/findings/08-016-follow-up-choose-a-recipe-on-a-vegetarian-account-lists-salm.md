@@ -1,7 +1,7 @@
 # 08-016 · Follow-up: Choose a Recipe on a vegetarian account lists salmon and chicken recipes
 
 - kind: followup-test
-- status: triaged
+- status: closed
 - ticket: 08
 - run: w1-20261007T1105Z
 - screen: Choose a Recipe (/meal-log/recipe)
@@ -25,3 +25,5 @@ Recipes respect the dietary preference, or the spec says the picker is unfiltere
 
 **Triage.**
 retest ticket 32 (retest: startup, tabs, deep links), wave 3 (Lee: all 27 followups into four retest tickets)
+
+**Closed (wave 3, 2026-10-08).** run in ticket 32; unfiltered with no rule, idea 32-014

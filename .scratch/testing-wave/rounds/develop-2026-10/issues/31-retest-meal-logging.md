@@ -1,6 +1,6 @@
 # 31: Retest: meal logging
 
-**Status:** in-progress (wave 3, 2026-10-08)
+**Status:** done 2026-10-08 (wave 3 run complete; see runs/31/notes.md)
 **Labels:** retest, round:develop-2026-10, area:meal-logging, ai-call
 **Branch:** `develop-next` (worktree per ticket, branched from the round's base after the fix wave lands)
 **Source:** TRIAGE.md rulings of 2026-10-07: followups 02-006, 02-007, 02-008, 02-009, 02-010, 02-011,

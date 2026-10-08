@@ -7,7 +7,7 @@ One line per wave: number, base sha, tickets, start time, who led it.
 - wave 1 · base `1c254461` · tickets 01, 02, 08 · 2026-10-07T10:56Z · lead: Claude (Fable), test wave
 - wave 2 · base `a69b226b` · ticket 29 alone (sequential Opus agents by area in one worktree), then 21–28 · 2026-10-07T13:40Z · lead: Claude (Fable), fix wave
 - wave 2b · base (29 merged) · tickets 21+22 (one agent), 24, 26+27 (one agent), 28; then 23 after 26+27 merges · 2026-10-07 · lead: Claude (Fable), fix wave
-- wave 3 · base `a89ace2a` (app built from it) · tickets 30, 31, 32 · 2026-10-08 · lead: Claude (Fable), test wave (rebuild)
+- wave 3 · base `a89ace2a` (app built from it) · tickets 30, 31, 32 · 2026-10-08T12:55Z–13:35Z · lead: Claude (Fable), test wave (rebuild); merged `e28df18a`; 43 Findings + 1 lead-filed; 30 old Findings closed
 
 ## Rulings
 
@@ -85,3 +85,46 @@ One line per Finding decision, made with Lee in the terminal: id, decision, who 
 - wave 2 question k · ruling · fix ticket 37, wave 4: sync-error text (plainSyncErrorMessage, Garmin reauth) becomes a code on the row mapped to a content key at display time · Lee, 2026-10-08
 - wave 2 question l · ruling · fix ticket 38, wave 4: the swap path and MealItemsEditor keep quantity apart from the portion text, as ticket 24 did for the item editor · Lee, 2026-10-08
 - wave 2 question m · ruling · fix ticket 39, wave 4: the nine remaining writers (coach, food_preferences, feedback, user foods, carb loading, activities, events, nutrition_plans, personal templates) send UTC or let the server default · Lee, 2026-10-08
+- 01-003 · closed · retest passed in ticket 30 (runs/30/notes.md, PASS 01-003) · lead, 2026-10-08
+- 01-004 · closed · retest passed in ticket 30 (runs/30/notes.md, PASS 01-004) · lead, 2026-10-08
+- 01-005 · closed · retest passed in ticket 30 (runs/30/notes.md, PASS 01-005) · lead, 2026-10-08
+- 01-006 · closed · retest passed in ticket 30 (runs/30/notes.md, PASS 01-006) · lead, 2026-10-08
+- 01-007 · closed · retest passed in ticket 30 (runs/30/notes.md, PASS 01-007) · lead, 2026-10-08
+- 01-009 · closed · retest passed in ticket 30 (runs/30/notes.md, PASS 01-009) · lead, 2026-10-08
+- 01-010 · closed · retest passed in ticket 30 (runs/30/notes.md, PASS 01-010) · lead, 2026-10-08
+- 01-016 · closed · retest passed in ticket 30 (runs/30/notes.md, PASS 01-016) · lead, 2026-10-08
+- 02-003 · closed · retest passed in ticket 31 (runs/31/notes.md, PASS 02-003) · lead, 2026-10-08
+- 02-005 · closed · retest passed in ticket 31 (runs/31/notes.md, PASS 02-005) · lead, 2026-10-08
+- 02-009 · closed · retest passed in ticket 31 (runs/31/notes.md, PASS 02-009) · lead, 2026-10-08
+- 02-010 · closed · retest passed in ticket 31 (runs/31/notes.md, PASS 02-010) · lead, 2026-10-08
+- 02-011 · closed · retest passed in ticket 31 (runs/31/notes.md, PASS 02-011) · lead, 2026-10-08
+- 02-012 · closed · retest passed in ticket 31 (runs/31/notes.md, PASS 02-012) · lead, 2026-10-08
+- 01-011 · closed · retest passed in ticket 32 (runs/32/notes.md) · lead, 2026-10-08
+- 08-001 · closed · retest passed in ticket 32 (runs/32/notes.md) · lead, 2026-10-08
+- 08-006 · closed · retest passed in ticket 32 (runs/32/notes.md) · lead, 2026-10-08
+- 08-007 · closed · retest passed in ticket 32 (runs/32/notes.md) · lead, 2026-10-08
+- 08-008 · closed · retest passed in ticket 32 (runs/32/notes.md) · lead, 2026-10-08
+- 08-009 · closed · retest passed in ticket 32 (runs/32/notes.md) · lead, 2026-10-08
+- 08-017 · closed · retest passed in ticket 32 (runs/32/notes.md) · lead, 2026-10-08
+- 08-018 · closed · retest passed in ticket 32 (runs/32/notes.md) · lead, 2026-10-08
+- 08-019 · closed · retest passed in ticket 32 (runs/32/notes.md) · lead, 2026-10-08
+- 08-020 · closed · retest passed in ticket 32 (runs/32/notes.md) · lead, 2026-10-08
+- 08-023 · closed · retest passed in ticket 32 (runs/32/notes.md) · lead, 2026-10-08
+- 08-003 · closed · retest passed in ticket 32 (runs/32/notes.md) · lead, 2026-10-08
+- 08-004 · closed · retest passed in ticket 32 (runs/32/notes.md) · lead, 2026-10-08
+- 08-005 · closed · retest passed in ticket 32 (runs/32/notes.md) · lead, 2026-10-08
+- 08-010 · closed · retest passed in ticket 32 (runs/32/notes.md) · lead, 2026-10-08
+- 08-011 · closed · retest passed in ticket 32 (runs/32/notes.md) · lead, 2026-10-08
+- 08-012 · closed · retest passed in ticket 32 (runs/32/notes.md) · lead, 2026-10-08
+- 08-014 · closed · retest passed in ticket 32 (runs/32/notes.md) · lead, 2026-10-08
+- 01-002 · closed · the wrong-code reason is right (ticket 21); the raw key it shows is 30-001 (content keys), which supersedes it · lead, 2026-10-08
+- 01-014 · closed · run in ticket 30; what failed is re-filed as 30-007 and 30-008; part (e) expired code not seen live · lead, 2026-10-08
+- 01-015 · closed · run in ticket 30; re-filed as 30-005 and 30-006 · lead, 2026-10-08
+- 01-017 · closed · run in ticket 30; re-filed as 30-009 and 30-010 · lead, 2026-10-08
+- 01-018 · closed · run in ticket 30; the one conflict is 30-004 · lead, 2026-10-08
+- 02-006 · closed · run in ticket 31; c and d pass; a and b re-filed as 31-004 and 31-002 · lead, 2026-10-08
+- 02-007 · closed · run in ticket 31; a and b pass; c re-filed as 31-003 · lead, 2026-10-08
+- 02-008 · closed · run in ticket 31; the sheet is hidden on a dead TrainingPeaks connection as wanted; the rest is 31-008 · lead, 2026-10-08
+- 22-002 · closed · run in ticket 32; re-filed as 32-008 (one resume late) · lead, 2026-10-08
+- 08-022 · closed · signed-out half passes in ticket 32; Go Home re-filed as 32-002 · lead, 2026-10-08
+- 08-016 · closed · run in ticket 32; unfiltered with no rule, idea 32-014 · lead, 2026-10-08
