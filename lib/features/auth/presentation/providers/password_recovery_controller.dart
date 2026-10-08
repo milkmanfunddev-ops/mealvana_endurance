@@ -6,6 +6,7 @@ import '../../../../shared/services/report/report.dart';
 import '../../../ai_credits/data/revenuecat_service.dart';
 import '../../application/supabase_auth_service.dart';
 import '../../domain/auth_exceptions.dart';
+import '../../domain/password_recovery_marker.dart';
 
 part 'password_recovery_controller.g.dart';
 
@@ -28,8 +29,9 @@ class PasswordRecoveryController extends _$PasswordRecoveryController {
       ref.read(appExternalDepsProvider).sharedPreferences;
 
   /// The SharedPreferences marker: a recovery session is live and its new
-  /// password has not been saved.
-  static const recoveryPendingKey = 'password_recovery_pending';
+  /// password has not been saved. Defined in the domain layer
+  /// ([passwordRecoveryPendingKey]) so startup can read it too.
+  static const recoveryPendingKey = passwordRecoveryPendingKey;
 
   /// The wait GoTrue asked for when the last [sendResetCode] was refused as
   /// too soon (124-004), or null when it was not.

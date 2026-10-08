@@ -294,8 +294,14 @@ class _EmailLoginScreenState extends ConsumerState<EmailLoginScreen> {
                       suffixIcon: IconButton(
                         key: const ValueKey('login.password_visibility_button'),
                         tooltip: _obscurePassword
-                            ? 'Show password'
-                            : 'Hide password',
+                            ? contentService.getValue(
+                                ContentKeys.authShowPassword,
+                                defaultValue: 'Show password',
+                              )
+                            : contentService.getValue(
+                                ContentKeys.authHidePassword,
+                                defaultValue: 'Hide password',
+                              ),
                         icon: Icon(
                           _obscurePassword
                               ? FontAwesomeIcons.eye.data

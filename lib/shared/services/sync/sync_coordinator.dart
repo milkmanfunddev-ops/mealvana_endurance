@@ -181,9 +181,22 @@ class SyncCoordinator extends _$SyncCoordinator {
         _onlineChanges = ref
             .read(connectivityCheckerProvider)
             .onlineChanges
-            .listen((online) {
-              if (online) unawaited(retryOwedUploads());
-            }, onError: (_) {});
+            .listen(
+              (online) {
+                if (online) unawaited(retryOwedUploads());
+              },
+              // The subscription stays open (cancelOnError is false); a
+              // connectivity error only costs this one event. D9: say so.
+              onError: (Object e) {
+                unawaited(
+                  _report.note(
+                    'Owed upload retry: connectivity stream error',
+                    area: 'sync',
+                    data: {'error': e.toString()},
+                  ),
+                );
+              },
+            );
       } catch (e) {
         // No connectivity plugin (tests, web): the other triggers remain.
         // D9: a skipped sync step, so it is written down.

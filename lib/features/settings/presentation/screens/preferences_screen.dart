@@ -761,11 +761,20 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
   }
 
   Widget _buildBirthdaySelector(BuildContext context) {
+    final content = ref.watch(contentServiceProvider);
+    final birthdayLabel = content.getValue(
+      ContentKeys.userProfileBirthdayLabel,
+      defaultValue: 'Birthday',
+    );
+    final birthdayHint = content.getValue(
+      ContentKeys.userProfileBirthdayHint,
+      defaultValue: 'Select your birthday',
+    );
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Birthday',
+          birthdayLabel,
           style: AppTextStyles.bodyMedium.copyWith(
             color: Theme.of(context).colorScheme.onSurface,
             fontWeight: FontWeight.w500,
@@ -779,10 +788,10 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
         Semantics(
           container: true,
           button: true,
-          label: 'Birthday',
+          label: birthdayLabel,
           value: _birthday != null
               ? '${_birthday!.month}/${_birthday!.day}/${_birthday!.year}'
-              : 'Select your birthday',
+              : birthdayHint,
           child: InkWell(
             key: const ValueKey('profile_edit.birthday_button'),
             onTap: () async {
@@ -833,7 +842,7 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
                       child: Text(
                         _birthday != null
                             ? '${_birthday!.month}/${_birthday!.day}/${_birthday!.year}'
-                            : 'Select your birthday',
+                            : birthdayHint,
                         style: AppTextStyles.bodyMedium.copyWith(
                           color: _birthday != null
                               ? Theme.of(context).colorScheme.onSurface

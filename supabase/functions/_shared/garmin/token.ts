@@ -48,12 +48,22 @@ export interface GarminTokenOptions {
 // deno-lint-ignore no-explicit-any
 type SupabaseLike = any;
 
+/** Env names already reported missing, so each is logged once per isolate. */
+const reportedMissingEnv = new Set<string>();
+
 function env(name: string): string {
+  let value = '';
   try {
-    return Deno.env.get(name) ?? '';
+    value = Deno.env.get(name) ?? '';
   } catch (_) {
-    return '';
+    value = '';
   }
+  if (value === '' && !reportedMissingEnv.has(name)) {
+    // D9: a missing credential makes every refresh fail; say why, once.
+    reportedMissingEnv.add(name);
+    console.error(`[garmin] missing env ${name}`);
+  }
+  return value;
 }
 
 /**

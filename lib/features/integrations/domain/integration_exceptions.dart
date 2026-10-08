@@ -8,6 +8,11 @@ import 'package:http/http.dart' as http;
 /// Finding 118-002). The raw exception used to be stored as is, address,
 /// port and URI included; the card and the server row only need the kind
 /// of failure. [providerName] is the name the athlete sees.
+///
+/// TODO(content): these English lines are stored server-side in
+/// `integrations.last_sync_error` and shown on the card as stored, so they
+/// cannot go through the content system as is. Moving them needs a
+/// key-based design (store a reason code, render the text from content).
 String plainSyncErrorMessage(Object error, {required String providerName}) {
   final couldNotReach =
       'Could not reach $providerName. Check your connection and try again.';

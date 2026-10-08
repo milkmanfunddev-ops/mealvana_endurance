@@ -155,3 +155,19 @@ Deno.test('OPTIONS is the CORS preflight; anything but POST is 405', async () =>
   assertEquals((await handler(post(null, 'OPTIONS'))).status, 200);
   assertEquals((await handler(post(null, 'GET'))).status, 405);
 });
+
+Deno.test('a lookup error is written down (D9) with the id and code, never the email', async () => {
+  const warns: unknown[][] = [];
+  const saved = console.warn;
+  console.warn = (...args: unknown[]) => warns.push(args);
+  try {
+    const r = await run([], { user_id: FRESH_ID, email: EMAIL });
+    assertEquals(r.body, { ok: true });
+  } finally {
+    console.warn = saved;
+  }
+  assertEquals(warns.length, 1);
+  assertEquals(warns[0][0], '[discard-signup] getUserById failed');
+  assertEquals(warns[0][1], { userId: FRESH_ID, code: 404, message: 'User not found' });
+  assertEquals(JSON.stringify(warns).includes(EMAIL), false);
+});

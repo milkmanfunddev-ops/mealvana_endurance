@@ -3,8 +3,12 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mealvana_endurance/features/content/application/content_service.dart';
 import 'package:mealvana_endurance/shared/widgets/food_selection/food_search_bar.dart';
+
+import '../../../helpers/test_content.dart';
 
 void main() {
   testWidgets('barcode and search are labelled buttons', (tester) async {
@@ -14,13 +18,17 @@ void main() {
     var scans = 0;
     final searches = <String>[];
 
+    // The labels come from the content system (content_defaults.json).
     await tester.pumpWidget(
-      MaterialApp(
-        home: Scaffold(
-          body: FoodSearchBar(
-            controller: controller,
-            onSearch: searches.add,
-            onBarcodeScan: () => scans++,
+      ProviderScope(
+        overrides: [contentServiceProvider.overrideWith(testContentService)],
+        child: MaterialApp(
+          home: Scaffold(
+            body: FoodSearchBar(
+              controller: controller,
+              onSearch: searches.add,
+              onBarcodeScan: () => scans++,
+            ),
           ),
         ),
       ),

@@ -175,6 +175,30 @@ describe("ensureFreshGarminToken", () => {
     assertEquals(token, "stale");
   });
 
+  it("says once per name when the Garmin client env is missing (D9)", async () => {
+    const saved = {
+      id: Deno.env.get("GARMIN_CLIENT_ID"),
+      secret: Deno.env.get("GARMIN_CLIENT_SECRET"),
+    };
+    Deno.env.delete("GARMIN_CLIENT_ID");
+    Deno.env.delete("GARMIN_CLIENT_SECRET");
+    try {
+      const { supabase } = fakeSupabase();
+      const { fn, calls } = fakeFetch(() => new Response("nope", { status: 401 }));
+      const row = { access_token: "stale", refresh_token: "r1", token_expires_at: hourAgo() };
+      const lines = await captureConsole(async () => {
+        await ensureFreshGarminToken(supabase, row, "u1", { fetch: fn });
+        await ensureFreshGarminToken(supabase, row, "u1", { fetch: fn });
+      });
+      assertEquals(calls.length, 2, "behaviour unchanged: the refresh still runs");
+      assertEquals(lines.filter((l) => l === "[garmin] missing env GARMIN_CLIENT_ID").length, 1);
+      assertEquals(lines.filter((l) => l === "[garmin] missing env GARMIN_CLIENT_SECRET").length, 1);
+    } finally {
+      if (saved.id !== undefined) Deno.env.set("GARMIN_CLIENT_ID", saved.id);
+      if (saved.secret !== undefined) Deno.env.set("GARMIN_CLIENT_SECRET", saved.secret);
+    }
+  });
+
   it("falls back to the stale token when there is no refresh token", async () => {
     const { supabase } = fakeSupabase();
     const { fn, calls } = fakeFetch(() => new Response("", { status: 200 }));

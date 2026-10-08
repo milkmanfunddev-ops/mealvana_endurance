@@ -829,10 +829,7 @@ class ConnectTrainingController extends _$ConnectTrainingController {
     var removed = 0;
     try {
       final activities = await deps.activitiesRepo
-          .getActivitiesByUserAndProvider(
-        userId,
-        providerId,
-      );
+          .getActivitiesByUserAndProvider(userId, providerId);
       for (final activity in activities) {
         // Hard delete, deliberately NOT the tombstone path: a disconnect
         // wipe must not leave status='deleted' rows around, or the matcher
@@ -1126,6 +1123,10 @@ class ConnectTrainingController extends _$ConnectTrainingController {
           userId,
           'garmin',
           status: requiresReauthStatus,
+          // TODO(content): stored server-side in
+          // `integrations.last_sync_error` and shown on the card as stored;
+          // moving it to the content system needs a key-based design (store
+          // a reason code, render the text from content).
           error: 'Garmin needs you to sign in again. Please reconnect.',
         );
     if (!ref.mounted) return;

@@ -35,6 +35,17 @@ class ContentKeys {
   static const String verifyCodeResendIn = 'auth.verify_code.resend_in';
   static const String verifyCodeResent = 'auth.verify_code.resent';
   static const String verifyCodeResendFailed = 'auth.verify_code.resend_failed';
+  // The password eye's spoken name on Log In and Create Account (118-005,
+  // 119-005): one pair for every password field.
+  static const String authShowPassword = 'auth.show_password';
+  static const String authHidePassword = 'auth.hide_password';
+  // The food search bar's icon buttons, named for a screen reader (28-006).
+  static const String foodSearchScanBarcode = 'food_search.scan_barcode';
+  static const String foodSearchSearch = 'food_search.search';
+  // A logged food with no serving description: "1 serving" / "1.5 servings"
+  // (112-002). The word is written into the logged row's portion.
+  static const String mealLogServingSingular = 'meal_log.serving_singular';
+  static const String mealLogServingPlural = 'meal_log.serving_plural';
 
   // Main Screen
   static const String mainScreenTitle = 'main_screen.title';
@@ -270,6 +281,7 @@ class ContentKeys {
       'barcode_scanner.enter_length';
   static const String barcodeScannerTypedInvalid =
       'barcode_scanner.typed_invalid';
+  static const String barcodeScannerFlash = 'barcode_scanner.flash';
 
   // Logged and saved meal actions (testing-wave 136: 112-005, 112-008)
   static const String mealLogActionsSavedMealRemoved =
