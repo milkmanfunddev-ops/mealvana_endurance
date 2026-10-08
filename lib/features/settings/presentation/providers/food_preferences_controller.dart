@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
-import '../../../../shared/database/database_provider.dart';
+import '../../../../shared/providers/user_id_provider.dart';
 import '../../../../shared/services/app_external_deps.dart';
 import '../../../../shared/services/report/report.dart';
 import '../../../../shared/services/sync/sync_coordinator.dart';
@@ -51,20 +51,14 @@ class FoodPreferencesController extends _$FoodPreferencesController {
     return const {};
   }
 
-  /// The signed-in account's id, or null with no session.
+  /// The signed-in account's profile id (through [userIdProvider]), or null
+  /// with no session.
   Future<String?> _resolveUserId() async {
-    final authUserId = ref
-        .read(appExternalDepsProvider)
-        .supabaseClient
-        .auth
-        .currentUser
-        ?.id;
-    if (authUserId == null) return null;
-    final profile = await ref
-        .read(appDatabaseProvider)
-        .userDao
-        .getCurrentUserProfile(currentAuthUserId: authUserId);
-    return profile?.id ?? authUserId;
+    final hasSession =
+        ref.read(appExternalDepsProvider).supabaseClient.auth.currentUser !=
+        null;
+    if (!hasSession) return null;
+    return ref.read(userIdProvider.future);
   }
 
   /// Sync `food_preferences` on demand, then read the levels for the foods on
@@ -92,28 +86,31 @@ class FoodPreferencesController extends _$FoodPreferencesController {
     required List<FoodItem> additional,
     required List<FoodItem> userFoods,
   }) async {
+    final report = _report;
     final userId = await _resolveUserId();
     var preferences = const <String, FoodPreference>{};
     var levels = const <String, int>{};
 
     if (userId == null) {
-      await _report.note(
+      await report.note(
         'Food preferences load: no signed-in user; showing defaults',
         area: _area,
       );
     } else {
+      // load() drops this result once disposed; stop before touching ref.
+      if (!ref.mounted) return const {};
+      final coordinator = ref.read(syncCoordinatorProvider.notifier);
       final repo = await ref.read(foodPreferencesRepositoryProvider.future);
       try {
         // Bounded so a slow network shows cached levels instead of a spinner.
         // The timeout does not cancel the sync: its pull and any pending
         // upload (an upsert on user_id,food_name, safe to repeat) finish in
         // the background.
-        await ref
-            .read(syncCoordinatorProvider.notifier)
+        await coordinator
             .ensureSynced('food_preferences', userId, repository: repo)
             .timeout(_syncTimeout);
       } catch (e, stackTrace) {
-        await _report.degraded(
+        await report.degraded(
           e,
           stackTrace: stackTrace,
           area: _area,
@@ -177,10 +174,11 @@ class FoodPreferencesController extends _$FoodPreferencesController {
   /// in-flight one, so the last save's rows are the last sent. The upload
   /// belongs to the repository, so closing Settings mid-upload loses nothing.
   Future<void> save(Map<String, int> levelsByKey) async {
+    final report = _report;
     final result = await AsyncValue.guard(() async {
       final userId = await _resolveUserId();
       if (userId == null) {
-        await _report.note(
+        await report.note(
           'Food preferences save: no signed-in user; nothing saved',
           area: _area,
           data: {'count': levelsByKey.length},
@@ -193,6 +191,10 @@ class FoodPreferencesController extends _$FoodPreferencesController {
       final preferences = {
         for (final e in levels.entries) e.key: foodPreferenceForLevel(e.value),
       };
+      // Disposed mid-resolve: save() drops the result, so stop before ref.
+      if (!ref.mounted) {
+        throw StateError('Food preferences controller disposed before save');
+      }
       final repo = await ref.read(foodPreferencesRepositoryProvider.future);
       final legacy = _legacyNames.where((n) => !levels.containsKey(n));
       await repo.removeFoodPreferencesByNames(userId, legacy);

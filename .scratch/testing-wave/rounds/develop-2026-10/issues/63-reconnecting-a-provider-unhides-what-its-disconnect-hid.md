@@ -120,3 +120,6 @@ Fix wave 6, pass A (one agent for 63+64, branch `testing-wave/develop-2026-10/63
 
 **Questions for Lee.** None new. The one above is answered by the 2026-10-08 ruling.
 
+**Review fixes (lead, 2026-10-08).**
+- An unknown athlete id on either side now counts as the same athlete and unhides; only two known ids that differ keep the rows hidden. New case (c2) in `reconnect_unhides_seam_test.dart`: a reconnect whose new athlete id is empty unhides all five (red without the fix).
+- `_importWorkouts`'s dead `getUpdated` parameter and its two call-site arguments are gone.

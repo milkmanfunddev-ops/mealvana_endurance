@@ -1,4 +1,5 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import '../../app_startup/application/app_startup_provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../shared/database/app_database.dart';
 import '../../../shared/database/database_provider.dart';
@@ -23,12 +24,38 @@ class AuthMigrationService {
     required this.database,
     required this.supabase,
     required this.report,
-  });
+    Future<void> Function(String reason)? refreshStartupSnapshot,
+  }) : _refreshStartupSnapshot = refreshStartupSnapshot;
 
   final UserRepository userRepository;
   final AppDatabase database;
   final SupabaseClient supabase;
   final Report report;
+
+  /// Re-reads the startup snapshot (ticket 56). The profile save here lands
+  /// after the `signedIn` event's refresh has read, so without a second
+  /// refresh the snapshot says "not onboarded" until the next one. Null in
+  /// tests that build the service by hand.
+  final Future<void> Function(String reason)? _refreshStartupSnapshot;
+
+  /// After the sign-in profile save: refresh the startup snapshot so it sees
+  /// the `onboarding_completed` this service just wrote.
+  /// Never fails the sign-in: a refresh that throws is recorded and the
+  /// snapshot catches up on the next refresh or launch.
+  Future<void> _refreshAfterProfileSave({required bool wasAnonymous}) async {
+    final reason = wasAnonymous
+        ? 'anonymous_upgrade_saved'
+        : 'sign_in_profile_saved';
+    try {
+      await _refreshStartupSnapshot?.call(reason);
+    } catch (e) {
+      report.breadcrumb(
+        'Startup snapshot refresh after sign-in save failed',
+        category: 'startup',
+        data: {'reason': reason, 'error': e.toString()},
+      );
+    }
+  }
 
   /// Migrate all data from anonymous user to OAuth user when signing into existing account
   /// This is called when account linking fails (account already exists) and user chooses to sign in
@@ -637,6 +664,7 @@ class AuthMigrationService {
         await _handleFreshLogin(newUserId, authProvider);
       }
 
+      await _refreshAfterProfileSave(wasAnonymous: wasAnonymous);
       return dataMigrated;
     } catch (e, stackTrace) {
       await report.fault(
@@ -744,6 +772,7 @@ class AuthMigrationService {
         await _handleFreshLogin(newUserId, authProvider);
       }
 
+      await _refreshAfterProfileSave(wasAnonymous: wasAnonymous);
       return dataMigrated;
     } catch (e, stackTrace) {
       await report.fault(
@@ -905,11 +934,16 @@ Future<AuthMigrationService> authMigrationService(Ref ref) async {
   final supabase = ref.watch(appExternalDepsProvider).supabaseClient;
   final report = ref.watch(reportProvider);
   final userRepository = await ref.watch(userRepositoryProvider.future);
+  // Callers read this auto-dispose provider once and then await the network,
+  // so its ref is gone by the time a save lands; the container is not.
+  final container = ref.container;
 
   return AuthMigrationService(
     userRepository: userRepository,
     database: database,
     supabase: supabase,
     report: report,
+    refreshStartupSnapshot: (reason) =>
+        refreshStartupSnapshotIn(container, reason: reason),
   );
 }

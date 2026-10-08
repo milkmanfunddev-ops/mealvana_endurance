@@ -130,3 +130,8 @@ Agent, fix wave 6 pass A, branch `testing-wave/develop-2026-10/58`, code commit 
 - Step 8's dev SQL at the close, with counts before and after (not run). The ruling adds prod at the next prod deploy; record that in `.scratch/branch-split/HANDOFF.md`.
 - Locally, `save` deletes only the legacy display-name rows it folded for foods on screen. Server display-name rows stay until the SQL runs. Until then, a pull brings them back into Drift, where they do nothing: the key row wins at load.
 - The onboarding allergy-then-diet replace (the Decisions note) is unchanged. `AuthService` still saves with replace, as the ticket says, and each of those saves now also uploads at once.
+
+**Review fixes (lead, 2026-10-08).**
+- FOA: `FoodPreferencesController` resolves the user through `userIdProvider` (after a session check) instead of reading `userDao` directly. The report, the sync coordinator and the repository are read before or behind `ref.mounted` checks, never after an await on a disposed ref.
+- Flag race: `FoodPreferencesRepository` counts user-edit saves per user (`_saveGenerations`). The dirty walk notes the count before it reads the rows and clears the pending flag only if no save landed since; otherwise it keeps the flag and leaves a `sync` breadcrumb. New case in `test/new_sync/food_preferences_repository_test.dart`: a save mid-walk whose own upload is refused leaves the flag set (red without the fix).
+- `UserRepository`'s reconcile skip is now a `sync` breadcrumb, not a `sync` Note: Notes in `sync` are promoted to Sentry warnings and this fired on every plan generation while an upload was pending. The two tests that asserted the Note now assert the breadcrumb.

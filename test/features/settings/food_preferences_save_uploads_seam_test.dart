@@ -238,7 +238,9 @@ void main() {
         .getUserFoodPreferenceLevels(_user);
     expect(afterReconcile['sports_drink'], 0, reason: 'not replaced by 4');
     expect(
-      report.notes.map((n) => n.message),
+      report.calls
+          .where((c) => c.severity == 'breadcrumb' && c.area == 'sync')
+          .map((c) => c.message),
       contains('Food preference reconcile skipped: local upload pending'),
     );
 

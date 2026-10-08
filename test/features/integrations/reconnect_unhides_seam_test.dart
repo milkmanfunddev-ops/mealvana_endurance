@@ -163,12 +163,7 @@ Map<String, dynamic> _activityRow(
   'user_id': _userId,
   'activity_type': 'running',
   'title': 'Easy run $id',
-  'scheduled_date_time': DateTime(
-    2026,
-    9 - monthsBack,
-    3,
-    7,
-  ).toIso8601String(),
+  'scheduled_date_time': DateTime(2026, 9 - monthsBack, 3, 7).toIso8601String(),
   'status': 'planned',
   'synced_from_provider': provider,
   'provider_workout_id': 'pw-$id',
@@ -316,9 +311,9 @@ void main() {
   ConnectTrainingController notifier() =>
       container.read(connectTrainingControllerProvider.notifier);
 
-  Future<Activity> local(String id) =>
-      (db.select(db.activitiesTable)..where((t) => t.id.equals(id)))
-          .getSingle();
+  Future<Activity> local(String id) => (db.select(
+    db.activitiesTable,
+  )..where((t) => t.id.equals(id))).getSingle();
 
   /// Every activities row the server was sent, by id, last write wins.
   Map<String, Map<String, dynamic>> sentActivities() => {
@@ -328,9 +323,8 @@ void main() {
           (row as Map)['id'] as String: row.cast<String, dynamic>(),
   };
 
-  List<RecordedReport> degradedFor(String provider) => report.degradeds
-      .where((d) => d.extra?['provider'] == provider)
-      .toList();
+  List<RecordedReport> degradedFor(String provider) =>
+      report.degradeds.where((d) => d.extra?['provider'] == provider).toList();
 
   test('(a) disconnect uploads the hide at once, before any sync', () async {
     await notifier().disconnectTrainingPeaks();
@@ -361,7 +355,9 @@ void main() {
       expect(sent[id]?['hidden_by_disconnect'], isFalse, reason: id);
     }
     expect(
-      container.read(connectTrainingControllerProvider).value!
+      container
+          .read(connectTrainingControllerProvider)
+          .value!
           .isTrainingPeaksConnected,
       isTrue,
     );
@@ -391,6 +387,30 @@ void main() {
     );
     expect(note.area, 'training_peaks');
     expect(note.data, {'hidden': 5});
+  });
+
+  test('(c2) a reconnect whose new athlete id is unknown counts as the same '
+      'athlete and unhides', () async {
+    await notifier().disconnectTrainingPeaks();
+    server.writes.clear();
+    // The profile call gave no athlete id (an empty one); the old row has one.
+    tpOAuth.athleteId = '';
+
+    expect(await notifier().connectTrainingPeaks(), isTrue);
+
+    final sent = sentActivities();
+    for (final id in tpIds) {
+      expect((await local(id)).hiddenByDisconnect, isFalse, reason: id);
+      expect(sent[id]?['hidden_by_disconnect'], isFalse, reason: id);
+    }
+    expect(
+      report.notes.where(
+        (n) =>
+            n.message ==
+            'Reconnect as a different athlete; hidden workouts stay hidden',
+      ),
+      isEmpty,
+    );
   });
 
   test('(d) a refused hide upload keeps the rows dirty and records one '
@@ -436,27 +456,29 @@ void main() {
     expect(sent.keys.where((k) => k.startsWith('tp-')), isEmpty);
   });
 
-  test('(e) Runna: a reconnect with no previous row unhides its rows',
-      () async {
-    server.tables['activities'] = [
-      _activityRow('rn-0', 'runna', hidden: true),
-      _activityRow('rn-1', 'runna', hidden: true),
-    ];
-    await activities.syncFromRemote(_userId);
-    server.writes.clear();
-    expect(await integrations.getIntegration(_userId, 'runna'), isNull);
+  test(
+    '(e) Runna: a reconnect with no previous row unhides its rows',
+    () async {
+      server.tables['activities'] = [
+        _activityRow('rn-0', 'runna', hidden: true),
+        _activityRow('rn-1', 'runna', hidden: true),
+      ];
+      await activities.syncFromRemote(_userId);
+      server.writes.clear();
+      expect(await integrations.getIntegration(_userId, 'runna'), isNull);
 
-    expect(
-      await notifier().connectRunna('https://cal.runna.com/feed/abc.ics'),
-      isTrue,
-    );
+      expect(
+        await notifier().connectRunna('https://cal.runna.com/feed/abc.ics'),
+        isTrue,
+      );
 
-    final sent = sentActivities();
-    for (final id in ['rn-0', 'rn-1']) {
-      expect((await local(id)).hiddenByDisconnect, isFalse, reason: id);
-      expect(sent[id]?['hidden_by_disconnect'], isFalse, reason: id);
-    }
-  });
+      final sent = sentActivities();
+      for (final id in ['rn-0', 'rn-1']) {
+        expect((await local(id)).hiddenByDisconnect, isFalse, reason: id);
+        expect(sent[id]?['hidden_by_disconnect'], isFalse, reason: id);
+      }
+    },
+  );
 
   group('item 5: Sync Now uploads dirty activities every time', () {
     Future<void> leaveDirty(String id) async {

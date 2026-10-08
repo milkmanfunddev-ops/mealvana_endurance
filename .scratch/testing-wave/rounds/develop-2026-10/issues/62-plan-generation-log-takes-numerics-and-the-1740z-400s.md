@@ -80,3 +80,5 @@ Next: /testing-wave develop-2026-10 (fix wave 6)
 
 **The lead deploys, in order (SQL first).** 1. Apply `20261008166200_plan_generation_log_numeric_duration.sql` on dev. 2. `./scripts/deploy_dev.sh generate-nutrition-plan-v3`. Prod: the same SQL at cutover (additive), for the close-out owed list. Then the retest box: `flutter test test/e2e/dev_cloud_e2e_test.dart --tags e2e` once.
 
+**Review fixes (lead, 2026-10-08).**
+- The migration's `alter column … type numeric` sits in a `do $$ … $$` block that runs it only while `information_schema.columns` reports `duration_minutes` as `integer`, so a re-run is a no-op (playbook §4). The comment statement is unchanged; `plan-generation-log.test.ts` still reads `numeric` from the file.

@@ -124,7 +124,9 @@ void main() {
       expect(dislikes, ['sports_drink']);
       verifyNever(() => mockSupabase.from(any()));
       expect(
-        report.notes.map((n) => n.message),
+        report.calls
+            .where((c) => c.severity == 'breadcrumb' && c.area == 'sync')
+            .map((c) => c.message),
         contains('Food preference reconcile skipped: local upload pending'),
       );
     });

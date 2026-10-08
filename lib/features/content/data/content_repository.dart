@@ -203,6 +203,11 @@ class ContentRepository {
     }
     if (fetched) {
       await sharedPreferences.remove(_contentKey);
+      _report.breadcrumb(
+        'Content cache cleared: server has no active content',
+        category: 'content',
+        data: {'environment': environment, 'locale': locale},
+      );
       return _loadDefaultContent();
     }
 

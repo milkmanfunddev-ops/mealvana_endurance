@@ -13,12 +13,25 @@
 -- row carries is text, uuid or jsonb.
 --
 -- Widening only (integer -> numeric): existing rows and the funnel query
--- (qa/scripts/query-ledger.sh) read the same. Re-running on a numeric column
--- is a no-op in effect. Additive, so safe on dev and prod at any time
--- (playbook §3).
+-- (qa/scripts/query-ledger.sh) read the same. Guarded (playbook §4): the
+-- alter runs only while the column is still integer, so a re-run is a no-op.
+-- Additive, so safe on dev and prod at any time (playbook §3).
 
-alter table public.plan_generation_log
-  alter column duration_minutes type numeric using duration_minutes::numeric;
+do $$
+begin
+  if exists (
+    select 1
+    from information_schema.columns
+    where table_schema = 'public'
+      and table_name = 'plan_generation_log'
+      and column_name = 'duration_minutes'
+      and data_type = 'integer'
+  ) then
+    alter table public.plan_generation_log
+      alter column duration_minutes type numeric using duration_minutes::numeric;
+  end if;
+end
+$$;
 
 comment on column public.plan_generation_log.duration_minutes is
   'minutes as sent by the caller; fractional allowed (e2e sends macros-v4 duration_min)';

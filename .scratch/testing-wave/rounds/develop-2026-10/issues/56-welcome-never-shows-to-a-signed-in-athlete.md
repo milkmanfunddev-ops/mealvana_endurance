@@ -115,4 +115,7 @@ Wave 6 pass A, branch `testing-wave/develop-2026-10/56`, code commit `5198647b`.
 
 **Exit box not met:** the retest in test wave 7 (ticket 67), which needs a simulator. Fix waves run none.
 
+**Review fixes (lead, 2026-10-08).**
+- `AuthMigrationService` takes a `refreshStartupSnapshot` callback from its provider and calls it at the end of `completeAuthentication` and `handleSignInCompletion`, after the profile save (`anonymous_upgrade_saved`, or `sign_in_profile_saved` for a non-anonymous login). The provider is auto-dispose and its callers await the network after reading it, so the callback goes through the provider's `ref.container` via a new `refreshStartupSnapshotIn(container, reason:)`; `refreshStartupSnapshot(ref, …)` now delegates to it after its mounted check. A refresh that throws never fails the sign-in: it leaves a `startup` breadcrumb. Three cases in `test/features/auth/application/fresh_login_keeps_contact_email_test.dart`.
+
 Next: /testing-wave develop-2026-10 (fix wave 6)

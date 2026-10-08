@@ -107,9 +107,20 @@ Future<void> refreshStartupSnapshot(Ref ref, {required String reason}) async {
     );
     return;
   }
-  if (!ref.exists(appStartupProvider)) {
+  await refreshStartupSnapshotIn(ref.container, reason: reason);
+}
+
+/// [refreshStartupSnapshot] for a caller whose own ref may be gone by the
+/// time it asks: a service built by an auto-dispose provider holds the
+/// [container] it was built in, which lives as long as the app. Same skip
+/// rule (no live startup provider: recorded, D9). Never throws.
+Future<void> refreshStartupSnapshotIn(
+  ProviderContainer container, {
+  required String reason,
+}) async {
+  if (!container.exists(appStartupProvider)) {
     LaunchTrail.add('startup snapshot refresh skipped ($reason): no startup');
-    ref
+    container
         .read(reportProvider)
         .breadcrumb(
           'Startup snapshot refresh skipped: startup provider not alive',
@@ -118,7 +129,9 @@ Future<void> refreshStartupSnapshot(Ref ref, {required String reason}) async {
         );
     return;
   }
-  await ref.read(appStartupProvider.notifier).refreshSession(reason: reason);
+  await container
+      .read(appStartupProvider.notifier)
+      .refreshSession(reason: reason);
 }
 
 /// AsyncNotifier for app startup initialization using Drift

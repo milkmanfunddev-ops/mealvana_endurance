@@ -1,4 +1,9 @@
+import 'dart:async';
+import 'dart:convert';
+
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
 import 'package:mealvana_endurance/features/food_preferences/data/food_preferences_repository.dart';
 import 'package:mealvana_endurance/shared/database/app_database.dart';
 import 'package:drift/drift.dart' show Value;
@@ -325,5 +330,99 @@ void main() {
       expect(rowFor(writes.last.body, 'gel')['preference_level'], 0);
       expect(FoodPreferencesRepository.inFlightUploadFor(testUserId), isNull);
     });
+  });
+
+  // develop-2026-10 ticket 58 review: the dirty walk's upload must not clear
+  // the pending flag a save set while it ran, when that save's own immediate
+  // upload was refused.
+  group('dirty walk vs a save mid-upload', () {
+    test(
+      'a save mid-walk whose upload is refused leaves the flag set',
+      () async {
+        final walkArrived = Completer<void>();
+        final releaseWalk = Completer<void>();
+        var writes = 0;
+        final client = SupabaseClient(
+          'http://fake-postgrest.test',
+          'anon-key',
+          httpClient: MockClient((request) async {
+            final headers = {'content-type': 'application/json'};
+            if (request.method == 'GET') {
+              return http.Response(
+                '[]',
+                200,
+                request: request,
+                headers: headers,
+              );
+            }
+            writes++;
+            if (writes == 1) {
+              // The walk's upload: held until the save's upload is refused.
+              walkArrived.complete();
+              await releaseWalk.future;
+              return http.Response(
+                request.body,
+                201,
+                request: request,
+                headers: headers,
+              );
+            }
+            return http.Response(
+              jsonEncode({
+                'code': '42501',
+                'message': 'new row violates row-level security policy',
+                'details': null,
+                'hint': null,
+              }),
+              403,
+              request: request,
+              headers: headers,
+            );
+          }),
+          authOptions: const AuthClientOptions(autoRefreshToken: false),
+        );
+        final repository = FoodPreferencesRepository(
+          supabase: client,
+          database: database,
+          report: report,
+        );
+        await database
+            .into(database.foodPreferencesTable)
+            .insert(
+              FoodPreferencesTableCompanion.insert(
+                id: '11111111-2222-4333-8444-555555555555',
+                userId: testUserId,
+                foodName: 'banana',
+                preference: 'like',
+              ),
+            );
+        SharedPreferences.setMockInitialValues({
+          foodPreferencesUploadPendingKey(testUserId): true,
+        });
+
+        final walk = repository.uploadDirtyRecords(testUserId);
+        await walkArrived.future;
+
+        await repository.saveFoodPreferences(
+          testUserId,
+          {'gel': FoodPreference.dislike},
+          sliderLevels: {'gel': 0},
+          mergeMode: true,
+          upload: true,
+        );
+        await FoodPreferencesRepository.inFlightUploadFor(testUserId);
+
+        releaseWalk.complete();
+        final result = await walk;
+        expect(result.success, isTrue);
+
+        final prefs = await SharedPreferences.getInstance();
+        expect(
+          prefs.getBool(foodPreferencesUploadPendingKey(testUserId)),
+          isTrue,
+          reason: 'the gel edit never reached the server',
+        );
+      },
+    );
   });
 }

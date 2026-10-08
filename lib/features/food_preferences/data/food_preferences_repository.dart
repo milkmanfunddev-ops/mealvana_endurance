@@ -137,6 +137,10 @@ class FoodPreferencesRepository with SyncableRepository {
       );
       return UploadResult.nothingToUpload();
     }
+    // A user edit saved while this upload runs may not be in the rows sent,
+    // and its own immediate upload may fail: clear the flag only if no save
+    // happened since the rows were read.
+    final generation = _saveGenerations[userId] ?? 0;
     try {
       final count = await _uploadAllPreferencesForUser(userId);
 
@@ -146,7 +150,15 @@ class FoodPreferencesRepository with SyncableRepository {
         data: {'user_id': userId, 'repository': repositoryKey, 'count': count},
       );
 
-      await _setUploadPending(userId, false);
+      if ((_saveGenerations[userId] ?? 0) == generation) {
+        await _setUploadPending(userId, false);
+      } else {
+        _report.breadcrumb(
+          'Food preferences upload flag kept: a save landed mid-upload',
+          category: 'sync',
+          data: {'user_id': userId, 'repository': repositoryKey},
+        );
+      }
       return count == 0
           ? UploadResult.nothingToUpload()
           : UploadResult.successful(count);
@@ -200,7 +212,10 @@ class FoodPreferencesRepository with SyncableRepository {
         // Dirty before the write: a crash between the two leaves the flag
         // set with nothing new to send (harmless), never a new row with no
         // flag.
-        if (isUserEdit) await _setUploadPending(userId, true);
+        if (isUserEdit) {
+          _saveGenerations[userId] = (_saveGenerations[userId] ?? 0) + 1;
+          await _setUploadPending(userId, true);
+        }
 
         await database.foodPreferencesDao.saveFoodPreferences(
           userId,
@@ -459,6 +474,11 @@ class FoodPreferencesRepository with SyncableRepository {
   // the last ones sent.
   static final Map<String, Future<void>> _inFlightUploads = {};
   static final Set<String> _uploadRerunOwed = {};
+
+  // User-edit saves per user, counted up before each save's flag is set. The
+  // dirty walk clears the flag only if this has not moved since it read the
+  // rows it sent.
+  static final Map<String, int> _saveGenerations = {};
 
   /// The in-flight immediate upload for [userId], if any. Tests await it
   /// instead of guessing how many event-loop turns the upload takes.

@@ -840,9 +840,12 @@ class UserRepository with SyncableRepository {
       final local = await database.foodPreferencesDao.getUserFoodPreferences(
         userId,
       );
-      await _r.note(
+      // A breadcrumb, not a sync Note: Notes in `sync` are promoted to a
+      // warning event, and this fires on every plan generation while an
+      // upload is pending.
+      _r.breadcrumb(
         'Food preference reconcile skipped: local upload pending',
-        area: 'sync',
+        category: 'sync',
         data: {'user_id': userId, 'local_count': local.length},
       );
       return local;

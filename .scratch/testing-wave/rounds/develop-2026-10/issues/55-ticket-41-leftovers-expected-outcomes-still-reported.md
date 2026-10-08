@@ -104,3 +104,6 @@ Commit `fe6ced8a` on `testing-wave/develop-2026-10/55` (base `292b3813`).
 - `flutter analyze` on the 15 touched Dart files: 6 issues, all pre-existing (blame predates this ticket), none new.
 
 **For the lead.** Deploy `analyze-meal-photo` to dev at the wave close. Until then, a photo not-food 422 has no flag and stays degraded. Codegen was not run: no annotated signature changed, only provider bodies did.
+
+**Review fixes (lead, 2026-10-08).**
+- `ContentRepository.refreshContent`: a fetch that succeeds with no active row now leaves a `content` breadcrumb (`Content cache cleared: server has no active content`, environment + locale) before it clears the cache and falls back to the bundled defaults (D9). `content_repository_test.dart` asserts it.

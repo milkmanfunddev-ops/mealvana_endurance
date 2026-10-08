@@ -144,4 +144,66 @@ void main() {
 
     expect(saved!.email, 'lee@example.com');
   });
+
+  // Ticket 56 review: the profile save lands after the signedIn event's
+  // snapshot refresh, so the service asks for one more after it saves.
+  group('startup snapshot refresh after the profile save', () {
+    late List<(String, bool)> refreshes;
+
+    setUp(() {
+      refreshes = [];
+      service = AuthMigrationService(
+        userRepository: repo,
+        database: _MockDatabase(),
+        supabase: _MockSupabase()..stub(auth),
+        report: report,
+        refreshStartupSnapshot: (reason) async =>
+            refreshes.add((reason, saved != null)),
+      );
+      givenStored('lee@example.com');
+      givenSession('lee@example.com');
+    });
+
+    test('a fresh login refreshes once, after the save', () async {
+      await freshLogin();
+      expect(refreshes, [('sign_in_profile_saved', true)]);
+    });
+
+    test('an anonymous upgrade (linked in place) refreshes once, after the '
+        'save', () async {
+      await service.completeAuthentication(
+        previousUserId: 'u1',
+        wasAnonymous: true,
+        newUserId: 'u1',
+        authProvider: 'apple',
+        preservedUserId: true,
+      );
+      expect(refreshes, [('anonymous_upgrade_saved', true)]);
+    });
+
+    test('a refresh that throws does not fail the sign-in', () async {
+      service = AuthMigrationService(
+        userRepository: repo,
+        database: _MockDatabase(),
+        supabase: _MockSupabase()..stub(auth),
+        report: report,
+        refreshStartupSnapshot: (_) async => throw StateError('disposed'),
+      );
+
+      await freshLogin();
+
+      expect(saved, isNotNull);
+      verify(
+        () => report.breadcrumb(
+          'Startup snapshot refresh after sign-in save failed',
+          category: 'startup',
+          data: any(named: 'data'),
+        ),
+      ).called(1);
+    });
+  });
+}
+
+extension on _MockSupabase {
+  void stub(GoTrueClient auth) => when(() => this.auth).thenReturn(auth);
 }

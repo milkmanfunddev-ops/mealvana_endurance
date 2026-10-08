@@ -299,22 +299,39 @@ void main() {
       expect(cached.version, 8);
     });
 
-    test('a fetch that finds no active row clears the cache', () async {
-      await prefs.setString(
-        'app_content_cache',
-        json.encode(_contentJson(version: 7)),
-      );
+    test(
+      'a fetch that finds no active row clears the cache and says so',
+      () async {
+        await prefs.setString(
+          'app_content_cache',
+          json.encode(_contentJson(version: 7)),
+        );
+        final report = RecordingReport();
 
-      final repo = ContentRepository(
-        supabase: mockSupabase,
-        sharedPreferences: prefs,
-        report: RecordingReport(),
-        fetchRow: (_, _) async => null,
-      );
-      await repo.refreshContent();
+        final repo = ContentRepository(
+          supabase: mockSupabase,
+          sharedPreferences: prefs,
+          report: report,
+          fetchRow: (_, _) async => null,
+        );
+        await repo.refreshContent();
 
-      expect(prefs.getString('app_content_cache'), isNull);
-    });
+        expect(prefs.getString('app_content_cache'), isNull);
+        final cleared = report.calls.where(
+          (c) =>
+              c.severity == 'breadcrumb' &&
+              c.area == 'content' &&
+              c.message ==
+                  'Content cache cleared: server has no active content',
+        );
+        expect(cleared, hasLength(1), reason: 'D9: the clear is recorded');
+        expect(cleared.single.data, {
+          'environment': 'production',
+          'locale': 'en',
+        });
+        expect(report.faults, isEmpty);
+      },
+    );
   });
 
   // ---------------------------------------------------------------------------

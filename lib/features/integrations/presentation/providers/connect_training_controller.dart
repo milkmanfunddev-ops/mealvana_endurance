@@ -891,9 +891,10 @@ class ConnectTrainingController extends _$ConnectTrainingController {
 
   /// Ticket 63 (Finding 50-006): a successful connect unhides every row this
   /// provider's disconnect hid, and uploads the unhide at once. Lee
-  /// (2026-10-08): only a same-athlete reconnect, or one whose previous
-  /// athlete id is unknown or absent, unhides; a different athlete leaves the
-  /// first athlete's rows hidden. Never fails the connect.
+  /// (2026-10-08): only a same-athlete reconnect (or an UNKNOWN athlete id)
+  /// unhides. Unknown on either side, the previous id or the new one, counts
+  /// as same-athlete; only two known ids that differ leave the first
+  /// athlete's rows hidden. Never fails the connect.
   Future<void> _unhideProviderData({
     required String providerId,
     required String userId,
@@ -903,7 +904,7 @@ class ConnectTrainingController extends _$ConnectTrainingController {
   }) async {
     final previous = previousAthleteId?.trim() ?? '';
     final current = newAthleteId?.trim() ?? '';
-    if (previous.isNotEmpty && previous != current) {
+    if (previous.isNotEmpty && current.isNotEmpty && previous != current) {
       var stillHidden = 0;
       try {
         stillHidden = await deps.activitiesRepo
@@ -1954,7 +1955,6 @@ class ConnectTrainingController extends _$ConnectTrainingController {
     required String Function(T result) getErrorType,
     required List<dynamic> Function(T result) getActivities,
     required int Function(T result) getNewWorkouts,
-    required int Function(T result) getUpdated,
     required int Function(T result) getSkipped,
     required List<dynamic> Function(T result)? getRaceCandidates,
     required List<dynamic> Function(T result)? getEventData,
@@ -2237,7 +2237,6 @@ class ConnectTrainingController extends _$ConnectTrainingController {
       getErrorType: (result) => result.errorType.name,
       getActivities: (result) => result.activities,
       getNewWorkouts: (result) => result.newWorkouts,
-      getUpdated: (result) => result.updated,
       getSkipped: (result) => result.skipped,
       getRaceCandidates: (result) => result.raceCandidates,
       getEventData: null,
@@ -2338,7 +2337,6 @@ class ConnectTrainingController extends _$ConnectTrainingController {
               wrapper.fullResult.workoutResult.activities,
           getNewWorkouts: (wrapper) =>
               wrapper.fullResult.workoutResult.newWorkouts,
-          getUpdated: (wrapper) => wrapper.fullResult.workoutResult.updated,
           getSkipped: (wrapper) => wrapper.fullResult.workoutResult.unchanged,
           getRaceCandidates: null,
           getEventData: (wrapper) =>
