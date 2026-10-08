@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -264,17 +266,15 @@ class _BarcodeScannerScreenState extends ConsumerState<BarcodeScannerScreen>
     await _safeStopScanner();
     if (!mounted) return;
 
-    ref
-        .read(appExternalDepsProvider)
-        .analytics
-        .track(
-          'barcode_entered',
-          properties: {
-            'code': digits,
-            'category': widget.category,
-            'context': widget.context,
-          },
-        );
+    unawaited(
+      ref
+          .read(barcodeScannerServiceProvider)
+          .trackBarcodeEntered(
+            digits,
+            category: widget.category,
+            context: widget.context,
+          ),
+    );
     await _lookupBarcode(digits);
   }
 
@@ -851,7 +851,7 @@ class _BarcodeScannerScreenState extends ConsumerState<BarcodeScannerScreen>
               _flashOn
                   ? FontAwesomeIcons.bolt.data
                   : FontAwesomeIcons.bolt.data,
-              semanticLabel: 'Flash',
+              semanticLabel: _text(ContentKeys.barcodeScannerFlash),
               color: _flashOn ? AppColors.orange : Colors.white,
               size: AppIconSizes.md,
             ),

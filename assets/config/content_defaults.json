@@ -244,6 +244,8 @@
     "pdf_from_label": "From"
   },
   "auth": {
+    "show_password": "Show password",
+    "hide_password": "Hide password",
     "post_onboarding": {
       "title": "Create Your Account",
       "subtitle": "Secure your data and sync across devices",
@@ -317,7 +319,7 @@
       "resend_in": "Resend code in {n}s",
       "resend": "Resend code",
       "resent": "New code sent to {email}",
-      "code_superseded": "That code is from an earlier email. Use the code in the newest one.",
+      "code_superseded": "That code is not right, or it came from an earlier email. Use the code in the newest email.",
       "maybe_account_hint": "No code? This address may already have an account.",
       "log_in": "Log in",
       "error_wrong_code": "That code is not right. Check the email and try again.",
@@ -356,7 +358,16 @@
     "enter_hint": "8 to 14 digits",
     "enter_submit": "Look it up",
     "enter_length": "A barcode has 8 to 14 digits.",
-    "typed_invalid": "That number isn't a barcode we recognise. Check the digits printed under the barcode and type them again."
+    "typed_invalid": "That number isn't a barcode we recognise. Check the digits printed under the barcode and type them again.",
+    "flash": "Flash"
+  },
+  "food_search": {
+    "scan_barcode": "Scan barcode",
+    "search": "Search"
+  },
+  "meal_log": {
+    "serving_singular": "serving",
+    "serving_plural": "servings"
   },
   "meal_log_actions": {
     "saved_meal_removed": "Saved meal removed",

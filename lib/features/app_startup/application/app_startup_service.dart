@@ -28,7 +28,7 @@ import '../../ai_credits/data/revenuecat_service.dart';
 import '../../auth/application/auth_service.dart';
 import '../../auth/data/user_repository.dart';
 import '../../../shared/services/launch_trail.dart';
-import '../../auth/presentation/providers/password_recovery_controller.dart';
+import '../../auth/domain/password_recovery_marker.dart';
 
 /// Service responsible for providing individual startup operations using Drift
 /// Following Andrea Bizzotto's app initialization patterns
@@ -623,7 +623,7 @@ class AppStartupService {
 
   /// A password reset the app was quit on (testing-wave 124-003): the right
   /// reset code signed the phone in, Set New Password was never finished,
-  /// and `PasswordRecoveryController.recoveryPendingKey` is still set. That
+  /// and [passwordRecoveryPendingKey] is still set. That
   /// session is signed out here, before the router reads any session, so the
   /// relaunch lands on Log In and the emailed code alone never signs a phone
   /// in. The marker is cleared first, so a sign-out that throws is not
@@ -633,11 +633,10 @@ class AppStartupService {
   Future<void> endAbandonedRecovery() async {
     try {
       final prefs = ref.read(appExternalDepsProvider).sharedPreferences;
-      if (prefs.getBool(PasswordRecoveryController.recoveryPendingKey) !=
-          true) {
+      if (prefs.getBool(passwordRecoveryPendingKey) != true) {
         return;
       }
-      await prefs.remove(PasswordRecoveryController.recoveryPendingKey);
+      await prefs.remove(passwordRecoveryPendingKey);
       if (_supabase.auth.currentSession == null) {
         // Marker without a session: nothing to sign out, but say so (D9).
         LaunchTrail.add('abandoned recovery: marker cleared, no session');

@@ -9,6 +9,7 @@ import '../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../../../shared/services/app_external_deps.dart';
 import '../../../../shared/services/auth/auth_listener_service.dart';
 import '../../../content/application/content_service.dart';
+import '../../../content/domain/content_keys.dart';
 import '../providers/post_onboarding_auth_controller.dart';
 import '../../application/email_auth_service.dart';
 import '../../domain/auth_exceptions.dart';
@@ -344,8 +345,14 @@ class _EmailSignupScreenState extends ConsumerState<EmailSignupScreen> {
                     ),
                     // Named as Log In's is (118-005, 119-005).
                     tooltip: _obscurePassword
-                        ? 'Show password'
-                        : 'Hide password',
+                        ? contentService.getValue(
+                            ContentKeys.authShowPassword,
+                            defaultValue: 'Show password',
+                          )
+                        : contentService.getValue(
+                            ContentKeys.authHidePassword,
+                            defaultValue: 'Hide password',
+                          ),
                     icon: Icon(
                       _obscurePassword
                           ? FontAwesomeIcons.eye.data
@@ -395,8 +402,14 @@ class _EmailSignupScreenState extends ConsumerState<EmailSignupScreen> {
                       'signup_email.confirm_password_visibility_button',
                     ),
                     tooltip: _obscureConfirmPassword
-                        ? 'Show password'
-                        : 'Hide password',
+                        ? contentService.getValue(
+                            ContentKeys.authShowPassword,
+                            defaultValue: 'Show password',
+                          )
+                        : contentService.getValue(
+                            ContentKeys.authHidePassword,
+                            defaultValue: 'Hide password',
+                          ),
                     icon: Icon(
                       _obscureConfirmPassword
                           ? FontAwesomeIcons.eye.data

@@ -327,10 +327,22 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
       scaleComponentForRelog(base, servings);
 
   /// "1 serving" / "1.5 servings" for a food with no serving description.
-  static String _servingsLabel(double servings) =>
-      servings == servings.truncateToDouble()
-      ? '${servings.toInt()} ${servings == 1 ? 'serving' : 'servings'}'
-      : '${servings.toStringAsFixed(1)} servings';
+  /// The words come from the content system; this text is written into the
+  /// logged row's portion.
+  String _servingsLabel(double servings) {
+    final content = ref.read(contentServiceProvider);
+    final singular = content.getValue(
+      ContentKeys.mealLogServingSingular,
+      defaultValue: 'serving',
+    );
+    final plural = content.getValue(
+      ContentKeys.mealLogServingPlural,
+      defaultValue: 'servings',
+    );
+    return servings == servings.truncateToDouble()
+        ? '${servings.toInt()} ${servings == 1 ? singular : plural}'
+        : '${servings.toStringAsFixed(1)} $plural';
+  }
 
   /// Runs one confirmed quick log: the body absorbs taps from Log it until
   /// the write has landed and the sheet has closed (112-006).

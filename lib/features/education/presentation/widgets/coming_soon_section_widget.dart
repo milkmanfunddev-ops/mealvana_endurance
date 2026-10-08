@@ -3,11 +3,10 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import '../../../../shared/services/app_external_deps.dart';
-import '../../../../shared/services/report/report.dart';
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../../content/application/content_service.dart';
 import '../../../content/domain/content_keys.dart';
+import '../../application/education_interest_service.dart';
 
 /// Coming soon card: icon tile, title and description on a BaseCard, with a
 /// Notify Me that records the interest and says so (testing-wave 117-006;
@@ -30,8 +29,9 @@ class ComingSoonSectionWidget extends ConsumerStatefulWidget {
   final String description;
   final Key? notifyButtonKey;
 
-  /// The event a Notify Me tap records, with the card's title as `card`.
-  static const String notifyEvent = 'education_notify_me_tapped';
+  /// The event a Notify Me tap records, with the card's title as `card`
+  /// (sent by [EducationInterestService]).
+  static const String notifyEvent = EducationInterestService.notifyEvent;
 
   @override
   ConsumerState<ComingSoonSectionWidget> createState() =>
@@ -47,27 +47,10 @@ class _ComingSoonSectionWidgetState
   void _notify() {
     if (_notified) return;
     setState(() => _notified = true);
-    try {
-      ref
-          .read(appExternalDepsProvider)
-          .analytics
-          .track(
-            ComingSoonSectionWidget.notifyEvent,
-            properties: {'card': widget.title},
-          );
-    } catch (e, stackTrace) {
-      // Analytics never blocks the confirmation.
-      unawaited(
-        ref
-            .read(reportProvider)
-            .degraded(
-              e,
-              stackTrace: stackTrace,
-              area: 'education',
-              message: 'Learn Notify Me analytics event failed',
-            ),
-      );
-    }
+    // Analytics never blocks the confirmation; the service reports a failure.
+    unawaited(
+      ref.read(educationInterestServiceProvider).recordNotifyMe(widget.title),
+    );
     MealvanaSnackbar.showSuccess(
       context,
       ref

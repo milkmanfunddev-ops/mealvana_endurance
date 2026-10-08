@@ -5,6 +5,8 @@ import 'supabase_barcode_service.dart';
 import 'food_mapping_service.dart';
 import '../../../shared/database/app_database.dart';
 import '../../../shared/database/database_provider.dart';
+import '../../../shared/services/analytics/analytics_tracker.dart';
+import '../../../shared/services/app_external_deps.dart';
 import '../../../shared/services/report/report.dart';
 
 part 'barcode_scanner_service.g.dart';
@@ -16,16 +18,42 @@ class BarcodeScannerService {
   final FoodMappingService _mappingService;
   final AppDatabase _database;
   final Report _report;
+  final AnalyticsTracker _analytics;
 
   BarcodeScannerService({
     required SupabaseBarcodeService barcodeService,
     required FoodMappingService mappingService,
     required AppDatabase database,
     required Report report,
+    required AnalyticsTracker analytics,
   }) : _barcodeService = barcodeService,
        _mappingService = mappingService,
        _database = database,
-       _report = report;
+       _report = report,
+       _analytics = analytics;
+
+  /// Records a barcode typed on the scanner's "Enter" sheet (testing-wave
+  /// 28-004) as `barcode_entered`, before its lookup runs. Never throws: an
+  /// analytics failure is reported (D9) and the lookup goes on.
+  Future<void> trackBarcodeEntered(
+    String code, {
+    String? category,
+    String? context,
+  }) async {
+    try {
+      await _analytics.track(
+        'barcode_entered',
+        properties: {'code': code, 'category': category, 'context': context},
+      );
+    } catch (e, stackTrace) {
+      await _report.degraded(
+        e,
+        stackTrace: stackTrace,
+        area: 'barcode_scanning',
+        message: 'barcode_entered analytics event failed',
+      );
+    }
+  }
 
   /// Scan a barcode and return a Food model if successful
   /// Returns null if the product is not found or there's an error
@@ -272,5 +300,6 @@ BarcodeScannerService barcodeScannerService(Ref ref) {
     mappingService: ref.watch(foodMappingServiceProvider),
     database: ref.read(appDatabaseProvider),
     report: ref.read(reportProvider),
+    analytics: ref.read(appExternalDepsProvider).analytics,
   );
 }

@@ -93,7 +93,17 @@ export function makeDiscardSignupHandler(deps: DiscardSignupDeps) {
 
       const admin = deps.admin();
       const { data, error } = await admin.auth.admin.getUserById(userId);
-      if (error || !data?.user) return ok();
+      if (error) {
+        // D9: say why nothing was discarded. A decoy id (124-002) lands here
+        // as not-found too. Never log the email.
+        console.warn('[discard-signup] getUserById failed', {
+          userId,
+          code: error.code ?? error.status,
+          message: error.message,
+        });
+        return ok();
+      }
+      if (!data?.user) return ok();
 
       if (!isDiscardable(data.user as AdminUser, email, now())) return ok();
 

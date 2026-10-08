@@ -168,9 +168,10 @@ class _VerifyEmailScreenState extends ConsumerState<VerifyEmailScreen> {
       final content = ref.read(contentServiceProvider);
       setState(() {
         _verifying = false;
-        // After a Resend, a refused young code most likely came from the
-        // earlier email (121-002): point at the newest one, never at Resend,
-        // which would send a third.
+        // After a Resend, a refused young code is either mistyped or from
+        // the earlier email (121-002); GoTrue cannot tell the two apart, so
+        // the line names both and points at the newest email, never at
+        // Resend, which would send a third.
         _error = _resent && e.reason == VerificationCodeRejection.wrong
             ? content.getValue(ContentKeys.verifyEmailCodeSuperseded)
             : content.getValue(_rejectionKey(e.reason));

@@ -57,6 +57,13 @@ void main() {
       () => analytics.track(any(), properties: any(named: 'properties')),
     ).thenAnswer((_) async {});
     scanner = _MockBarcodeScannerService();
+    when(
+      () => scanner.trackBarcodeEntered(
+        any(),
+        category: any(named: 'category'),
+        context: any(named: 'context'),
+      ),
+    ).thenAnswer((_) async {});
     popped = [];
   });
 
@@ -221,14 +228,14 @@ void main() {
         await tester.pump(const Duration(milliseconds: 600));
 
         verify(() => scanner.scanBarcode('3017620422003')).called(1);
+        // The event goes through the scanner service (analytics stay out of
+        // the screen); its payload is pinned in
+        // barcode_scanner_service_analytics_test.dart.
         verify(
-          () => analytics.track(
-            'barcode_entered',
-            properties: {
-              'code': '3017620422003',
-              'category': 'add_food',
-              'context': 'meal_log_discover',
-            },
+          () => scanner.trackBarcodeEntered(
+            '3017620422003',
+            category: 'add_food',
+            context: 'meal_log_discover',
           ),
         ).called(1);
 

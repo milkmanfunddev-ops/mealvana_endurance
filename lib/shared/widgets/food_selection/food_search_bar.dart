@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:mealvana_endurance/features/content/application/content_service.dart';
+import 'package:mealvana_endurance/features/content/domain/content_keys.dart';
 import 'package:mealvana_endurance/shared/widgets/kyle_design/kyle_design.dart';
 
 /// Unified search bar for food selection across different screens
 /// Uses Kyle's design system for consistent styling
 /// Configurable to show/hide filter button based on context
-class FoodSearchBar extends StatelessWidget {
+class FoodSearchBar extends ConsumerWidget {
   const FoodSearchBar({
     super.key,
     required this.controller,
@@ -43,7 +46,8 @@ class FoodSearchBar extends StatelessWidget {
   final Key? fieldKey;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final content = ref.watch(contentServiceProvider);
     return Column(
       children: [
         // Search input field
@@ -85,7 +89,10 @@ class FoodSearchBar extends StatelessWidget {
                     key: const ValueKey('add_food.barcode_button'),
                     icon: FaIcon(
                       FontAwesomeIcons.barcode,
-                      semanticLabel: 'Scan barcode',
+                      semanticLabel: content.getValue(
+                        ContentKeys.foodSearchScanBarcode,
+                        defaultValue: 'Scan barcode',
+                      ),
                       color: AppColors.orange,
                       size: AppIconSizes.controlIcon,
                     ),
@@ -98,7 +105,10 @@ class FoodSearchBar extends StatelessWidget {
                     child: Semantics(
                       container: true,
                       button: true,
-                      label: 'Search',
+                      label: content.getValue(
+                        ContentKeys.foodSearchSearch,
+                        defaultValue: 'Search',
+                      ),
                       child: GestureDetector(
                         onTap: () => onSearch(controller.text),
                         child: Container(
