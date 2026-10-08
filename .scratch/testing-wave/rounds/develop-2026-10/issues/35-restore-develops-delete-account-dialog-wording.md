@@ -27,7 +27,7 @@
 
 No edge-function or schema change. Nothing to deploy.
 
-- [ ] `settings_account_dialogs_test.dart` green with the new defaults.
+- [x] `settings_account_dialogs_test.dart` green with the new defaults (5/5, wave 4).
 - [ ] Retest on a simulator: Settings → Delete account shows the old title and body (retest ticket 30's account checks, next test wave).
 
 Next: /testing-wave develop-2026-10 (fix wave 4)
