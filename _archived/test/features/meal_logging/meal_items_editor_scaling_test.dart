@@ -13,7 +13,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mealvana_endurance/features/meal_logging/domain/meal_analysis_result.dart';
 import 'package:mealvana_endurance/features/meal_logging/domain/meal_component.dart';
 import 'package:mealvana_endurance/features/meal_logging/presentation/widgets/meal_component_editor.dart';
-import 'package:mealvana_endurance/features/meal_logging/presentation/widgets/meal_items_editor.dart';
+import 'package:mealvana_endurance/features/_archived/meal_logging/presentation/widgets/meal_items_editor.dart';
 
 Finder _fieldByLabel(String label) => find.byWidgetPredicate(
   (w) => w is TextField && w.decoration?.labelText == label,

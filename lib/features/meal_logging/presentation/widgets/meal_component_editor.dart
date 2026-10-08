@@ -6,10 +6,12 @@ import '../../domain/consumed_totals.dart' show MealTotals;
 import '../../domain/meal_component.dart';
 import '../../domain/portion_quantity.dart';
 
-/// An editable list of [MealComponent]s for use in the edit-meal-log flow.
+/// An editable list of [MealComponent]s (stored in `MealLog.components`), used
+/// by Review & Log and Edit Meal.
 ///
-/// Mirrors the structure of [MealItemsEditor] but operates on [MealComponent]
-/// objects (stored in [MealLog.components]) rather than [MealAnalysisItem]s.
+/// Each row shows [MealComponent.portionLabel]; the Edit Item dialog saves the
+/// portion as typed and the Quantity beside it in `quantity`, never folded
+/// into the portion text (testing-wave develop-2026-10, 02-005).
 /// Exposes [onComponentsChanged] so the parent screen tracks the current list.
 class MealComponentEditor extends StatefulWidget {
   const MealComponentEditor({

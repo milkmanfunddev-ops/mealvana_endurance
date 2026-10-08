@@ -1,6 +1,6 @@
 # 38: The swap path keeps quantity apart from the portion text; MealItemsEditor is archived
 
-**Status:** in-progress (wave 4, 2026-10-08)
+**Status:** fixed (wave 4, 779431cb) awaiting retest
 **Labels:** fix, round:develop-2026-10, area:meal-logging
 **Branch:** `develop-next` (fix-wave worktree)
 **Blocked by:** nothing.
@@ -25,10 +25,12 @@
 
 No edge-function or schema change. Nothing to deploy.
 
-- [ ] Unit (`meal_swap_test.dart`): a food with `servingUnit: 'cup'`, 150 kcal per serving, swapped at qty 2 → `portion == '1 cup'`, `quantity == 2`, `calories == 300`, `portionLabel == '2 × 1 cup'`; at qty 1 → `portionLabel == '1 cup'`; a food with no `servingUnit` → `'1 serving'`.
-- [ ] Both screens use the helper (a grep in the test's comment is not a test: a widget test on the Review screen's swap sheet asserting the row text "2 × 1 cup" is the seam; `test/smoke_tests/food_smoke_test.dart` renders the swap screen and shows how to pump it).
-- [ ] The archived test is not collected by `flutter test` (confirm with `flutter test test/features/meal_logging`).
-- [ ] `flutter analyze` clean on touched files.
+**Fix notes (wave 4, 779431cb).** The archive paths follow the repo's convention rather than the paths in item 2: the widget went to `lib/features/_archived/meal_logging/presentation/widgets/meal_items_editor.dart` and its test to `_archived/test/features/meal_logging/meal_items_editor_scaling_test.dart`. A `*_test.dart` under `test/**/_archived/` would still be collected by `flutter test` (CI runs it with no path argument), while `lib/features/_archived/**` and `_archived/**` are the two trees `analysis_options.yaml` excludes and `docs/test/README.md` names as archived. Stale comments that still name `MealItemsEditor` remain in `test/seeded_tests/events_meal_logging_content_test.dart:557-605` (outside this ticket's Touches).
+
+- [x] Unit (`meal_swap_test.dart`): a food with `servingUnit: 'cup'`, 150 kcal per serving, swapped at qty 2 → `portion == '1 cup'`, `quantity == 2`, `calories == 300`, `portionLabel == '2 × 1 cup'`; at qty 1 → `portionLabel == '1 cup'`; a food with no `servingUnit` → `'1 serving'`.
+- [x] Both screens use the helper (a grep in the test's comment is not a test: a widget test on the Review screen's swap sheet asserting the row text "2 × 1 cup" is the seam; `test/smoke_tests/food_smoke_test.dart` renders the swap screen and shows how to pump it).
+- [x] The archived test is not collected by `flutter test` (confirm with `flutter test test/features/meal_logging`).
+- [x] `flutter analyze` clean on touched files.
 - [ ] Retest on a simulator (ticket 31, next test wave): swap an item to quantity 2, reopen it, Quantity shows 2 over the base.
 
 Next: /testing-wave develop-2026-10 (fix wave 4)

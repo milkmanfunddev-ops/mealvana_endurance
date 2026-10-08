@@ -9,6 +9,7 @@ import '../../domain/meal_analysis_result.dart';
 import '../../domain/meal_component.dart';
 import '../../domain/meal_log_source.dart';
 import '../../domain/meal_slot.dart';
+import '../../domain/meal_swap.dart';
 import '../providers/meal_log_providers.dart';
 import '../widgets/meal_component_editor.dart';
 import '../widgets/slot_chip_selector.dart' show OptionalSlotChipSelector;
@@ -76,9 +77,9 @@ class _MealReviewScreenState extends ConsumerState<MealReviewScreen> {
   }
 
   /// Opens the shared food-swap picker (returnSelection mode) and maps the
-  /// chosen food + quantity into a replacement [MealComponent]. Mirrors
-  /// [EditMealLogScreen._swapComponentFood] so both flows share the same
-  /// swap UX (unifies with the build-a-meal draft editor — item 13).
+  /// chosen food + quantity into a replacement [MealComponent] through
+  /// [swappedComponent], the same mapping Edit Meal uses, so both flows share
+  /// the same swap UX (unifies with the build-a-meal draft editor — item 13).
   Future<MealComponent?> _swapComponentFood(MealComponent current) async {
     final selection = await context.push<SwapFoodSelection>(
       '/swap-food',
@@ -90,27 +91,7 @@ class _MealReviewScreenState extends ConsumerState<MealReviewScreen> {
     );
     if (selection == null) return null;
 
-    final food = selection.food;
-    final qty = selection.quantity;
-    final qtyLabel = qty == qty.truncateToDouble()
-        ? qty.toInt().toString()
-        : qty.toStringAsFixed(1);
-    final unit = qty == 1
-        ? (food.servingUnit ?? 'serving')
-        : (food.servingUnitPlural ?? food.servingUnit ?? 'servings');
-    double? scale(num? v) => v == null ? null : v.toDouble() * qty;
-
-    return MealComponent(
-      name: food.displayName ?? food.name,
-      portion: '$qtyLabel $unit',
-      calories: food.caloriesPerServing != null
-          ? (food.caloriesPerServing! * qty).round()
-          : null,
-      carbG: scale(food.carbsPerServing),
-      proteinG: scale(food.proteinPerServing),
-      fatG: scale(food.fatPerServing),
-      sodiumMg: scale(food.sodiumMg),
-    );
+    return swappedComponent(selection.food, selection.quantity);
   }
 
   Future<void> _logMeal() async {

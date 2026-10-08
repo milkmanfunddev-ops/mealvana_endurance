@@ -2,12 +2,14 @@
 /// free-text portion string (e.g. "1 cup", "1.5 oz", "1/2 cup dry",
 /// "1 1/2 cups", "a handful").
 ///
-/// [MealAnalysisItem] has no quantity field, so its Edit Item dialog uses
-/// these helpers to fold the chosen Quantity into the portion at save time.
-/// [MealComponent] carries `quantity` beside the portion instead (testing-wave
-/// develop-2026-10, 02-005), and its dialog no longer rewrites the portion. During editing the Portion label itself is
-/// never rewritten (bug 39fe3fdb): the label shows the unit portion and the
-/// Quantity field communicates how many of it were eaten.
+/// No meal-logging editor folds a quantity into a portion any more:
+/// [MealComponent] carries `quantity` beside the portion (testing-wave
+/// develop-2026-10, 02-005), and both its Edit Item dialog and the swap path
+/// (`swappedComponent`) leave the portion text as the per-serving base. The
+/// Portion label is never rewritten during editing (bug 39fe3fdb); the
+/// Quantity field says how many of it were eaten. [replaceLeadingQuantity]
+/// and the readers below remain for food display and the nutrition-plan
+/// screens.
 ///
 /// The leading number may be a whole number, a decimal, a fraction or a mixed
 /// number (testing-wave 112-003: "1/2 cup dry" x 2 used to become "2/2 cup
