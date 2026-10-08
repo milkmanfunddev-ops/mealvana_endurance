@@ -1,0 +1,1 @@
+{'message': 'Failed to run sql query: ERROR:  42703: column "race_distance" does not exist\nLINE 1: select id, event_name, event_date, start_time, origin, location, race_distance, sport_category, updated_at from events where id=\'3e874ee3-fd74-49ed-a92b-bf27efc6c06e\'\n                                                                         ^\n'}

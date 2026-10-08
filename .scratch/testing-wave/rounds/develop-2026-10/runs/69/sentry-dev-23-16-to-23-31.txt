@@ -1,0 +1,6 @@
+Dev Sentry (milkman-24 / mealvana-endurance-dev), errors dataset, 2026-10-08 23:16:00Z-23:31:00Z, read 23:29Z via the Sentry MCP:
+- 23:16:32Z warning SlowOperation startup.total 11733 ms, area performance (this device's first launch after the reboot; known noise)
+- 23:22:19Z warning FunctionException describe-meal 400 "description is too long", user 607f9dd5, area meal_logging (ticket 68's run)
+- 23:23:03Z warning "onesignal init skipped: no app id configured yet", area push, user.id 81D07A23-… (not this device: no matching line in this console; another wave simulator)
+- 23:23:22Z warning PlatformException camera_access_denied, user 607f9dd5, area meal_logging (ticket 68's run)
+Nothing at 23:26-23:28Z (the offline cold start at 23:26:37Z).

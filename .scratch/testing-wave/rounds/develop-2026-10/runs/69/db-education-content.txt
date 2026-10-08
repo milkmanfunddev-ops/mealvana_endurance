@@ -1,0 +1,6 @@
+{"id": "20da5117-da4b-446e-8a76-d2b7855d933d", "title": "ME 101 - 1.1", "content_type": "free", "duration_seconds": 97, "sort_order": 1, "is_published": true, "no_video": false}
+{"id": "d400da9c-e2f4-4232-bbca-a7d44772b213", "title": "ME 101 - 1.2", "content_type": "free", "duration_seconds": null, "sort_order": 2, "is_published": true, "no_video": false}
+{"id": "ace26f03-b926-4f10-8179-f014280f89c6", "title": "ME 101 - 1.3", "content_type": "free", "duration_seconds": null, "sort_order": 3, "is_published": true, "no_video": false}
+{"id": "1ab4edf0-3366-44a9-8ba8-efce06bc86b9", "title": "ME 101 - 1.4", "content_type": "free", "duration_seconds": null, "sort_order": 4, "is_published": true, "no_video": false}
+{"id": "fec3e16e-b356-40e7-8e8f-1a8d247d0fa5", "title": "ME 101 - 1.5", "content_type": "free", "duration_seconds": null, "sort_order": 5, "is_published": true, "no_video": false}
+(5 rows)

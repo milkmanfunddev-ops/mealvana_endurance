@@ -1,0 +1,2 @@
+{"id": "3e874ee3-fd74-49ed-a92b-bf27efc6c06e", "event_name": "IM NC 70.3", "event_date": "2026-10-17", "start_time": "2026-10-17T00:00:00.000", "origin": "training_peaks", "location": null, "updated_at": "2026-10-08 08:29:26.302866"}
+(1 rows)

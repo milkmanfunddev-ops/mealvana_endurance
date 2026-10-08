@@ -1,0 +1,7 @@
+{"id": "30f0679b-db4e-4f7b-bee5-6dedce6a1784", "event_name": "Test 1", "event_date": "2026-01-24", "start_time": "2026-01-24T14:15:04.889477", "origin": null, "location": null, "updated_at": "2025-12-25 14:15:22.423721"}
+{"id": "68c5b207-6faa-4bd5-a67e-2ee2e6b246f0", "event_name": "Test123", "event_date": "2026-01-24", "start_time": "2026-01-24T20:18:29.949889", "origin": null, "location": null, "updated_at": "2025-12-25 20:18:36.522688"}
+{"id": "94b2af15-016d-4e4b-8140-97243710a30c", "event_name": "Baton Rouge Half Marathon", "event_date": "2026-03-08", "start_time": "2026-03-08T07:00:00.000", "origin": null, "location": "Baton Rouge, Louisiana", "updated_at": "2026-03-02 07:40:59.140351"}
+{"id": "65379d67-b5a5-4a8f-8145-8386271115cc", "event_name": "Test", "event_date": "2026-06-20", "start_time": "2026-06-20T08:58:00.000", "origin": null, "location": null, "updated_at": "2026-10-08 20:47:04.828996"}
+{"id": "3e874ee3-fd74-49ed-a92b-bf27efc6c06e", "event_name": "IM NC 70.3", "event_date": "2026-10-17", "start_time": "2026-10-17T00:00:00.000", "origin": "training_peaks", "location": null, "updated_at": "2026-10-08 08:29:26.302866"}
+{"id": "a7e76d6c-bbf7-4d29-bebc-59a42c462b0d", "event_name": "IRONMAN Cozumel", "event_date": "2026-11-23", "start_time": "2026-11-23T06:30:00.000", "origin": null, "location": "Isla Cozumel, Mexico", "updated_at": "2026-09-16 18:56:39.353"}
+(6 rows)

@@ -1,0 +1,2 @@
+synced_from_provider|hidden|needs_upload|count (read-only Drift copy, 23:39Z)
+training_peaks|0|0|43
