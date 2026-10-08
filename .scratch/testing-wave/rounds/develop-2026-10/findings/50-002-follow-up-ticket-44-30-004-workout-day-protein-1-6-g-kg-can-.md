@@ -1,7 +1,7 @@
 # 50-002 · Follow-up: ticket 44 / 30-004 workout-day protein 1.6 g/kg can only be checked in a fresh signup's daily-plan preview, not signed in
 
 - kind: followup-test
-- status: triaged
+- status: closed
 - ticket: 50
 - run: w5-20261008T1720Z
 - screen: Onboarding → Your daily plan (daily-plan preview); Settings → Nutrition Targets
@@ -27,4 +27,4 @@ pre/during/post fuel overrides (Carbs/Protein/Fat/Sodium/Fluids per window, no d
 > 
 
 **Triage.**
-
+- closed · retest passed or ran in wave 7 (ticket 69 check 1 (body-fat half has no control: 69-001)) · lead, 2026-10-09

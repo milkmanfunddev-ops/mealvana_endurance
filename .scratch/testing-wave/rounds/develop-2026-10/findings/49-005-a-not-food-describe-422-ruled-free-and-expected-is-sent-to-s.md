@@ -1,7 +1,7 @@
 # 49-005 · A not-food describe (422, ruled free and expected) is sent to Sentry as a Degraded FunctionException
 
 - kind: bug
-- status: triaged
+- status: closed
 - ticket: 49
 - run: w5-20261008T1719Z
 - screen: Log a Meal (Describe tab)
@@ -25,3 +25,4 @@ The screen is right (not-food line, no Review, no debit). But the console shows 
 > 
 
 **Triage.**
+- closed · retest passed or ran in wave 7 (ticket 68 check 5) · lead, 2026-10-09

@@ -1,7 +1,7 @@
 # 50-003 · Offline cold start still sends error_reported for the content fetch (x2) and the Learn lesson list (retest of 32-007)
 
 - kind: bug
-- status: triaged
+- status: closed
 - ticket: 50
 - run: w5-20261008T1720Z
 - screen: none (startup chain, offline cold start); Learn
@@ -38,4 +38,4 @@ The notification-answer path was not exercised (permission already granted).
 > 
 
 **Triage.**
-
+- closed · retest passed or ran in wave 7 (ticket 69 check 4) · lead, 2026-10-09

@@ -1,6 +1,6 @@
 # 44: Onboarding Your daily plan applies the session protein bump
 
-**Status:** not retested 2026-10-08 (ticket 50, wave 5): the preview is onboarding-only → 50-002
+**Status:** done 2026-10-09: 50-002 passed in ticket 69 check 1 (99 g / 1.6 g/kg; rest 87 g); no body-fat control in onboarding (69-001)
 **Labels:** fix, round:develop-2026-10, area:onboarding, area:nutrition
 **Branch:** `develop-next` (fix-wave worktree)
 **Blocked by:** 40 (runs first, alone). Nothing else.

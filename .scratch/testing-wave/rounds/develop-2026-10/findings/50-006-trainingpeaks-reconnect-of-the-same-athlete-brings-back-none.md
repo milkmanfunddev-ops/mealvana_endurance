@@ -1,7 +1,7 @@
 # 50-006 · TrainingPeaks reconnect of the same athlete brings back none of the 43 hidden past workouts, though the Disconnect dialog says they come back (32-011)
 
 - kind: bug
-- status: triaged
+- status: closed
 - ticket: 50
 - run: w5-20261008T1720Z
 - screen: Connected Apps; Timeline
@@ -45,4 +45,4 @@ them.
 > 
 
 **Triage.**
-
+- closed · retest passed or ran in wave 7 (ticket 69 check 10) · lead, 2026-10-09

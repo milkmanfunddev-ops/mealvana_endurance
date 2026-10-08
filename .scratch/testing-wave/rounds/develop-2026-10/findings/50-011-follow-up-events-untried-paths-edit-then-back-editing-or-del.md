@@ -1,7 +1,7 @@
 # 50-011 · Follow-up: Events untried paths (edit-then-Back, editing or deleting a TrainingPeaks-imported event, then sync)
 
 - kind: followup-test
-- status: triaged
+- status: closed
 - ticket: 50
 - run: w5-20261008T1720Z
 - screen: Events, Event Details, Edit Event
@@ -28,4 +28,4 @@ Not run (steps 2-4). Step 1 seen: no prompt, nothing written (k03, db-event-test
 > 
 
 **Triage.**
-
+- closed · retest passed or ran in wave 7 (ticket 69 check 6 ran it; 69-002, 69-003, 69-004, 69-005 carry what failed or waits) · lead, 2026-10-09

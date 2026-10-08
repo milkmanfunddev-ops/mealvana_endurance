@@ -1,7 +1,7 @@
 # 49-006 · meal_ai_photo_attached fires on every Camera or Gallery tap, also when no photo is attached (no camera, cancelled picker)
 
 - kind: bug
-- status: triaged
+- status: closed
 - ticket: 49
 - run: w5-20261008T1719Z
 - screen: Log a Meal (Describe tab)
@@ -26,3 +26,4 @@
 > 
 
 **Triage.**
+- closed · retest passed or ran in wave 7 (ticket 68 check 7) · lead, 2026-10-09

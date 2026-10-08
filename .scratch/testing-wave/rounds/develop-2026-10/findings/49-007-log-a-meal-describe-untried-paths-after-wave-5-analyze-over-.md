@@ -1,7 +1,7 @@
 # 49-007 · Log a Meal Describe: untried paths after wave 5 (Analyze over 2000 characters, double-tap Analyze, Gallery pick with location, camera denied)
 
 - kind: followup-test
-- status: triaged
+- status: closed
 - ticket: 49
 - run: w5-20261008T1719Z
 - screen: Log a Meal (Describe tab)
@@ -27,3 +27,4 @@ Not run: steps 1 and 2 need AI spends beyond this ticket's three; 3 and 4 were o
 > 
 
 **Triage.**
+- closed · retest passed or ran in wave 7 (ticket 68 checks 6+8 ran it; what failed is 68-002, 68-003, 68-004) · lead, 2026-10-09

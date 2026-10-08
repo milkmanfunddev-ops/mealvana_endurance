@@ -1,7 +1,7 @@
 # 50-013 · Follow-up: Log a Meal untried paths (empty Search gives no feedback, barcode Enter, start from saved meal, Describe offline)
 
 - kind: followup-test
-- status: triaged
+- status: closed
 - ticket: 50
 - run: w5-20261008T1720Z
 - screen: Log a Meal
@@ -28,4 +28,4 @@ Not run (only the screens were opened; see notes Check 9).
 > 
 
 **Triage.**
-
+- closed · retest passed or ran in wave 7 (ticket 68 check 12 ran it; 68-010, 68-011, 68-007 carry what failed) · lead, 2026-10-09

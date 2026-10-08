@@ -1,7 +1,7 @@
 # 49-008 · Edit Meal: untried paths after wave 5 (Re-scan photo, a time after now or across midnight, Discard and Keep editing, Hide details alone)
 
 - kind: followup-test
-- status: triaged
+- status: closed
 - ticket: 49
 - run: w5-20261008T1719Z
 - screen: Edit Meal
@@ -27,3 +27,4 @@ Not run. This run checked Change (12:38 -> 10:38 AM, eaten_at 15:38Z), a notes e
 > 
 
 **Triage.**
+- closed · retest passed or ran in wave 7 (ticket 68 check 11 (time behaviour carried by 68-015)) · lead, 2026-10-09

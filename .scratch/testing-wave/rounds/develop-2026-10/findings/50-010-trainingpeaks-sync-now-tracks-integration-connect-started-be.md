@@ -1,7 +1,7 @@
 # 50-010 · TrainingPeaks Sync Now tracks integration_connect_started before integration_sync_success
 
 - kind: bug
-- status: triaged
+- status: closed
 - ticket: 50
 - run: w5-20261008T1720Z
 - screen: Connected Apps (TrainingPeaks card)
@@ -27,4 +27,4 @@ id>`, as 32-005 already noted.)
 > 
 
 **Triage.**
-
+- closed · retest passed or ran in wave 7 (ticket 69 check 12) · lead, 2026-10-09

@@ -1,7 +1,7 @@
 # 50-007 · Cancelling V.O2 Connect at the iOS sign-in prompt sends error_reported (degraded) to Sentry as an authentication_error (32-007 family)
 
 - kind: bug
-- status: triaged
+- status: closed
 - ticket: 50
 - run: w5-20261008T1720Z
 - screen: Connected Apps (V.O2 card)
@@ -34,4 +34,4 @@ tapped in this run).
 > 
 
 **Triage.**
-
+- closed · retest passed or ran in wave 7 (ticket 69 check 8) · lead, 2026-10-09

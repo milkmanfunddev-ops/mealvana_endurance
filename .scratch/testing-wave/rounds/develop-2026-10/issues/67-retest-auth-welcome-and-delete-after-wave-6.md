@@ -1,6 +1,6 @@
 # 67: Retest: auth, Welcome and delete after wave 6
 
-**Status:** in-progress (wave 7, 2026-10-08)
+**Status:** done 2026-10-09 (wave 7 run complete; see runs/67/notes.md)
 **Labels:** retest, round:develop-2026-10, area:account
 **Branch:** `develop-next` (worktree per ticket, branched from the round's base after fix wave 6 lands)
 **Source:** TRIAGE.md rulings of 2026-10-08 (wave 5 triage): followups 48-004, 48-005, 48-006, 50-016; fix retests for tickets 55 (48-001), 56 (49-001, 50-005), 57 (48-003)

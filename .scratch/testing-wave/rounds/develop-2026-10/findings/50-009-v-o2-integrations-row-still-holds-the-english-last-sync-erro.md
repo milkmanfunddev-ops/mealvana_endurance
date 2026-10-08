@@ -1,7 +1,7 @@
 # 50-009 · V.O2 integrations row still holds the English last_sync_error 'Please reconnect your V.O2 account' and requires_reauth after ticket 37 (no backfill for existing rows)
 
 - kind: bug
-- status: triaged
+- status: closed
 - ticket: 50
 - run: w5-20261008T1720Z
 - screen: none (dev database, `integrations`)
@@ -32,4 +32,4 @@ disconnect: status and error null). V.O2 could not be disconnected again in this
 > 
 
 **Triage.**
-
+- closed · retest passed or ran in wave 7 (ticket 69 check 11) · lead, 2026-10-09

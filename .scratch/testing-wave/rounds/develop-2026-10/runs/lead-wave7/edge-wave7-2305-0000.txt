@@ -1,0 +1,8 @@
+Lead's edge extract, dev vlmtsdzpnjnavdgytcmi, function_edge_logs with status not in 200/201/204, 2026-10-08T23:05Z–2026-10-09T00:00Z (Supabase MCP query_logs):
+23:20:02.796  422  describe-meal     -> ticket 68 check 5 (not-food, expected; no debit)
+23:22:19.691  400  describe-meal     -> ticket 68 check 6 (2,149 chars; 68-002)
+23:38:08.412  409  garmin-backfill   -> ticket 69 Connected Apps open (dead Garmin token; 69-010, 69-012)
+23:43:02.438  404  lookup-product    -> ticket 68 check 12 unknown barcode (68-007)
+No server line for ticket 68's first 12345670 lookup at 23:41:08Z (client-side 30 s timeout; lead Finding).
+67-006's describe-meal 422/400 are the first two lines above (68's checks), and its onesignal warnings are the relaunches after the 23:13Z simulator shutdown (67, 68) — matched, no new bug.
+Function logs for ticket 61 (garmin-push, 20:30–23:20Z) and ticket 62 (20:35–21:00Z): see TRIAGE wave-7 close line.

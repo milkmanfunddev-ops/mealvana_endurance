@@ -1,6 +1,6 @@
 # 61: garmin-push logs an unmapped Garmin user without a 23502
 
-**Status:** landed (wave 6, 2026-10-08, develop-next `8dec4583`); open until its retest passes in test wave 7 (tickets 67-69; 61/62/64 server-side checks at the wave-7 close)
+**Status:** done 2026-10-09: lead's function_logs read at the wave-7 close: unmapped push 22:23Z logged act/actdet/actdetfull skips with reason=no_user_mapping and the -detail id; no 23502
 **Labels:** fix, round:develop-2026-10, area:integrations, area:functions
 **Branch:** `develop-next` (fix-wave worktree)
 **Blocked by:** nothing.

@@ -1,6 +1,6 @@
 # 39: The five remaining timestamptz writers send UTC
 
-**Status:** retest FAILED 2026-10-08 (ticket 49, wave 5): the Settings save never uploads → 49-010; the UTC writer could not be exercised
+**Status:** done 2026-10-09: food_preferences updated_at at +00 within a second of the save (ticket 68 check 2, wave 7)
 **Labels:** fix, round:develop-2026-10, area:sync
 **Branch:** `develop-next` (fix-wave worktree)
 **Blocked by:** nothing.

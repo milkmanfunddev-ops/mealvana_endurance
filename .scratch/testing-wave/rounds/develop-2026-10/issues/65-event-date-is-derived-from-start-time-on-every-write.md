@@ -1,6 +1,6 @@
 # 65: An event's event_date is derived from its start_time on every write
 
-**Status:** landed (wave 6, 2026-10-08, develop-next `8dec4583`); open until its retest passes in test wave 7 (tickets 67-69; 61/62/64 server-side checks at the wave-7 close)
+**Status:** done 2026-10-09: 50-004 passed in ticket 69 (wave 7)
 **Labels:** fix, round:develop-2026-10, area:events
 **Branch:** `develop-next` (fix-wave worktree)
 **Blocked by:** nothing.

@@ -1,7 +1,7 @@
 # 48-005 · Follow-up: consent ON afterwards, Settings Privacy and Mixpanel
 
 - kind: followup-test
-- status: triaged
+- status: closed
 - ticket: 48
 - run: w5-20261008T1718Z
 - screen: Your privacy
@@ -30,3 +30,4 @@ as 30-014 already noted.
 > 
 
 **Triage.**
+- closed · retest passed or ran in wave 7 (ticket 67 checks 1+4 (prefs granted/denied; Mixpanel proof carried by 67-002)) · lead, 2026-10-09

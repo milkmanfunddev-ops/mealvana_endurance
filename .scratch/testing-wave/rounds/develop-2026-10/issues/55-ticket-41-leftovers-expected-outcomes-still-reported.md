@@ -1,6 +1,6 @@
 # 55: Ticket 41 leftovers: four expected outcomes still reach Sentry
 
-**Status:** landed (wave 6, 2026-10-08, develop-next `8dec4583`); open until its retest passes in test wave 7 (tickets 67-69; 61/62/64 server-side checks at the wave-7 close)
+**Status:** done 2026-10-09: 48-001 (67 check 3), 49-005 (68 check 5), 50-003 and 50-007 (69 checks 4, 8) passed in wave 7
 **Labels:** fix, round:develop-2026-10, area:auth, area:meal-logging, area:startup
 **Branch:** `develop-next` (fix-wave worktree)
 **Blocked by:** 54 (it changes what `faultUnlessWeather` does with a count when no tracker is in hand, and item 4 adds two callers of that kind). Never alongside 57 (both edit `post_onboarding_auth_screen.dart`) or 58, 60, 63 or 64 (all four list `connect_training_controller.dart` in their Touches).

@@ -1,7 +1,7 @@
 # 49-002 · Describe's field errors are cut to one line with an ellipsis: "like what you at…", "Describe what …"
 
 - kind: bug
-- status: triaged
+- status: closed
 - ticket: 49
 - run: w5-20261008T1719Z
 - screen: Log a Meal (Describe tab)
@@ -25,3 +25,4 @@ The field's error shows one line, "Add a bit more: at least 5 characters, like w
 > 
 
 **Triage.**
+- closed · retest passed or ran in wave 7 (ticket 68 checks 4-5) · lead, 2026-10-09

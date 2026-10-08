@@ -1,7 +1,7 @@
 # 50-012 · Follow-up: Learn untried paths (Notify Me twice, Back mid-load, scrub to the end, lessons 1.2 and 1.3)
 
 - kind: followup-test
-- status: triaged
+- status: closed
 - ticket: 50
 - run: w5-20261008T1720Z
 - screen: Learn, Video player
@@ -28,4 +28,4 @@ Not run.
 > 
 
 **Triage.**
-
+- closed · retest passed or ran in wave 7 (ticket 69 check 7 ran it; 69-007 and 69-008 carry the rest) · lead, 2026-10-09

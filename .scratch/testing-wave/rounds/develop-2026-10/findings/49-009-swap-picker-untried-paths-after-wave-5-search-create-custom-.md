@@ -1,7 +1,7 @@
 # 49-009 · Swap picker: untried paths after wave 5 (search, Create Custom Food and Scan barcode in swap mode, editing a swapped item's quantity)
 
 - kind: followup-test
-- status: triaged
+- status: closed
 - ticket: 49
 - run: w5-20261008T1719Z
 - screen: Add Food (swap picker)
@@ -26,3 +26,4 @@ Not run. This run checked: picker Back keeps the original item (Edit Meal, 55-pi
 > 
 
 **Triage.**
+- closed · retest passed or ran in wave 7 (ticket 68 check 10 ran it; the search crash is 68-006, Create Food 68-009, rest in 68-016) · lead, 2026-10-09

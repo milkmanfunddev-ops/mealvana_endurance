@@ -1,6 +1,6 @@
 # 54: Startup expected failures are recorded in Sentry, not held for analytics
 
-**Status:** landed (wave 6, 2026-10-08, develop-next `8dec4583`); open until its retest passes in test wave 7 (tickets 67-69; 61/62/64 server-side checks at the wave-7 close)
+**Status:** done 2026-10-09: 50-003 passed in ticket 69 check 4 (offline cold start: 0 error_reported; expected_failure counts in the Debug console; nothing new in dev Sentry). The Sentry count itself was not seen as an issue in that minute: it is a metric, noted for triage
 **Labels:** fix, round:develop-2026-10, area:telemetry
 **Branch:** `develop-next` (fix-wave worktree)
 **Blocked by:** nothing in code; runs in the fix wave after retest wave 5 (cut at the wave-4 close from ticket 41's question).

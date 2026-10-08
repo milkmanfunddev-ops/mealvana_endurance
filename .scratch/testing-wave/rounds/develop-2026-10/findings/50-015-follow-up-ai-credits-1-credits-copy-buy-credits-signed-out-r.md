@@ -1,7 +1,7 @@
 # 50-015 · Follow-up: AI Credits ('1 Credits' copy, /buy-credits signed out, Restore with nothing to restore)
 
 - kind: followup-test
-- status: triaged
+- status: closed
 - ticket: 50
 - run: w5-20261008T1720Z
 - screen: AI Credits
@@ -25,4 +25,4 @@ Not run (1 seen only).
 > 
 
 **Triage.**
-
+- closed · retest passed or ran in wave 7 (ticket 69 check 14 ran it; "1 Credits" is 69-013) · lead, 2026-10-09

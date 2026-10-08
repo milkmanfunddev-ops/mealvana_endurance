@@ -1,7 +1,7 @@
 # 49-003 · Retest of 31-006: a swiped-away Review item has no undo; the only way back is Back + Review again, which silently drops every edit
 
 - kind: bug
-- status: triaged
+- status: closed
 - ticket: 49
 - run: w5-20261008T1719Z
 - screen: Review & Log
@@ -27,3 +27,4 @@ Step 2: the item is gone at once, no confirm, no snackbar, no undo; Total 477 ->
 > 
 
 **Triage.**
+- closed · retest passed or ran in wave 7 (ticket 68 check 9) · lead, 2026-10-09

@@ -1,7 +1,7 @@
 # 50-014 · Follow-up: Connected Apps untried paths (Turn Off Sharing, Runna, TP sheet Cancel, reconnect with a future workout, Delete synced data on a disposable account)
 
 - kind: followup-test
-- status: triaged
+- status: closed
 - ticket: 50
 - run: w5-20261008T1720Z
 - screen: Connected Apps
@@ -28,4 +28,4 @@ Not run.
 > 
 
 **Triage.**
-
+- closed · retest passed or ran in wave 7 (ticket 69 checks 10+13 ran it; 69-009 and 69-011 carry the rest) · lead, 2026-10-09

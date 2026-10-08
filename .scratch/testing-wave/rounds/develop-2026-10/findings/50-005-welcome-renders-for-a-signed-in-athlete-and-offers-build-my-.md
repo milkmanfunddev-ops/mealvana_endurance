@@ -1,7 +1,7 @@
 # 50-005 · Welcome renders for a signed-in athlete and offers Build My Plan and Log In over the live session (32-012)
 
 - kind: bug
-- status: triaged
+- status: closed
 - ticket: 50
 - run: w5-20261008T1720Z
 - screen: Welcome
@@ -33,4 +33,4 @@ Go Home no longer leads here when signed in (check 4 passed), so the remaining w
 > 
 
 **Triage.**
-
+- closed · retest passed or ran in wave 7 (ticket 67 check 6) · lead, 2026-10-09

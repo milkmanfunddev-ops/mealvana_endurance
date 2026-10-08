@@ -1,6 +1,6 @@
 # 69: Retest: startup, events, learn and connected apps after wave 6
 
-**Status:** in-progress (wave 7, 2026-10-08)
+**Status:** done 2026-10-09 (wave 7 run complete; see runs/69/notes.md)
 **Labels:** retest, round:develop-2026-10, area:startup, area:integrations, area:events
 **Branch:** `develop-next` (worktree per ticket, branched from the round's base after fix wave 6 lands)
 **Source:** TRIAGE.md rulings of 2026-10-08 (wave 5 triage): followups 50-002, 50-011, 50-012, 50-014, 50-015, and 50-016 step 1 (from ticket 67); fix retests for tickets 59 (50-001), 55 (50-003, 50-007), 60 (50-010), 63 (50-006), 64 (50-009), 65 (50-004), 66 (50-008)

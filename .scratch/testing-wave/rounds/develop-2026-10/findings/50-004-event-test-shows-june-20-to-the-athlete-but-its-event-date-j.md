@@ -1,7 +1,7 @@
 # 50-004 · Event 'Test' shows June 20 to the athlete but its event_date (July 17) drives coach views, calendar dots and the carb nudge (retest of 32-010)
 
 - kind: bug
-- status: triaged
+- status: closed
 - ticket: 50
 - run: w5-20261008T1720Z
 - screen: Events, Event Details
@@ -40,4 +40,4 @@ not known (no edit made in this run; the code re-derives `event_date` from `star
 > 
 
 **Triage.**
-
+- closed · retest passed or ran in wave 7 (ticket 69 check 5) · lead, 2026-10-09

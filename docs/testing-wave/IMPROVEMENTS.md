@@ -566,3 +566,19 @@ Their dates come from the wave each entry names.
   (`PATROL_FAIL_ON_SKIP`, `skipFlow()`). Wave 3, `ff1baafc`.
 - 2026-09-24 · mealplanning-2026-09 · done · The redeem flow's header now says what a thrown wait leaves on dev and how to sweep it. Wave 5,
   `fe14603c`.
+- 2026-10-09 · develop-2026-10 · done · **#128 the account sweep could not see an anonymous signup's address (wave 7).** Ticket 67's
+  leftover B held its address in `auth.users.email_change` (an anonymous upgrade that never verified), and
+  `sweep-accounts.mjs delete --id … --apply` answered "0 accounts": its candidate query matched `email` only. The lead deleted the
+  auth user by SQL at the close. Done 2026-10-09: the query also matches `email_change` (this commit).
+- 2026-10-09 · develop-2026-10 · open · **#129 all three wave simulators shut down at once under host memory pressure (wave 7).** At
+  ~23:13Z, four minutes into the wave, wave-pool-1/2/3 went to Shutdown together (vm_stat ~4k free pages); each agent's log
+  stream died with SIGKILL, and each rebooted its own simulator and restarted the stream (67-007, 68-017). Nothing of the Mac's was
+  running but the three agents and idb. Rule to consider: the lead checks `vm_stat` free pages before spawning and the runbook's
+  step 3 says what to do when the simulator dies (reboot it, restart the stream into the same file, note the gap, relaunch; the
+  app's data survives). For Lee: whether three simulators plus three Opus agents still fit the Mac.
+- 2026-10-09 · develop-2026-10 · done · **#130 retest tickets quoted wave-5 wording for lines the fix wave changed (wave 7).** Ticket 69
+  named the tape line `HELD … (startup not routable)` and `expected_failure` console lines for content/education; fix wave 6 had
+  changed both (`(no session)`; Sentry counts at Info with no console line). Three Opus code-map researchers, one per ticket, read
+  the code before the prompts and caught it, so the prompts carried the new wording and the runs judged on it. Done: the lead's
+  step 4 keeps the code-map researchers (one per ticket, in parallel with the build), and a retest ticket's check that quotes a
+  log line is re-read against the fix's diff when the ticket is cut.

@@ -1,7 +1,7 @@
 # 49-001 · Back on a deep-linked Connected Apps lands a signed-in athlete on Welcome (back fallback go('/') resolves to Welcome)
 
 - kind: bug
-- status: triaged
+- status: closed
 - ticket: 49
 - run: w5-20261008T1719Z
 - screen: Connected Apps
@@ -28,3 +28,4 @@ Welcome ("Get more out of every session.", Build My Plan / I already have an acc
 > 
 
 **Triage.**
+- closed · retest passed or ran in wave 7 (ticket 67 check 7) · lead, 2026-10-09

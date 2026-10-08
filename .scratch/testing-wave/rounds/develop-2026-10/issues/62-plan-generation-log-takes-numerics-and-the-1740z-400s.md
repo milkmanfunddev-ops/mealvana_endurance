@@ -1,6 +1,6 @@
 # 62: plan_generation_log takes numerics, and the 17:40Z 400s
 
-**Status:** landed (wave 6, 2026-10-08, develop-next `8dec4583`); open until its retest passes in test wave 7 (tickets 67-69; 61/62/64 server-side checks at the wave-7 close)
+**Status:** done 2026-10-09: lead's read at the wave-7 close: duration_minutes numeric, 2 fractional dev_cloud_e2e rows, 0 insert-failed lines, exactly the health check's four 400s
 **Labels:** fix, round:develop-2026-10, area:nutrition, area:functions
 **Branch:** `develop-next` (fix-wave worktree)
 **Blocked by:** nothing.

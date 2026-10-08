@@ -1,7 +1,7 @@
 # 49-004 · Retest of 31-001 / 31-009: the Timeline reconnect notice never showed (no provider went to requires_reauth), so its words, Reconnect, X and relaunch went unchecked
 
 - kind: followup-test
-- status: triaged
+- status: closed
 - ticket: 49
 - run: w5-20261008T1719Z
 - screen: Timeline
@@ -28,3 +28,4 @@ Not shown at 17:22:18Z (sign-in), 17:25:24Z (relaunch) or on any later Timeline 
 > 
 
 **Triage.**
+- closed · retest passed or ran in wave 7 (ticket 68 check 12 observed it; the missing Garmin notice is 68-008) · lead, 2026-10-09

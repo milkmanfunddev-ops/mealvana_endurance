@@ -1,7 +1,7 @@
 # 48-006 · Follow-up: onboarding choice tiles and the doubled Back label with VoiceOver
 
 - kind: followup-test
-- status: triaged
+- status: closed
 - ticket: 48
 - run: w5-20261008T1718Z
 - screen: Tell us about yourself
@@ -29,3 +29,4 @@ state (ui-03.txt shows the sports page uses CheckBox correctly), and the back ar
 > 
 
 **Triage.**
+- closed · retest passed or ran in wave 7 (ticket 67 check 2 ran it; the confirmed bug is 67-001) · lead, 2026-10-09

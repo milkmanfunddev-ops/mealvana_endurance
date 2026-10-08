@@ -1,7 +1,7 @@
 # 48-003 · Logging in from Verify's hint lands back on the Sign Up form, not the app
 
 - kind: bug
-- status: triaged
+- status: closed
 - ticket: 48
 - run: w5-20261008T1718Z
 - screen: Log In
@@ -40,3 +40,4 @@ Retest of 30-013 (the hint's Log in): the hint itself works; what follows the lo
 > 
 
 **Triage.**
+- closed · retest passed or ran in wave 7 (ticket 67 check 5) · lead, 2026-10-09

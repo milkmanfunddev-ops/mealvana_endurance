@@ -136,7 +136,11 @@ export function devAdmin(ref = DEV_REF, { token = managementToken() } = {}) {
     query,
     authAdmin,
     listCandidates: () =>
-      query(`select id::text, email, created_at from auth.users where email ilike 'lee+e2e-%@rightpathprogramming.com' order by created_at`),
+      query(
+        // An anonymous signup that never verified holds its address in email_change, not email
+        // (IMPROVEMENTS #128: wave 7's leftover was invisible to the sweep).
+        `select id::text, coalesce(email, email_change) as email, created_at from auth.users where email ilike 'lee+e2e-%@rightpathprogramming.com' or email_change ilike 'lee+e2e-%@rightpathprogramming.com' order by created_at`,
+      ),
     async deleteAccount(id) {
       if (!UUID.test(id)) throw new Error(`"${id}" is not a uuid`);
       // Same order as supabase/functions/delete-user: public.users (cascades), then the auth user.

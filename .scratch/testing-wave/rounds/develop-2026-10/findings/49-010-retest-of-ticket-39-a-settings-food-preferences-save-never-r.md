@@ -1,7 +1,7 @@
 # 49-010 · Retest of ticket 39: a Settings Food Preferences save never reaches the food_preferences table (no row written after Save, a relaunch and a resume), so the UTC offset cannot be checked
 
 - kind: bug
-- status: triaged
+- status: closed
 - ticket: 49
 - run: w5-20261008T1719Z
 - screen: Food Preferences
@@ -33,3 +33,4 @@ Ticket 39's UTC fix could not be exercised by this path. The server rows' 08:07:
 > 
 
 **Triage.**
+- closed · retest passed or ran in wave 7 (ticket 68 checks 1-3) · lead, 2026-10-09

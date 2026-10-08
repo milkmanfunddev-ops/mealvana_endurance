@@ -1,7 +1,7 @@
 # 50-016 · Follow-up: Welcome — held notification tap across sign-in, and Build My Plan over a live session on a disposable account
 
 - kind: followup-test
-- status: triaged
+- status: closed
 - ticket: 50
 - run: w5-20261008T1720Z
 - screen: Welcome
@@ -28,4 +28,4 @@ Not run.
 > 
 
 **Triage.**
-
+- closed · retest passed or ran in wave 7 (ticket 67 check 6 (step 2) + 69 check 2 (step 1)) · lead, 2026-10-09
