@@ -1,0 +1,46 @@
+1791464445.344 closed fd 14 (open to 2606:4700::6811:6fdf:443 before the cut) pid 35200
+1791464445.344 closed fd 26 (open to 2606:4700::6811:6fdf:443 before the cut) pid 35200
+1791464445.344 closed fd 29 (open to 2600:1901:0:5e8a:::443 before the cut) pid 35200
+1791464445.344 closed fd 32 (open to 172.64.149.246:443 before the cut) pid 35200
+1791464445.344 closed fd 36 (open to 172.64.149.246:443 before the cut) pid 35200
+1791464445.344 closed fd 37 (open to 18.165.116.50:443 before the cut) pid 35200
+1791464445.345 closed fd 40 (open to 172.64.149.246:443 before the cut) pid 35200
+1791464445.345 closed fd 41 (open to 172.64.149.246:443 before the cut) pid 35200
+1791464445.345 closed fd 42 (open to 172.64.149.246:443 before the cut) pid 35200
+1791464445.345 cut: 9 open socket(s) shut down pid 35200
+1791464446.374 blocked connect -> 172.64.149.246:443 pid 35200
+1791464446.375 blocked connect -> 104.18.38.10:443 pid 35200
+1791464446.407 blocked connect -> ::ffff:172.64.149.246:443 pid 35200
+1791464446.407 blocked connect -> ::ffff:104.18.38.10:443 pid 35200
+1791464448.423 blocked connect -> 172.64.149.246:443 pid 35200
+1791464448.423 blocked connect -> 104.18.38.10:443 pid 35200
+1791464448.431 blocked connect -> ::ffff:172.64.149.246:443 pid 35200
+1791464448.432 blocked connect -> ::ffff:104.18.38.10:443 pid 35200
+1791464452.440 blocked connect -> 172.64.149.246:443 pid 35200
+1791464452.441 blocked connect -> 104.18.38.10:443 pid 35200
+1791464452.452 blocked connect -> ::ffff:172.64.149.246:443 pid 35200
+1791464452.453 blocked connect -> ::ffff:104.18.38.10:443 pid 35200
+1791464453.589 blocked connect -> 2600:1901:0:5e8a:::443 pid 35200
+1791464453.594 blocked connect -> 34.160.81.0:443 pid 35200
+1791464453.599 blocked connect -> 2600:1901:0:5e8a:::443 pid 35200
+1791464453.601 blocked connect -> 34.160.81.0:443 pid 35200
+1791464454.548 blocked connect -> 2600:1901:0:5e8a:::443 pid 35200
+1791464454.551 blocked connect -> 34.160.81.0:443 pid 35200
+1791464454.554 blocked connect -> 2600:1901:0:5e8a:::443 pid 35200
+1791464454.556 blocked connect -> 34.160.81.0:443 pid 35200
+1791464460.539 blocked connect -> 172.64.149.246:443 pid 35200
+1791464460.540 blocked connect -> 104.18.38.10:443 pid 35200
+1791464460.541 blocked connect -> ::ffff:172.64.149.246:443 pid 35200
+1791464460.541 blocked connect -> ::ffff:104.18.38.10:443 pid 35200
+1791464462.363 blocked connect -> 172.64.149.246:443 pid 35200
+1791464462.363 blocked connect -> 104.18.38.10:443 pid 35200
+1791464462.414 blocked connect -> ::ffff:172.64.149.246:443 pid 35200
+1791464462.414 blocked connect -> ::ffff:104.18.38.10:443 pid 35200
+1791464462.532 blocked connect -> 2600:1901:0:5e8a:::443 pid 35200
+1791464462.535 blocked connect -> 34.160.81.0:443 pid 35200
+1791464462.542 blocked connect -> 2600:1901:0:5e8a:::443 pid 35200
+1791464462.543 blocked connect -> 34.160.81.0:443 pid 35200
+1791464470.566 blocked connect -> 172.64.149.246:443 pid 35200
+1791464470.566 blocked connect -> 104.18.38.10:443 pid 35200
+1791464470.569 blocked connect -> ::ffff:172.64.149.246:443 pid 35200
+1791464470.569 blocked connect -> ::ffff:104.18.38.10:443 pid 35200

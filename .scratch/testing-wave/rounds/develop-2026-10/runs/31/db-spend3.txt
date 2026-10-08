@@ -1,0 +1,8 @@
+# db-spend3 2026-10-08T13:12:40Z (my bike ride analyzed, Back without logging)
+{"balance": 2490, "unit": "credit", "updated_at": "2026-10-08 13:12:03.060501+00"}
+{"delta": -1, "reason": "debit_usage", "ref": "describe-meal", "balance_after": 2490, "created_at": "2026-10-08 13:12:03.060501+00"}
+{"delta": -1, "reason": "debit_usage", "ref": "analyze-meal-photo", "balance_after": 2491, "created_at": "2026-10-08 13:10:56.475408+00"}
+{"delta": -1, "reason": "debit_usage", "ref": "describe-meal", "balance_after": 2492, "created_at": "2026-10-08 13:02:50.29965+00"}
+## meal rows this run
+{"id": "2627444d-fec4-4c60-af2e-a600dbb0acf0", "name": "tw31 eggs toast banana", "source": "describe", "calories": 392, "slot": "lunch", "is_deleted": false, "created_at": "2026-10-08 13:06:28.081382+00"}
+{"id": "4a3f9e5e-b3f4-4d00-ba57-976ccfbd6a8a", "name": "Bread slices and orange (from food spread)", "source": "photo", "calories": 191, "slot": "snack", "is_deleted": false, "created_at": "2026-10-08 13:11:21.324012+00"}
