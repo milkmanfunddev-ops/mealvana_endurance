@@ -350,6 +350,8 @@ the above and follows this instead:
    client (a repository, an edge-function client) greps the tests for fakes of that client and runs
    them too: some assert the exact list of calls (#76). A logic ticket's prompt adds: "for every
    async path you add, write down what happens if it runs twice at once or after a refresh" (#77).
+   A test that starts a timer cancels it inside the test body or with `addTearDown` before the pump,
+   never in a `tearDown` alone: flutter_test checks pending timers before `tearDown` runs (#110).
 2. No SSOT or decisions-page writes during a wave, not even open questions. A product question an
    agent raises goes in its ticket file under a `**Questions for Lee.**` heading, never only in a
    commit body (#111); the lead's close-out lists them and takes them to Lee, then to the review queue.
@@ -359,7 +361,8 @@ the above and follows this instead:
    and forbid them (#63). Two tickets that decide the same thing about the same rows (whether
    another account's unsent data survives a sweep, what counts as dirty) go to one agent. When they
    cannot, each prompt states the other ticket's rule for that data, not only the shared file names
-   (#70).
+   (#70). A ticket whose items share generated files or a schema bump (a backport, a Drift version)
+   runs as sequential agents by area in one worktree; only independent areas run at once (#108).
 4. Merge as agents finish. Make the merge worktree when the first report arrives and merge each
    branch in when its agent reports; do not wait for the slowest.
 5. At the end, once: merge the working branch in (it may have moved, #59), one unfiltered codegen,
