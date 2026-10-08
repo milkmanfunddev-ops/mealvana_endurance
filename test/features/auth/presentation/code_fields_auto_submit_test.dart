@@ -12,6 +12,7 @@ import 'package:mealvana_endurance/features/auth/domain/auth_exceptions.dart';
 import 'package:mealvana_endurance/features/auth/presentation/providers/password_recovery_controller.dart';
 import 'package:mealvana_endurance/features/auth/presentation/screens/verify_email_screen.dart';
 import 'package:mealvana_endurance/features/auth/presentation/screens/verify_reset_code_screen.dart';
+import 'package:mealvana_endurance/features/content/application/content_service.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../helpers/widget_test_harness.dart';
@@ -71,9 +72,16 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(auth.tokens, ['123456']);
-    // The screen shows the wrong-code line (its content key; this harness
-    // serves no content).
-    expect(find.text('auth.verify_email.error_wrong_code'), findsOneWidget);
+    // The screen shows the wrong-code line. Since ticket 40 the bundled
+    // defaults are the floor under every lookup (Findings 30-001/32-001: a
+    // raw key on this screen is the bug), so the line is the default's words
+    // when the bundle is loaded and the key only when it is not.
+    final wrongCode =
+        ContentDefaultsCache.values?['auth.verify_email.error_wrong_code'] ??
+        'auth.verify_email.error_wrong_code';
+    expect(wrongCode, isNot('auth.verify_email.error_wrong_code'),
+        reason: 'the bundled defaults must carry the wrong-code line');
+    expect(find.text(wrongCode), findsOneWidget);
   });
 
   testWidgets('Enter Reset Code: the sixth digit submits the code', (

@@ -25,6 +25,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shorebird_code_push/shorebird_code_push.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../features/content/application/content_service.dart'
+    show ContentDefaultsCache;
 import '../../database/app_database.dart';
 import '../../services/app_config.dart';
 import '../../services/app_external_deps.dart';
@@ -234,6 +236,13 @@ Future<void> _runMealvanaApp(
   if (!kIsWeb && defaultTargetPlatform == TargetPlatform.iOS) {
     await MetricKitRelay(report: SentryReport.global).start();
   }
+
+  // Bundled content defaults must be in memory before the first frame:
+  // widgets that read a content key in their one synchronous build never
+  // re-render on their own (CLAUDE.md: non-recoverable bootstrap lives in
+  // main). Restored 2026-10-08 (testing-wave ticket 40; the branch split
+  // dropped it and every key-only lookup showed its key).
+  await ContentDefaultsCache.preload();
 
   runApp(
     SentryWidget(
