@@ -1,6 +1,6 @@
 # 70: device_id on plan, activity and reminder analytics events
 
-**Status:** ready (round develop-2026-10, fix wave 6)
+**Status:** in-progress (wave 6, 2026-10-08) (round develop-2026-10, fix wave 6)
 **Labels:** fix, round:develop-2026-10, area:analytics
 **Branch:** `develop-next` (fix-wave worktree)
 **Blocked by:** 60 (it adds `deviceInfoServiceProvider.deviceId` to the eight integration events; this ticket follows the same pattern). Runs after 60 merges.
