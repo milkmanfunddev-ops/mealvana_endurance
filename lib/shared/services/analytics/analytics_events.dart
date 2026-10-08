@@ -373,6 +373,24 @@ extension AnalyticsEvents on AnalyticsTracker {
     );
   }
 
+  /// Track when a workout sync from a connected training provider starts
+  /// (Sync Now, a background import). Separate from
+  /// [trackIntegrationConnectStarted] so the connect funnel counts connects
+  /// only (ticket 60).
+  Future<void> trackIntegrationSyncStarted({
+    required String provider,
+    required String deviceId,
+  }) {
+    return track(
+      'integration_sync_started',
+      properties: {
+        'provider': provider,
+        'device_id': deviceId,
+        'timestamp': DateTime.now().toIso8601String(),
+      },
+    );
+  }
+
   /// Track successful workout sync from a training provider
   /// Maps to: trainingpeaks_sync_success, final_surge_sync_success
   Future<void> trackIntegrationSyncSuccess({

@@ -41,6 +41,7 @@ import '../../domain/meal_log_source.dart';
 import '../../domain/meal_relog.dart';
 import '../../domain/saved_meal.dart';
 import '../providers/describe_analysis_controller.dart';
+import '../providers/image_picker_provider.dart';
 import '../providers/meal_log_providers.dart';
 import '../widgets/common_ingredients_section.dart';
 import '../widgets/meal_analysis_skeleton.dart';
@@ -1979,9 +1980,7 @@ class _AiTabState extends ConsumerState<_AiTab> {
     final method = source == ImageSource.camera
         ? 'photo_camera'
         : 'photo_gallery';
-    final analytics = ref.read(appExternalDepsProvider).analytics;
-    analytics.track('meal_ai_photo_attached', properties: {'method': method});
-    final picker = ImagePicker();
+    final picker = ref.read(imagePickerProvider);
     XFile? file;
     try {
       // 1000px keeps enough detail for food recognition while trimming ~30%
@@ -2011,6 +2010,12 @@ class _AiTabState extends ConsumerState<_AiTab> {
       return;
     }
     if (file == null || !mounted) return;
+    // Only a photo that came back counts: a cancelled or failed pick sends
+    // nothing (ticket 60, 49-006).
+    ref
+        .read(appExternalDepsProvider)
+        .analytics
+        .track('meal_ai_photo_attached', properties: {'method': method});
     setState(() {
       _photo = file;
       _photoSource = source;
