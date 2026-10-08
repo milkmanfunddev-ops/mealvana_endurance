@@ -1,0 +1,64 @@
+## 2026-10-08T17:48:13Z after
+### wallet
+[
+ {
+  "balance": 2488,
+  "updated_at": "2026-10-08 17:38:20.234123+00"
+ }
+]
+### ledger since 17:19Z
+[
+ {
+  "delta": -1,
+  "reason": "debit_usage",
+  "ref": "describe-meal",
+  "balance_after": 2489,
+  "created_at": "2026-10-08 17:27:09.217194+00"
+ },
+ {
+  "delta": -1,
+  "reason": "debit_usage",
+  "ref": "analyze-meal-photo",
+  "balance_after": 2488,
+  "created_at": "2026-10-08 17:38:20.234123+00"
+ }
+]
+### saved_meals since 17:19Z
+[
+ {
+  "id": "d0209a34-1931-4a5d-a3c4-a94c2d5ee4ca",
+  "name": "Tw49 eggs toast banana",
+  "created_at": "2026-10-08 17:31:12.543475+00"
+ }
+]
+### integrations
+[
+ {
+  "provider": "vdot",
+  "is_active": false,
+  "last_sync_status": "requires_reauth",
+  "last_sync_at": "2026-10-07 06:16:58+00",
+  "updated_at": "2026-10-08 13:26:26.703585+00"
+ },
+ {
+  "provider": "training_peaks",
+  "is_active": true,
+  "last_sync_status": "success",
+  "last_sync_at": "2026-10-08 17:45:17+00",
+  "updated_at": "2026-10-08 17:45:17.625517+00"
+ },
+ {
+  "provider": "garmin",
+  "is_active": true,
+  "last_sync_status": "success",
+  "last_sync_at": "2026-09-19 08:56:12.014+00",
+  "updated_at": "2026-09-19 08:56:12.195127+00"
+ },
+ {
+  "provider": "final_surge",
+  "is_active": true,
+  "last_sync_status": "success",
+  "last_sync_at": "2026-10-08 17:23:55+00",
+  "updated_at": "2026-10-08 17:23:55.49376+00"
+ }
+]

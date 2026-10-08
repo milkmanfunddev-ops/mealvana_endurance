@@ -1,0 +1,5 @@
+# function_logs, describe-meal / analyze-meal-photo, 17:19-17:35Z (Supabase MCP query_logs, project vlmtsdzpnjnavdgytcmi)
+2026-10-08T17:26:57.552Z info [describe-meal] Processing description for user 607f9dd5-…, length: 70 chars, model: anthropic/claude-sonnet-4.6
+2026-10-08T17:27:09.293Z info [describe-meal] Success for user 607f9dd5-…: "Scrambled eggs, whole wheat toast with butter, banana", 3 items, confidence=medium
+2026-10-08T17:33:32.274Z info [describe-meal] Processing description for user 607f9dd5-…, length: 12 chars, model: anthropic/claude-sonnet-4.6
+2026-10-08T17:33:36.732Z info [describe-meal] Not food for user 607f9dd5-…: 422, no debit (notes: The description 'My bike ride' refers to a physical activity, not a food or drink. No nutritional data can be logged. Please describe what you ate or drank during or around your ride (e.g., energy gels, sports drink, banana) to log a meal.)

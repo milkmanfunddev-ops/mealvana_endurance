@@ -1,0 +1,11 @@
+food_name|preference|preference_level|updated_utc
+Carb Drink Mix|willing_to_try|2|2026-10-08 17:42:39
+Energy Bar|dislike|0|2026-10-08 17:42:39
+Energy Chews|like|3|2026-10-08 17:42:39
+Energy Chews (mini pack)|willing_to_try|2|2026-10-08 17:42:39
+Energy Gel|willing_to_try|2|2026-10-08 17:42:39
+Fig Bar|dislike|0|2026-10-08 17:42:39
+Granola Bar|willing_to_try|2|2026-10-08 17:42:39
+High-Carb Drink Mix|willing_to_try|2|2026-10-08 17:42:39
+Protein Bar|dislike|0|2026-10-08 17:42:39
+Sports Drink|willing_to_try|2|2026-10-08 17:42:39

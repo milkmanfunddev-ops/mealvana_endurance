@@ -1,0 +1,30 @@
+[
+ {
+  "provider": "vdot",
+  "is_active": false,
+  "last_sync_status": "requires_reauth",
+  "last_sync_at": "2026-10-07 06:16:58+00",
+  "updated_at": "2026-10-08 13:26:26.703585+00"
+ },
+ {
+  "provider": "training_peaks",
+  "is_active": true,
+  "last_sync_status": "success",
+  "last_sync_at": "2026-10-08 17:22:10+00",
+  "updated_at": "2026-10-08 17:22:10.623374+00"
+ },
+ {
+  "provider": "garmin",
+  "is_active": true,
+  "last_sync_status": "success",
+  "last_sync_at": "2026-09-19 08:56:12.014+00",
+  "updated_at": "2026-09-19 08:56:12.195127+00"
+ },
+ {
+  "provider": "final_surge",
+  "is_active": true,
+  "last_sync_status": "success",
+  "last_sync_at": "2026-10-08 17:22:09+00",
+  "updated_at": "2026-10-08 17:22:09.510276+00"
+ }
+]

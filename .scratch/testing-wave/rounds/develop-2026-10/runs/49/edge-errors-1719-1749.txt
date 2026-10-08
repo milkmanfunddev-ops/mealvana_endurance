@@ -1,0 +1,16 @@
+# Non-200 function_edge_logs + warning/error function_logs, 17:19-17:49Z (Supabase MCP query_logs, project vlmtsdzpnjnavdgytcmi, limit 60)
+# Known noise, omitted after the first: ~45x "sessionCost: unknown sport "other" — F4a zero-with-estimate-flag (RULED 2026-09-10)" at 17:22:08, 17:22:20, 17:23:54, 17:24:04, 17:46:30Z (calculate-daily-macros on this run's sign-in, relaunches and syncs).
+2026-10-08T17:28:59.325Z function_logs warning [garmin-push] inbound payload log error for actdet:24654452703-detail: code 23502, null value in column "user_id" of relation "garmin_health_data" violates not-null constraint (garmin userId 05fec9ca-1bde-4c7b-b2fe-8b8b852298a3)
+2026-10-08T17:28:59.675Z function_logs warning [garmin-push] inbound payload log error for actdetfull:24654452703-detail: code 23502, same
+2026-10-08T17:28:59.761Z function_logs warning [garmin-push] inbound payload log error for act:24654452703: code 23502, same
+2026-10-08T17:33:36.748Z function_edge_logs POST | 422 | describe-meal   (this run: "my bike ride", expected)
+2026-10-08T17:40:28.688Z function_edge_logs POST | 400 | generate-macros-v4
+2026-10-08T17:40:29.025Z function_edge_logs POST | 400 | generate-macros-v4
+2026-10-08T17:40:31.038Z function_edge_logs POST | 400 | generate-nutrition-plan-v3
+2026-10-08T17:40:32.461-36.585Z function_logs warning [DURING-TEMPLATE] VALIDATION FAILED …; [DURING-RULES] POST-VALIDATION …; [FORMULA-CASCADE] … no_template_candidates; [PLAN-V3] … phase out of range (non-fatal) (several)
+2026-10-08T17:40:32.530Z function_logs warning [PLAN-V3] plan_generation_log insert failed: code 22P02, invalid input syntax for type integer: "18.64"
+2026-10-08T17:40:35.182Z function_logs warning [PLAN-V3] plan_generation_log insert failed: code 22P02, invalid input syntax for type integer: "117.9"
+2026-10-08T17:40:38.664Z function_edge_logs POST | 400 | generate-macros-v4
+2026-10-08T17:40:38.976Z function_edge_logs POST | 400 | search-public-events
+2026-10-08T17:40:39.360Z function_edge_logs POST | 400 | get-weather-forecast
+2026-10-08T17:40:39.825Z function_edge_logs POST | 400 | generate-nutrition-plan-v3

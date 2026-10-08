@@ -1,0 +1,10 @@
+[
+ {
+  "name": "Salted Edamame (half bowl)",
+  "slot": "snack",
+  "eaten_at": "2026-10-08 15:38:00+00",
+  "log_date": "2026-10-08",
+  "notes": "Athlete ate approximately half th tw49 note edit. to contain a full restaurant-style serving of salted edamame in pods (roughly 2 cups in-shell total), so half equates to ~1 cup in-shell or about 75g of shelled edamame. Salt is visible on the pods, so moderate sodium is factored in. Edamame is a great snack for endurance athletes given its protein and complex carb profile.",
+  "updated_at": "2026-10-08 17:40:36.623461+00"
+ }
+]
