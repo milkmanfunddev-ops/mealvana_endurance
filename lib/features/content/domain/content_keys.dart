@@ -317,6 +317,9 @@ class ContentKeys {
   static const String aiCreditsOutBody = 'ai_credits.out_body';
   static const String aiCreditsOutNotNow = 'ai_credits.out_not_now';
   static const String aiCreditsOutGetCredits = 'ai_credits.out_get_credits';
+  // AI Credits screen "How credits work" (develop-2026-10 ticket 46: 32-004)
+  static const String aiCreditsHowTitle = 'ai_credits.how_title';
+  static const String aiCreditsHowBody = 'ai_credits.how_body';
 
   // Sync errors (testing-wave develop-2026-10 ticket 37): the row stores a
   // code (`SyncErrorCode`), these keys hold the text. `{provider}` is the

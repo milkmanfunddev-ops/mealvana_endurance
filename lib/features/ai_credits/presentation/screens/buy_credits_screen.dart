@@ -4,7 +4,10 @@ import 'package:go_router/go_router.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 
 import '../../../../shared/services/app_config.dart';
+import '../../../../shared/widgets/custom_app_bar_back_button.dart';
 import '../../../../shared/widgets/kyle_design/feedback/mealvana_snackbar.dart';
+import '../../../content/application/content_service.dart';
+import '../../../content/domain/content_keys.dart';
 import '../../application/credits_controller.dart';
 import '../../application/purchase_controller.dart';
 import '../../domain/credit_packs.dart';
@@ -45,7 +48,11 @@ class _ComingSoonBody extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('AI Credits')),
+      appBar: AppBar(
+        // Back when pushed; home when opened by deep link (32-003).
+        leading: const CustomAppBarBackButton(),
+        title: const Text('AI Credits'),
+      ),
       body: const Center(
         child: Padding(
           padding: EdgeInsets.all(32),
@@ -142,6 +149,8 @@ class _EnabledBody extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
+        // Back when pushed; home when opened by deep link (32-003).
+        leading: const CustomAppBarBackButton(),
         title: const Text('AI Credits'),
         actions: [
           TextButton(
@@ -310,24 +319,23 @@ class _PackagesUnavailable extends StatelessWidget {
   }
 }
 
-class _CreditsExplanation extends StatelessWidget {
+/// "How credits work": both lines come from the content system
+/// (`ai_credits.how_*`, develop-2026-10 ticket 46: 32-004).
+class _CreditsExplanation extends ConsumerWidget {
   const _CreditsExplanation();
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final content = ref.watch(contentServiceProvider);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'How credits work',
+          content.getValue(ContentKeys.aiCreditsHowTitle),
           style: Theme.of(context).textTheme.titleMedium,
         ),
         const SizedBox(height: 8),
-        const Text(
-          'AI credits power coach insights, meal photo analysis, '
-          'meal descriptions, and Mealvana AI conversations. '
-          'Credits are consumed per request and never expire.',
-        ),
+        Text(content.getValue(ContentKeys.aiCreditsHowBody)),
       ],
     );
   }

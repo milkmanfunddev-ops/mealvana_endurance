@@ -1108,7 +1108,11 @@ class AppRouter {
               ),
               const SizedBox(height: 24),
               ElevatedButton(
-                onPressed: () => context.go('/welcome'),
+                // `/` is the one path the redirect resolves from app state
+                // (main, welcome, force-upgrade, privacy consent), so home is
+                // wherever startup says it is. `/welcome` is public and would
+                // strand a signed-in athlete there (32-002).
+                onPressed: () => context.go('/'),
                 child: const Text('Go Home'),
               ),
             ],
