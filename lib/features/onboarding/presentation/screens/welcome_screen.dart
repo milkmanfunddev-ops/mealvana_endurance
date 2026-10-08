@@ -177,23 +177,34 @@ class WelcomeScreen extends ConsumerWidget {
                 ),
               ],
             ),
-            child: Material(
-              color: OnbTokens.orange,
-              borderRadius: BorderRadius.circular(OnbTokens.rPill),
-              child: InkWell(
-                key: const ValueKey('welcome.get_started_button'),
+            // A named button to a screen reader (testing-wave 30-010): the
+            // bare InkWell read as static text. Same pattern as
+            // OnboardingSpecCta; the visible text is read once.
+            child: Semantics(
+              container: true,
+              button: true,
+              enabled: true,
+              label: 'Build My Plan',
+              child: Material(
+                color: OnbTokens.orange,
                 borderRadius: BorderRadius.circular(OnbTokens.rPill),
-                onTap: () => _getStarted(context, ref),
-                child: const Padding(
-                  padding: EdgeInsets.all(16),
-                  child: Text(
-                    'Build My Plan',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontFamily: OnbTokens.fontDisplay,
-                      fontWeight: FontWeight.w700,
-                      fontSize: 17,
-                      color: OnbTokens.bg,
+                child: InkWell(
+                  key: const ValueKey('welcome.get_started_button'),
+                  borderRadius: BorderRadius.circular(OnbTokens.rPill),
+                  onTap: () => _getStarted(context, ref),
+                  child: const ExcludeSemantics(
+                    child: Padding(
+                      padding: EdgeInsets.all(16),
+                      child: Text(
+                        'Build My Plan',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontFamily: OnbTokens.fontDisplay,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 17,
+                          color: OnbTokens.bg,
+                        ),
+                      ),
                     ),
                   ),
                 ),

@@ -104,27 +104,33 @@ class _PrivacyConsentScreenState extends ConsumerState<PrivacyConsentScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          children: [
-            const Expanded(
-              child: Text(
-                'Share usage data',
-                style: TextStyle(
-                  fontFamily: 'Sansita',
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.textDark,
+        // One control to a screen reader (testing-wave 30-010): merged, the
+        // switch's toggled node takes the title as its name instead of
+        // reading as an unlabeled checkbox beside static text. The
+        // disclosure line below stays outside the merge.
+        MergeSemantics(
+          child: Row(
+            children: [
+              const Expanded(
+                child: Text(
+                  'Share usage data',
+                  style: TextStyle(
+                    fontFamily: 'Sansita',
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textDark,
+                  ),
                 ),
               ),
-            ),
-            KyleSwitch(
-              key: const ValueKey('privacy_consent.usage_toggle'),
-              value: _shareUsageData,
-              onChanged: _saving
-                  ? null
-                  : (value) => setState(() => _shareUsageData = value),
-            ),
-          ],
+              KyleSwitch(
+                key: const ValueKey('privacy_consent.usage_toggle'),
+                value: _shareUsageData,
+                onChanged: _saving
+                    ? null
+                    : (value) => setState(() => _shareUsageData = value),
+              ),
+            ],
+          ),
         ),
         const SizedBox(height: 8),
         // This one line is the entire disclosure, so it has to be true and
