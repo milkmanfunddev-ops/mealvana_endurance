@@ -1,6 +1,6 @@
 # 39: The five remaining timestamptz writers send UTC
 
-**Status:** in-progress (wave 4, 2026-10-08)
+**Status:** fixed (wave 4, 78a5947e) awaiting retest
 **Labels:** fix, round:develop-2026-10, area:sync
 **Branch:** `develop-next` (fix-wave worktree)
 **Blocked by:** nothing.
@@ -29,9 +29,11 @@
 
 No edge-function or schema change. Nothing to deploy. Ticket 22's note about the server reading naive strings in its own zone applies to dev and prod alike; no SQL fix for existing rows (they are at most hours off and overwritten on the next write).
 
-- [ ] Seam tests (ticket 22's pattern: a Drift row read back local, uploaded through the real repository against `FakePostgrest`, assert `endsWith('Z')` and `isAtSameMomentAs`) for each of the five areas, extending the named existing files and adding the two new ones.
-- [ ] The two pinned-naive tests (`activity_sync_handler_timestamptz_test.dart`, `activity_mapper_test.dart`) still green: nothing wall-clock moved.
-- [ ] `flutter analyze` clean on touched files.
+- [x] Seam tests (ticket 22's pattern: a Drift row read back local, uploaded through the real repository against `FakePostgrest`, assert `endsWith('Z')` and `isAtSameMomentAs`) for each of the five areas, extending the named existing files and adding the two new ones.
+- [x] The two pinned-naive tests (`activity_sync_handler_timestamptz_test.dart`, `activity_mapper_test.dart`) still green: nothing wall-clock moved.
+- [x] `flutter analyze` clean on touched files.
 - [ ] Retest: one real read per changed PostgREST write at dev deploy time is not needed (no function changed); the lead checks one `food_preferences` row's `updated_at` offset after the next simulator run (ticket 31 or 30).
+
+**Fix notes (wave 4, `78a5947e`).** All five areas send `.toUtc().toIso8601String()`, inline. Two more sites in the touched files had the same bug and were fixed with them: `feedback.timestamp` (`feedback_repository.dart` `_saveToSupabase` + `_toSupabaseJson`; `timestamptz` in both dumps) and the two `users.updated_at` stamps in `UserSyncHandler.syncUsers` / `uploadUserProfile`. Item 6 left alone: no upload caller and no test covers those `toJson`s. Not touched, outside this ticket's files: `UserProfile.toJson` `sweat_test_date` (`timestamptz`, still naive; lives under `lib/features/auth/`). Seam tests: coach (create/accept/decline/archive/athlete profile/nutrition targets/coach application), food preferences (repo upload + immediate upload; handler upload), feedback (dirty upload + survey save), user foods (repo upload; crud save/update/delete), personal templates (create + dirty upload). Red-checked against the unfixed lib. The fourth box is the lead's retest.
 
 Next: /testing-wave develop-2026-10 (fix wave 4)
