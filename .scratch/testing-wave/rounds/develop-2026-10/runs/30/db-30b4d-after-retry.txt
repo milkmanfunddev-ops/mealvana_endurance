@@ -1,0 +1,9 @@
+[
+ {
+  "id": "1ffc8851-e02f-4203-b5b9-973400f65528",
+  "is_anonymous": false,
+  "email": "lee+e2e-30-20261008t131238z@rightpathprogramming.com",
+  "email_change": "",
+  "email_confirmed_at": "2026-10-08 13:17:05.126006+00"
+ }
+]

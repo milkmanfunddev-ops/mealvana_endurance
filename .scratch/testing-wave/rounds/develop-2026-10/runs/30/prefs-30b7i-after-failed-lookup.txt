@@ -1,0 +1,1 @@
+flutter.privacy_region_source = device
