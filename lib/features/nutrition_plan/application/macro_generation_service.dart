@@ -52,6 +52,7 @@ class MacroGenerationService {
     required this.macroRepository,
     required this.authService,
     required this.analytics,
+    required this.analyticsDeviceId,
     Report? report,
   }) : _report = report;
 
@@ -63,6 +64,11 @@ class MacroGenerationService {
   final MacroRepository macroRepository;
   final AuthService authService;
   final AnalyticsTracker analytics;
+
+  /// The device id analytics events carry (`deviceInfoServiceProvider`), the
+  /// one `app_opened` sends. Not the `deviceId` the generate methods take:
+  /// that one is the user id the edge function reads (ticket 70).
+  final String analyticsDeviceId;
 
   /// Generate running macro targets
   Future<MacroTargets> generateRunningMacros({
@@ -107,7 +113,7 @@ class MacroGenerationService {
     await _cacheMacroTargets(macroTargets, activityId: activityId);
 
     await analytics.trackPlanGenerated(
-      deviceId: deviceId,
+      deviceId: analyticsDeviceId,
       activityId: activityId,
       activityType: 'running',
       distanceMiles: distanceMiles,
@@ -185,7 +191,7 @@ class MacroGenerationService {
     );
 
     await analytics.trackPlanGenerated(
-      deviceId: deviceId,
+      deviceId: analyticsDeviceId,
       activityId: activityId,
       activityType: 'cycling',
       distanceMiles: distanceMiles,
@@ -259,7 +265,7 @@ class MacroGenerationService {
     );
 
     await analytics.trackPlanGenerated(
-      deviceId: deviceId,
+      deviceId: analyticsDeviceId,
       activityId: activityId,
       activityType: 'swimming',
       distanceMiles: distanceMeters / 1609.34,

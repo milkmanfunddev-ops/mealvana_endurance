@@ -23,6 +23,7 @@ import '../../../activities/domain/activity_reminder.dart';
 import '../../../activities/data/activities_repository.dart';
 import '../../../../shared/services/app_external_deps.dart';
 import '../../../../shared/services/analytics/analytics_tracker.dart';
+import '../../../../shared/services/device_info_service.dart';
 import '../../application/resolved_during_target_resolver.dart';
 import '../../data/macro_repository.dart';
 import '../../data/nutrition_plan_repository.dart';
@@ -349,6 +350,8 @@ class ActivityDetailController extends _$ActivityDetailController {
     final analytics = ref.read(analyticsTrackerProvider);
     final macroRepo = ref.read(macroRepositoryProvider);
     final supabaseClient = ref.read(appExternalDepsProvider).supabaseClient;
+    // `plan_generated` carries the device id, not the user id (ticket 70).
+    final analyticsDeviceId = ref.read(deviceInfoServiceProvider).deviceId;
 
     final user = await _authService.getCurrentUser();
     if (user == null) return;
@@ -369,6 +372,7 @@ class ActivityDetailController extends _$ActivityDetailController {
           macroRepository: macroRepo,
           authService: _authService,
           analytics: analytics,
+          analyticsDeviceId: analyticsDeviceId,
           report: _report,
         );
         final segments = currentState.macroTargets?.brickSegments;
@@ -388,6 +392,7 @@ class ActivityDetailController extends _$ActivityDetailController {
           macroRepository: macroRepo,
           authService: _authService,
           analytics: analytics,
+          analyticsDeviceId: analyticsDeviceId,
           report: _report,
         );
         final distanceMiles = activity.distanceMiles ?? 5.0;
@@ -410,6 +415,7 @@ class ActivityDetailController extends _$ActivityDetailController {
           macroRepository: macroRepo,
           authService: _authService,
           analytics: analytics,
+          analyticsDeviceId: analyticsDeviceId,
           report: _report,
         );
         final distanceMiles = activity.distanceMiles ?? 20.0;

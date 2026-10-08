@@ -13,6 +13,7 @@ import '../utils/platform_io.dart'
 import 'analytics/analytics_events.dart';
 import 'launch_trail.dart';
 import 'analytics/analytics_tracker.dart';
+import 'device_info_service.dart';
 import 'report/report.dart';
 
 /// The slice of the OneSignal SDK [NotificationService] drives, behind a
@@ -101,6 +102,16 @@ class NotificationService {
   static AnalyticsTracker _analytics = const NoopAnalyticsTracker();
   static String _oneSignalAppId = '';
 
+  /// Where the analytics events below get their `device_id`: the device id
+  /// `app_opened` sends (ticket 70). Handed in by [configure] from
+  /// `deviceInfoServiceProvider`; null falls back to the same singleton.
+  /// Events only leave the device once [configure] has run, which the
+  /// startup chain does after `deferred.device_info`, so the id is the
+  /// initialized one by then.
+  static DeviceInfoService? _deviceInfo;
+  static String get _analyticsDeviceId =>
+      (_deviceInfo ?? DeviceInfoService.instance).deviceId;
+
   /// Where every swallowed failure and silent bail in the push path goes
   /// (area `push`, whose Notes rule D9 promotes to warning events). Null means
   /// [SentryReport.global]; tests inject a recording fake.
@@ -143,6 +154,7 @@ class NotificationService {
     _navigationHandler = null;
     _dailyMacroCacheInvalidator = null;
     _analytics = const NoopAnalyticsTracker();
+    _deviceInfo = null;
     _oneSignalAppId = '';
     _onPermissionAnswer = null;
     _lastReportedPermission = null;
@@ -172,8 +184,10 @@ class NotificationService {
     AnalyticsTracker tracker, {
     String oneSignalAppId = '',
     Future<void> Function(bool granted)? onPermissionAnswer,
+    DeviceInfoService? deviceInfo,
   }) {
     _analytics = tracker;
+    if (deviceInfo != null) _deviceInfo = deviceInfo;
     configureRemotePush(oneSignalAppId: oneSignalAppId);
     if (onPermissionAnswer != null) {
       configurePermissionAnswer(onPermissionAnswer);
@@ -810,7 +824,7 @@ class NotificationService {
 
       if (type == 'reminder') {
         _analytics.trackReminderClicked(
-          deviceId: 'unknown', // Will be set properly when app identifies user
+          deviceId: _analyticsDeviceId,
           activityId: activityId,
         );
       } else if (type == 'carb_event') {
@@ -831,7 +845,7 @@ class NotificationService {
         _analytics.track(
           'activity_upload_notification_clicked',
           properties: {
-            'device_id': 'unknown',
+            'device_id': _analyticsDeviceId,
             'activity_id': activityId,
             'copy_variant': payloadVariant ?? _unknownCopyVariant,
             'timestamp': DateTime.now().toIso8601String(),
@@ -845,7 +859,7 @@ class NotificationService {
 
     // Legacy payload compatibility: raw activityId (treated as reminder)
     _analytics.trackReminderClicked(
-      deviceId: 'unknown', // Will be set properly when app identifies user
+      deviceId: _analyticsDeviceId,
       activityId: payload,
     );
     _dispatchNavigation(payload, null);
@@ -1055,14 +1069,14 @@ class NotificationService {
     if (activityId != null) {
       // Track both reminder_set and reminder_scheduled
       await _analytics.trackReminderSet(
-        deviceId: 'unknown', // Will be set properly when app identifies user
+        deviceId: _analyticsDeviceId,
         activityId: activityId,
         reminderTime: scheduledDate,
       );
 
       // Also track as scheduled (proxy for delivery)
       await _analytics.trackReminderScheduled(
-        deviceId: 'unknown', // Will be set properly when app identifies user
+        deviceId: _analyticsDeviceId,
         activityId: activityId,
         reminderTime: scheduledDate,
       );
@@ -1188,7 +1202,7 @@ class NotificationService {
     await _analytics.track(
       'activity_upload_notification_shown',
       properties: {
-        'device_id': 'unknown',
+        'device_id': _analyticsDeviceId,
         'activity_id': activityId,
         'provider': provider.toLowerCase(),
         'activity_date': activityDateText,

@@ -28,6 +28,7 @@ import '../../../../shared/domain/write_consistency.dart';
 import '../../../../shared/services/app_external_deps.dart';
 import '../../../../shared/services/analytics/analytics_tracker.dart';
 import '../../../../shared/services/analytics/analytics_events.dart';
+import '../../../../shared/services/device_info_service.dart';
 import '../../../../shared/services/report/report.dart';
 import '../../../auth/application/auth_service.dart';
 import '../../../events/presentation/providers/events_controller.dart';
@@ -239,6 +240,12 @@ class MacroTargetsController extends _$MacroTargetsController {
   AnalyticsTracker get _analytics =>
       ref.read(appExternalDepsProvider).analytics;
   AuthService get _authService => ref.read(authServiceProvider);
+
+  /// The device id analytics events carry, the one `app_opened` sends
+  /// (ticket 70). The local `deviceId` in the generate methods is the user
+  /// id, which the edge function and the activity writes need.
+  String get _analyticsDeviceId =>
+      ref.read(deviceInfoServiceProvider).deviceId;
 
   /// Fire-and-forget pushes outlive the provider; once it is disposed the
   /// global instance (the one `reportProvider` built) takes the report.
@@ -568,6 +575,9 @@ class MacroTargetsController extends _$MacroTargetsController {
       currentState.copyWith(isGeneratingMacros: true, errorMessage: null),
     );
 
+    // Analytics carry the device id, never the user id (ticket 70). Read
+    // before the guard's first await.
+    final analyticsDeviceId = _analyticsDeviceId;
     state = await AsyncValue.guard(() async {
       String deviceId = 'unknown';
       try {
@@ -587,7 +597,7 @@ class MacroTargetsController extends _$MacroTargetsController {
         deviceId = user?.id ?? 'unknown';
 
         await _analytics.trackPlanGenerationStarted(
-          deviceId: deviceId,
+          deviceId: analyticsDeviceId,
           activityId: activityId,
           distanceMiles: distance,
           paceMinutesPerMile: paceMinutes,
@@ -697,6 +707,7 @@ class MacroTargetsController extends _$MacroTargetsController {
           macroRepository: ref.read(macroRepositoryProvider),
           authService: _authService,
           analytics: _analytics,
+          analyticsDeviceId: analyticsDeviceId,
           report: _report,
         );
 
@@ -766,7 +777,7 @@ class MacroTargetsController extends _$MacroTargetsController {
 
         // Track macro generation failed
         await _analytics.trackPlanGenerationFailed(
-          deviceId: deviceId,
+          deviceId: analyticsDeviceId,
           activityId: activityId,
           distanceMiles: double.tryParse(distanceText) ?? 5.0,
           paceMinutesPerMile: double.tryParse(paceText) ?? 8.5,
@@ -808,6 +819,9 @@ class MacroTargetsController extends _$MacroTargetsController {
       currentState.copyWith(isGeneratingMacros: true, errorMessage: null),
     );
 
+    // Analytics carry the device id, never the user id (ticket 70). Read
+    // before the guard's first await.
+    final analyticsDeviceId = _analyticsDeviceId;
     state = await AsyncValue.guard(() async {
       String deviceId = 'unknown';
 
@@ -817,7 +831,7 @@ class MacroTargetsController extends _$MacroTargetsController {
         deviceId = user?.id ?? 'unknown';
 
         await _analytics.trackPlanGenerationStarted(
-          deviceId: deviceId,
+          deviceId: analyticsDeviceId,
           activityId: activityId,
           distanceMiles: distanceMiles,
           paceMinutesPerMile:
@@ -946,6 +960,7 @@ class MacroTargetsController extends _$MacroTargetsController {
           macroRepository: ref.read(macroRepositoryProvider),
           authService: _authService,
           analytics: _analytics,
+          analyticsDeviceId: analyticsDeviceId,
           report: _report,
         );
 
@@ -1017,7 +1032,7 @@ class MacroTargetsController extends _$MacroTargetsController {
 
         // Track macro generation failed
         await _analytics.trackPlanGenerationFailed(
-          deviceId: deviceId,
+          deviceId: analyticsDeviceId,
           activityId: activityId,
           distanceMiles: distanceMiles,
           paceMinutesPerMile: 60.0 / speedMph,
@@ -1097,6 +1112,9 @@ class MacroTargetsController extends _$MacroTargetsController {
       currentState.copyWith(isGeneratingMacros: true, errorMessage: null),
     );
 
+    // Analytics carry the device id, never the user id (ticket 70). Read
+    // before the guard's first await.
+    final analyticsDeviceId = _analyticsDeviceId;
     state = await AsyncValue.guard(() async {
       String deviceId = 'unknown';
 
@@ -1112,7 +1130,7 @@ class MacroTargetsController extends _$MacroTargetsController {
         final approximatePaceMinPerMile = durationMinutes / distanceMiles;
 
         await _analytics.trackPlanGenerationStarted(
-          deviceId: deviceId,
+          deviceId: analyticsDeviceId,
           activityId: activityId,
           distanceMiles: distanceMiles,
           paceMinutesPerMile: approximatePaceMinPerMile,
@@ -1230,6 +1248,7 @@ class MacroTargetsController extends _$MacroTargetsController {
           macroRepository: ref.read(macroRepositoryProvider),
           authService: _authService,
           analytics: _analytics,
+          analyticsDeviceId: analyticsDeviceId,
           report: _report,
         );
 
@@ -1297,7 +1316,7 @@ class MacroTargetsController extends _$MacroTargetsController {
 
         // Track macro generation failed
         await _analytics.trackPlanGenerationFailed(
-          deviceId: deviceId,
+          deviceId: analyticsDeviceId,
           activityId: activityId,
           distanceMiles: distanceMeters / 1609.34,
           paceMinutesPerMile:
@@ -1333,6 +1352,9 @@ class MacroTargetsController extends _$MacroTargetsController {
       currentState.copyWith(isGeneratingMacros: true, errorMessage: null),
     );
 
+    // Analytics carry the device id, never the user id (ticket 70). Read
+    // before the guard's first await.
+    final analyticsDeviceId = _analyticsDeviceId;
     state = await AsyncValue.guard(() async {
       String deviceId = 'unknown';
 
@@ -1350,7 +1372,7 @@ class MacroTargetsController extends _$MacroTargetsController {
         }
 
         await _analytics.trackPlanGenerationStarted(
-          deviceId: deviceId,
+          deviceId: analyticsDeviceId,
           activityId: activityId,
           distanceMiles: totalDistanceMiles,
           paceMinutesPerMile: 0.0, // Not applicable for brick
@@ -1502,6 +1524,7 @@ class MacroTargetsController extends _$MacroTargetsController {
           macroRepository: ref.read(macroRepositoryProvider),
           authService: _authService,
           analytics: _analytics,
+          analyticsDeviceId: analyticsDeviceId,
           report: _report,
         );
 
@@ -1568,7 +1591,7 @@ class MacroTargetsController extends _$MacroTargetsController {
 
         // Track macro generation failed
         await _analytics.trackPlanGenerationFailed(
-          deviceId: deviceId,
+          deviceId: analyticsDeviceId,
           activityId: activityId,
           distanceMiles: 0.0,
           paceMinutesPerMile: 0.0,
@@ -1854,6 +1877,8 @@ class MacroTargetsController extends _$MacroTargetsController {
   /// Returns the activityId of the created/updated activity
   Future<String?> createNutritionPlan() async {
     final repository = ref.read(macroRepositoryProvider);
+    // Pin events carry the device id (ticket 70); read before any await.
+    final analyticsDeviceId = _analyticsDeviceId;
     final currentState = state.value;
     MacroTargets? macroTargets;
     final activityId = currentState?.activityId;
@@ -2030,7 +2055,7 @@ class MacroTargetsController extends _$MacroTargetsController {
           await _trackPinDecisions(
             plan: nutritionPlan,
             activityId: currentStateValue.activityId!,
-            deviceId: userProfile?.id ?? 'unknown',
+            deviceId: analyticsDeviceId,
           );
         }
 
