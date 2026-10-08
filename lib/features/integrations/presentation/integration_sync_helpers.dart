@@ -128,7 +128,7 @@ Future<void> syncFinalSurge(
         // Ticket 37: content text for the code, never the code or English.
         syncFailureText(
           ref.read(contentServiceProvider),
-          providerName: 'Final Surge',
+          providerName: integrationProviderName('final_surge'),
           stateMessage: state?.errorMessage,
           resultCode: syncFailureCode(
             error: result.error,
@@ -227,7 +227,7 @@ Future<void> syncTrainingPeaks(
         // Ticket 37: content text for the code, never the code or English.
         syncFailureText(
           ref.read(contentServiceProvider),
-          providerName: 'TrainingPeaks',
+          providerName: integrationProviderName('training_peaks'),
           stateMessage: state?.errorMessage,
           resultCode: syncFailureCode(
             error: result.error,
@@ -436,7 +436,7 @@ Future<void> syncRunna(
       // Ticket 37: content text for the code, never the code or English.
       syncFailureText(
         ref.read(contentServiceProvider),
-        providerName: 'Runna',
+        providerName: integrationProviderName('runna'),
         stateMessage: state?.errorMessage,
         resultCode: syncFailureCode(
           error: result.error,
@@ -510,7 +510,7 @@ Future<void> syncVdot(
       // Ticket 37: content text for the code, never the code or English.
       syncFailureText(
         ref.read(contentServiceProvider),
-        providerName: 'V.O2',
+        providerName: integrationProviderName('vdot'),
         stateMessage: state?.errorMessage,
         resultCode: syncFailureCode(
           error: result.error,

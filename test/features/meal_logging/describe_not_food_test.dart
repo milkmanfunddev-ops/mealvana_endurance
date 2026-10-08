@@ -14,9 +14,11 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mealvana_endurance/features/content/application/content_service.dart';
 import 'package:mealvana_endurance/features/meal_logging/application/meal_ai_service.dart';
+import 'package:mealvana_endurance/features/meal_logging/presentation/providers/describe_analysis_controller.dart';
 import 'package:mealvana_endurance/features/meal_logging/presentation/screens/log_meal_screen.dart';
 import 'package:mealvana_endurance/features/meal_logging/presentation/screens/meal_review_screen.dart';
 import 'package:mealvana_endurance/shared/services/report/report.dart';
@@ -97,6 +99,14 @@ void main() {
       () => functions.invoke('describe-meal', body: any(named: 'body')),
     ).called(1);
     expect(find.byType(MealReviewScreen), findsNothing);
+    // The failure never reaches notifier state (the Riverpod observer would
+    // fault it with no area; wave 4 review): the controller holds no error.
+    final container = ProviderScope.containerOf(
+      tester.element(find.byType(LogMealScreen)),
+    );
+    final held = container.read(describeAnalysisControllerProvider);
+    expect(held.hasError, isFalse);
+    expect(held.value, isNull);
     final notFood = content['meal_log.describe.not_food']!;
     expect(notFood, startsWith("That doesn't sound like food or drink."));
     expect(find.text(notFood), findsOneWidget);

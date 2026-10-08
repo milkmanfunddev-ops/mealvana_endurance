@@ -9,7 +9,6 @@ import '../../../shared/database/app_database.dart';
 import '../../../shared/services/report/report.dart';
 import '../../../shared/services/sync/sync_dependency_graph.dart';
 import '../domain/integration.dart';
-import '../domain/integration_exceptions.dart' show reauthRequiredCode;
 
 /// Repository for managing external training-platform integrations
 /// (Final Surge, TrainingPeaks, Strava, Garmin).
@@ -409,8 +408,9 @@ class IntegrationsRepository with SyncableRepository {
   ///   provider refused the token for good, and a later network blip does
   ///   not change that. The row keeps its status and message.
   /// - Ticket 37: [error] is a wire code (`SyncErrorCode`), never English.
-  ///   A stored `reauth_required` code also keeps the reconnect; the status
-  ///   check stays for rows written before the code (legacy English).
+  ///   The stored STATUS decides (legacy English rows carry it too); a
+  ///   `reauth_required` code beside status `error` is not a reconnect, so
+  ///   the card and this guard never disagree (wave 4 review).
   Future<void> updateSyncStatus(
     String userId,
     String provider, {
@@ -419,9 +419,7 @@ class IntegrationsRepository with SyncableRepository {
   }) async {
     final existing = await getIntegration(userId, provider);
     final keepsReauth =
-        status == 'error' &&
-        (existing?.lastSyncStatus == requiresReauthStatus ||
-            existing?.lastSyncError == reauthRequiredCode);
+        status == 'error' && existing?.lastSyncStatus == requiresReauthStatus;
     final storedStatus = keepsReauth ? requiresReauthStatus : status;
     await (_db.update(_db.integrationsTable)
           ..where((t) => t.userId.equals(userId) & t.provider.equals(provider)))

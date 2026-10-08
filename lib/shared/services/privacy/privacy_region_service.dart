@@ -7,6 +7,7 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../prefs_provider.dart';
+import '../launch_trail.dart';
 import '../report/report.dart';
 import 'analytics_consent.dart';
 import 'privacy_region.dart';
@@ -129,12 +130,16 @@ class PrivacyRegionService {
       // body is still a fault. No tracker is passed: this runs before
       // consent is resolved, so the count waits for analytics to start
       // (`ExpectedFailureCounts`).
-      await _r.faultUnlessWeather(
+      final weather = await _r.faultUnlessWeather(
         e,
         stackTrace: stackTrace,
         area: 'privacy',
         message: 'Region lookup failed; falling back to device signals',
       );
+      if (weather != null) {
+        // Startup chain: the tape carries the silent fallback too (D9).
+        LaunchTrail.add('region lookup ${weather.tag}: device fallback');
+      }
       await _markDeviceFallback();
     }
   }

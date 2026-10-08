@@ -98,7 +98,14 @@ class DescribeAnalysisController extends _$DescribeAnalysisController {
     if (_inFlightKey == key) {
       _inFlight = null;
       _inFlightKey = null;
-      state = outcome;
+      // A failed call stays out of notifier state: `MealAiService` has
+      // already reported the cause and the Describe tab notes the outcome,
+      // and `SentryProviderObserver` would otherwise fault the wrapper with
+      // no area (31-003's "my bike ride" is an expected answer, not an
+      // event). The caller gets the error from the returned outcome.
+      state = outcome.hasError
+          ? AsyncData<DescribeAnalysis?>(state.value)
+          : outcome;
     }
     return outcome;
   }

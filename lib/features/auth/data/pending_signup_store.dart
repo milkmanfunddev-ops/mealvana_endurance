@@ -79,7 +79,7 @@ class PendingSignupStore {
       _current = record;
       return (record: record, unreadable: record == null);
     } catch (e) {
-      await _failed('read', e);
+      await _report.noteFailed('read', e);
       return (record: null, unreadable: true);
     }
   }
@@ -90,7 +90,7 @@ class PendingSignupStore {
     try {
       return await _secure.read(key: passwordKey);
     } catch (e) {
-      await _failed('read_password', e);
+      await _report.noteFailed('read_password', e);
       return null;
     }
   }
@@ -104,7 +104,7 @@ class PendingSignupStore {
       ok = await _prefs.setString(prefsKey, jsonEncode(record.toJson()));
       if (ok) _current = record;
     } catch (e) {
-      await _failed('write', e);
+      await _report.noteFailed('write', e);
       return false;
     }
     try {
@@ -114,7 +114,7 @@ class PendingSignupStore {
         await _secure.delete(key: passwordKey);
       }
     } catch (e) {
-      await _failed('write_password', e);
+      await _report.noteFailed('write_password', e);
       ok = false;
     }
     _report.info(
@@ -141,7 +141,7 @@ class PendingSignupStore {
       if (ok) _current = moved;
       return ok;
     } catch (e) {
-      await _failed('mark_resent', e);
+      await _report.noteFailed('mark_resent', e);
       return false;
     }
   }
@@ -155,12 +155,12 @@ class PendingSignupStore {
       await _prefs.remove(prefsKey);
       _current = null;
     } catch (e) {
-      await _failed('clear', e);
+      await _report.noteFailed('clear', e);
     }
     try {
       await _secure.delete(key: passwordKey);
     } catch (e) {
-      await _failed('clear_password', e);
+      await _report.noteFailed('clear_password', e);
     }
     await _report.note(
       'Pending signup cleared',
@@ -177,7 +177,12 @@ class PendingSignupStore {
     }
   }
 
-  Future<void> _failed(String step, Object error) => _report.note(
+}
+
+extension on Report {
+  /// One note per failed store step: the step name and the error's type,
+  /// never the address or the password (D9).
+  Future<void> noteFailed(String step, Object error) => note(
     'Pending signup store: $step failed',
     area: 'auth',
     data: {'step': step, 'error_type': error.runtimeType.toString()},

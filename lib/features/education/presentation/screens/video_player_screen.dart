@@ -172,7 +172,7 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
       // Offline is weather (ticket 41, 32-007): iOS says "Could not connect
       // to the server". A breadcrumb and one count; the screen's "Failed to
       // load video" with Retry already tells the athlete.
-      _report.faultUnlessWeather(
+      await _report.faultUnlessWeather(
         e,
         stackTrace: stackTrace,
         area: 'education',

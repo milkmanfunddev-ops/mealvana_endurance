@@ -165,6 +165,10 @@ AppExternalDeps _deps(SupabaseClient client) {
       authMigrationServiceProvider.overrideWith((ref) async => migration),
     ],
   );
+  // The app's Verify screen watches the service; without a listener the
+  // auto-dispose notifier dies across the pending-signup store's real async
+  // gap (ticket 42) and `ref.invalidate` throws.
+  container.listen(emailAuthServiceProvider, (_, _) {});
   addTearDown(container.dispose);
   return (container: container, spy: spy);
 }

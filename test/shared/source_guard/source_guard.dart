@@ -95,6 +95,10 @@ const List<String> reportCalls = [
   'report.',
   '_report.',
   'Report.',
+  // `Report.faultUnlessWeather` (ticket 41): a fault, or a breadcrumb plus an
+  // `expected_failure` count for network weather; either way the catch is
+  // written down, so the call is the report.
+  '.faultUnlessWeather(',
   // A pure domain decoder hands its issue to the data layer's `DecodeIssue`
   // callback (`lib/shared/domain/decode_issue.dart`), which is bound to
   // `report.decodeIssue(area)`; the call is the report.
