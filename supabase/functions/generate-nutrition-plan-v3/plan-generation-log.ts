@@ -151,7 +151,15 @@ export function buildPlanGenerationLogRow(params: {
   };
 }
 
-/** Insert a ledger row. Never throws; failures are logged and swallowed. */
+/**
+ * Insert a ledger row. Never throws; failures are logged and swallowed.
+ *
+ * A failed write is one `console.warn` line with a JSON part (plan id,
+ * device id, error code and message, and duration_minutes), so a reader of
+ * function_logs can match it to the request and see the field that failed
+ * without the `Full input` line (D9; ticket 62, Finding 49-012). A thrown
+ * error reports `code: "threw"`.
+ */
 export async function insertPlanGenerationLog(
   supabase: ReturnType<typeof createServiceClient>,
   row: PlanGenerationLogRow,
@@ -159,9 +167,27 @@ export async function insertPlanGenerationLog(
   try {
     const { error } = await supabase.from("plan_generation_log").insert(row);
     if (error) {
-      console.warn("[PLAN-V3] plan_generation_log insert failed:", error);
+      console.warn(
+        "[PLAN-V3] plan_generation_log insert failed",
+        JSON.stringify({
+          plan_id: row.plan_id,
+          device_id: row.device_id,
+          code: error.code,
+          message: error.message,
+          duration_minutes: row.duration_minutes,
+        }),
+      );
     }
   } catch (err) {
-    console.warn("[PLAN-V3] plan_generation_log insert threw:", err);
+    console.warn(
+      "[PLAN-V3] plan_generation_log insert failed",
+      JSON.stringify({
+        plan_id: row.plan_id,
+        device_id: row.device_id,
+        code: "threw",
+        message: String(err),
+        duration_minutes: row.duration_minutes,
+      }),
+    );
   }
 }

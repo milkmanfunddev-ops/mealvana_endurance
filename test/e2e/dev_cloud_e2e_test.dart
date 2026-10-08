@@ -38,6 +38,10 @@ class SupabaseTestClient {
   Map<String, String> get headers => {
     'Content-Type': 'application/json',
     'apikey': DevCloudConfig.supabaseAnonKey,
+    // Marks this suite's requests as test traffic: plan-v3 records the
+    // header into plan_generation_log.source, and funnel queries exclude
+    // non-null source (testing-wave ticket 62).
+    'x-mealvana-test': 'dev_cloud_e2e',
     if (_accessToken != null) 'Authorization': 'Bearer $_accessToken',
   };
 
@@ -565,6 +569,7 @@ void main() {
         'run_pace': 8.5,
         'run_pace_unit': 'min_per_mile',
         'activity_type': 'running',
+        'hours_before': 2.0,
       };
 
       // Test low gut training
@@ -572,6 +577,9 @@ void main() {
         'generate-macros-v4',
         body: {...baseRequest, 'gut_training': 'low'},
       );
+      // A stale request shape answers 400; fail on it rather than reading
+      // the error body as macros (testing-wave ticket 62).
+      expect(lowResponse.statusCode, 200, reason: lowResponse.body);
       final lowData = jsonDecode(lowResponse.body) as Map<String, dynamic>;
       final lowMacros = lowData['macros'] as Map<String, dynamic>?;
       final lowCarbsPerHour = lowMacros?['during_rate_g_per_h'] as num?;
@@ -581,6 +589,7 @@ void main() {
         'generate-macros-v4',
         body: {...baseRequest, 'gut_training': 'high'},
       );
+      expect(highResponse.statusCode, 200, reason: highResponse.body);
       final highData = jsonDecode(highResponse.body) as Map<String, dynamic>;
       final highMacros = highData['macros'] as Map<String, dynamic>?;
       final highCarbsPerHour = highMacros?['during_rate_g_per_h'] as num?;
@@ -728,6 +737,7 @@ void main() {
         final requestData = {
           'device_id': client.userId ?? testDeviceId,
           'activity_type': 'running',
+          'hours_before': 2.0,
           'macro_targets': {
             'pre_run': {
               'carbs_g': 100,

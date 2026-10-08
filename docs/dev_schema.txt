@@ -2599,7 +2599,7 @@ CREATE TABLE "public"."plan_generation_log" (
     "plan_id" "uuid",
     "device_id" "text",
     "activity_type" "text",
-    "duration_minutes" integer,
+    "duration_minutes" numeric,
     "gut_training_level" "text",
     "during_path" "text",
     "targets" "jsonb",
