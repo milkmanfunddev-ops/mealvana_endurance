@@ -163,13 +163,16 @@ class _EmailLoginScreenState extends ConsumerState<EmailLoginScreen> {
       );
     }
     if (!mounted) return;
-    final verified = await Navigator.of(context).push<bool>(
+    final exit = await Navigator.of(context).push<VerifyEmailExit>(
       MaterialPageRoute(
         builder: (_) => VerifyEmailScreen(email: email),
         fullscreenDialog: true,
       ),
     );
-    if (verified != true || !mounted) return;
+    // Log in (the hint) or a different email: this Log In screen is the one
+    // to stay on, the address still filled in. No second Log In is pushed
+    // (ticket 57).
+    if (exit != VerifyEmailExit.verified || !mounted) return;
     // Develop hands back through the pop result (mealplanning uses its
     // emailAuthHandoffProvider and app gate here): the screen beneath
     // finishes as a login, which keeps any onboarding draft in memory.

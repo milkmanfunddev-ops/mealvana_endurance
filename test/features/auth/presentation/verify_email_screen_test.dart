@@ -3,6 +3,8 @@
 /// system; Resend waits as long as the server does, counts down a 429's N,
 /// says when it failed, and a code that went out restarts the code's age.
 /// A resumed code (ticket 42) counts Resend down from when it was sent.
+/// The route says which way it was left (ticket 57): Log in, a different
+/// email, or a used code, and Log in pushes nothing itself.
 library;
 
 import 'dart:async';
@@ -22,6 +24,10 @@ import '../../../helpers/widget_test_harness.dart';
 /// auto-dispose provider is re-created between reads.
 class _Spy {
   VerificationCodeRejection refusal = VerificationCodeRejection.wrong;
+
+  /// True: every code is accepted.
+  bool accept = false;
+  final abandoned = <String>[];
   Object? resendError;
   final codeSentAts = <DateTime?>[];
   final lastSentAts = <DateTime?>[];
@@ -44,6 +50,7 @@ class _FakeEmailAuthService extends EmailAuthService {
     DateTime? codeSentAt,
   }) async {
     spy.codeSentAts.add(codeSentAt);
+    if (spy.accept) return;
     throw InvalidVerificationCodeException(spy.refusal);
   }
 
@@ -64,7 +71,9 @@ class _FakeEmailAuthService extends EmailAuthService {
   }) async {}
 
   @override
-  Future<void> abandonPendingSignup({required String reason}) async {}
+  Future<void> abandonPendingSignup({required String reason}) async {
+    spy.abandoned.add(reason);
+  }
 }
 
 final _content = loadDefaultContent();
@@ -79,6 +88,48 @@ Future<void> _pump(WidgetTester tester, _Spy spy, {DateTime? codeSentAt}) =>
         emailAuthServiceProvider.overrideWith(() => _FakeEmailAuthService(spy)),
       ],
     );
+
+/// A screen that opens Verify as the app's openers do and keeps what the
+/// route popped.
+class _Opener extends StatelessWidget {
+  const _Opener(this.exits);
+
+  final List<VerifyEmailExit?> exits;
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+    body: TextButton(
+      onPressed: () async {
+        exits.add(
+          await Navigator.of(context).push<VerifyEmailExit>(
+            MaterialPageRoute(
+              builder: (_) => const VerifyEmailScreen(email: 'a@b.com'),
+              fullscreenDialog: true,
+            ),
+          ),
+        );
+      },
+      child: const Text('open'),
+    ),
+  );
+}
+
+/// Pumps [_Opener], opens Verify, and returns the list its pops land in.
+Future<List<VerifyEmailExit?>> _open(WidgetTester tester, _Spy spy) async {
+  final exits = <VerifyEmailExit?>[];
+  await smokeScreen(
+    tester,
+    _Opener(exits),
+    overrides: [
+      contentServiceProvider.overrideWith(testContentService),
+      emailAuthServiceProvider.overrideWith(() => _FakeEmailAuthService(spy)),
+    ],
+  );
+  await tester.tap(find.text('open'));
+  await tester.pumpAndSettle();
+  expect(find.byType(VerifyEmailScreen), findsOneWidget);
+  return exits;
+}
 
 Future<void> _enterCode(WidgetTester tester, String code) async {
   await tester.enterText(find.byType(TextField), code);
@@ -180,6 +231,67 @@ void main() {
     final secondSentAt = spy.codeSentAts.last!;
     expect(secondSentAt.isBefore(beforeResend), isFalse);
     expect(secondSentAt.isAfter(firstSentAt), isTrue);
+  });
+
+  group('which way Verify was left (ticket 57)', () {
+    final logIn = find.byKey(const ValueKey('auth.verify_log_in'));
+    final changeEmail = find.byKey(const ValueKey('auth.verify_change_email'));
+
+    testWidgets('Log in pops logIn and pushes nothing', (tester) async {
+      final spy = _Spy();
+      final exits = await _open(tester, spy);
+
+      await tester.ensureVisible(logIn);
+      await tester.tap(logIn);
+      await tester.pumpAndSettle();
+
+      expect(exits, [VerifyEmailExit.logIn]);
+      expect(spy.abandoned, ['log_in']);
+      // Back on the opener, and nothing above or below it.
+      expect(find.byType(VerifyEmailScreen), findsNothing);
+      expect(find.text('open'), findsOneWidget);
+      final nav = tester.state<NavigatorState>(find.byType(Navigator));
+      expect(nav.canPop(), isFalse);
+    });
+
+    testWidgets('a second Log in tap in the same frame pops nothing more', (
+      tester,
+    ) async {
+      final spy = _Spy();
+      final exits = await _open(tester, spy);
+
+      await tester.ensureVisible(logIn);
+      final button = tester.widget<TextButton>(logIn);
+      button.onPressed!();
+      button.onPressed!();
+      await tester.pumpAndSettle();
+
+      expect(exits, [VerifyEmailExit.logIn]);
+      expect(spy.abandoned, ['log_in']);
+      expect(find.text('open'), findsOneWidget);
+    });
+
+    testWidgets('Use a different email pops differentEmail', (tester) async {
+      final spy = _Spy();
+      final exits = await _open(tester, spy);
+
+      await tester.ensureVisible(changeEmail);
+      await tester.tap(changeEmail);
+      await tester.pumpAndSettle();
+
+      expect(exits, [VerifyEmailExit.differentEmail]);
+      expect(spy.abandoned, ['different_email']);
+    });
+
+    testWidgets('a good code pops verified', (tester) async {
+      final spy = _Spy()..accept = true;
+      final exits = await _open(tester, spy);
+
+      await _enterCode(tester, '123456');
+
+      expect(exits, [VerifyEmailExit.verified]);
+      expect(spy.abandoned, isEmpty);
+    });
   });
 
   group('a resumed code (ticket 42)', () {

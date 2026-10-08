@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' show OtpType;
 
 import '../../../../shared/services/report/report.dart';
@@ -13,13 +12,28 @@ import '../../../content/domain/content_keys.dart';
 import '../../application/email_auth_service.dart';
 import '../../domain/auth_exceptions.dart';
 
+/// Which way Verify your email was left, as its route's pop value (ticket 57,
+/// 48-003). A system back pops null, which callers read as [differentEmail].
+enum VerifyEmailExit {
+  /// The code was accepted; the pending flow completed and the caller may
+  /// continue.
+  verified,
+
+  /// "Use a different email": back to the form that sent the code.
+  differentEmail,
+
+  /// The hint's "Log in": the caller opens Log In for the address. Verify
+  /// pushes nothing itself; the screen that opened it knows the hand-off.
+  logIn,
+}
+
 /// Collects the 6-digit signup verification code.
 ///
 /// Reached when [EmailAuthService.signUpWithEmail] or
 /// [EmailAuthService.linkEmailAccount] throws
 /// [EmailVerificationRequiredException] — the address exists on the account but
-/// Supabase withheld/withholds the upgrade until it is proven. Popping `true`
-/// means the pending flow completed and the caller may continue.
+/// Supabase withheld/withholds the upgrade until it is proven. The route pops
+/// a [VerifyEmailExit] saying which way it was left.
 ///
 /// The screen deliberately cannot be dismissed by the back gesture: leaving
 /// here strands a created-but-unverified account with no way back to this
@@ -72,6 +86,10 @@ class _VerifyEmailScreenState extends ConsumerState<VerifyEmailScreen> {
   final _codeCtrl = TextEditingController();
   bool _verifying = false;
   String? _error;
+
+  /// Set once Log in or "Use a different email" pops this route, so a second
+  /// tap before the route is gone pops nothing else (ticket 57).
+  bool _leaving = false;
 
   /// Whether a Resend went out from this screen: a refused code after that
   /// most likely came from the earlier email (121-002).
@@ -142,20 +160,24 @@ class _VerifyEmailScreenState extends ConsumerState<VerifyEmailScreen> {
   }
 
   void _useDifferentEmail() {
+    if (_leaving || !mounted) return;
+    _leaving = true;
     _discardAbandonedSignup();
     _abandonPendingSignup('different_email');
-    Navigator.of(context).pop(false);
+    Navigator.of(context).pop(VerifyEmailExit.differentEmail);
   }
 
   /// The hint's Log in (124-002): the address may already be an account, so
-  /// Log In opens with it filled in. The abandoned signup, if this was one,
-  /// is discarded like "Use a different email".
+  /// the caller opens Log In with it filled in (ticket 57: Verify pops
+  /// [VerifyEmailExit.logIn] and pushes nothing, so the login's result
+  /// reaches the screen that can finish it). The abandoned signup, if this
+  /// was one, is discarded like "Use a different email".
   void _logIn() {
-    final router = GoRouter.of(context);
+    if (_leaving || _verifying || !mounted) return;
+    _leaving = true;
     _discardAbandonedSignup();
     _abandonPendingSignup('log_in');
-    Navigator.of(context).pop(false);
-    router.push('/auth/email-login', extra: {'email': widget.email});
+    Navigator.of(context).pop(VerifyEmailExit.logIn);
   }
 
   Future<void> _verify() async {
@@ -176,7 +198,7 @@ class _VerifyEmailScreenState extends ConsumerState<VerifyEmailScreen> {
             codeSentAt: _codeSentAt,
           );
       if (!mounted) return;
-      Navigator.of(context).pop(true);
+      Navigator.of(context).pop(VerifyEmailExit.verified);
     } on InvalidVerificationCodeException catch (e) {
       await ref
           .read(reportProvider)

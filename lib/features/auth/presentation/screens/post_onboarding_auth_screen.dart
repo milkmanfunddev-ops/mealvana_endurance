@@ -22,6 +22,7 @@ import '../../application/auth_service.dart';
 import '../providers/post_onboarding_auth_controller.dart';
 import '../../domain/auth_exceptions.dart';
 import '../../domain/pending_signup.dart';
+import 'email_signup_screen.dart' show EmailSignupResult;
 import '../../../coach_mode/application/coach_service.dart';
 
 /// Post-Onboarding Authentication Screen
@@ -299,7 +300,9 @@ class _PostOnboardingAuthScreenState
           TextButton(
             onPressed: () {
               Navigator.of(context).pop();
-              context.push('/auth/email-signup');
+              // Through the same hand-off as the Email button, so a signup
+              // saves the answers and a login finishes as one (ticket 57).
+              unawaited(_handleEmailSignUp());
             },
             child: Text(
               contentService.getValue(
@@ -419,11 +422,13 @@ class _PostOnboardingAuthScreenState
       data: {'resume': resume != null},
     );
     final result = await context.push('/auth/email-signup', extra: resume);
+    // A breadcrumb carries plain values: the enum goes by its name.
+    final resultTag = result is EmailSignupResult ? result.name : result;
 
     report.info(
       'Email signup returned',
       area: 'auth',
-      data: {'result': result, 'mounted': mounted},
+      data: {'result': resultTag, 'mounted': mounted},
     );
 
     // If email signup successful, save onboarding data and navigate to main app
@@ -438,11 +443,20 @@ class _PostOnboardingAuthScreenState
           isAnonymous: false,
         ),
       );
+    } else if (result == EmailSignupResult.loggedIn && mounted) {
+      // Logged in to an existing account from the signup flow (Verify's
+      // hint, the account-exists dialog; ticket 57, 48-003): finish as a
+      // login, the way the Log In button does, keeping the draft policy.
+      report.info(
+        'Email signup returned a login, finishing as a login',
+        area: 'auth',
+      );
+      await _handOff(() => _finishLoginPreservingDraft(authProvider: 'email'));
     } else {
       report.info(
         'Email signup did not return true or widget unmounted',
         area: 'auth',
-        data: {'result': result, 'mounted': mounted},
+        data: {'result': resultTag, 'mounted': mounted},
       );
     }
   }
