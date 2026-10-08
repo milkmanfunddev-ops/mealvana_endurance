@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart' show ProviderListenable;
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:wiredash/wiredash.dart';
@@ -9,6 +10,8 @@ import '../../theme/kyle_design/theme_provider.dart';
 import '../../features/app_startup/application/app_startup_provider.dart';
 import '../../features/app_startup/presentation/widgets/app_startup_widget.dart';
 import '../core/app_router.dart';
+import '../../features/auth/data/pending_signup_store.dart';
+import '../services/privacy/analytics_consent.dart';
 import '../core/bootstrap/bootstrap.dart' show appNavigatorKey;
 import '../services/report/report.dart';
 import '../services/app_config.dart';
@@ -145,6 +148,180 @@ Future<void> _collectResumeTaps(Report report) async {
   await NotificationService.consumeLegacyResumeTap();
 }
 
+/// Why a notification tap cannot route right now, or null when it can
+/// (ticket 59, Finding 50-001).
+///
+/// Routable means "the router would answer `/main` for `/` right now, with a
+/// live session": the same [AppRouter.rootRedirect] the router runs on
+/// `appStartupProvider`'s data, plus the live-session check the router makes
+/// for every protected route. One rule shared with the router, not a second
+/// list of conditions (the old guard ignored onboarding). The answer is the
+/// reason the HELD line carries:
+/// - `no session`: no live Supabase session;
+/// - `startup loading` / `startup failed`: startup has no data;
+/// - otherwise the root redirect's answer when it is not `/main`
+///   (`/welcome`, `/force-upgrade`, `/privacy-consent`,
+///   `/auth/post-onboarding?resume=verify`).
+///
+/// The caller passes the reads the router makes, unchanged:
+/// `ref.read(appStartupProvider)`, the live `currentSession != null`,
+/// `pendingSignupStoreProvider.isOpen` and `analyticsConsentProvider`'s
+/// `needsPrompt` (see [notificationTapGate]).
+@visibleForTesting
+String? notificationTapHoldReason(
+  AsyncValue<AppStartupData> startup, {
+  required bool hasSession,
+  required bool Function() pendingSignupOpen,
+  required bool Function() needsConsentPrompt,
+}) {
+  if (!hasSession) return 'no session';
+  if (startup is! AsyncData<AppStartupData>) {
+    return startup.hasError ? 'startup failed' : 'startup loading';
+  }
+  final target = AppRouter.rootRedirect(
+    startup.value,
+    pendingSignupOpen: pendingSignupOpen,
+    needsConsentPrompt: needsConsentPrompt,
+  );
+  return target == '/main' ? null : (target ?? 'root redirect undecided');
+}
+
+/// Whether a notification tap can route right now. See
+/// [notificationTapHoldReason].
+@visibleForTesting
+bool notificationTapRoutable(
+  AsyncValue<AppStartupData> startup, {
+  required bool hasSession,
+  required bool Function() pendingSignupOpen,
+  required bool Function() needsConsentPrompt,
+}) =>
+    notificationTapHoldReason(
+      startup,
+      hasSession: hasSession,
+      pendingSignupOpen: pendingSignupOpen,
+      needsConsentPrompt: needsConsentPrompt,
+    ) ==
+    null;
+
+/// What the tap guard reads, at one moment: why a tap cannot route (null when
+/// it can) and whose session is live (null when signed out).
+typedef NotificationTapGate = ({String? holdReason, String? sessionUserId});
+
+/// Reads the gate the way the router reads its redirect. [read] is
+/// `WidgetRef.read` in the app and `ProviderContainer.read` in tests.
+@visibleForTesting
+NotificationTapGate notificationTapGate(
+  T Function<T>(ProviderListenable<T> provider) read,
+) {
+  final session = read(
+    appExternalDepsProvider,
+  ).supabaseClient.auth.currentSession;
+  return (
+    holdReason: notificationTapHoldReason(
+      read(appStartupProvider),
+      hasSession: session != null,
+      pendingSignupOpen: () => read(pendingSignupStoreProvider).isOpen,
+      needsConsentPrompt: () => read(analyticsConsentProvider).needsPrompt,
+    ),
+    sessionUserId: session?.user.id,
+  );
+}
+
+/// The one notification tap the root widget is holding, and the record of
+/// what became of it (ticket 59).
+///
+/// A tap that arrives while the app is not routable is HELD. It is released
+/// (REPLAY) when the reason clears in the same session, and DROPPED when the
+/// session changes (Lee's ruling 2026-10-08: a tap held across a sign-in or a
+/// sign-out is never replayed; no ownership check, no expiry). A newer tap
+/// replaces a held one; the root going away drops it.
+///
+/// Every line goes to [LaunchTrail] (the device tape) and, with the same
+/// text, to a `push` breadcrumb (rule D9: the tape alone is not
+/// PROD-readable).
+class HeldNotificationTap {
+  HeldNotificationTap(this._report);
+
+  final Report _report;
+
+  ({String id, String? type, String? sessionUserId})? _held;
+
+  /// The held tap's id, or null.
+  String? get heldId => _held?.id;
+
+  bool get isHeld => _held != null;
+
+  /// Holds a tap that cannot route now. A tap already held is dropped: the
+  /// newest is the athlete's latest intent.
+  void hold(
+    String id,
+    String? type, {
+    required String reason,
+    required String? sessionUserId,
+  }) {
+    dropReplacedBy(id);
+    _held = (id: id, type: type, sessionUserId: sessionUserId);
+    _write('HELD id=$id type=$type ($reason)', id, type);
+  }
+
+  /// Drops the held tap, if any, because a newer tap ([id]) arrived.
+  void dropReplacedBy(String id) {
+    final old = _held;
+    if (old == null) return;
+    _held = null;
+    _write('DROPPED id=${old.id} (replaced by id=$id)', old.id, old.type);
+  }
+
+  /// Re-checks the held tap against [gate]. Returns it, cleared, when it can
+  /// route now (and tapes REPLAY); drops it when the session changed since it
+  /// was held; otherwise keeps holding it and returns null.
+  ({String id, String? type})? takeIfRoutable(NotificationTapGate gate) {
+    final tap = _held;
+    if (tap == null) return null;
+    if (gate.sessionUserId != tap.sessionUserId) {
+      _held = null;
+      final change = tap.sessionUserId == null
+          ? 'signed in'
+          : gate.sessionUserId == null
+          ? 'signed out'
+          : 'account changed';
+      _write(
+        'DROPPED id=${tap.id} type=${tap.type} (session changed: $change)',
+        tap.id,
+        tap.type,
+      );
+      return null;
+    }
+    if (gate.holdReason != null) return null;
+    _held = null;
+    _write('REPLAY id=${tap.id} type=${tap.type}', tap.id, tap.type);
+    return (id: tap.id, type: tap.type);
+  }
+
+  /// The root is going away with a tap still held.
+  void dropOnDispose() {
+    final tap = _held;
+    if (tap == null) return;
+    _held = null;
+    _write(
+      'DROPPED id=${tap.id} type=${tap.type} (root disposed while held)',
+      tap.id,
+      tap.type,
+    );
+  }
+
+  /// A tap that was never held or routed: [why] says what stopped it
+  /// (`empty id`, `root unmounted`).
+  void dropIncoming(String id, String? type, {required String why}) {
+    _write('DROPPED id=$id type=$type ($why)', id, type);
+  }
+
+  void _write(String line, String id, String? type) {
+    LaunchTrail.add(line);
+    _report.breadcrumb(line, category: 'push', data: {'id': id, 'type': type});
+  }
+}
+
 class RootAppWidget extends ConsumerStatefulWidget {
   const RootAppWidget({super.key});
 
@@ -154,9 +331,18 @@ class RootAppWidget extends ConsumerStatefulWidget {
 
 class _RootAppWidgetState extends ConsumerState<RootAppWidget>
     with WidgetsBindingObserver {
+  /// Captured in [initState] so [dispose] can write down a dropped tap
+  /// without reading a provider after unmount.
+  late final Report _report;
+
+  /// The tap held until the app can route it (ticket 59).
+  late final HeldNotificationTap _heldTap;
+
   @override
   void initState() {
     super.initState();
+    _report = ref.read(reportProvider);
+    _heldTap = HeldNotificationTap(_report);
     WidgetsBinding.instance.addObserver(this);
 
     NotificationService.setNavigationHandler(_handleNotificationNavigation);
@@ -252,14 +438,9 @@ class _RootAppWidgetState extends ConsumerState<RootAppWidget>
     WidgetsBinding.instance.removeObserver(this);
     NotificationService.setNavigationHandler(null);
     NotificationService.setDailyMacroCacheInvalidator(null);
+    _heldTap.dropOnDispose();
     super.dispose();
   }
-
-  /// A tap that arrived before the router could honour it.
-  ///
-  /// Cold start only: see [_isRoutableNow]. Held rather than dropped, and
-  /// replayed the moment startup resolves.
-  ({String id, String? type})? _deferredTap;
 
   /// Can a deep link survive the root redirect right now?
   ///
@@ -268,30 +449,39 @@ class _RootAppWidgetState extends ConsumerState<RootAppWidget>
   /// was still resolving. The global redirect reads `appStartupProvider`, and
   /// until that has data every protected route falls through to the startup
   /// branch and is sent to `/main` — so the athlete landed on the Timeline
-  /// holding a nudge that told them to go somewhere else. It was not the two
-  /// navigations racing so much as the deep link being evaluated in a window
-  /// where the router could only answer "/main".
+  /// holding a nudge that told them to go somewhere else.
   ///
-  /// Backgrounded taps never hit this: startup has long since resolved, which
-  /// is exactly why the bug read as cold-start-only.
-  bool _isRoutableNow() {
-    final startup = ref.read(appStartupProvider);
-    return startup.maybeWhen(
-      data: (d) =>
-          !d.forceUpgradeRequired && !d.resyncRequired && d.user != null,
-      orElse: () => false,
-    );
-  }
+  /// Ticket 59 (Finding 50-001): the guard now asks the router's own
+  /// question on the live state ([notificationTapGate]). Before, it read a
+  /// launch-time "no user" for the whole process, so after an in-session
+  /// login every backgrounded tap was held and never released.
+  NotificationTapGate _gate() => notificationTapGate(ref.read);
 
   void _handleNotificationNavigation(String activityId, String? type) {
-    if (!mounted || activityId.isEmpty) return;
-
-    // Hold it. Dropping the tap is the failure; arriving late is not.
-    if (!_isRoutableNow()) {
-      LaunchTrail.add('HELD id=$activityId type=$type (startup not routable)');
-      _deferredTap = (id: activityId, type: type);
+    if (activityId.isEmpty) {
+      _heldTap.dropIncoming(activityId, type, why: 'empty id');
       return;
     }
+    if (!mounted) {
+      _heldTap.dropIncoming(activityId, type, why: 'root unmounted');
+      return;
+    }
+
+    // Hold it until it can route, or until the session changes (then it is
+    // dropped, never replayed into another session: Lee, 2026-10-08).
+    final gate = _gate();
+    final reason = gate.holdReason;
+    if (reason != null) {
+      _heldTap.hold(
+        activityId,
+        type,
+        reason: reason,
+        sessionUserId: gate.sessionUserId,
+      );
+      return;
+    }
+    // A newer tap that routes now supersedes one still held.
+    _heldTap.dropReplacedBy(activityId);
     LaunchTrail.add('routing id=$activityId type=$type');
 
     // The tap is the attribution anchor for "did the nudge cause a plan".
@@ -333,8 +523,9 @@ class _RootAppWidgetState extends ConsumerState<RootAppWidget>
   ///
   /// Seed home, then push, so back behaves exactly as it does when the screen
   /// is reached by hand. Safe to do synchronously here because the caller has
-  /// already cleared `_isRoutableNow()` — the app is past the auth/startup
-  /// gate, so '/' will not redirect out from under the push.
+  /// already cleared the tap guard ([notificationTapHoldReason]), which asks
+  /// the router's own `rootRedirect` for `/main`, so '/' will not redirect
+  /// out from under the push.
   void _deepLinkTo(String location, Object? extra) {
     final router = ref.read(AppRouter.routerProvider);
     router.go('/');
@@ -387,23 +578,23 @@ class _RootAppWidgetState extends ConsumerState<RootAppWidget>
     LaunchTrail.add('navigated(prefilled) -> ${destination.location}');
   }
 
-  /// Replays a held tap once the router can honour it.
-  void _flushDeferredTap() {
-    final tap = _deferredTap;
-    if (tap == null || !_isRoutableNow()) return;
-    LaunchTrail.add('REPLAY id=${tap.id} type=${tap.type}');
-    _deferredTap = null;
-    _handleNotificationNavigation(tap.id, tap.type);
+  /// Re-checks the held tap: replays it when it can route, drops it when the
+  /// session changed since it was held, otherwise keeps holding it.
+  void _releaseHeldTap() {
+    if (!mounted || !_heldTap.isHeld) return;
+    final tap = _heldTap.takeIfRoutable(_gate());
+    if (tap != null) _handleNotificationNavigation(tap.id, tap.type);
   }
 
   @override
   Widget build(BuildContext context) {
-    // The held-tap release. Startup resolving is the signal that the router
-    // can answer with something other than /main, so a cold-start deep link
-    // is replayed here rather than being lost to the root redirect.
-    ref.listen(appStartupProvider, (_, __) {
-      if (mounted) _flushDeferredTap();
-    });
+    // The held-tap release (ticket 59). The startup snapshot changes when
+    // startup resolves and, after ticket 56, on every in-session sign-in,
+    // sign-out and onboarding save; a consent decision moves the guard
+    // without writing the snapshot. Each re-check replays a tap whose reason
+    // cleared in the same session and drops one held across a session change.
+    ref.listen(appStartupProvider, (_, __) => _releaseHeldTap());
+    ref.listen(analyticsConsentProvider, (_, __) => _releaseHeldTap());
 
     // Initialize auth listener ONCE at app startup
     // This is a singleton that lives for the lifetime of the app
