@@ -1,6 +1,6 @@
 # 42: A pending signup survives a relaunch, and a 429 is a wait, not a failure
 
-**Status:** ready (round develop-2026-10, fix wave 4)
+**Status:** in-progress (wave 4, 2026-10-08)
 **Labels:** fix, round:develop-2026-10, area:auth, area:onboarding
 **Branch:** `develop-next` (fix-wave worktree)
 **Blocked by:** nothing in code. Sequential with 41 (auth report sites), 46 (`app_router.dart`) and whichever wave-4 agent edits `content_keys.dart` / `content_defaults.json` last (see Overlaps).

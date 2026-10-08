@@ -1,6 +1,6 @@
 # 38: The swap path keeps quantity apart from the portion text; MealItemsEditor is archived
 
-**Status:** ready (round develop-2026-10, fix wave 4)
+**Status:** in-progress (wave 4, 2026-10-08)
 **Labels:** fix, round:develop-2026-10, area:meal-logging
 **Branch:** `develop-next` (fix-wave worktree)
 **Blocked by:** nothing.

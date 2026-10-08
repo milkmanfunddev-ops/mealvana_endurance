@@ -1,6 +1,6 @@
 # 44: Onboarding Your daily plan applies the session protein bump
 
-**Status:** ready (round develop-2026-10, fix wave 4)
+**Status:** in-progress (wave 4, 2026-10-08)
 **Labels:** fix, round:develop-2026-10, area:onboarding, area:nutrition
 **Branch:** `develop-next` (fix-wave worktree)
 **Blocked by:** 40 (runs first, alone). Nothing else.

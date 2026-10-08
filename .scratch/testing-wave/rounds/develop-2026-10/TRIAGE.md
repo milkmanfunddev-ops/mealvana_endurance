@@ -8,6 +8,7 @@ One line per wave: number, base sha, tickets, start time, who led it.
 - wave 2 · base `a69b226b` · ticket 29 alone (sequential Opus agents by area in one worktree), then 21–28 · 2026-10-07T13:40Z · lead: Claude (Fable), fix wave
 - wave 2b · base (29 merged) · tickets 21+22 (one agent), 24, 26+27 (one agent), 28; then 23 after 26+27 merges · 2026-10-07 · lead: Claude (Fable), fix wave
 - wave 3 · base `a89ace2a` (app built from it) · tickets 30, 31, 32 · 2026-10-08T12:55Z–13:35Z · lead: Claude (Fable), test wave (rebuild); merged `e28df18a`; 43 Findings + 1 lead-filed; 30 old Findings closed
+- wave 4 · base `aab323b7` · fix wave: 34, 35+36 (one agent), 38, 39, 41, 43, 44 at once; then 37; then 45, 46, 47; then 42 · 2026-10-08T15:58Z · lead: Claude (Fable), fix wave (40 done earlier by the lead)
 
 ## Rulings
 
@@ -174,3 +175,6 @@ One line per Finding decision, made with Lee in the terminal: id, decision, who 
 - 30-012 · closed · IMPROVEMENTS entry (#113): simctl defaults delete does nothing on a simulator; use the container plist · Lee, 2026-10-08
 - wave 3 lead notes · ticket 32 exposed the TrainingPeaks test login password in one screenshot (deleted, never committed) and ticket 31 sent Lee's address in a User-Agent header; both in IMPROVEMENTS #112 · lead, 2026-10-08
 - 29-001 · triaged · fixed by 29; retest in ticket 50, wave 5 · lead, 2026-10-08
+- 42 (ruling, review queue 4) · keep the anonymous-upgrade path's deferred password in the Keychain until the code is used or the signup is abandoned; a relaunch resumes the same signup · Lee, 2026-10-08
+- 45 (ruling, review queue 5) · a describe call that finds no food is free: describe-meal skips or refunds the charge, as the photo function already does · Lee, 2026-10-08
+- 41 (ruling, review queue 6) · expected failures become breadcrumbs AND a plain analytics event `expected_failure` with a reason, so the offline and login-failure counts survive · Lee, 2026-10-08

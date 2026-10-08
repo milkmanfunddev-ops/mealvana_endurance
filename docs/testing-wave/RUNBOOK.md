@@ -184,7 +184,9 @@ state is a Finding, not a step.
 - Edge-function logs for the functions the scenario touched: the Supabase MCP's `query_logs` on the dev
   project (`select timestamp, event_message, log_attributes['level'] from logs where source =
   'function_edge_logs'` for request lines, `'function_logs'` for console lines, with the run's window as
-  `iso_timestamp_start/end`). `scripts/edge_logs.sh` is gone (#102): it answered "(no rows in window)" for
+  `iso_timestamp_start/end`). A metered call is confirmed by its `token_ledger` debit and its `function_logs` lines; a
+  missing `function_edge_logs` request line alone does not mean the call was never made (31-013: analyze-meal-photo
+  never gets one). `scripts/edge_logs.sh` is gone (#102): it answered "(no rows in window)" for
   every query after Supabase removed its endpoint. Save the rows to `RUNS/edge-*.txt`.
 
 Both the SQL and the logs need a Management API token. Read it from the main clone without

@@ -1,6 +1,6 @@
 # 41: Expected outcomes are breadcrumbs, not Sentry events (auth, offline, permission note), and two analytics gaps
 
-**Status:** ready (round develop-2026-10, fix wave 4)
+**Status:** in-progress (wave 4, 2026-10-08)
 **Labels:** fix, round:develop-2026-10, area:telemetry
 **Branch:** `develop-next` (fix-wave worktree)
 **Blocked by:** 40 (runs first, alone). Runs after or before 42, never alongside it: both edit `email_auth_service.dart`, `post_onboarding_auth_controller.dart` and `app_startup_service.dart`.

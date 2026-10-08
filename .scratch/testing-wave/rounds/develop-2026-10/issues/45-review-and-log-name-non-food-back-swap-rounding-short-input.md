@@ -1,6 +1,6 @@
 # 45: Review & Log: empty name, non-food text, Back keeps the analysis, swap rounding, short-input copy
 
-**Status:** ready (round develop-2026-10, fix wave 4)
+**Status:** in-progress (wave 4, 2026-10-08)
 **Labels:** fix, round:develop-2026-10, area:meal-logging, area:ai
 **Branch:** `develop-next` (fix-wave worktree)
 **Blocked by:** 38 (same two screens' swap mapping; 45 extends 38's `meal_swap.dart` helper). Runs after 38 merges.

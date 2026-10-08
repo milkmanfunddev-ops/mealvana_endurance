@@ -1,6 +1,6 @@
 # 39: The five remaining timestamptz writers send UTC
 
-**Status:** ready (round develop-2026-10, fix wave 4)
+**Status:** in-progress (wave 4, 2026-10-08)
 **Labels:** fix, round:develop-2026-10, area:sync
 **Branch:** `develop-next` (fix-wave worktree)
 **Blocked by:** nothing.

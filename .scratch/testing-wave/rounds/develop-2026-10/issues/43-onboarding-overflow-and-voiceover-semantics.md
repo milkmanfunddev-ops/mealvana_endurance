@@ -1,6 +1,6 @@
 # 43: Onboarding: the 971 px overflow and VoiceOver semantics
 
-**Status:** ready (round develop-2026-10, fix wave 4)
+**Status:** in-progress (wave 4, 2026-10-08)
 **Labels:** fix, round:develop-2026-10, area:onboarding, area:accessibility
 **Branch:** `develop-next` (fix-wave worktree)
 **Blocked by:** 40 (runs first, alone). Not alongside 42, which also edits `post_onboarding_auth_screen.dart`.

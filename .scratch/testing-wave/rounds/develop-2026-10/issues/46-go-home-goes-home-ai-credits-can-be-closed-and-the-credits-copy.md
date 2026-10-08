@@ -1,6 +1,6 @@
 # 46: Go Home goes home, AI Credits can be closed, and the credits copy names what credits buy
 
-**Status:** ready (round develop-2026-10, fix wave 4)
+**Status:** in-progress (wave 4, 2026-10-08)
 **Labels:** fix, round:develop-2026-10, area:navigation, area:ai-credits, copy
 **Branch:** `develop-next` (fix-wave worktree)
 **Blocked by:** 37 (shared `content_keys.dart` and `content_defaults.json`, which 35+36 also edit); run after 37 merges.

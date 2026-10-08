@@ -1,6 +1,6 @@
 # 47: Connected Apps: disconnect clears reconnect state, a fresh token syncs, the card refreshes
 
-**Status:** ready (round develop-2026-10, fix wave 4)
+**Status:** in-progress (wave 4, 2026-10-08)
 **Labels:** fix, round:develop-2026-10, area:integrations
 **Branch:** `develop-next` (fix-wave worktree)
 **Blocked by:** 37. It edits `integrations_repository.dart`, `training_peaks_sync_service.dart`, `connect_training_controller.dart` and `connected_apps_reconnect_test.dart`, and it turns the reconnect text into the code `reauth_required`. Run 47 after 37 merges and re-read the line numbers then.

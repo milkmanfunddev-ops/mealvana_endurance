@@ -1,6 +1,6 @@
 # 37: Sync-error text becomes a code on the row, mapped to content keys at display time
 
-**Status:** ready (round develop-2026-10, fix wave 4)
+**Status:** in-progress (wave 4, 2026-10-08)
 **Labels:** fix, round:develop-2026-10, area:integrations
 **Branch:** `develop-next` (fix-wave worktree)
 **Blocked by:** 35+36's agent (shared `content_keys.dart` and `content_defaults.json`); run after it merges.

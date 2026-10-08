@@ -1,6 +1,6 @@
 # 36: The profile Email field is editable only when auth has no real address
 
-**Status:** ready (round develop-2026-10, fix wave 4)
+**Status:** in-progress (wave 4, 2026-10-08)
 **Labels:** fix, round:develop-2026-10, area:settings, area:auth
 **Branch:** `develop-next` (fix-wave worktree)
 **Blocked by:** nothing. Runs in the same agent as 35 (shared `content_defaults.json`).

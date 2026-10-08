@@ -53,14 +53,14 @@ approved card or a ruling in the round's TRIAGE.md, and leaves this file. Rewrit
    disabled Codemagic workflows and let the contract test read the M1 workflow only. Recommend yes.
 3. **RevenueCat Test Store (mp-656).** Swap it to the four `me_pro_*` products? Recommend yes.
 
-4. **Resumed signup and the Keychain (ticket 42, before wave 4).** Resuming a signup after a relaunch means
+4. ~~Ruled 2026-10-08 (Lee, terminal): yes, keep it.~~ **Resumed signup and the Keychain (ticket 42, before wave 4).** Resuming a signup after a relaunch means
    keeping the anonymous-upgrade path's deferred password in the Keychain until the code is used or abandoned.
    Recommend yes (the other option resumes only plain signups, which the app never takes from Build My Plan).
-5. **A describe call that finds no food (ticket 45, before wave 4).** The token is charged after the model
+5. ~~Ruled 2026-10-08 (Lee, terminal): yes, describe is free for non-food.~~ **A describe call that finds no food (ticket 45, before wave 4).** The token is charged after the model
    answers, so "my bike ride" costs one; the photo function already refuses non-food before charging.
    Recommend: make describe free for non-food too (one line in describe-meal).
 
-6. **Offline and login-failure counts (ticket 41, before wave 4).** Since 2026-10-05 expected failures go to
+6. ~~Ruled 2026-10-08 (Lee, terminal): yes, `expected_failure` analytics event.~~ **Offline and login-failure counts (ticket 41, before wave 4).** Since 2026-10-05 expected failures go to
    Sentry as warnings so you can count how often athletes are offline or fail login. Ticket 41 turns them into
    breadcrumbs at the named sites, which loses those counts there. Keep a plain analytics event
    (`expected_failure` with a reason) instead? Recommend yes.
