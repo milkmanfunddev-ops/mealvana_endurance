@@ -117,6 +117,15 @@ class Food {
     );
   }
 
+  /// Calories eaten at [servings] servings, rounded once to a whole kcal.
+  ///
+  /// The swap picker and the swapped meal row both read this, so 95 kcal at
+  /// 1.5 servings is 143 in both places (testing-wave 31-005). Unknown stays
+  /// unknown (`null ≠ 0`).
+  int? caloriesFor(double servings) => caloriesPerServing == null
+      ? null
+      : (caloriesPerServing! * servings).round();
+
   /// Get the full image URL for this food
   /// Returns Open Food Facts URLs directly, or constructs S3 URL for other images
   String? get imageUrl {

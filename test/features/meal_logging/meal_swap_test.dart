@@ -74,6 +74,31 @@ void main() {
       expect(c.calories, 225);
     });
 
+    // Ticket 45 (31-005): the row and the swap picker round once, the same
+    // way, through Food.caloriesFor. 95 × 1.5 = 142.5 → 143 in both.
+    test('Apple (medium) at 1.5 servings is 143 kcal, macros rounded', () {
+      final apple = Food.fromJson({
+        'id': 'apple-medium',
+        'name': 'Apple (medium)',
+        'serving_unit': 'apple',
+        'calories_per_serving': 95,
+        'carbs_per_serving': 25.1,
+        'protein_per_serving': 0.5,
+        'fat_per_serving': 0.3,
+        'sodium_mg': 1,
+      });
+
+      final c = swappedComponent(apple, 1.5);
+
+      expect(c.calories, 143);
+      expect(c.calories, apple.caloriesFor(1.5));
+      // 25.1 × 1.5 = 37.650000000000006 before rounding (112-004).
+      expect(c.carbG, 37.7);
+      expect(c.proteinG, 0.8);
+      expect(c.fatG, 0.5);
+      expect(c.sodiumMg, 2);
+    });
+
     test('unknown numbers stay unknown', () {
       final c = swappedComponent(
         Food.fromJson({'id': 'x', 'name': 'Mystery', 'serving_unit': 'bar'}),
