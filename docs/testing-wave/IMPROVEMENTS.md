@@ -73,14 +73,16 @@ Their dates come from the wave each entry names.
   caught four ticket mismatches before any simulator ran (the Delete dialog's button reads "Delete" by design, the
   daily-plan preview is onboarding-only, "Delete synced data" hard-deletes server rows, Food Preferences has sliders, not a
   toggle). Done 2026-10-08: this is the lead's step 4 from now on.
-- 2026-10-08 · develop-2026-10 · open · **#121 `netcut.sh slow` on a call with no client timeout runs the write (wave 5).**
+- 2026-10-08 · develop-2026-10 · done · **#121 `netcut.sh slow` on a call with no client timeout runs the write (wave 5).**
   Ticket 48 planned a slowed delete-user to see the failure message; delete-user has no client timeout, so a slowed reply
   would have deleted the account for real. Use `netcut.sh on` (connection refused) for any call whose client does not time
   out, and `slow` only where the ticket names the client's timeout. Runbook step 5 should say so.
-- 2026-10-08 · develop-2026-10 · open · **#122 a direct plist edit is lost while cfprefsd holds the file (wave 5).** Ticket 48
+  Done 2026-10-08 (before wave 6): runbook step 5's netcut lines say it.
+- 2026-10-08 · develop-2026-10 · done · **#122 a direct plist edit is lost while cfprefsd holds the file (wave 5).** Ticket 48
   wrote the app container's `Library/Preferences/<bundle>.plist` with `plistlib` (app terminated) and the value did not
   take. `xcrun simctl spawn UDID defaults write <full container plist path> <key> <value>` worked. #113's rule stays for
   reads; writes go through `defaults write` on the container path.
+  Done 2026-10-08 (before wave 6): runbook step 5's simulator-prefs line says it.
 - 2026-10-08 · develop-2026-10 · open · **#123 CLAUDE.md cites a notification-testing skill and an ops fact sheet that are
   not on disk (wave 5).** `.claude/skills/notification-testing/` is absent from every branch and `../ops/docs/` is not
   checked out, so ticket 50 read the notification code instead (#101 recorded Lee dropping the rule for agents). Either

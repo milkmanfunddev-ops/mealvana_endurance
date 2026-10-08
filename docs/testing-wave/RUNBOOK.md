@@ -121,8 +121,10 @@ so.
   anything uses a neutral User-Agent, and a food photo comes from the repo's fixtures or is generated
   in SCRATCH, never downloaded.
 - Simulator prefs: `simctl spawn UDID defaults delete <bundle id> <key>` does nothing (#113). Read
-  and edit `Library/Preferences/com.milkman.mealvanaendurance.dev.plist` in the app's data container
-  with `plistlib`, app terminated; print key names and only the values the ticket names.
+  `Library/Preferences/com.milkman.mealvanaendurance.dev.plist` in the app's data container with
+  `plistlib`, app terminated; print key names and only the values the ticket names. A write made
+  with `plistlib` is lost while cfprefsd holds the file (#122): write with `xcrun simctl spawn UDID
+  defaults write <full container plist path> <key> <value>`, then read it back with `plistlib`.
   Never tap the eye (show password) icon on a password field: the element list and screenshots
   then carry the password (#89). Read a password field back only as a count of dots, and check the
   count against the password's length before submitting. `CRED type` waits a second after the
@@ -160,7 +162,10 @@ so.
   connection the app already had open, so the first offline tap is offline too (111-004);
   `on SCRATCH --relaunch UDID` stays as the fallback. `netcut.sh slow <ms> SCRATCH` makes the app's
   traffic answer `<ms>` late but succeed (a host proxy holds each reply; `--only <host>` slows one
-  host alone, `--relaunch UDID` so connections opened before it are slowed too, #92). The host and
+  host alone, `--relaunch UDID` so connections opened before it are slowed too, #92). `slow` only
+  where the ticket names the client's timeout: a call with no client timeout runs to completion
+  under `slow`, so a slowed delete-user deletes the account for real (#121); use `on` (connection
+  refused) for any call whose client does not time out. The host and
   other simulators keep their network. Events go to `SCRATCH/netcut.log` and
   `SCRATCH/slowproxy.log`; the proxy's PID is in `SCRATCH/slowproxy.pid` (step 9). The app's
   connectivity check still reads "online", so its offline banner needs a device (20-006). Start the
