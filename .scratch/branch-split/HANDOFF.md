@@ -250,3 +250,10 @@ develop-next's `duration_source` step above mealplanning's 24 (idempotent `addCo
   (release/1.29.0 + the included commits). Xuan's bugfix branches must be based on `release/1.29.0` or the new
   `develop`; a branch off the old develop (`develop-pre-split`, `fb4a97e9`) would merge the 53 excluded
   meal-planning commits back in.
+- **Prod SQL owed at the next prod bundle (testing-wave develop-2026-10, 2026-10-08).** Ticket 58: food_preferences
+  display-name rows → snake_case catalog names (1,365 rows, 44 accounts; rows matching no food left alone). Ticket 65:
+  `events.event_date` re-derived from `start_time` (6 rows), the duplicate sweep (4 groups) and the unique index on
+  `(user_id, event_date, event_name)`. Ticket 64: 0 prod rows today, re-count at the release.
+- **The e2e suite signs in anonymously (ticket 62, 2026-10-08).** `test/e2e/dev_cloud_e2e_test.dart` makes an anonymous
+  dev user per run (and leaves it behind); it breaks when the anonymous path is removed and needs a real test login then.
+

@@ -1,0 +1,42 @@
+# 69: Retest: startup, events, learn and connected apps after wave 6
+
+**Status:** ready (round develop-2026-10, retest, wave 7)
+**Labels:** retest, round:develop-2026-10, area:startup, area:integrations, area:events
+**Branch:** `develop-next` (worktree per ticket, branched from the round's base after fix wave 6 lands)
+**Source:** TRIAGE.md rulings of 2026-10-08 (wave 5 triage): followups 50-002, 50-011, 50-012, 50-014, 50-015, and 50-016 step 1 (from ticket 67); fix retests for tickets 59 (50-001), 55 (50-003, 50-007), 60 (50-010), 63 (50-006), 64 (50-009), 65 (50-004), 66 (50-008)
+**Blocked by:** fix wave 6 (55, 59, 60, 63, 64, 65, 66) and its rebuild, and the lead's close SQL for 63, 64 and 65; runs in wave 7
+**Next:** `/testing-wave develop-2026-10 --only 69`
+**Model:** opus
+
+**Runs by:** `docs/testing-wave/RUNBOOK.md`. RUNS = `.scratch/testing-wave/rounds/develop-2026-10/runs/69/`, Findings in `.scratch/testing-wave/rounds/develop-2026-10/findings/`. One slot, console to RUNS, a look-around on every screen capped at ONE followup-test Finding per screen (IMPROVEMENTS #115), every problem a Finding, nothing fixed. Checks 2 and 3 touch notifications: invoke the `notification-testing` skill first; if it is not on disk (IMPROVEMENTS #101), read `notification_service.dart`, `launch_trail.dart`, `root_app_widget.dart` and `ios/Runner/AppDelegate.swift` as run 50 did.
+
+**Retest rule.** A check that passes closes the Finding named beside it: `PASS <id>` in `RUNS/notes.md` with evidence; a fix ticket closes when every check under it passes. A check that fails files a new Finding citing the old id (`Retest of NN-NNN`).
+
+**Secrets (#112).** Before every `CRED type`, a fresh screenshot shows the focused field is the password field; nothing fetched from the web; no personal address in any header. The Runna calendar URL is a credential: never in a screenshot, note or console extract.
+
+**Accounts:** the dev test account for every check but 1; ticket 68 logs and deletes meals on it in the same wave (a meal card that moves is theirs). Check 1 uses ONE new account, `lee+e2e-69-<UTC time>@rightpathprogramming.com` via `CRED new`, deleted in the app straight after. This run writes only what a check names: one new event (deleted), the Connected Apps section (last), and Runna connected then disconnected. **App data:** cleared by the lead. **Cost:** none.
+
+## Checks (14; the lead may cut 69a = 1–7, 69b = 8–14)
+
+1. **50-002 (ticket 44).** From the cleared app, Build My Plan, allow notifications, onboard with 62 kg, Running + Cycling, no body fat, no imports. On Your daily plan → Workout day: passes when protein reads 1.6 g/kg = 99 g (rest and carb-load days 87 g). Then Back to body composition, enter a body fat value, forward again: record the Workout day protein (lean-mass baseline, 1.6 not expected). Finish the signup, Settings → Delete Account → Delete; `CRED update … --state deleted`.
+2. **59 / 50-001 + 50-016 step 1.** Terminate and relaunch signed out. Read an upcoming planned activity's id by SQL (run 50 used `be55a023-…`, Run - Long Run, Oct 10). Background, `xcrun simctl push UDID com.milkman.mealvanaendurance.dev` with `"payload":"reminder:<activityId>"`, tap the banner: the tape shows `HELD … (startup not routable)`. Log In as test@test.com in the same session: passes when the held tap is replayed (`REPLAY id=…`) and lands on the activity, or is dropped with a trail line. Then back to the Timeline, background, push again and tap: passes when it routes to the activity detail and no `HELD` line stays unreplayed.
+3. **59, cold start.** Terminate, relaunch signed in, background, same push, tap. Passes when it routes to the activity and `flutter.ios_un_response_payload` is absent from the container plist after a terminate.
+4. **55 / 50-003.** `netcut.sh on SCRATCH --relaunch UDID` (offline cold start). Passes with zero `error_reported` in the console from the relaunch, `expected_failure` lines for content (`app_content`) and education (`education_content`), and nothing new in the dev Sentry project (read-only) for that minute. Open Learn: cached lessons. `netcut.sh off SCRATCH`.
+5. **65 / 50-004.** Event "Test" after the lead's SQL: `select id, event_name, event_date, start_time from events where …` (named columns): passes when `event_date` = `start_time`'s date (2026-06-20) and the list and detail read June 20. Create a new event `tw69 <time>` with a date: both columns agree. Edit its date: both move together.
+6. **50-011, Events.** On `tw69`: change a field, Back (record whether it asks); Add race checklist; then delete `tw69` and confirm the row is gone or soft-deleted. On past event "Test": the "Carb loading window has passed" control. Imported "IM NC 70.3": change only its Location, TrainingPeaks Sync Now, record whether the sync keeps, overwrites or duplicates it, then put the Location back. One Finding for the screen.
+7. **50-012, Learn.** Notify Me twice on one card (read the code for the row it writes first; record the row); Back on a lesson before its video starts; scrub a lesson to 95 % without watching, Back: record whether `education_video_completed` fires; open lessons 1.2 and 1.3, and a lesson with no video if one exists. One Finding for the screen.
+8. **Connected Apps section (LAST; note its start time). 55 / 50-007.** V.O2 Connect, Cancel on the iOS prompt. Passes with the card back on Connect, the `integrations` vdot row unchanged, and no `error_reported` and no `integration_connect_failed` in the console (`expected_failure` or a breadcrumb instead).
+9. **66 / 50-008.** The same iOS prompt (screenshot from check 8): passes when it names the app "Mealvana", not "mealvana_endurance".
+10. **63 / 50-006.** SQL count first: TrainingPeaks `activities` rows with `hidden_by_disconnect true`, `deleted_at null` (expect 0 after ticket 63's close SQL; run 50 had left 43). Disconnect TrainingPeaks: passes when the server reads 43 rows `hidden_by_disconnect true` at once, with no Sync Now and no sign-out. Connect: tap the sheet's X once (50-014 step 3: no `error_reported`, card on Connect), then Connect again with lee.tri (#112) → Allow → Keep Sharing, as the same athlete (`2687398`). Passes when, before any Sync Now, the server reads 0 hidden (SQL count), a read-only Drift copy reads 0 hidden, and a September workout shows on the Timeline.
+11. **64 / 50-009.** Read `integrations` (named columns): passes when the vdot row has null `last_sync_error` and `last_sync_status` (ticket 64's close SQL) and the TrainingPeaks row after check 10's reconnect has `last_sync_status` `pending` or `success` and `last_sync_error` null.
+12. **60 / 50-010.** TrainingPeaks Sync Now: passes when the console tracks a sync event (`integration_sync_*`) and no `integration_connect_started`, and the event payload's `device_id` is not the user id (`607f9dd5-…`).
+13. **50-014, Connected Apps.** TrainingPeaks write-back sheet → Turn Off Sharing, then the "Write fuel plan to TrainingPeaks" toggle back on (row and card agree each time). Runna Connect with the calendar URL through CRED (if `CRED list` shows no Runna URL: "not run: no test calendar URL"), sync, then Disconnect. Garmin Sync Now: record what it re-pulls. Delete synced data: not run (hard-deletes server rows; needs a disposable account with its own provider link). One Finding for the screen.
+14. **50-015, AI Credits.** Read the tester pack's copy ("1 Credits" is the singular to check). Settings → Sign Out, then `openurl …:///buy-credits` signed out: record whether it redirects to Welcome or shows the page, and that the back control works. Do NOT tap Restore or Buy.
+
+## Exit
+- [ ] Findings filed with `node scripts/testing-wave/findings.mjs new 69 … --round develop-2026-10`; index exits clean.
+- [ ] `RUNS/notes.md` lists each check with `PASS <id>`, the new Finding's id, or "not run" with its reason; the clock time the Connected Apps section started.
+- [ ] Check 1's account deleted in the app and `CRED update … --state deleted`. Event `tw69` deleted; IM NC 70.3's Location restored; event "Test" left as the lead's SQL leaves it. TrainingPeaks left connected with sharing on; V.O2 left disconnected; Runna disconnected. `netcut.sh off SCRATCH`; helpers stopped by PID; log stream stopped; app terminated; `LOCK release slot testing-wave-69`; simulator released.
+- [ ] Console redacted. `findings/69-*.md` and `runs/69/` committed on the ticket branch, explicit paths.
+
+Next: /testing-wave develop-2026-10 (wave 7)
