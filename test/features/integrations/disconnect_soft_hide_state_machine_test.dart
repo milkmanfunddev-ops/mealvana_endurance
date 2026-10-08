@@ -249,4 +249,85 @@ void main() {
     );
     expect(changes.newActivities, isEmpty);
   });
+
+  group('ticket 63: reconnect unhides what disconnect hid', () {
+    late ActivitiesRepository repository;
+
+    setUp(() {
+      repository = ActivitiesRepository(
+        supabase: fakeSupabaseClient(),
+        database: db,
+        report: RecordingReport(),
+        deduplicationService: ActivityDeduplicationService(),
+      );
+    });
+
+    Future<Activity> row(String id) =>
+        (db.select(db.activitiesTable)..where((t) => t.id.equals(id)))
+            .getSingle();
+
+    test('the unhide covers only the named provider\'s hidden, non-deleted '
+        'rows, in every spelling, and dirties them', () async {
+      await seed('tp1', provider: 'training_peaks', hidden: true);
+      await seed('tp2', provider: 'trainingpeaks', hidden: true);
+      await seed('tp3', provider: 'TrainingPeaks', hidden: true);
+      await seed('tpVisible', provider: 'training_peaks');
+      await seed('tpGone', provider: 'training_peaks', hidden: true);
+      await (db.update(db.activitiesTable)..where((t) => t.id.equals('tpGone')))
+          .write(ActivitiesTableCompanion(deletedAt: Value(DateTime(2026, 9, 2))));
+      await seed('fs1', provider: 'final_surge', hidden: true);
+
+      final unhidden = await repository.unhideActivitiesForProviderReconnect(
+        userId: userId,
+        provider: 'training_peaks',
+      );
+
+      expect(unhidden, 3);
+      for (final id in ['tp1', 'tp2', 'tp3']) {
+        final r = await row(id);
+        expect(r.hiddenByDisconnect, isFalse, reason: id);
+        expect(r.needsUpload, isTrue, reason: id);
+        // Not stamped: the provider's next sync still sees its own change.
+        expect(r.updatedAt, DateTime(2026, 9, 1), reason: id);
+      }
+      // The tombstone and the other provider's row are left as they were.
+      expect((await row('tpGone')).hiddenByDisconnect, isTrue);
+      expect((await row('fs1')).hiddenByDisconnect, isTrue);
+      expect((await row('tpVisible')).needsUpload, isNot(true));
+
+      // Twice: the second finds nothing.
+      expect(
+        await repository.unhideActivitiesForProviderReconnect(
+          userId: userId,
+          provider: 'training_peaks',
+        ),
+        0,
+      );
+    });
+
+    test('the hide matches the same spelling variants', () async {
+      await seed('tp1', provider: 'training_peaks');
+      await seed('tp2', provider: 'trainingpeaks');
+      await seed('tp3', provider: 'Training Peaks');
+      await seed('fs1', provider: 'final_surge');
+
+      final hidden = await repository.hideActivitiesForProviderDisconnect(
+        userId: userId,
+        provider: 'training_peaks',
+      );
+
+      expect(hidden, 3);
+      for (final id in ['tp1', 'tp2', 'tp3']) {
+        expect((await row(id)).hiddenByDisconnect, isTrue, reason: id);
+      }
+      expect((await row('fs1')).hiddenByDisconnect, isNot(true));
+      expect(
+        await repository.countActivitiesHiddenByDisconnect(
+          userId: userId,
+          provider: 'training_peaks',
+        ),
+        3,
+      );
+    });
+  });
 }

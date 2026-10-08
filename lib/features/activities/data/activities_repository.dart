@@ -2445,20 +2445,23 @@ class ActivitiesRepository with SyncableRepository {
   }
 
   /// Q-INT2 disconnect redesign: soft-hide every activity this provider
-  /// imported. The rows keep their status and metadata — a matching
-  /// re-sync after reconnect REVIVES them (unlike the tombstone, which
-  /// suppresses re-import). Returns the number of rows hidden.
+  /// imported. The rows keep their status and metadata; a same-athlete
+  /// reconnect unhides them all ([unhideActivitiesForProviderReconnect],
+  /// ticket 63), unlike the tombstone, which suppresses re-import. Matches
+  /// the provider's spelling variants, the same rows the unhide covers.
+  /// Returns the number of rows hidden.
   Future<int> hideActivitiesForProviderDisconnect({
     required String userId,
     required String provider,
   }) async {
     try {
       final now = DateTime.now();
+      final variants = _providerLookupVariants(provider);
       final hidden =
           await (_database.update(_database.activitiesTable)..where(
                 (tbl) =>
                     tbl.userId.lower().equals(userId.toLowerCase()) &
-                    tbl.syncedFromProvider.equals(provider) &
+                    tbl.syncedFromProvider.lower().isIn(variants) &
                     tbl.deletedAt.isNull(),
               ))
               .write(
@@ -2481,6 +2484,74 @@ class ActivitiesRepository with SyncableRepository {
         stackTrace: stackTrace,
         area: 'activities',
         message: 'Failed to hide provider activities on disconnect',
+        extra: {'provider': provider},
+      );
+      rethrow;
+    }
+  }
+
+  /// Ticket 63: how many of [provider]'s non-deleted rows a disconnect hid
+  /// and nothing has unhidden yet (the different-athlete reconnect note).
+  Future<int> countActivitiesHiddenByDisconnect({
+    required String userId,
+    required String provider,
+  }) async {
+    final variants = _providerLookupVariants(provider);
+    final count = _database.activitiesTable.id.count();
+    final query = _database.selectOnly(_database.activitiesTable)
+      ..addColumns([count])
+      ..where(
+        _database.activitiesTable.userId.lower().equals(userId.toLowerCase()) &
+            _database.activitiesTable.syncedFromProvider.lower().isIn(
+              variants,
+            ) &
+            _database.activitiesTable.hiddenByDisconnect.equals(true) &
+            _database.activitiesTable.deletedAt.isNull(),
+      );
+    final row = await query.getSingle();
+    return row.read(count) ?? 0;
+  }
+
+  /// Ticket 63 (develop-2026-10, Finding 50-006): a reconnect unhides every
+  /// row this provider's disconnect hid, not only the rows the next sync
+  /// fetches (TrainingPeaks fetches 45 days ahead, so past rows never came
+  /// back). The mirror of [hideActivitiesForProviderDisconnect]: same
+  /// provider variants, non-deleted rows only. `updatedAt` is not stamped,
+  /// so the provider's next sync still sees its own change; the row is
+  /// dirtied so the caller's upload carries the flag. Returns the count.
+  Future<int> unhideActivitiesForProviderReconnect({
+    required String userId,
+    required String provider,
+  }) async {
+    try {
+      final variants = _providerLookupVariants(provider);
+      final unhidden =
+          await (_database.update(_database.activitiesTable)..where(
+                (tbl) =>
+                    tbl.userId.lower().equals(userId.toLowerCase()) &
+                    tbl.syncedFromProvider.lower().isIn(variants) &
+                    tbl.hiddenByDisconnect.equals(true) &
+                    tbl.deletedAt.isNull(),
+              ))
+              .write(
+                ActivitiesTableCompanion(
+                  hiddenByDisconnect: const Value(false),
+                  needsUpload: const Value(true),
+                  localUpdatedAt: Value(DateTime.now()),
+                ),
+              );
+      _report.info(
+        'Unhid provider activities on reconnect (ticket 63)',
+        area: 'activities',
+        data: {'provider': provider, 'unhidden': unhidden},
+      );
+      return unhidden;
+    } catch (e, stackTrace) {
+      _report.fault(
+        e,
+        stackTrace: stackTrace,
+        area: 'activities',
+        message: 'Failed to unhide provider activities on reconnect',
         extra: {'provider': provider},
       );
       rethrow;
