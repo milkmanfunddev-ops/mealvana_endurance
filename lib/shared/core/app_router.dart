@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../features/app_startup/application/app_startup_provider.dart';
 import '../services/app_external_deps.dart';
 import '../services/app_config.dart';
+import '../services/launch_trail.dart';
 import 'bootstrap/bootstrap.dart' show appNavigatorKey, appNavigatorObservers;
 
 // Import all screens
@@ -189,6 +190,35 @@ class AppRouter {
     return '/main';
   }
 
+  /// Where `/welcome` goes instead of rendering Welcome (ticket 56), or
+  /// null to render it.
+  ///
+  /// It redirects iff (a) there is a live session, anonymous or real
+  /// (Lee's ruling 2026-10-08: an onboarded guest skips Welcome too),
+  /// (b) startup has data, and (c) [rootRedirect] on that snapshot does not
+  /// answer `/welcome`. In practice (c) means an onboarded local profile and
+  /// no force-upgrade or resync: `/main`, or `/privacy-consent` for the
+  /// strict-region backfill, or `?resume=verify` for an open pending
+  /// signup, exactly as `/` does. No session, a not-onboarded account
+  /// (guest or real), a logged-out snapshot and a failed resync all render
+  /// Welcome, so sign-out, delete account and Sports Selection's back still
+  /// land there, and a resync is never looped back to `/main`.
+  static String? welcomeRedirect({
+    required bool hasSession,
+    required AsyncValue<AppStartupData> startup,
+    required bool Function() pendingSignupOpen,
+    required bool Function() needsConsentPrompt,
+  }) {
+    if (!hasSession) return null;
+    if (startup is! AsyncData<AppStartupData>) return null;
+    final target = rootRedirect(
+      startup.value,
+      pendingSignupOpen: pendingSignupOpen,
+      needsConsentPrompt: needsConsentPrompt,
+    );
+    return (target == null || target == '/welcome') ? null : target;
+  }
+
   // Router provider with ref access for redirect logic
   static final routerProvider = Provider<GoRouter>((ref) {
     final authChangeNotifier = ref.read(authChangeNotifierProvider);
@@ -258,6 +288,26 @@ class AppRouter {
             return '/welcome';
           }
           return null; // Allow navigation to protected routes when authenticated
+        }
+
+        // Welcome is where an account with nowhere else to go lands. Anyone
+        // signed in resolves it like '/' (ticket 56: 49-001, 50-005), so a
+        // link or a back fallback never drops an onboarded athlete there.
+        if (currentPath == '/welcome') {
+          final supabase = ref.read(appExternalDepsProvider).supabaseClient;
+          final target = welcomeRedirect(
+            hasSession: supabase.auth.currentSession != null,
+            startup: ref.read(appStartupProvider),
+            pendingSignupOpen: () =>
+                ref.read(pendingSignupStoreProvider).isOpen,
+            needsConsentPrompt: () =>
+                ref.read(analyticsConsentProvider).needsPrompt,
+          );
+          if (target != null) {
+            LaunchTrail.add('welcome redirect: signed in -> $target');
+            return target;
+          }
+          return null;
         }
 
         // For public routes, don't redirect (user is already where they should be)

@@ -54,19 +54,65 @@
 
 **Overlaps:** 59 (`root_app_widget.dart` reads what this adds; runs after). 57 edits `post_onboarding_auth_screen.dart`, `email_login_screen.dart`, `verify_email_screen.dart`, `email_signup_screen.dart`; no shared file, but 57's go to `/main` relies on the protected-route check, not on this. 55 shares no file. Ticket 54 edits `app_startup_service.dart`, not `app_startup_provider.dart`.
 
-- [ ] Router redirect tests (new `app_router_welcome_redirect_test.dart`, harness from `page_not_found_go_home_test.dart:26-110`: the real `AppRouter.routerProvider`, a mocked `auth.currentSession`, an overridden `appStartupProvider`). `/welcome` with a real session and an onboarded snapshot lands on `/main`. With no session it renders Welcome. With an anonymous session (onboarded or not) it renders Welcome. With a real session and `hasCompletedOnboarding false` it renders Welcome. With a real session and `resyncRequired` it renders Welcome (no loop).
-- [ ] Seam through the real notifier (`startup_snapshot_refresh_test.dart`). Resolve `AppStartup` with no session (snapshot `user null`), then give the mocked auth a session and seed the in-memory Drift with the athlete's profile as the server row would (`onboarding_completed true`, through the `UserProfile` download mapping, not `UserProfile(...)` built by hand). Call `refreshSession(reason: 'signed_in')`. The snapshot has the user and onboarded, state never passed through `AsyncLoading` (listen and record), and `go('/')` on the real router lands on `/main`. The sign-out direction resolves `/` to `/welcome`. Two overlapping refreshes leave the later one's answer.
-- [ ] `AuthListenerService`: a `signedIn` event on the auth stream leads to one refresh; an onboarding sign-out leads to none (no test constructs `AuthListenerService` today; add `test/shared/services/auth/auth_listener_refresh_test.dart` over a fake `onAuthStateChange` stream).
-- [ ] `back_button_fallback_test.dart`: a stackless arrival with a signed-in, onboarded live snapshot lands on `/main`.
-- [ ] `page_not_found_go_home_test.dart` and `pending_signup_resume_seam_test.dart` stay green.
-- [ ] #116: `grep -rl` under `test/` for `rootRedirect`, `AppStartupData(`, `appStartupProvider`, `AuthListenerService`, `saveAllOnboardingData`, `_handleSignedIn`/`_handleSignedOut`, and run every file named.
-- [ ] #117: `refreshSession`'s catch reports (`fault`); it adds no Report helper. Run `test/shared/source_guard/`.
-- [ ] #118: a refresh failure is reported and the old snapshot kept; no error is written into `AppStartup`'s state.
-- [ ] `flutter analyze` clean on touched files.
+- [x] Router redirect tests (new `app_router_welcome_redirect_test.dart`, harness from `page_not_found_go_home_test.dart:26-110`: the real `AppRouter.routerProvider`, a mocked `auth.currentSession`, an overridden `appStartupProvider`). `/welcome` with a real session and an onboarded snapshot lands on `/main`. With no session it renders Welcome. With an anonymous session (onboarded or not) it renders Welcome. With a real session and `hasCompletedOnboarding false` it renders Welcome. With a real session and `resyncRequired` it renders Welcome (no loop).
+- [x] Seam through the real notifier (`startup_snapshot_refresh_test.dart`). Resolve `AppStartup` with no session (snapshot `user null`), then give the mocked auth a session and seed the in-memory Drift with the athlete's profile as the server row would (`onboarding_completed true`, through the `UserProfile` download mapping, not `UserProfile(...)` built by hand). Call `refreshSession(reason: 'signed_in')`. The snapshot has the user and onboarded, state never passed through `AsyncLoading` (listen and record), and `go('/')` on the real router lands on `/main`. The sign-out direction resolves `/` to `/welcome`. Two overlapping refreshes leave the later one's answer.
+- [x] `AuthListenerService`: a `signedIn` event on the auth stream leads to one refresh; an onboarding sign-out leads to none (no test constructs `AuthListenerService` today; add `test/shared/services/auth/auth_listener_refresh_test.dart` over a fake `onAuthStateChange` stream).
+- [x] `back_button_fallback_test.dart`: a stackless arrival with a signed-in, onboarded live snapshot lands on `/main`.
+- [x] `page_not_found_go_home_test.dart` and `pending_signup_resume_seam_test.dart` stay green.
+- [x] #116: `grep -rl` under `test/` for `rootRedirect`, `AppStartupData(`, `appStartupProvider`, `AuthListenerService`, `saveAllOnboardingData`, `_handleSignedIn`/`_handleSignedOut`, and run every file named.
+- [x] #117: `refreshSession`'s catch reports (`fault`); it adds no Report helper. Run `test/shared/source_guard/`.
+- [x] #118: a refresh failure is reported and the old snapshot kept; no error is written into `AppStartup`'s state.
+- [x] `flutter analyze` clean on touched files.
 - [ ] Retest in test wave 7, retest ticket 67 (auth, Welcome) on a cleared simulator. Log in in-session, deep-link `…:///settings/connected-apps`, tap Back: the Timeline, with a `startup snapshot refreshed (signed_in)` trail line. Signed in, `simctl openurl …:///welcome`: the Timeline. Sign out from Settings: Welcome. Delete account: Welcome. Build My Plan → Sports Selection → back: Welcome.
 
 **Rulings (Lee, 2026-10-08, after drafting).**
 - An onboarded anonymous guest also skips Welcome.
 
+
+## Fix notes
+
+Wave 6 pass A, branch `testing-wave/develop-2026-10/56`, code commit `5198647b`.
+
+**The `/welcome` predicate, as built (Lee's ruling applied).** `/welcome` redirects iff (a) there is a live session, anonymous or real, (b) startup has data (`AsyncData`, so not loading, reloading or failed), and (c) `rootRedirect` on that snapshot answers something other than `/welcome`. It lives in `AppRouter.welcomeRedirect` (static, unit-testable) and the redirect calls it before the public-route `return null`. The "not anonymous" clause of item 3 is gone: an onboarded guest goes to `/main`; a guest with no profile or a not-onboarded profile still gets Welcome, so Build My Plan, then Sports Selection's back, still lands there. A redirect away from Welcome writes `welcome redirect: signed in -> <target>` to the LaunchTrail.
+
+**What changed.**
+- `lib/features/app_startup/application/app_startup_provider.dart`: `AppStartupData.copyWith` (`user` is a getter so it can be set to null). The session block of `build` became `_readSessionFields({restoreSnapshot})`, which `build` and `refreshSession` both call. `refreshSession({reason})` has its contract in its doc comment (when it writes, when it skips, the sequence rule) for ticket 59. A top-level `refreshStartupSnapshot(ref, reason:)` is what callers use: `appStartupProvider` is auto-dispose, and reading its notifier while nothing holds it would start a whole new startup, so a missing provider (or a disposed caller) is a recorded skip. `build` bumps the sequence number, so a refresh still awaiting from before a rebuild drops its write. The counter is never reset, because Riverpod reuses the notifier across `invalidate`.
+- `lib/shared/services/auth/auth_listener_service.dart`: `_handleSignedIn` calls the refresh after the `userIdProvider` invalidation (`signed_in`). `_handleSignedOut` calls it in the non-onboarding branch, before `notify()`, so the redirect that re-runs sees the signed-out snapshot (`signed_out`). Onboarding sign-outs skip it. The class comment no longer claims it invalidates `appStartupProvider`.
+- `lib/features/onboarding/presentation/providers/onboarding_controller.dart`: `saveAllOnboardingData` calls the refresh on success (`onboarding_saved`). Grep for other in-session writers of `onboarding_completed` true: `auth_service.createUser` (reached only through this save), `auth_migration_service.dart:244/809` (anonymous-to-real upgrade, `lib/features/auth/application/`, forbidden this pass, see below) and `user_repository.fetchAndSaveRemoteProfile` (reached through `userIdProvider`, which the refresh awaits).
+- `lib/shared/core/app_router.dart`: `welcomeRedirect` and its call in the redirect.
+- Generated: `app_startup_provider.g.dart`, `onboarding_controller.g.dart` (hash only).
+- Tests: new `test/features/app_startup/startup_snapshot_refresh_test.dart` (9), new `test/shared/core/app_router_welcome_redirect_test.dart` (9), new `test/shared/services/auth/auth_listener_refresh_test.dart` (4), and a real-router case in `test/shared/widgets/back_button_fallback_test.dart`.
+
+**Departures from the ticket text.**
+- The refresh does not run the onboarding-snapshot restore (`_maybeRestoreOnboardingSnapshot`). That is a launch-time recovery net for a database that was deleted and recreated, not an in-session auth change; on a sign-out it could have brought back a ghost profile.
+- The catch reports through `faultUnlessWeather` (area `startup`), so a network failure during the profile pull becomes a breadcrumb plus an `expected_failure` count rather than a Sentry error. Anything else is a `fault`. Either way a `startup` breadcrumb and a trail line record the skip.
+- `notification-testing` skill and `ops/docs/messaging-relay-and-testing.md` are not on this machine (IMPROVEMENTS #101/#123). I read `app_startup_provider.dart`, `auth_listener_service.dart` and `root_app_widget.dart:258-406` in full instead. `root_app_widget.dart` is not edited.
+
+**D9.** Every branch `refreshSession` adds writes a LaunchTrail line and a `startup` breadcrumb. The branches: refreshed; skipped because startup has no data; superseded; session user changed; provider disposed; startup lost its data mid-refresh; read failed (plus the fault or weather report). `refreshStartupSnapshot`'s skips (startup provider not alive, caller disposed) do the same; for a disposed caller the breadcrumb goes through `SentryReport.global`. Startup is a promoted note area, so these are breadcrumbs, not notes.
+
+**Async paths (#77).**
+- Two refreshes at once (`signed_in` and `onboarding_saved` close together): each takes a sequence number, and only the latest writes. The earlier one writes `superseded by a later refresh or rebuild`. Tested.
+- Sign-out then sign-in in quick succession: the same rule drops the sign-out's late write. Each run also reads the session again at its end and skips if the user changed while it awaited `userIdProvider` (tested).
+- A refresh during startup (`build` still running, or rebuilding after an invalidate): state is not `AsyncData`, so it skips, and `build` reads the same session itself. A refresh that started before a rebuild is dropped because `build` bumps the sequence number. Tested for the loading case.
+- After a refresh: nothing navigates. The router reads the new data on its next redirect. `appStartupProvider` listeners do fire (`root_app_widget.dart:404`'s held-tap replay); ticket 59 owns what that does.
+- The signed-in refresh is awaited inside `_handleSignedIn`, so the other-accounts sweep runs after the profile pull rather than alongside it. On a fresh-device login that holds the sweep back by one profile fetch.
+
+**Tests run.**
+- `flutter test test/features/app_startup/startup_snapshot_refresh_test.dart`: 9/9.
+- `test/shared/core/app_router_welcome_redirect_test.dart`: 9/9.
+- `test/shared/services/auth/`: 7/7 (new 4 + sweep 3).
+- `test/shared/widgets/back_button_fallback_test.dart`: 3/3.
+- #116 (the grep for `rootRedirect`, `AppStartupData`, `appStartupProvider`, `AppStartup`, `AuthListenerService`, `authListenerServiceProvider`, `saveAllOnboardingData`, `_handleSignedIn`/`_handleSignedOut`, `refreshSession`, `refreshStartupSnapshot` and `welcomeRedirect`, plus the back-button files) and #117 (`test/shared/source_guard/`), in one run: `test/db_flows/app_startup_test.dart test/features/app_startup/ test/features/auth/anonymous_account_upgrade_test.dart test/features/auth/pending_signup_resume_seam_test.dart test/features/onboarding/onboarding_controller_test.dart test/new_sync/app_startup_version_check_test.dart test/shared/core/ test/shared/services/auth/ test/shared/widgets/back_button_fallback_test.dart test/shared/widgets/custom_app_bar_back_button_test.dart test/shared/source_guard/`: 204/204.
+- `integration_test/flows/onboarding_signup_flow_test.dart` also matches the grep. It was analyzed, not run (Patrol).
+- `flutter analyze` on every touched lib and test file, plus that integration file: no issues.
+
+**For the lead.**
+- `auth_migration_service.dart` (anonymous-to-real upgrade) writes `onboarding_completed` from the guest profile after the `signedIn` event. If it saves the new profile after the `signed_in` refresh has read, the snapshot says "not onboarded" until the next refresh. A one-line `refreshStartupSnapshot(ref, reason: 'account_upgraded')` after its save would close that, but the file was forbidden this pass. With the upgrade path being removed (48-002), this may be moot.
+- The first unfiltered codegen in this worktree also rewrote the hash in `lib/features/meal_logging/presentation/providers/describe_analysis_controller.g.dart`, a file I did not touch: base `876ca27e` already carries a stale hash there. I reverted it, so it is not in this branch. The lead's end-of-wave codegen will pick it up.
+- Retest 67 should check the trail lines named above (`startup snapshot refreshed (signed_in): user=true onboarded=true`, and `welcome redirect: signed in -> /main` for the `simctl openurl …:///welcome` step).
+
+**Questions for Lee.** None new. Question 1 above is answered by the 2026-10-08 ruling and is built.
+
+**Exit box not met:** the retest in test wave 7 (ticket 67), which needs a simulator. Fix waves run none.
 
 Next: /testing-wave develop-2026-10 (fix wave 6)

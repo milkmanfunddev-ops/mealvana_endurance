@@ -9,6 +9,7 @@ import '../../../../shared/services/sync/entity_sync/user_sync_handler.dart';
 import '../../../../shared/services/sync/sync_coordinator.dart';
 import '../../../content/application/content_service.dart';
 import '../../../content/domain/content_keys.dart';
+import '../../../app_startup/application/app_startup_provider.dart';
 import '../../../auth/application/auth_service.dart';
 import '../../../auth/data/user_repository.dart';
 import '../../../nutrition_plan/data/food_repository.dart';
@@ -831,6 +832,12 @@ class OnboardingController extends _$OnboardingController {
       );
       return false;
     }
+
+    // The profile is now onboarded locally: the startup snapshot follows it
+    // (ticket 56), so a later go('/') or a visit to /welcome resolves to the
+    // Timeline instead of the launch-time "not onboarded". Never throws; a
+    // skip or failure is written down inside.
+    await refreshStartupSnapshot(ref, reason: 'onboarding_saved');
 
     return true;
   }
