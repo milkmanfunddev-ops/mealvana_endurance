@@ -1,6 +1,6 @@
 # 43: Onboarding: the 971 px overflow and VoiceOver semantics
 
-**Status:** partly fixed (wave 4, baffce26) awaiting retest (overflow not reproduced)
+**Status:** done 2026-10-08: 30-002 and 30-010 passed in ticket 48 (wave 5); overflow not seen; tiles/back label carried in 48-006
 **Labels:** fix, round:develop-2026-10, area:onboarding, area:accessibility
 **Branch:** `develop-next` (fix-wave worktree)
 **Blocked by:** 40 (runs first, alone). Not alongside 42, which also edits `post_onboarding_auth_screen.dart`.

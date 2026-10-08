@@ -1,7 +1,7 @@
 # 30-002 · A RenderFlex overflowed by 971 pixels during onboarding (fatal FlutterError in dev Sentry, MEALVANA-ENDURANCE-DEV-B1)
 
 - kind: bug
-- status: triaged
+- status: closed
 - ticket: 30
 - run: w3-20261008T1255Z
 - screen: Tell us about yourself

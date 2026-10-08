@@ -1,7 +1,7 @@
 # 31-010 · Edit Meal: untried paths (Scan a photo, Time eaten Change, Notes edit, Hide details, Back with unsaved changes)
 
 - kind: followup-test
-- status: triaged
+- status: closed
 - ticket: 31
 - run: w3-20261008T1256Z
 - screen: Edit Meal

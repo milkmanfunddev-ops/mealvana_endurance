@@ -1,6 +1,6 @@
 # 44: Onboarding Your daily plan applies the session protein bump
 
-**Status:** fixed (wave 4, 78a98ad6) awaiting retest
+**Status:** not retested 2026-10-08 (ticket 50, wave 5): the preview is onboarding-only → 50-002
 **Labels:** fix, round:develop-2026-10, area:onboarding, area:nutrition
 **Branch:** `develop-next` (fix-wave worktree)
 **Blocked by:** 40 (runs first, alone). Nothing else.

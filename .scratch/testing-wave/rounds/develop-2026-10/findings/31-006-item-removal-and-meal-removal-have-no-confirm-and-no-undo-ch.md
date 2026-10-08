@@ -1,7 +1,7 @@
 # 31-006 · Item removal and meal removal have no confirm and no undo: check recovery from an accidental swipe or tap
 
 - kind: followup-test
-- status: triaged
+- status: closed
 - ticket: 31
 - run: w3-20261008T1256Z
 - screen: Review & Log / Timeline

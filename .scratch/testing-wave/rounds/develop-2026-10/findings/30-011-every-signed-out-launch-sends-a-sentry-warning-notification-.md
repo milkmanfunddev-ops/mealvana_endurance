@@ -1,7 +1,7 @@
 # 30-011 · Every signed-out launch sends a Sentry warning 'Notification permission answer not stored: no local profile'
 
 - kind: bug
-- status: triaged
+- status: closed
 - ticket: 30
 - run: w3-20261008T1255Z
 - screen: none

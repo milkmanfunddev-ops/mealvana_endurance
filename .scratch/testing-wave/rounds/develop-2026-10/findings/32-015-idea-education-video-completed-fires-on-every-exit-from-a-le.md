@@ -1,7 +1,7 @@
 # 32-015 · Idea: education_video_completed fires on every exit from a lesson, even at 15% watched
 
 - kind: idea
-- status: triaged
+- status: closed
 - ticket: 32
 - run: w3-20261008T1256Z
 - screen: Learn, lesson player

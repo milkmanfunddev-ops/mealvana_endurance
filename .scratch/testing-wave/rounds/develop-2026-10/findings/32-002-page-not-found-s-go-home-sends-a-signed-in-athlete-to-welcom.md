@@ -1,7 +1,7 @@
 # 32-002 · Page Not Found's Go Home sends a signed-in athlete to Welcome, not the Timeline (retest of 08-022)
 
 - kind: bug
-- status: triaged
+- status: closed
 - ticket: 32
 - run: w3-20261008T1256Z
 - screen: Page Not Found

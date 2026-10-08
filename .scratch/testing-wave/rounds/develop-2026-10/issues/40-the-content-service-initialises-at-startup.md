@@ -1,6 +1,6 @@
 # 40: The content service initialises at startup (raw keys never show)
 
-**Status:** done 2026-10-08 by the lead (`2b730018`, before the develop push): ContentDefaultsCache + bootstrap preload + provider start; the preload catch reports through the global Report (D9); full suite 5154 pass. Retest in ticket 48/49/50 (the raw-key screens).
+**Status:** done 2026-10-08: 30-001, 31-001 (favorite half), 32-001 passed in tickets 48/49/50 (wave 5)
 **Labels:** fix, round:develop-2026-10, area:content
 **Branch:** `develop-next` (fix-wave worktree)
 **Blocked by:** nothing. Runs FIRST in wave 4, alone (Lee, 2026-10-08): every ticket that adds a content key is retested through this fix.

@@ -1,6 +1,6 @@
 # 34: Backgrounded notification taps are collected on resume
 
-**Status:** fixed (wave 4, b2546610) awaiting retest
+**Status:** retest FAILED 2026-10-08 (ticket 50, wave 5): 32-008 passes; 22-001 fixed from a cold start, held after an in-session login → 50-001
 **Labels:** fix, round:develop-2026-10, area:notifications
 **Branch:** `develop-next` (fix-wave worktree)
 **Blocked by:** nothing. Not with 36 in the same agent (both touch nothing in common, but 36 is a settings ticket; keep areas apart).

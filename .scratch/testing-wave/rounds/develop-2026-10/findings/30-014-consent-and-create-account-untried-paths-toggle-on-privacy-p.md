@@ -1,7 +1,7 @@
 # 30-014 · Consent and Create account: untried paths (toggle ON, Privacy Policy/Terms links, Back from Your privacy, Log in from anonymous Settings migrating data)
 
 - kind: followup-test
-- status: triaged
+- status: closed
 - ticket: 30
 - run: w3-20261008T1255Z
 - screen: Your privacy

@@ -1,7 +1,7 @@
 # 31-013 · analyze-meal-photo ran and charged a token but left no request line in function_edge_logs
 
 - kind: bug
-- status: triaged
+- status: closed
 - ticket: 31
 - run: w3-20261008T1256Z
 - screen: none

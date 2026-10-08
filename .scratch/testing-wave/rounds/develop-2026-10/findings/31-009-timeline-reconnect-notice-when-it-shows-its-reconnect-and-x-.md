@@ -1,7 +1,7 @@
 # 31-009 · Timeline Reconnect notice: when it shows, its Reconnect and X, and why it was gone after a relaunch with two integrations still needing a reconnect
 
 - kind: followup-test
-- status: triaged
+- status: closed
 - ticket: 31
 - run: w3-20261008T1256Z
 - screen: Timeline

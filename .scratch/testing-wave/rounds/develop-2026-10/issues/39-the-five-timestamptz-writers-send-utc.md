@@ -1,6 +1,6 @@
 # 39: The five remaining timestamptz writers send UTC
 
-**Status:** fixed (wave 4, 78a5947e) awaiting retest
+**Status:** retest FAILED 2026-10-08 (ticket 49, wave 5): the Settings save never uploads → 49-010; the UTC writer could not be exercised
 **Labels:** fix, round:develop-2026-10, area:sync
 **Branch:** `develop-next` (fix-wave worktree)
 **Blocked by:** nothing.

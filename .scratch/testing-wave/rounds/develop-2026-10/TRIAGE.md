@@ -185,3 +185,41 @@ One line per Finding decision, made with Lee in the terminal: id, decision, who 
 - 37 (ruling, agent question 2) · Runna moves onto the sync-error codes: follow-up fix ticket 52 · Lee, 2026-10-08
 - 41 (ruling, agent question) · Lee: "we can send them to sentry but we needn't necessarily have any analytics": the startup-site expected failures are recorded in Sentry, not held for analytics; follow-up ticket 54 · Lee, 2026-10-08
 - 39 (agent note) · `UserProfile.toJson` still sends `sweat_test_date` naive: follow-up fix ticket 53 · Lee, 2026-10-08
+- 30-001 · closed · PASS in ticket 48 (wave 5); 31-001/32-001 halves in 49/50 · lead, 2026-10-08
+- 30-007 · closed · PASS in ticket 48 (wave 5) · lead, 2026-10-08
+- 30-008 · closed · PASS in ticket 48 (wave 5) · lead, 2026-10-08
+- 30-011 · closed · PASS in ticket 48 (wave 5) · lead, 2026-10-08
+- 30-002 · closed · PASS in ticket 48 (wave 5) · lead, 2026-10-08
+- 30-010 · closed · PASS in ticket 48 (wave 5) · lead, 2026-10-08
+- 30-014 · closed · PASS in ticket 48 (wave 5) · lead, 2026-10-08
+- 30-015 · closed · PASS in ticket 48 (wave 5) · lead, 2026-10-08
+- 30-013 · closed · run in ticket 48 (wave 5): paste and double-tap pass; the hint's Log in re-filed as 48-003; expired code carried in 48-004 · lead, 2026-10-08
+- 30-005 · closed · run in ticket 48 (wave 5): Google cancel, email-exists and wrong password pass; the Apple sheet re-filed as 48-001 · lead, 2026-10-08
+- 31-004 · closed · PASS in ticket 49 (wave 5) · lead, 2026-10-08
+- 31-002 · closed · PASS in ticket 49 (wave 5) · lead, 2026-10-08
+- 31-005 · closed · PASS in ticket 49 (wave 5) · lead, 2026-10-08
+- 31-003 · closed · PASS in ticket 49 (wave 5) · lead, 2026-10-08
+- 31-007 · closed · PASS in ticket 49 (wave 5); the line is cut on screen, 49-002 · lead, 2026-10-08
+- 31-013 · closed · PASS in ticket 49 (wave 5): the request line was present · lead, 2026-10-08
+- 31-006 · closed · run in ticket 49 (wave 5): the meal has a 3 s Undo; the Review item has none, re-filed as 49-003 · lead, 2026-10-08
+- 31-010 · closed · run in ticket 49 (wave 5); untried paths carried in 49-008 · lead, 2026-10-08
+- 31-011 · closed · run in ticket 49 (wave 5); untried paths carried in 49-007/49-009, analytics bug 49-006 · lead, 2026-10-08
+- 31-001 · closed · favorite half PASS in ticket 49 (wave 5); the notice never showed, carried in 49-004 · lead, 2026-10-08
+- 31-009 · closed · the notice never showed in ticket 49 (wave 5); carried in 49-004 · lead, 2026-10-08
+- 32-001 · closed · PASS in ticket 50 (wave 5) · lead, 2026-10-08
+- 32-008 · closed · PASS in ticket 50 (wave 5) · lead, 2026-10-08
+- 32-002 · closed · PASS in ticket 50 (wave 5) · lead, 2026-10-08
+- 32-003 · closed · PASS in ticket 50 (wave 5) · lead, 2026-10-08
+- 32-004 · closed · PASS in ticket 50 (wave 5) · lead, 2026-10-08
+- 32-015 · closed · PASS in ticket 50 (wave 5) · lead, 2026-10-08
+- 32-005 · closed · PASS in ticket 50 (wave 5) · lead, 2026-10-08
+- 32-006 · closed · PASS in ticket 50 (wave 5) · lead, 2026-10-08
+- 29-001 · closed · PASS in ticket 50 (wave 5) · lead, 2026-10-08
+- 32-010 · closed · run in ticket 50 (wave 5): the columns still disagree, re-filed as 50-004 · lead, 2026-10-08
+- 32-012 · closed · run in ticket 50 (wave 5): re-filed as 50-005 · lead, 2026-10-08
+- 32-011 · closed · run in ticket 50 (wave 5); re-filed as 50-006..50-010, untried paths in 50-014 · lead, 2026-10-08
+- 32-013 · closed · run in ticket 50 (wave 5); untried paths in 50-011..50-013 · lead, 2026-10-08
+- 22-001 · closed · retested in ticket 50 (wave 5): fixed from a signed-in cold start, still held after an in-session login, re-filed as 50-001 · lead, 2026-10-08
+- 32-007 · closed · retested in ticket 50 (wave 5): four paths converted, content fetch and lesson list not, re-filed as 50-003 · lead, 2026-10-08
+- 30-004 · closed · not reachable signed in (ticket 50, wave 5); carried in 50-002 · lead, 2026-10-08
+- wave 5 lead edge extract (runs/wave-5-edge-logs.txt) · garmin-push 23502 ×3 at 17:28:59Z = 49-011; plan-v3 400s + 22P02 at 17:40Z = 49-012, matched to no wave-5 run (no run was generating a plan then); F4a 'unknown sport other' = known noise (ruled 2026-09-10) · lead, 2026-10-08

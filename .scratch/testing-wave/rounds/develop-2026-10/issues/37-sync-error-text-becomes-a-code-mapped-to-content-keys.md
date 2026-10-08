@@ -1,6 +1,6 @@
 # 37: Sync-error text becomes a code on the row, mapped to content keys at display time
 
-**Status:** fixed (wave 4, f9db3e64) awaiting retest
+**Status:** done 2026-10-08: passed in ticket 50 (wave 5); the pre-fix V.O2 row is 50-009
 **Labels:** fix, round:develop-2026-10, area:integrations
 **Branch:** `develop-next` (fix-wave worktree)
 **Blocked by:** 35+36's agent (shared `content_keys.dart` and `content_defaults.json`); run after it merges.

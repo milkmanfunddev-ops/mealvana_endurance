@@ -1,7 +1,7 @@
 # 31-004 · Retest of 02-006 (a): Back on Review & Log drops the paid analysis and the typed text; getting back to Review costs another token
 
 - kind: bug
-- status: triaged
+- status: closed
 - ticket: 31
 - run: w3-20261008T1256Z
 - screen: Review & Log

@@ -1,6 +1,6 @@
 # 47: Connected Apps: disconnect clears reconnect state, a fresh token syncs, the card refreshes
 
-**Status:** fixed (wave 4, bfd0f77c) awaiting retest
+**Status:** done 2026-10-08: 32-005, 32-006 passed in ticket 50 (wave 5); hidden workouts after reconnect is 50-006 (new)
 **Labels:** fix, round:develop-2026-10, area:integrations
 **Branch:** `develop-next` (fix-wave worktree)
 **Blocked by:** 37. It edits `integrations_repository.dart`, `training_peaks_sync_service.dart`, `connect_training_controller.dart` and `connected_apps_reconnect_test.dart`, and it turns the reconnect text into the code `reauth_required`. Run 47 after 37 merges and re-read the line numbers then.

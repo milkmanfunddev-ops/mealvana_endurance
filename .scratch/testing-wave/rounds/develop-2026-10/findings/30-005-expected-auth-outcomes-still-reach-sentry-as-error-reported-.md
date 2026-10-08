@@ -1,7 +1,7 @@
 # 30-005 · Expected auth outcomes still reach Sentry as error_reported: Google cancel (fault), Apple sheet closed, email already registered, wrong login password
 
 - kind: bug
-- status: triaged
+- status: closed
 - ticket: 30
 - run: w3-20261008T1255Z
 - screen: Create account

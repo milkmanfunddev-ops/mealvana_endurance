@@ -1,7 +1,7 @@
 # 30-001 · Verify your email shows raw content keys (auth.verify_email.*) for the countdown, Resend, hint, Log in, errors and the resent snackbar
 
 - kind: bug
-- status: triaged
+- status: closed
 - ticket: 30
 - run: w3-20261008T1255Z
 - screen: Verify your email

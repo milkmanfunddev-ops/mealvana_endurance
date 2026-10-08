@@ -1,7 +1,7 @@
 # 32-011 · Follow-up: Connected Apps untried paths (hidden workouts after reconnect, Delete synced data, V.O2 and Runna Connect, sharing-sheet Turn Off)
 
 - kind: followup-test
-- status: triaged
+- status: closed
 - ticket: 32
 - run: w3-20261008T1256Z
 - screen: Connected Apps

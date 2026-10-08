@@ -1,7 +1,7 @@
 # 32-001 · Raw content keys across the app: ContentService.initialize() has no caller, so every getValue without a default shows its key
 
 - kind: bug
-- status: triaged
+- status: closed
 - ticket: 32
 - run: w3-20261008T1256Z
 - screen: many: Log In, Timeline, Learn, Settings, Sign Out dialog, Connected Apps

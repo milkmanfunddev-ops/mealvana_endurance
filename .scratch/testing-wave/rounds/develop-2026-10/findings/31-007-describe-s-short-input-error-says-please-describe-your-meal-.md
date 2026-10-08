@@ -1,7 +1,7 @@
 # 31-007 · Describe's short-input error says "Please describe your meal" for 1-4 characters and is a hardcoded string
 
 - kind: idea
-- status: triaged
+- status: closed
 - ticket: 31
 - run: w3-20261008T1256Z
 - screen: Log a Meal (Describe tab)

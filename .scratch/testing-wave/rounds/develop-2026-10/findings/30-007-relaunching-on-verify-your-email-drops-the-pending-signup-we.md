@@ -1,7 +1,7 @@
 # 30-007 · Relaunching on Verify your email drops the pending signup: Welcome, onboarding answers gone, no way back to the code without a new one
 
 - kind: bug
-- status: triaged
+- status: closed
 - ticket: 30
 - run: w3-20261008T1255Z
 - screen: Verify your email

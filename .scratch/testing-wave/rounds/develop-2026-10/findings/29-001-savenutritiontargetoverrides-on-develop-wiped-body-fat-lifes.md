@@ -1,7 +1,7 @@
 # 29-001 · saveNutritionTargetOverrides on develop wiped body fat, lifestyle, training phase, sweat test and Garmin timestamps on every override save
 
 - kind: bug
-- status: triaged
+- status: closed
 - ticket: 29
 - run: w2-20261007T1340Z
 - screen: Settings > Nutrition targets (override save)

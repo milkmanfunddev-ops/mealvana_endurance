@@ -1,7 +1,7 @@
 # 31-001 · Raw content keys shown as text: Timeline Reconnect notice and the meal card's Save as favorite button
 
 - kind: bug
-- status: triaged
+- status: closed
 - ticket: 31
 - run: w3-20261008T1256Z
 - screen: Timeline

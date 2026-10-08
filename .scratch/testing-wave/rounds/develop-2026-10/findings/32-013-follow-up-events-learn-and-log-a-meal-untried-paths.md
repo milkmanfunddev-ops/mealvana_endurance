@@ -1,7 +1,7 @@
 # 32-013 · Follow-up: Events, Learn and Log a Meal untried paths
 
 - kind: followup-test
-- status: triaged
+- status: closed
 - ticket: 32
 - run: w3-20261008T1256Z
 - screen: Events, Learn, Log a Meal

@@ -1,7 +1,7 @@
 # 22-001 · consumeLegacyResumeTap has no caller: backgrounded notification taps are never collected and their payload keys never cleared
 
 - kind: bug
-- status: triaged
+- status: closed
 - ticket: 22
 - run: w2-20261007T1340Z
 - screen: none (startup chain, NotificationService)

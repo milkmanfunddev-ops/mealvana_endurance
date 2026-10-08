@@ -1,7 +1,7 @@
 # 32-005 · A disconnected integration still shows 'needs reconnect', and disconnecting TrainingPeaks first retries the dead refresh token
 
 - kind: bug
-- status: triaged
+- status: closed
 - ticket: 32
 - run: w3-20261008T1256Z
 - screen: Connected Apps

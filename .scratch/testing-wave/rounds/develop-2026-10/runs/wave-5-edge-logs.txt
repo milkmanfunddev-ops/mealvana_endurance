@@ -1,0 +1,8 @@
+# Wave 5 lead extract: dev vlmtsdzpnjnavdgytcmi, function_edge_logs + function_logs, 17:17Z-17:52Z 2026-10-08
+# (Supabase MCP query_logs; errors, warnings and 4xx/5xx only)
+17:22:08Z-17:24:04Z  sessionCost: unknown sport "other" — F4a (×20)            known noise, ruled 2026-09-10 (ticket 49/50 sign-in syncs)
+17:28:59Z            [garmin-push] inbound payload log error 23502 null user_id ×3 (actdet/actdetfull/act 24654452703)   → 49-011
+17:40:32Z            [PLAN-V3] plan_generation_log insert failed 22P02 "18.64"   → 49-012 (matched to no wave-5 run)
+17:40:35Z            [PLAN-V3] plan_generation_log insert failed 22P02 "117.9"   → 49-012
+17:40:32Z-17:40:38Z  [DURING-TEMPLATE]/[PLAN-V3] out-of-range warnings (non-fatal)   same generation as 49-012
+17:46:30Z            sessionCost F4a ×7                                          known noise (ticket 50 TrainingPeaks Sync Now)

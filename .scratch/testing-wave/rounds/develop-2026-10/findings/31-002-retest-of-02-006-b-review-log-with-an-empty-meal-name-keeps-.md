@@ -1,7 +1,7 @@
 # 31-002 · Retest of 02-006 (b): Review & Log with an empty meal name keeps Log this meal enabled and the tap does nothing, silently
 
 - kind: bug
-- status: triaged
+- status: closed
 - ticket: 31
 - run: w3-20261008T1256Z
 - screen: Review & Log

@@ -1,7 +1,7 @@
 # 30-008 · A second Create Account inside 60 s is refused by GoTrue (429) and reported as a failed signup instead of a wait
 
 - kind: bug
-- status: triaged
+- status: closed
 - ticket: 30
 - run: w3-20261008T1255Z
 - screen: Sign Up with Email

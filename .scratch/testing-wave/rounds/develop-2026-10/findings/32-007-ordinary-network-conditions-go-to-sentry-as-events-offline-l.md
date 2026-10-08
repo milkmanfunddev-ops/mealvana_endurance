@@ -1,7 +1,7 @@
 # 32-007 · Ordinary network conditions go to Sentry as events: offline login (x2), offline cold start, a 2 s region timeout online, and an offline lesson as severity fault
 
 - kind: bug
-- status: triaged
+- status: closed
 - ticket: 32
 - run: w3-20261008T1256Z
 - screen: none (startup, Log In, lesson player)

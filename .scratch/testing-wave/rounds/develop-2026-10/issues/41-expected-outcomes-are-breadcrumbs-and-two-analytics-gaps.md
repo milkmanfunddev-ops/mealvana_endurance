@@ -1,6 +1,6 @@
 # 41: Expected outcomes are breadcrumbs, not Sentry events (auth, offline, permission note), and two analytics gaps
 
-**Status:** fixed (wave 4, f1c17f11) awaiting retest
+**Status:** retest 2026-10-08 (wave 5): 30-011, 32-015, meal_log_deleted pass; Apple sheet close → 48-001, content/lesson-list offline → 50-003
 **Labels:** fix, round:develop-2026-10, area:telemetry
 **Branch:** `develop-next` (fix-wave worktree)
 **Blocked by:** 40 (runs first, alone). Runs after or before 42, never alongside it: both edit `email_auth_service.dart`, `post_onboarding_auth_controller.dart` and `app_startup_service.dart`.

@@ -1,7 +1,7 @@
 # 30-013 · Verify your email: untried paths (hint's Log in, expired code at 60 min, paste a code, Verify tapped after the sixth-digit auto-submit)
 
 - kind: followup-test
-- status: triaged
+- status: closed
 - ticket: 30
 - run: w3-20261008T1255Z
 - screen: Verify your email

@@ -1,6 +1,6 @@
 # 50: Retest: startup, tabs, learn and connected apps after wave 4
 
-**Status:** in-progress (wave 5, 2026-10-08)
+**Status:** done 2026-10-08 (wave 5 run complete; see runs/50/notes.md)
 **Labels:** retest, round:develop-2026-10, area:startup, area:integrations
 **Branch:** `develop-next` (worktree per ticket, branched from the round's base after fix wave 4 lands)
 **Source:** TRIAGE.md rulings of 2026-10-08 (wave 3 triage): followups 32-010, 32-011, 32-012, 32-013; fix retests for tickets 34 (22-001 resume tap, 32-008), 37 (sync error codes), 40 (32-001), 41 (32-007, 32-015), 44 (30-004 preview numbers), 46 (32-002, 32-003, 32-004), 47 (32-005, 32-006); 29-001 (override save keeps profile fields)

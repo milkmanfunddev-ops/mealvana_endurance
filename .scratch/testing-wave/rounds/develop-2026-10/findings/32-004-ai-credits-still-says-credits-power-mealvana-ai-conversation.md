@@ -1,7 +1,7 @@
 # 32-004 · AI Credits still says credits power 'Mealvana AI conversations' after Jade was archived (ticket 27)
 
 - kind: bug
-- status: triaged
+- status: closed
 - ticket: 32
 - run: w3-20261008T1256Z
 - screen: AI Credits (/buy-credits)

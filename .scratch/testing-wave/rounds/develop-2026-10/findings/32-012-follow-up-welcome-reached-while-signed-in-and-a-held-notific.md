@@ -1,7 +1,7 @@
 # 32-012 · Follow-up: Welcome reached while signed in, and a held notification tap after sign-in
 
 - kind: followup-test
-- status: triaged
+- status: closed
 - ticket: 32
 - run: w3-20261008T1256Z
 - screen: Welcome

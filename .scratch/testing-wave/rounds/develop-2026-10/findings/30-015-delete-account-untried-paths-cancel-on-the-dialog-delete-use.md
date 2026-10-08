@@ -1,7 +1,7 @@
 # 30-015 · Delete Account: untried paths (Cancel on the dialog, delete-user answering 500, Sign Out dialog text, region cache after delete)
 
 - kind: followup-test
-- status: triaged
+- status: closed
 - ticket: 30
 - run: w3-20261008T1255Z
 - screen: Settings

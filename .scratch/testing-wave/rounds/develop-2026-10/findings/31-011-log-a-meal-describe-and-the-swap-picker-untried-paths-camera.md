@@ -1,7 +1,7 @@
 # 31-011 · Log a Meal Describe and the swap picker: untried paths (Camera on the simulator, Gallery cancel, very long text, picker Back, search and Create Custom Food in swap mode)
 
 - kind: followup-test
-- status: triaged
+- status: closed
 - ticket: 31
 - run: w3-20261008T1256Z
 - screen: Log a Meal (Describe tab)
