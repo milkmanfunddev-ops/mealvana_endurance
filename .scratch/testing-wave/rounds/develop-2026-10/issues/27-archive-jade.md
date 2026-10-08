@@ -1,6 +1,6 @@
 # 27: Archive Jade (the AI coach chat)
 
-**Status:** in-progress — fixed, awaiting retest (wave 2, 2026-10-07)
+**Status:** done 2026-10-08: /jade gone and the thinking status shows on describe and photo (tickets 32 + 31, wave 3); 08-002 AI Credits copy is 32-004
 **Labels:** fix, round:develop-2026-10, area:ai-coach
 **Branch:** `develop-next` (fix-wave worktree)
 **Blocked by:** 29 (runs first and alone). Run with 26 or after it (see Overlaps).

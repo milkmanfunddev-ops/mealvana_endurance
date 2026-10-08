@@ -4,9 +4,13 @@ Spec: `spec.md`. Research: `STRATEGY.md`. Written by the Phase A session, 2026-1
 
 ## Status
 
-**Phase A done; round-up started on `develop-next`** — testing-wave system + 20 round tickets + Sentry leftovers landed (`d9ea11a5`, `03b23ce4`, `ce1a1527`; suite green, dev Sentry unresolved = DEV-7D only). Waves not yet run: `/testing-wave develop-2026-10`. Round-up NOT yet green. — code tip `1574cd93`, branch tip = this docs commit on top (`git rev-parse develop-next`); = `sentry-next` after the
-fast-forward). Nothing pushed. Xuan informed: **NO** (Lee does this before Phase B's force push).
-Phase B (`mealplanning-next`) not started.
+**develop PUSHED 2026-10-08** (Lee's go in the terminal): `git push origin develop-pre-split sentry-original`, then
+`git push --force-with-lease=develop:fb4a97e9 origin develop-next:develop` → origin/develop = `f2dc5951` (tip title
+`[skip ci]`; Codemagic cut nothing, GitHub Actions skipped too). release/1.29.0 is an ancestor of the new develop.
+Round develop-2026-10: waves 1–3 run, fix wave 4 (tickets 34–47) and retest wave 5 (48–51) still to run on
+develop-next, which now tracks origin/develop. Xuan told by Lee: Lee says she is working on her own bugfixes and
+will merge into develop (her branches must be based on release/1.29.0 or the new develop, see the rulings below).
+Phase B (`mealplanning-next`) not started. Round-up test suite: 5154 pass at `2b730018`.
 
 ## Tips recorded 2026-10-06 (all `git fetch`ed, unchanged since the spec)
 
