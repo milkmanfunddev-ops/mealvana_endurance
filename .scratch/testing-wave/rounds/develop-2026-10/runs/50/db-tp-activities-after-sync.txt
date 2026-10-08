@@ -1,0 +1,2 @@
+{"hidden_by_disconnect":null,"count":40,"min":"2026-02-03 00:00:00","max":"2026-09-21 07:00:00"}
+{"hidden_by_disconnect":true,"count":3,"min":"2026-09-22 07:00:00","max":"2026-09-24 07:00:00"}
