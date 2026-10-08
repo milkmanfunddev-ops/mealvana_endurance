@@ -174,7 +174,15 @@ class PlanPreviewService {
     final workoutDay = _dayPreview(
       dayType: PreviewDayType.workout,
       carbG: baseline.carbG + sessionCarb,
-      protG: baseline.protG,
+      // Session protein bump (session-demand.md §Protein bump), workout day
+      // only: rest and carb-load days carry no session, as on the server.
+      // The clamp in _dayPreview runs after it, like STEP 9.
+      protG:
+          baseline.protG +
+          DailyBaselineCalculator.proteinBump(
+            sessions: [(sport: sessionSport, durationHr: sessionHr)],
+            weightKg: weightKg,
+          ),
       weightKg: weightKg,
       rmr: rmr,
       baseNeat: baseNeat,

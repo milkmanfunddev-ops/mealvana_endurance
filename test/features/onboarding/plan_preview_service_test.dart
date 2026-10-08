@@ -4,6 +4,7 @@ import 'package:mealvana_endurance/features/onboarding/application/plan_preview_
 import 'package:mealvana_endurance/features/onboarding/domain/onboarding_draft.dart';
 import 'package:mealvana_endurance/features/onboarding/domain/training_insights.dart';
 import 'package:mealvana_endurance/shared/domain/activity_type.dart';
+import 'package:mealvana_endurance/shared/utils/unit_formatter.dart';
 
 void main() {
   final now = DateTime(2026, 8, 6);
@@ -309,6 +310,68 @@ void main() {
       );
       // 14 h/week → base NEAT 0.17 vs default 0.25 → fewer rest-day calories.
       expect(highVolume.restDay.calories, lessThan(generic.restDay.calories));
+    });
+  });
+
+  // Ticket 44 / Finding 30-004: the workout day carries the session protein
+  // bump (session-demand.md §Protein bump). Account B's onboarding answers,
+  // stored the way the body-composition screen stores a metric entry
+  // (kg → pounds, cm → feet/inches). Expected numbers are by hand from the
+  // spec: baseline 1.4 g/kg (no LBM, age 32), bump 0.2 × 62 for a run
+  // longer than 1.0 hr.
+  group('session protein bump (account B)', () {
+    OnboardingDraft accountB() {
+      final (feet, inches) = UnitFormatter.cmToFeetInches(173);
+      return OnboardingDraft(
+        sports: const {OnboardingSport.running, OnboardingSport.cycling},
+        gender: Gender.female,
+        birthYear: 1994,
+        useMetricUnits: true,
+        heightFeet: feet,
+        heightInches: inches,
+        weightPounds: UnitFormatter.kgToPounds(62),
+        gutTraining: GutTraining.high,
+        sweatRate: SweatRateCat.heavy,
+      );
+    }
+
+    test('workout day protein is round(62 × 1.4 + 0.2 × 62) = 99 g, '
+        '1.6 g/kg; rest and carb-load stay 87 g', () {
+      final preview = PlanPreviewService.buildPreview(accountB(), now: now);
+      expect(preview.workoutDay.proteinG, 99);
+      expect(preview.workoutDay.proteinGPerKg, 1.6);
+      expect(preview.restDay.proteinG, 87);
+      expect(preview.carbLoadDay.proteinG, 87);
+      for (final day in [
+        preview.workoutDay,
+        preview.restDay,
+        preview.carbLoadDay,
+      ]) {
+        expect(day.calories, day.carbsG * 4 + day.proteinG * 4 + day.fatG * 9);
+      }
+    });
+
+    test('a reliable import whose longest run is 45 min gets no bump', () {
+      final shortRun = TrainingInsights(
+        isReliable: true,
+        windowDays: 7,
+        sessionCount: 4,
+        weeklyDurationHours: 4,
+        longestRun: InsightSession(
+          activityType: ActivityType.running,
+          durationMinutes: 45,
+          distanceMiles: 5,
+          scheduledDateTime: DateTime(2026, 8, 2),
+        ),
+      );
+      final preview = PlanPreviewService.buildPreview(
+        accountB(),
+        insights: shortRun,
+        now: now,
+      );
+      expect(preview.usedTrainingData, isTrue);
+      expect(preview.workoutDay.proteinG, 87);
+      expect(preview.workoutDay.proteinG, preview.restDay.proteinG);
     });
   });
 }

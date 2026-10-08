@@ -1,6 +1,6 @@
 # 44: Onboarding Your daily plan applies the session protein bump
 
-**Status:** in-progress (wave 4, 2026-10-08)
+**Status:** fixed (wave 4, 78a98ad6) awaiting retest
 **Labels:** fix, round:develop-2026-10, area:onboarding, area:nutrition
 **Branch:** `develop-next` (fix-wave worktree)
 **Blocked by:** 40 (runs first, alone). Nothing else.
@@ -29,10 +29,10 @@
 
 No edge-function or schema change. Nothing to deploy. The server already applies the bump.
 
-- [ ] Vector-backed test (`daily_baseline_calculator_test.dart`): a new group that loads `docs/ssot/vectors/daily-macros/session-demand.json` (as the existing "session-demand kcal vectors" group does at `:359-397`) and runs every row whose `expected` has `protBumpG` through `proteinBump`. Today that is `protbump-max-not-sum`: 75 kg, strength 1.0 h plus running 1.5 h → 22.5 g. Read the file's tolerance as the existing group does. This is the same row `calculate-daily-macros-v6/vectors.conformance.test.ts:231-241` runs on the TS side, so the twins are held to one vector.
-- [ ] Spec boundary units (hand values from the spec's pseudo-code, not from the calculator): running 1.0 h exactly → 0 (strict `>`); running 1.01 h at 62 kg → 12.4; strength 0.5 h at 62 kg → 18.6; no sessions → 0.
-- [ ] Preview test (`plan_preview_service_test.dart`), producer-shaped. The draft is account B's onboarding answers as the app stores them (Running + Cycling, Female, born 1994, 173 cm, 62 kg entered metric, gut High, sweat Heavy; read `onboarding_draft.dart` for how metric input is stored), and no training insights. Expected numbers are by hand from the spec, not from the calculator: workout protein `round(62 × 1.4 + 0.2 × 62) = 99` g (1.6 g/kg), and rest and carb-load protein stay 87 g. Calories stay 4/4/9-consistent (the existing assertion at `:131`). A reliable import whose longest run is 45 minutes gives workout protein equal to rest.
-- [ ] `flutter analyze` clean on touched files; run `test/features/onboarding/`.
+- [x] Vector-backed test (`daily_baseline_calculator_test.dart`): a new group that loads `docs/ssot/vectors/daily-macros/session-demand.json` (as the existing "session-demand kcal vectors" group does at `:359-397`) and runs every row whose `expected` has `protBumpG` through `proteinBump`. Today that is `protbump-max-not-sum`: 75 kg, strength 1.0 h plus running 1.5 h → 22.5 g. Read the file's tolerance as the existing group does. This is the same row `calculate-daily-macros-v6/vectors.conformance.test.ts:231-241` runs on the TS side, so the twins are held to one vector.
+- [x] Spec boundary units (hand values from the spec's pseudo-code, not from the calculator): running 1.0 h exactly → 0 (strict `>`); running 1.01 h at 62 kg → 12.4; strength 0.5 h at 62 kg → 18.6; no sessions → 0.
+- [x] Preview test (`plan_preview_service_test.dart`), producer-shaped. The draft is account B's onboarding answers as the app stores them (Running + Cycling, Female, born 1994, 173 cm, 62 kg entered metric, gut High, sweat Heavy; read `onboarding_draft.dart` for how metric input is stored), and no training insights. Expected numbers are by hand from the spec, not from the calculator: workout protein `round(62 × 1.4 + 0.2 × 62) = 99` g (1.6 g/kg), and rest and carb-load protein stay 87 g. Calories stay 4/4/9-consistent (the existing assertion at `:131`). A reliable import whose longest run is 45 minutes gives workout protein equal to rest.
+- [x] `flutter analyze` clean on touched files; run `test/features/onboarding/`.
 - [ ] Retest on device: wave 5 retest ticket 50 (it lists 44 in its Blocked-by). Account B's answers through to Your daily plan → Workout day shows 99 g / 1.6 g/kg protein and rest shows 87 g.
 
 Next: /testing-wave develop-2026-10 (fix wave 4)

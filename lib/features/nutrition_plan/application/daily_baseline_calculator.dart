@@ -305,6 +305,36 @@ class DailyBaselineCalculator {
     return raw;
   }
 
+  /// Protein bump from strength sessions, in g/kg.
+  static const double strengthProteinBumpGPerKg = 0.3;
+
+  /// Protein bump from an endurance session longer than 1.0 hr, in g/kg.
+  static const double enduranceProteinBumpGPerKg = 0.2;
+
+  /// Protein bump from today's sessions (`docs/ssot/spec/daily-macros/
+  /// session-demand.md` §Protein bump; twin of
+  /// `calculate-daily-macros-v6/pipeline.ts` STEP 4 and the max loop in
+  /// `formulas/safety.ts` `multiSessionCarbCompound`).
+  ///
+  /// A max across sessions, never a sum: strength qualifies on sport alone
+  /// at any duration (0.3 × kg); any other sport qualifies only when
+  /// `durationHr > 1.0`, strictly (0.2 × kg). No sessions → 0. Unrounded;
+  /// rounding happens once, at display (R1).
+  static double proteinBump({
+    required List<({String sport, double durationHr})> sessions,
+    required double weightKg,
+  }) {
+    var bump = 0.0;
+    for (final s in sessions) {
+      if (s.sport == 'strength') {
+        bump = math.max(bump, strengthProteinBumpGPerKg * weightKg);
+      } else if (s.durationHr > 1.0) {
+        bump = math.max(bump, enduranceProteinBumpGPerKg * weightKg);
+      }
+    }
+    return bump;
+  }
+
   // ---------------------------------------------------------------------------
   // NEAT / TEF / TDEE (neat-tef.ts)
   // ---------------------------------------------------------------------------

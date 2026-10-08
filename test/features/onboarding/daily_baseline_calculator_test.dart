@@ -394,4 +394,78 @@ void main() {
     }
   });
 
+  // Protein bump (session-demand.md §Protein bump; pipeline.ts STEP 4 and
+  // safety.ts multiSessionCarbCompound). The vector rows are the same ones
+  // vectors.conformance.test.ts runs on the TS side, so the twins are held
+  // to one vector.
+  group('session-demand protein bump vectors (twin parity)', () {
+    final file = File('docs/ssot/vectors/daily-macros/session-demand.json');
+    final data = jsonDecode(file.readAsStringSync()) as Map<String, dynamic>;
+    final vectors = (data['vectors'] as List).cast<Map<String, dynamic>>();
+    final tol = ((data['toleranceG'] as num?) ?? 0.001).toDouble();
+    final rows = vectors
+        .where((v) => (v['expected'] as Map).containsKey('protBumpG'))
+        .toList();
+
+    test('the vector file carries at least one protBumpG row', () {
+      expect(rows, isNotEmpty);
+    });
+
+    for (final v in rows) {
+      test(v['id'] as String, () {
+        final i = v['inputs'] as Map<String, dynamic>;
+        final e = v['expected'] as Map<String, dynamic>;
+        final bump = DailyBaselineCalculator.proteinBump(
+          sessions: (i['sessions'] as List)
+              .map((s) => (
+                    sport: ((s as Map)['sport'] as String).toLowerCase(),
+                    durationHr: (s['durationHr'] as num).toDouble(),
+                  ))
+              .toList(),
+          weightKg: (i['weightKg'] as num).toDouble(),
+        );
+        expect(bump, closeTo((e['protBumpG'] as num).toDouble(), tol));
+      });
+    }
+  });
+
+  group('protein bump spec boundaries (hand values from the pseudo-code)', () {
+    test('running exactly 1.0 h gets no bump (strict > 1.0 hr)', () {
+      expect(
+        DailyBaselineCalculator.proteinBump(
+          sessions: [(sport: 'running', durationHr: 1.0)],
+          weightKg: 62,
+        ),
+        0,
+      );
+    });
+
+    test('running 1.01 h at 62 kg: 0.2 × 62 = 12.4', () {
+      expect(
+        DailyBaselineCalculator.proteinBump(
+          sessions: [(sport: 'running', durationHr: 1.01)],
+          weightKg: 62,
+        ),
+        closeTo(12.4, 1e-9),
+      );
+    });
+
+    test('strength 0.5 h at 62 kg qualifies on sport alone: 0.3 × 62 = 18.6',
+        () {
+      expect(
+        DailyBaselineCalculator.proteinBump(
+          sessions: [(sport: 'strength', durationHr: 0.5)],
+          weightKg: 62,
+        ),
+        closeTo(18.6, 1e-9),
+      );
+    });
+
+    test('no sessions: 0', () {
+      expect(
+        DailyBaselineCalculator.proteinBump(sessions: const [], weightKg: 62),
+        0,
+      );
+    });
+  });
 }
