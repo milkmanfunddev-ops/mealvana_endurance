@@ -1,0 +1,7 @@
+# dev auth_logs 17:27:00Z-17:31:30Z (Supabase MCP query_logs, source auth_logs), remote_addr = this Mac
+17:27:19Z PUT /user 200 user_modified actor 1c31d98e-1413-4233-92ad-1991d1737355   (Create Account 1, code 634184 mailed 17:27:20)
+17:27:31Z PUT /user 429 over_email_send_rate_limit "you can only request this after 47 seconds"   (Create Account 2, 14 s later)
+17:28:44Z PUT /user 200 user_modified actor 1c31d98e   (Create Account 3 after the countdown, code 844982 mailed 17:28:44)
+17:28:50Z POST /verify 403 otp_expired "One-time token not found"   (wrong code 111111, auto-submit)
+17:29:05Z POST /verify 403 otp_expired   (Verify tapped twice fast at 17:29:04: ONE request)
+17:29:52Z POST /resend 200   (Resend; app showed "New code sent to ..."; NO email arrived, auth.users.email_change_sent_at stays 17:28:44)

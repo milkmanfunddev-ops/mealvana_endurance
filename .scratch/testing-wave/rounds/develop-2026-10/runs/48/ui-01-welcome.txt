@@ -1,0 +1,8 @@
+Application 'Endurance Dev' '' 0 0 402 874
+Image 'Mealvana Endurance logo' '' 158 218 85 84
+StaticText 'Mealvana' '' 136 316 129 30
+StaticText 'ENDURANCE' '' 139 352 123 19
+StaticText 'Get more out of\nevery session.' '' 92 415 217 70
+StaticText 'Fueling plans built for how you train — so you stop guessing your carbs mid-race.' '' 56 503 290 69
+Button 'Build My Plan' '' 30 729 342 57
+Button 'I already have an account' '' 108 792 184 48

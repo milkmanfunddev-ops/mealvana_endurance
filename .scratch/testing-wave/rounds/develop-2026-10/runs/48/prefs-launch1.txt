@@ -1,0 +1,10 @@
+flutter.launch_trail_current = native ios_delegate_at_launch=AppDelegate
+native ios_launch_options=(none)
+12:20:06.181 pending signup: none
+12:20:07.917 plugin.initialize() starting (handler not yet attached)
+12:20:07.929 plugin.initialize() done (handler attached)
+12:20:07.934 launchDetails didNotificationLaunchApp=false payload=null
+12:20:07.935 onesignal started; permission ask + heal wait for an athlete id
+flutter.privacy_geo_country = US
+flutter.privacy_geo_region = AL
+flutter.privacy_region_source = geo

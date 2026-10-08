@@ -1,0 +1,17 @@
+flutter.launch_trail_current = native ios_delegate_after_delay=AppDelegate
+native ios_delegate_at_launch=AppDelegate
+native ios_launch_options=(none)
+12:20:54.726 pending signup: none
+12:20:56.034 plugin.initialize() starting (handler not yet attached)
+12:20:56.042 plugin.initialize() done (handler attached)
+12:20:56.058 launchDetails didNotificationLaunchApp=false payload=null
+12:20:56.059 onesignal started; permission ask + heal wait for an athlete id
+12:20:56.555 region lookup timeout: device fallback
+12:21:14.985 permission prompt wait 11197ms granted=false
+12:21:14.988 notification permission answer: granted=false
+12:21:15.004 notification answer not stored: no local profile
+12:21:15.005 push heal: permission=false optedIn=false (hydration wait 0ms)
+12:21:15.005 push heal: no action
+12:21:15.291 app resumed
+12:21:15.339 nudge sweep activities=0 estimated=0 longCandidates=0
+12:21:15.347 nudge evaluate candidates=0 fastFire=false

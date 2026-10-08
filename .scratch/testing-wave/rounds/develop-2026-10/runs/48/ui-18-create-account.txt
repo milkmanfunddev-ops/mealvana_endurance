@@ -1,0 +1,13 @@
+Application 'Endurance Dev' '' 0 0 402 874
+Button 'Back' '' 16 74 32 32
+StaticText 'Create Your Account' '' 16 142 370 28
+StaticText 'Secure your data and sync across devices' '' 16 178 370 20
+StaticText '★★★★★' '' 33 229 76 23
+StaticText '“GETTING NUTRITION RIGHT IS HOW I FINISH MY TRAINING BLOCK STRONG AND TOE THE START LINE  '' 120 229 248 189
+StaticText 'Xuan H. · 6x marathoner · 2x half IM' '' 120 425 194 17
+Button 'Continue with Apple' '' 16 475 370 50
+StaticText 'or' '' 195 537 11 17
+Button 'Continue with Google' '' 16 566 370 50
+Button 'Sign up with Email' '' 16 626 370 50
+Button 'Continue without signing in' '' 16 692 370 48
+StaticText 'You can always create an account later in Settings' '' 16 742 370 16

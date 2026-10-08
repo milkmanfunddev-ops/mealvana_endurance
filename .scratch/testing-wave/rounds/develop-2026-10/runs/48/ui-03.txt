@@ -1,0 +1,9 @@
+Application 'Endurance Dev' '' 0 0 402 874
+Button 'Back' '' 22 78 32 32
+StaticText 'Which sports do you train for?' '' 24 164 346 27
+StaticText "We'll tune carb targets to each one. Nothing is pre-selected." '' 24 199 354 40
+CheckBox 'Running' '0' 24 265 354 58
+CheckBox 'Cycling' '0' 24 334 354 58
+CheckBox 'Swimming' '0' 24 403 354 58
+CheckBox 'Triathlon' '0' 24 472 354 58
+Button 'Continue' '' 24 783 354 57
