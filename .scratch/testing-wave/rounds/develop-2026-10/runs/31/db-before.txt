@@ -1,0 +1,16 @@
+# db-before 2026-10-08T12:56:34Z
+## token_wallets
+{"balance": 2493, "unit": "credit", "allowance": 0, "allowance_monthly": 0, "free_period": "2026-10", "updated_at": "2026-10-08 02:15:20.330217+00"}
+## token_ledger newest 5
+{"delta": -1, "reason": "debit_usage", "ref": "describe-meal", "balance_after": 2493, "unit": "credit", "created_at": "2026-10-08 02:15:20.330217+00"}
+{"delta": -49894991, "reason": "convert_credits", "ref": "usd_micro->credit@20000 develop-2026-10#23", "balance_after": 2494, "unit": "credit", "created_at": "2026-10-07 16:02:17.935119+00"}
+{"delta": -1, "reason": "debit_usage", "ref": "describe-meal", "balance_after": 49897485, "unit": "usd_micro", "created_at": "2026-10-07 11:08:38.918648+00"}
+{"delta": 50, "reason": "grant_free", "ref": "2026-10", "balance_after": 49897486, "unit": "usd_micro", "created_at": "2026-10-07 11:07:55.979982+00"}
+{"delta": -740, "reason": "settle_usage", "ref": "5a4de1a8-f311-4496-b533-8796a8c6c6fa", "balance_after": 49897436, "unit": "usd_micro", "created_at": "2026-09-30 13:38:33.197385+00"}
+## meal_logs today/recent (not deleted)
+{"id": "40600e48-f359-48f6-b59f-d49a5c473bee", "log_date": "2026-10-07", "slot": "breakfast", "name": "Scrambled Eggs, Whole Wheat Toast with Butter, and Banana", "source": "describe", "calories": 404, "is_deleted": false, "created_at": "2026-10-07 11:10:15.93897+00"}
+## integrations (no token columns)
+{"provider": "vdot", "is_active": true, "last_sync_at": "2026-10-07 06:16:58+00", "last_sync_status": "requires_reauth", "last_sync_error": "Please reconnect your V.O2 account", "updated_at": "2026-10-07 11:16:58.880865+00"}
+{"provider": "garmin", "is_active": true, "last_sync_at": "2026-09-19 08:56:12.014+00", "last_sync_status": "success", "last_sync_error": null, "updated_at": "2026-09-19 08:56:12.195127+00"}
+{"provider": "training_peaks", "is_active": true, "last_sync_at": "2026-09-28 18:16:35+00", "last_sync_status": "error", "last_sync_error": "TrainingPeaksApiException: Token refresh failed: no answer (ClientException with SocketException: Failed host lookup: 'oauth.sandbox.trainingpeaks.com' (OS Error: nodename nor servname provided, or not known, errno = 8), uri=https://oauth.sandbox.trainingpeaks.com/oauth/token)", "updated_at": "2026-09-28 23:16:43.10994+00"}
+{"provider": "final_surge", "is_active": true, "last_sync_at": "2026-10-07 06:07:21+00", "last_sync_status": "success", "last_sync_error": null, "updated_at": "2026-10-07 11:07:21.976226+00"}

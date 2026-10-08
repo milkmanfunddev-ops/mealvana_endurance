@@ -1,0 +1,25 @@
+# Supabase MCP query_logs, dev, source function_edge_logs, 13:01:30Z-13:15:00Z (queried 13:14Z)
+2026-10-08T13:01:31.045Z POST | 200 | garmin-push
+2026-10-08T13:01:35.466Z POST | 200 | garmin-push
+2026-10-08T13:02:11.698Z POST | 200 | garmin-push
+2026-10-08T13:02:21.231Z POST | 200 | calculate-daily-macros-v6
+2026-10-08T13:02:21.707Z POST | 200 | calculate-daily-macros-v6
+2026-10-08T13:02:43.835Z POST | 200 | garmin-push
+2026-10-08T13:02:50.380Z POST | 200 | describe-meal            <- spend 1 (Analyze 13:02:40.8Z)
+2026-10-08T13:02:56.231Z POST | 200 | garmin-push
+2026-10-08T13:02:57.631Z POST | 200 | garmin-push
+2026-10-08T13:02:58.877Z POST | 200 | garmin-push
+2026-10-08T13:02:59.220Z POST | 200 | garmin-push
+2026-10-08T13:04:38.967Z POST | 200 | delete-user              <- not this run (no account deleted here; another ticket)
+2026-10-08T13:07:19.734Z POST | 200 | sync-all-data            <- not this run's minute of action (ticket 32's sign-in, likely)
+2026-10-08T13:07:25.840Z POST | 200 | calculate-daily-macros-v6
+2026-10-08T13:10:25.480Z POST | 200 | garmin-push
+2026-10-08T13:10:26.503Z POST | 200 | garmin-push
+2026-10-08T13:10:34.198Z POST | 200 | garmin-push
+2026-10-08T13:12:03.107Z POST | 200 | describe-meal            <- spend 3 ("my bike ride", Analyze 13:11:57.4Z)
+# NOTE: no analyze-meal-photo request line for spend 2 (Analyze 13:10:47.4Z), although function_logs show it ran:
+2026-10-08T13:10:48.046Z edge_logs     POST 200 storage/v1/object/meal-photos/607f9dd5-…/c8a731f8-….jpg (app upload)
+2026-10-08T13:10:49.854Z function_logs [analyze-meal-photo] Analyzing photo for user 607f9dd5-…, path …/c8a731f8-….jpg, model anthropic/claude-sonnet-4.6
+2026-10-08T13:10:57.401Z function_logs [analyze-meal-photo] Success …: "Bread slices and orange (from food spread)", 2 items, confidence=medium
+2026-10-08T13:11:58.384Z function_logs [describe-meal] Processing description …, length: 12 chars
+2026-10-08T13:12:03.091Z function_logs [describe-meal] Success …: "Bike Ride (No Food Logged)", 1 items, confidence=low

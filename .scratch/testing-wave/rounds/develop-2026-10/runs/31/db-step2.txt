@@ -1,0 +1,4 @@
+# db-step2 2026-10-08T13:01:15Z (after empty, short, offline)
+{"balance": 2493, "unit": "credit", "updated_at": "2026-10-08 02:15:20.330217+00"}
+{"delta": -1, "reason": "debit_usage", "ref": "describe-meal", "balance_after": 2493, "created_at": "2026-10-08 02:15:20.330217+00"}
+{"delta": -49894991, "reason": "convert_credits", "ref": "usd_micro->credit@20000 develop-2026-10#23", "balance_after": 2494, "created_at": "2026-10-07 16:02:17.935119+00"}

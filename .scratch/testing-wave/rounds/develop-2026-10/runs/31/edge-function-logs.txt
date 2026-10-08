@@ -1,0 +1,6 @@
+# Supabase MCP query_logs, dev, source function_logs, warning/error/fail lines, 12:56:00Z-13:15:00Z
+# No error-level line in the window.
+12:58:03.380Z-12:58:08.035Z  warning x14  sessionCost: unknown sport "other" — F4a zero-with-estimate-flag (session-demand.md F4a, RULED 2026-09-10)   (calculate-daily-macros-v6, this run's sign-in)
+13:07:21.549Z-13:07:25.825Z  warning x13  same F4a line (the 13:07 calculate-daily-macros-v6 call)
+13:00:46.011Z  warning  [garmin-push] OneSignal accepted the request but reached no device for user c2c7e005-6041-4b6c-b7ae-ae25c97b049b (recipients=0) — not counting it as sent: ["All included players are not subscribed"]
+"Errors: 0" info lines at 12:57:59Z, 13:02:20Z, 13:07:19Z (sync-all-data summaries).

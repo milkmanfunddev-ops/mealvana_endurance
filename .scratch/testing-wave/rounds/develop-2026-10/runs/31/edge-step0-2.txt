@@ -1,0 +1,6 @@
+# Supabase MCP query_logs, dev, source function_edge_logs, 12:56:00Z-13:02:00Z (sign-in through step 2)
+2026-10-08T12:57:59.308Z POST | 200 | /functions/v1/sync-all-data
+2026-10-08T12:58:03.397Z POST | 200 | /functions/v1/calculate-daily-macros-v6
+2026-10-08T12:58:08.051Z POST | 200 | /functions/v1/calculate-daily-macros-v6
+2026-10-08T13:00:43.305Z POST | 200 | /functions/v1/garmin-push
+# No describe-meal request between 12:59:43Z (empty Analyze) and 13:01:15Z (network restored).

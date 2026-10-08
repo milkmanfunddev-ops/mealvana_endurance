@@ -1,0 +1,9 @@
+# db-spend1 2026-10-08T13:06:38Z (after spend 1 and Log)
+## meal_logs rows this run
+{"id": "2627444d-fec4-4c60-af2e-a600dbb0acf0", "log_date": "2026-10-08", "slot": null, "name": "tw31 eggs toast banana", "source": "describe", "calories": 287, "carbs_g": "28.4", "protein_g": "13.9", "fat_g": "13.9", "sodium_mg": "343.0", "photo_path": null, "notes": "Confidence is medium as no specific brands or weights were given. Butter assumed to be approximately 1 teaspoon (~5g). Eggs assumed large and scrambled in a small amount of butter or cooking spray, which is included in the fat and calorie estimate.", "eaten_at": "2026-10-08 13:06:00+00", "created_at": "2026-10-08 13:06:28.081382+00", "updated_at": "2026-10-08 13:06:28.082049+00", "is_deleted": false, "servings": "1.0", "items": [{"name": "Scrambled eggs (x2)", "fat_g": 13.6, "carb_g": 1.4, "portion": "2 large eggs, scrambled", "calories": 182, "protein_g": 12.6, "sodium_mg": 342}, {"name": "Banana", "fat_g": 0.3, "carb_g": 27, "portion": "1 medium banana (~118g)", "calories": 105, "protein_g": 1.3, "sodium_mg": 1}]}
+## wallet
+{"balance": 2492, "unit": "credit", "updated_at": "2026-10-08 13:02:50.29965+00"}
+## ledger newest 3
+{"delta": -1, "reason": "debit_usage", "ref": "describe-meal", "balance_after": 2492, "unit": "credit", "created_at": "2026-10-08 13:02:50.29965+00"}
+{"delta": -1, "reason": "debit_usage", "ref": "describe-meal", "balance_after": 2493, "unit": "credit", "created_at": "2026-10-08 02:15:20.330217+00"}
+{"delta": -49894991, "reason": "convert_credits", "ref": "usd_micro->credit@20000 develop-2026-10#23", "balance_after": 2494, "unit": "credit", "created_at": "2026-10-07 16:02:17.935119+00"}
