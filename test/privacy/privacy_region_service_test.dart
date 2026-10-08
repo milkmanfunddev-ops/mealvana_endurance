@@ -5,7 +5,10 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:mealvana_endurance/shared/services/privacy/privacy_region.dart';
 import 'package:mealvana_endurance/shared/services/privacy/privacy_region_service.dart';
+import 'package:mealvana_endurance/shared/services/report/report.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+import '../helpers/fakes/recording_report.dart';
 
 /// This service is the only thing in the consent stack that touches the
 /// network, and every downstream reader is synchronous — so its job is to fill
@@ -63,6 +66,80 @@ void main() {
       await Future<void>.delayed(Duration.zero);
 
       expect(prefs.getString(kGeoRegionKey), isNull);
+    });
+  });
+
+  // develop-2026-10 ticket 41 (32-007): offline and the 2 s timeout are
+  // weather, a breadcrumb and a count, never an event. A malformed body is
+  // not weather and still faults.
+  group('what a failure reports', () {
+    late RecordingReport report;
+
+    setUp(() {
+      report = RecordingReport();
+      ExpectedFailureCounts.debugReset();
+    });
+    tearDown(ExpectedFailureCounts.debugReset);
+
+    Future<SharedPreferences> resolve(
+      http.Client client, {
+      Duration timeout = const Duration(seconds: 2),
+    }) async {
+      final prefs = await prefsWith({});
+      await PrivacyRegionService(
+        prefs: prefs,
+        client: client,
+        report: report,
+      ).ensureResolved(timeout: timeout);
+      return prefs;
+    }
+
+    List<RecordedReport> weather() => report.calls
+        .where((c) => c.severity == 'breadcrumb' && c.area == 'privacy.weather')
+        .toList();
+
+    test('the timeout falls back to device signals with no fault', () async {
+      // A server that never answers: the lookup's own timeout ends it.
+      final prefs = await resolve(
+        MockClient((_) => Completer<http.Response>().future),
+        timeout: const Duration(milliseconds: 20),
+      );
+
+      expect(prefs.getString(kRegionSourceKey), 'device');
+      expect(report.faults, isEmpty);
+      expect(report.degradeds, isEmpty);
+      expect(weather().single.data?['expected_failure'], 'timeout');
+      expect(ExpectedFailureCounts.pending, [
+        (area: 'privacy', reason: 'timeout'),
+      ]);
+    });
+
+    test('offline falls back to device signals with no fault', () async {
+      // package:http's IOClient wraps the SocketException's message.
+      final prefs = await resolve(
+        MockClient(
+          (request) async => throw http.ClientException(
+            "Failed host lookup: 'app.mealvana.io'",
+            request.url,
+          ),
+        ),
+      );
+
+      expect(prefs.getString(kRegionSourceKey), 'device');
+      expect(report.faults, isEmpty);
+      expect(weather().single.data?['expected_failure'], 'offline');
+    });
+
+    test('a malformed body still faults', () async {
+      final prefs = await resolve(
+        MockClient((_) async => http.Response('not json', 200)),
+      );
+
+      expect(prefs.getString(kRegionSourceKey), 'device');
+      expect(report.faults, hasLength(1));
+      expect(report.faults.single.area, 'privacy');
+      expect(weather(), isEmpty);
+      expect(ExpectedFailureCounts.pending, isEmpty);
     });
   });
 

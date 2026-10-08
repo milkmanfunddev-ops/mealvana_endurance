@@ -562,44 +562,53 @@ class MealLogController extends _$MealLogController {
   /// Restore a previously soft-deleted meal log entry (used by undo-delete).
   Future<void> restoreLog(String logId) async {
     await _runGuarded((service) async {
-      // Read the repo before the async gap below so a mid-action disposal
-      // can't trigger a `ref.read` on a disposed ref (UnmountedRefException).
+      // Read the repo, report and tracker before the async gap below so a
+      // mid-action disposal can't trigger a `ref.read` on a disposed ref
+      // (UnmountedRefException). The Undo snackbar calls this with no
+      // listener, so the auto-dispose controller is usually gone by the time
+      // the write lands; the event still goes (ticket 41, 31-012).
       final repo = ref.read(mealLogRepositoryProvider);
+      final report = _report;
+      final analytics = ref.read(appExternalDepsProvider).analytics;
       final userId = await _currentUserId();
       if (userId == null) throw StateError('No authenticated user');
 
       await repo.restoreLog(id: logId, userId: userId);
 
-      if (!ref.mounted) return;
-      _report.info(
+      report.info(
         'Meal log restored',
         area: 'meal_logging',
         data: {'logId': logId},
       );
-
-      await _trackEvent('meal_log_restored', {'log_id': logId});
+      await analytics.track(
+        'meal_log_restored',
+        properties: {'log_id': logId},
+      );
     });
   }
 
   /// Soft-delete a meal log entry.
   Future<void> deleteLog(String logId) async {
     await _runGuarded((service) async {
-      // Read the repo before the async gap below so a mid-action disposal
-      // can't trigger a `ref.read` on a disposed ref (UnmountedRefException).
+      // Read the repo, report and tracker before the async gap below so a
+      // mid-action disposal can't trigger a `ref.read` on a disposed ref
+      // (UnmountedRefException). The Timeline and the diary call this with
+      // no listener, so the auto-dispose controller is usually gone by the
+      // time the write lands; the event still goes (ticket 41, 31-012).
       final repo = ref.read(mealLogRepositoryProvider);
+      final report = _report;
+      final analytics = ref.read(appExternalDepsProvider).analytics;
       final userId = await _currentUserId();
       if (userId == null) throw StateError('No authenticated user');
 
       await repo.softDeleteLog(id: logId, userId: userId);
 
-      if (!ref.mounted) return;
-      _report.info(
+      report.info(
         'Meal log deleted',
         area: 'meal_logging',
         data: {'logId': logId},
       );
-
-      await _trackEvent('meal_log_deleted', {'log_id': logId});
+      await analytics.track('meal_log_deleted', properties: {'log_id': logId});
     });
   }
 

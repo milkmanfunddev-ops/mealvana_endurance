@@ -1,13 +1,28 @@
 import 'signup_code.dart';
 
-/// An expected turn in the signup and verify flows, not a failure (01-005):
-/// the screen routes on it or shows a line. The Riverpod net turns one it
-/// finds in a notifier's state into an `auth.flow` breadcrumb, never a Fault,
-/// and `EmailAuthService.verifyEmailOtp` does not report it; the verify
-/// screen's note is its record.
+/// An expected turn in the auth flows, not a failure (01-005; widened from
+/// signup and verify to every auth flow by develop-2026-10 ticket 41): the
+/// screen routes on it or shows a line. The Riverpod net turns one it finds
+/// in a notifier's state into an `auth.flow` breadcrumb, never a Fault. The
+/// service that maps the outcome writes its own note and sends one
+/// `expected_failure` count ([authOutcomeReason]); `verifyEmailOtp` leaves
+/// that to the verify screen's note.
 abstract interface class AuthFlowOutcome implements Exception {}
 
-class AccountAlreadyExistsException implements Exception {
+/// The `reason` an [AuthFlowOutcome] carries on the `expected_failure`
+/// analytics event (ticket 41). Stable once it has reached Mixpanel.
+String authOutcomeReason(Object outcome) => switch (outcome) {
+  OAuthCancelledException() => 'oauth_cancelled',
+  AccountAlreadyExistsException() => 'account_exists',
+  OAuthAccountNotFoundException() => 'oauth_account_not_found',
+  WrongCredentialsException() => 'wrong_credentials',
+  NoConnectionException() => 'offline',
+  EmailNotConfirmedException() => 'email_not_confirmed',
+  EmailVerificationRequiredException() => 'verification_pending',
+  _ => outcome.runtimeType.toString(),
+};
+
+class AccountAlreadyExistsException implements AuthFlowOutcome {
   final String message;
   final String? email;
 
@@ -27,7 +42,7 @@ class AccountAlreadyExistsException implements Exception {
 /// elsewhere. The sign-in flow detects the mint, signs the empty account back
 /// out, and throws this instead — a *control-flow* signal the UI turns into
 /// "no account found for this provider; try the one you signed up with".
-class OAuthAccountNotFoundException implements Exception {
+class OAuthAccountNotFoundException implements AuthFlowOutcome {
   const OAuthAccountNotFoundException({required this.provider, this.email});
 
   /// Lowercase provider slug ('apple' | 'google').
@@ -45,7 +60,7 @@ class OAuthAccountNotFoundException implements Exception {
 /// error: the service throws it in place of a generic failure, the controller
 /// logs it at info, and the screen returns quietly with no "Sign in failed".
 /// The simulator's `unknown` Apple error is not a cancel and stays a failure.
-class OAuthCancelledException implements Exception {
+class OAuthCancelledException implements AuthFlowOutcome {
   const OAuthCancelledException({required this.provider});
 
   /// Lowercase provider slug ('apple' | 'google').
@@ -83,7 +98,8 @@ sealed class EmailSignInException implements Exception {
 }
 
 /// GoTrue's `invalid_credentials`: the email or the password is wrong.
-class WrongCredentialsException extends EmailSignInException {
+class WrongCredentialsException extends EmailSignInException
+    implements AuthFlowOutcome {
   const WrongCredentialsException();
 
   @override
@@ -91,7 +107,8 @@ class WrongCredentialsException extends EmailSignInException {
 }
 
 /// The sign-in never reached GoTrue (a socket failure, a retryable fetch).
-class NoConnectionException extends EmailSignInException {
+class NoConnectionException extends EmailSignInException
+    implements AuthFlowOutcome {
   const NoConnectionException(this.cause);
 
   final Object cause;
@@ -103,7 +120,8 @@ class NoConnectionException extends EmailSignInException {
 /// GoTrue's `email_not_confirmed`: the account exists, its code was never
 /// entered. The app resends the signup code and opens Verify your email
 /// (testing-wave 124-001).
-class EmailNotConfirmedException extends EmailSignInException {
+class EmailNotConfirmedException extends EmailSignInException
+    implements AuthFlowOutcome {
   const EmailNotConfirmedException(this.email);
 
   final String email;

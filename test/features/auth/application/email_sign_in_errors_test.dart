@@ -37,7 +37,12 @@ final _notConfirmed = AuthApiException(
   code: 'email_not_confirmed',
 );
 
-({ProviderContainer container, MockGoTrueClient goTrue, RecordingReport report})
+({
+  ProviderContainer container,
+  MockGoTrueClient goTrue,
+  RecordingReport report,
+  MockAnalyticsTracker analytics,
+})
 _wired() {
   final goTrue = fakeGoTrueClient() as MockGoTrueClient;
   final prefs = MockSharedPreferences();
@@ -65,7 +70,34 @@ _wired() {
   addTearDown(container.dispose);
   // Auto-dispose: keep the notifier alive across the awaits.
   container.listen(emailAuthServiceProvider, (_, _) {});
-  return (container: container, goTrue: goTrue, report: report);
+  return (
+    container: container,
+    goTrue: goTrue,
+    report: report,
+    analytics: analytics,
+  );
+}
+
+/// The one plain count an expected outcome sends (ticket 41, Lee
+/// 2026-10-08: keep the counts), and no Sentry event.
+void _countedOnce(
+  ({
+    ProviderContainer container,
+    MockGoTrueClient goTrue,
+    RecordingReport report,
+    MockAnalyticsTracker analytics,
+  })
+  w,
+  String reason,
+) {
+  verify(
+    () => w.analytics.track(
+      expectedFailureEvent,
+      properties: {'area': 'auth', 'reason': reason},
+    ),
+  ).called(1);
+  expect(w.report.faults, isEmpty);
+  expect(w.report.degradeds, isEmpty);
 }
 
 void main() {
@@ -142,6 +174,7 @@ void main() {
             .signInWithEmail(email: 'a@b.com', password: 'nope'),
         throwsA(isA<WrongCredentialsException>()),
       );
+      _countedOnce(w, 'wrong_credentials');
     });
 
     test('no network reaches the caller as NoConnection', () async {
@@ -159,6 +192,7 @@ void main() {
             .signInWithEmail(email: 'a@b.com', password: 'password1'),
         throwsA(isA<NoConnectionException>()),
       );
+      _countedOnce(w, 'offline');
     });
 
     test('an unconfirmed address reaches the caller as EmailNotConfirmed, '
@@ -183,7 +217,7 @@ void main() {
           ),
         ),
       );
-      expect(w.report.faults, isEmpty);
+      _countedOnce(w, 'email_not_confirmed');
     });
   });
 

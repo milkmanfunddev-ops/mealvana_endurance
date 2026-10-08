@@ -16,6 +16,12 @@
 /// expected-failure allow-list (`expected_failures.dart`) and drops test-only
 /// exceptions outright. Nothing else in `lib/` may import the Sentry SDK except
 /// this file and the bootstrap; the source guard test enforces that.
+///
+/// Some expected outcomes leave no event at all (ticket 41): network weather
+/// at a site that already falls back ([ExpectedOutcomes.faultUnlessWeather])
+/// and an athlete's own turn in the auth flows ([ExpectedOutcomes.
+/// noteExpected]) become breadcrumbs, and each sends one plain
+/// [expectedFailureEvent] to Mixpanel so they are still counted.
 library;
 
 import 'dart:async';
@@ -682,4 +688,184 @@ final Provider<Report> reportProvider = Provider<Report>((ref) {
 /// [reportProvider] points at the same instance.
 extension ReportRef on Ref {
   Report get report => mounted ? read(reportProvider) : SentryReport.global;
+}
+
+/// The Mixpanel event an expected failure sends in place of a Sentry event
+/// (develop-2026-10 ticket 41, Lee 2026-10-08: "keep the counts"). Plain
+/// analytics, never `error_reported`: `{area, reason}`, where `reason` is the
+/// weather tag ([ExpectedFailure.tag]) or the auth outcome's name.
+const String expectedFailureEvent = 'expected_failure';
+
+/// The weather an [ExpectedOutcomes.faultUnlessWeather] site turns into a
+/// breadcrumb: the device is offline, slow, or lost its connection.
+const Set<ExpectedFailure> networkWeather = <ExpectedFailure>{
+  ExpectedFailure.offline,
+  ExpectedFailure.timeout,
+  ExpectedFailure.handshake,
+  ExpectedFailure.connectionReset,
+};
+
+/// Where [expectedFailureEvent] goes when a site has no tracker in hand.
+///
+/// The version check and the region lookup run before consent is resolved
+/// and before Mixpanel starts, and reading the tracker there would read
+/// consent before the region is known (`app_startup_provider.dart`, step 0a).
+/// So a count with no tracker is held here until the app attaches its
+/// consent-gated tracker after analytics starts
+/// (`AppStartupService._initializeAnalytics`), then sent; later ones go
+/// straight to it. With no consent the tracker is a no-op and nothing leaves.
+abstract final class ExpectedFailureCounts {
+  static AnalyticsTracker? Function()? _sink;
+  static final List<({String area, String reason})> _pending = [];
+
+  /// Most counts held before analytics starts; one launch never gets near.
+  static const int maxPending = 50;
+
+  /// Counts waiting for [attach].
+  static List<({String area, String reason})> get pending =>
+      List.unmodifiable(_pending);
+
+  /// Sends the held counts through [sink] and routes later ones to it.
+  static Future<void> attach(AnalyticsTracker? Function() sink) async {
+    _sink = sink;
+    final held = List.of(_pending);
+    _pending.clear();
+    for (final count in held) {
+      await trackExpectedFailure(
+        null,
+        area: count.area,
+        reason: count.reason,
+      );
+    }
+  }
+
+  static void _hold(String area, String reason, Report? report) {
+    if (_pending.length >= maxPending) {
+      (report ?? SentryReport.global).breadcrumb(
+        'expected_failure not counted: buffer full',
+        category: '$area.expected',
+        data: <String, dynamic>{'reason': reason},
+      );
+      return;
+    }
+    _pending.add((area: area, reason: reason));
+  }
+
+  @visibleForTesting
+  static void debugReset() {
+    _sink = null;
+    _pending.clear();
+  }
+}
+
+/// Sends [expectedFailureEvent] through [analytics], or through the app's
+/// attached tracker when [analytics] is null ([ExpectedFailureCounts]). A
+/// tracker that throws must not turn an expected outcome into a crash; the
+/// lost count is written down as a breadcrumb through [report] (D9).
+Future<void> trackExpectedFailure(
+  AnalyticsTracker? analytics, {
+  required String area,
+  required String reason,
+  Report? report,
+}) async {
+  AnalyticsTracker? tracker = analytics;
+  try {
+    tracker ??= ExpectedFailureCounts._sink?.call();
+  } catch (_) {
+    tracker = null;
+  }
+  if (tracker == null) {
+    ExpectedFailureCounts._hold(area, reason, report);
+    return;
+  }
+  try {
+    await tracker.track(
+      expectedFailureEvent,
+      properties: <String, dynamic>{'area': area, 'reason': reason},
+    );
+  } catch (error) {
+    (report ?? SentryReport.global).breadcrumb(
+      'expected_failure not tracked',
+      category: '$area.expected',
+      data: <String, dynamic>{'reason': reason, 'error': error.toString()},
+    );
+  }
+}
+
+/// Expected outcomes as breadcrumbs plus one plain count (ticket 41). An
+/// extension, so `SentryReport`, `NoopReport` and the test fakes all have it
+/// with no change to the interface.
+extension ExpectedOutcomes on Report {
+  /// [fault], unless [error] is network weather ([networkWeather]): then a
+  /// breadcrumb in category `<area>.weather`, one [expectedFailureEvent]
+  /// (through [analytics], or held for the app's tracker when null; see
+  /// [ExpectedFailureCounts]), and no Sentry event. Returns the weather it saw, or
+  /// null when it faulted, so a startup site can also write its LaunchTrail
+  /// line.
+  Future<ExpectedFailure?> faultUnlessWeather(
+    Object error, {
+    StackTrace? stackTrace,
+    required String area,
+    required String message,
+    Map<String, dynamic>? data,
+    AnalyticsTracker? analytics,
+  }) async {
+    final weather = classifyExpectedFailure(describeThrowable(error));
+    if (weather == null || !networkWeather.contains(weather)) {
+      await fault(
+        error,
+        stackTrace: stackTrace,
+        area: area,
+        message: message,
+        extra: data,
+      );
+      return null;
+    }
+    breadcrumb(
+      message,
+      category: '$area.weather',
+      data: <String, dynamic>{
+        'expected_failure': weather.tag,
+        'error': error.runtimeType.toString(),
+        ...?data,
+      },
+    );
+    await trackExpectedFailure(
+      analytics,
+      area: area,
+      reason: weather.tag,
+      report: this,
+    );
+    return weather;
+  }
+
+  /// An expected turn the athlete took (a cancel, a wrong password, an
+  /// address that already has an account): a [note] in [area] and one
+  /// [expectedFailureEvent] with [reason]. Only for areas that are not in
+  /// [promotedNoteAreas]; a promoted area would make the note a warning
+  /// event, so those sites write a [breadcrumb] and call
+  /// [trackExpectedFailure] themselves.
+  Future<void> noteExpected(
+    String message, {
+    required String area,
+    required String reason,
+    AnalyticsTracker? analytics,
+    Map<String, dynamic>? data,
+  }) async {
+    assert(
+      !promotedNoteAreas.contains(area),
+      'noteExpected in promoted area $area would send a warning event',
+    );
+    await note(
+      message,
+      area: area,
+      data: <String, dynamic>{'expected_failure': reason, ...?data},
+    );
+    await trackExpectedFailure(
+      analytics,
+      area: area,
+      reason: reason,
+      report: this,
+    );
+  }
 }

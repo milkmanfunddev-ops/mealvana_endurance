@@ -9,12 +9,12 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter/services.dart' show PlatformException;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:logger/logger.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 
 import 'package:mealvana_endurance/shared/services/analytics/analytics_tracker.dart';
-import 'package:mealvana_endurance/shared/services/report/report_log.dart';
 import 'package:mealvana_endurance/shared/services/report/report.dart';
 
 /// Collects every envelope the SDK would have sent.
@@ -165,7 +165,7 @@ void main() {
     });
 
     test('downgrades timeouts, handshakes, cancelled sign-in, '
-        'invalid credentials, cancelled purchase, account-not-found', () async {
+        'invalid credentials, cancelled purchase, store network', () async {
       final samples = <Object, String>{
         TimeoutException('after 30s'): 'timeout',
         const HandshakeException('Connection terminated during handshake'):
@@ -175,7 +175,6 @@ void main() {
             'invalid_credentials',
         Exception('PurchasesErrorCode.purchaseCancelledError'):
             'cancelled_purchase',
-        Exception('OAuthAccountNotFoundException: apple'): 'account_not_found',
         Exception('PurchasesErrorCode.networkError'): 'store_network',
       };
       for (final entry in samples.entries) {
@@ -469,6 +468,138 @@ void main() {
 
   test('isEnabled follows the hub', () {
     expect(report.isEnabled, isTrue);
+  });
+
+  // develop-2026-10 ticket 41 (32-007): network weather at a site that
+  // already falls back is a breadcrumb and one plain count, never an event.
+  group('faultUnlessWeather', () {
+    setUp(ExpectedFailureCounts.debugReset);
+    tearDown(ExpectedFailureCounts.debugReset);
+
+    /// The weather samples as their producers throw them: dart:io, a
+    /// `Future.timeout`, and AVPlayer's offline wording on iOS (run 32
+    /// console, 08:17:08).
+    final weather = <String, Object>{
+      'offline': const SocketException(
+        "Failed host lookup: 'app.mealvana.io'",
+      ),
+      'timeout': TimeoutException('Future not completed', Duration(seconds: 2)),
+      'ios video offline': PlatformException(
+        code: 'VideoError',
+        message:
+            'Failed to load video: Could not connect to the server.: '
+            'Could not connect to the server.',
+      ),
+    };
+
+    for (final entry in weather.entries) {
+      test('${entry.key} is a breadcrumb in <area>.weather, a count, and '
+          'no event', () async {
+        final counted = <({String name, Map<String, dynamic> properties})>[];
+        final seen = await report.faultUnlessWeather(
+          entry.value,
+          area: 'education',
+          message: 'Video player failed to initialise',
+          analytics: FakeAnalytics(counted),
+        );
+
+        expect(seen, isNotNull);
+        expect(transport.events, isEmpty);
+        expect(tracked, isEmpty, reason: 'no error_reported fan-out');
+        expect(counted, hasLength(1));
+        expect(counted.single.name, expectedFailureEvent);
+        expect(counted.single.properties, {
+          'area': 'education',
+          'reason': seen!.tag,
+        });
+
+        // The breadcrumb rides the next event.
+        await report.fault(StateError('next'));
+        final crumb = transport.events.single.breadcrumbs!.singleWhere(
+          (b) => b.category == 'education.weather',
+        );
+        expect(crumb.message, 'Video player failed to initialise');
+        expect(crumb.data?['expected_failure'], seen.tag);
+      });
+    }
+
+    test('a malformed body still faults, with its area', () async {
+      final counted = <({String name, Map<String, dynamic> properties})>[];
+      final seen = await report.faultUnlessWeather(
+        const FormatException('Unexpected character', 'not json'),
+        area: 'privacy',
+        message: 'Region lookup failed; falling back to device signals',
+        analytics: FakeAnalytics(counted),
+      );
+
+      expect(seen, isNull);
+      final event = transport.events.single;
+      expect(event.level, SentryLevel.error);
+      expect(event.tags, containsPair('area', 'privacy'));
+      expect(counted, isEmpty);
+    });
+
+    test('an expected failure that is not weather still reaches fault '
+        '(a warning there), never a breadcrumb here', () async {
+      final seen = await report.faultUnlessWeather(
+        _ExpiredSession(),
+        area: 'auth',
+        message: 'refresh failed',
+      );
+      expect(seen, isNull);
+      expect(transport.events.single.level, SentryLevel.warning);
+    });
+
+    test('with no tracker the count is held until analytics attaches, '
+        'then sent', () async {
+      await report.faultUnlessWeather(
+        const SocketException('Network is unreachable'),
+        area: 'startup',
+        message: 'Version check failed; using cached result',
+      );
+      expect(ExpectedFailureCounts.pending, hasLength(1));
+
+      final counted = <({String name, Map<String, dynamic> properties})>[];
+      await ExpectedFailureCounts.attach(() => FakeAnalytics(counted));
+
+      expect(ExpectedFailureCounts.pending, isEmpty);
+      expect(counted.single.properties, {
+        'area': 'startup',
+        'reason': 'offline',
+      });
+    });
+
+    test('a tracker that throws costs the count, not the app', () async {
+      await report.faultUnlessWeather(
+        const SocketException('Network is unreachable'),
+        area: 'privacy',
+        message: 'Region lookup failed',
+        analytics: const ThrowingAnalytics(),
+      );
+      expect(transport.events, isEmpty);
+    });
+
+    test('works on NoopReport too (an extension, not an interface change)',
+        () async {
+      const noop = NoopReport();
+      final counted = <({String name, Map<String, dynamic> properties})>[];
+      await noop.faultUnlessWeather(
+        const SocketException('Network is unreachable'),
+        area: 'startup',
+        message: 'm',
+        analytics: FakeAnalytics(counted),
+      );
+      await noop.noteExpected(
+        'Email sign in: WrongCredentialsException',
+        area: 'auth',
+        reason: 'wrong_credentials',
+        analytics: FakeAnalytics(counted),
+      );
+      expect(counted.map((c) => c.properties['reason']), [
+        'offline',
+        'wrong_credentials',
+      ]);
+    });
   });
 
 }

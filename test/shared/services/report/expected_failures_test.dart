@@ -22,6 +22,30 @@ final _refreshUri = Uri.parse(
 );
 
 void main() {
+  // develop-2026-10 ticket 41 (32-007): iOS's offline wording, as AVPlayer
+  // wraps it for video_player (run 32 console, 08:17:08).
+  group('iOS offline wording is offline', () {
+    test('NSURLErrorCannotConnectToHost', () {
+      final error = PlatformException(
+        code: 'VideoError',
+        message:
+            'Failed to load video: Could not connect to the server.: '
+            'Could not connect to the server.',
+      );
+      expect(classify(error), ExpectedFailure.offline);
+    });
+
+    test('NSURLErrorNotConnectedToInternet', () {
+      final error = PlatformException(
+        code: 'VideoError',
+        message:
+            'Failed to load video: The Internet connection appears to be '
+            'offline.',
+      );
+      expect(classify(error), ExpectedFailure.offline);
+    });
+  });
+
   group('connection aborts are Degraded (connection_reset)', () {
     test('ClientException: Software caused connection abort (CW)', () {
       // CW arrived through the SDK's HTTP client, not Report.
@@ -106,15 +130,13 @@ void main() {
   });
 
   group('auth control-flow signals and user input', () {
-    test('OAuthAccountNotFoundException is account_not_found (CE, CQ, CZ)', () {
-      expect(
-        classify(const OAuthAccountNotFoundException(provider: 'google')),
-        ExpectedFailure.accountNotFound,
-      );
-      expect(
-        classify(const OAuthAccountNotFoundException(provider: 'apple')),
-        ExpectedFailure.accountNotFound,
-      );
+    // develop-2026-10 ticket 41: both account outcomes are AuthFlowOutcomes,
+    // breadcrumbs in the Riverpod net, so they left the allow-list.
+    test('OAuthAccountNotFoundException is an AuthFlowOutcome, not a needle '
+        '(CE, CQ, CZ)', () {
+      const error = OAuthAccountNotFoundException(provider: 'google');
+      expect(error, isA<AuthFlowOutcome>());
+      expect(classify(error), isNull);
     });
 
     test('login before verifying is verification_pending (DEV-9N)', () {
@@ -140,14 +162,13 @@ void main() {
     });
 
     test('an existing account is account_exists (DEV-8D)', () {
-      expect(
-        classify(
-          AccountAlreadyExistsException(
-            'This Google account is already linked to another account',
-          ),
-        ),
-        ExpectedFailure.accountExists,
+      // The app's own type is an AuthFlowOutcome now (ticket 41); GoTrue's
+      // raw answer is still a needle, since other paths can report it.
+      final mapped = AccountAlreadyExistsException(
+        'This Google account is already linked to another account',
       );
+      expect(mapped, isA<AuthFlowOutcome>());
+      expect(classify(mapped), isNull);
       expect(
         classify(
           AuthApiException(
