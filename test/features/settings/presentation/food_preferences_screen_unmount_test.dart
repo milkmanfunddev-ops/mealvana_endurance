@@ -8,7 +8,6 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mealvana_endurance/features/auth/application/auth_service.dart';
 import 'package:mealvana_endurance/features/nutrition_plan/data/food_repository.dart';
 import 'package:mealvana_endurance/features/nutrition_plan/domain/food_item.dart';
 import 'package:mealvana_endurance/features/settings/presentation/screens/food_preferences_screen.dart';
@@ -20,8 +19,6 @@ import '../../../helpers/fakes/recording_report.dart';
 import '../../../helpers/widget_test_harness.dart';
 
 class _MockFoodRepository extends Mock implements FoodRepository {}
-
-class _MockAuthService extends Mock implements AuthService {}
 
 /// Shows the screen while [visible] is true: flipping it false disposes the
 /// screen with the ProviderScope still alive, the way a back-pop does.
@@ -51,9 +48,6 @@ void main() {
       () => foodRepository.getAdditionalFoodsForPreferences(),
     ).thenAnswer((_) async => <FoodItem>[]);
 
-    final authService = _MockAuthService();
-    when(() => authService.getCurrentUser()).thenAnswer((_) async => null);
-
     final report = RecordingReport();
     final visible = ValueNotifier<bool>(true);
     addTearDown(visible.dispose);
@@ -64,7 +58,6 @@ void main() {
       overrides: [
         reportProvider.overrideWithValue(report),
         foodRepositoryProvider.overrideWithValue(foodRepository),
-        authServiceProvider.overrideWithValue(authService),
         // No remote in a widget test: the sync step degrades and the load
         // carries on with cached data, exactly as on a flaky network.
         userFoodsRepositoryProvider.overrideWith(

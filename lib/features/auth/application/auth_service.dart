@@ -6,6 +6,7 @@ import 'package:supabase_flutter/supabase_flutter.dart'
     hide AuthUser, AuthException;
 import '../../../shared/services/device_info_service.dart';
 import '../data/auth_repository_edge.dart';
+import '../../food_preferences/data/food_preferences_repository.dart';
 import '../domain/user_preferences.dart';
 import '../../onboarding/domain/dietary_preference.dart';
 import '../../onboarding/domain/allergy.dart';
@@ -354,8 +355,11 @@ class AuthService {
     return user.onboardingCompleted;
   }
 
-  /// Save food preferences (typically during onboarding)
-  /// Uses consolidated Edge Function for optimized multi-step operation (reduces network roundtrips)
+  /// Save food preferences (typically during onboarding).
+  ///
+  /// Replaces the local set through [FoodPreferencesRepository], which marks
+  /// it dirty and uploads it at once (ticket 58). The profile is not marked
+  /// dirty: its upload carries no food preferences.
   /// [source] identifies the origin of the preference:
   /// - 'manual': User explicitly set this preference (default)
   /// - 'allergy:{name}': Auto-set due to an allergy (e.g., 'allergy:gluten')
@@ -379,42 +383,28 @@ class AuthService {
 
     try {
       _report.info(
-        'Saving food preferences via consolidated edge function',
+        'Saving food preferences',
         area: 'auth',
         data: {'userId': userId, 'count': preferences.length},
       );
 
-      // Save locally first (offline-first)
-      final userRepo = await _userRepository;
-      await userRepo.saveFoodPreferences(
+      // Local first (offline-first); the repository uploads after.
+      final repo = await ref.read(foodPreferencesRepositoryProvider.future);
+      await repo.saveFoodPreferences(
         userId,
         preferences,
         sliderLevels: normalizedLevels,
         source: source,
       );
 
-      // Mark user profile for background upload (onboardingCompleted already set in createUser)
-      final user = await getCurrentUser();
-      if (user != null) {
-        final updatedUser = user.copyWith(updatedAt: DateTime.now());
-        // Mark for background upload - DataSyncService will sync user profile + food preferences
-        await userRepo.updateUserProfile(updatedUser, needsUpload: true);
-
-        _report.info(
-          'Food preferences saved locally and marked for background upload',
-          area: 'auth',
-          data: {'userId': userId, 'foodPreferencesCount': preferences.length},
-        );
-
-        _report.breadcrumb(
-          'Food preferences saved locally',
-          category: 'user_lifecycle',
-          data: {
-            'user_id': userId,
-            'food_preferences_count': preferences.length.toString(),
-          },
-        );
-      }
+      _report.breadcrumb(
+        'Food preferences saved locally',
+        category: 'user_lifecycle',
+        data: {
+          'user_id': userId,
+          'food_preferences_count': preferences.length.toString(),
+        },
+      );
     } catch (e, stackTrace) {
       // Critical: Food preferences save failure blocks onboarding completion
       await _report.fault(
@@ -424,7 +414,7 @@ class AuthService {
         message: 'Food preferences save failed',
         tags: {
           'device_id': deviceId,
-          'error_type': 'edge_function_failure',
+          'error_type': 'local_write_failure',
           'operation': 'save_food_preferences',
           'preferences_count': preferences.length.toString(),
         },

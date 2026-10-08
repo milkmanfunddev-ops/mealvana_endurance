@@ -7,14 +7,14 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:mealvana_endurance/shared/widgets/kyle_design/kyle_design.dart';
 import 'package:mealvana_endurance/shared/widgets/custom_app_bar_back_button.dart';
 import 'package:uuid/uuid.dart';
-import '../../../auth/domain/user_preferences.dart';
 import '../../../nutrition_plan/data/food_repository.dart';
 import '../../../../shared/services/app_external_deps.dart';
 import '../../../../shared/services/report/report.dart';
 import '../../../nutrition_plan/domain/food_item.dart';
 import '../../../../shared/services/food_management/fuel_predicate.dart';
 import '../../../nutrition_plan/domain/food.dart';
-import '../../../auth/application/auth_service.dart';
+import '../../../food_preferences/domain/food_preference_key.dart';
+import '../providers/food_preferences_controller.dart';
 import '../../../barcode_scanning/application/product_detail_service.dart';
 import '../../../barcode_scanning/application/food_mapping_service.dart';
 import '../../../../shared/screens/food_detail_screen.dart';
@@ -54,8 +54,14 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
   /// cannot touch `ref`.
   late final Report _report;
 
-  // Store slider levels (0-4) locally
+  // Slider levels (0-4) being edited, by preference key
+  // ([foodPreferenceKey]: the catalog `template_foods.name`, or a user
+  // food's name). Seeded from [FoodPreferencesController.load].
   final Map<String, int> _sliderLevels = {};
+
+  // Search results arrive as `Food`, which has no catalog name: their key is
+  // looked up by id from the lists loaded on screen.
+  final Map<String, String> _keyByFoodId = {};
 
   List<FoodItem> _allFoodPreferences = [];
   List<FoodItem> _additionalFoodPreferences = [];
@@ -73,6 +79,9 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
   void initState() {
     super.initState();
     _report = ref.read(reportProvider);
+    // Keep the autoDispose controller alive while the screen is open, so the
+    // levels a load reads are still there when the save runs.
+    ref.listenManual(foodPreferencesControllerProvider, (_, _) {});
     _loadFoods();
 
     ref
@@ -171,7 +180,6 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
 
     try {
       final foodRepository = ref.read(foodRepositoryProvider);
-      final authService = ref.read(authServiceProvider);
       final database = ref.read(appDatabaseProvider);
 
       // Get current user's ID using Supabase auth session for correct UUID
@@ -205,20 +213,6 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
             foodRepository.getPrimaryFoodsForPreferences(),
             foodRepository.getAdditionalFoodsForPreferences(),
             database.foodsDao.getUserFoods(deviceId),
-            () async {
-              final user = await authService.getCurrentUser();
-              if (user != null) {
-                return await authService.getFoodPreferences(user.id);
-              }
-              return null;
-            }(),
-            () async {
-              final user = await authService.getCurrentUser();
-              if (user != null) {
-                return await authService.getFoodPreferenceLevels(user.id);
-              }
-              return <String, int>{};
-            }(),
           ]).timeout(
             const Duration(seconds: 15),
             onTimeout: () {
@@ -239,10 +233,6 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
           .where((f) => isFuelProductType(f.productTypeId))
           .toList();
       final userFoodsData = results[2] as List<dynamic>;
-      final existingPreferences = results[3] as Map<String, FoodPreference>?;
-      final sliderLevels = Map<String, int>.from(
-        results[4] as Map<String, int>? ?? {},
-      );
 
       // Convert user foods to FoodItems, scoped to fuel foods (same rationale
       // as the template foods above).
@@ -254,6 +244,22 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
           .where((f) => isFuelProductType(f.productTypeId))
           .toList();
 
+      // The controller syncs food_preferences and resolves each food's level
+      // (server rows, legacy display-name rows folded, defaults).
+      if (!mounted) {
+        _report.info(
+          'Food preferences load finished after the screen closed; dropped',
+          area: _area,
+        );
+        return;
+      }
+      final controller = ref.read(foodPreferencesControllerProvider.notifier);
+      await controller.load(
+        primary: primaryFoods,
+        additional: additionalFoods,
+        userFoods: userFoods,
+      );
+
       // The user can back out while the catalog is still loading. setState on
       // a disposed State is `_element!` on null in a release build (Sentry
       // MEALVANA-ENDURANCE-CC, ticket 23), and `ref` is gone too.
@@ -264,6 +270,11 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
         );
         return;
       }
+      final loaded = ref.read(foodPreferencesControllerProvider);
+      if (loaded.hasError) {
+        Error.throwWithStackTrace(loaded.error!, loaded.stackTrace!);
+      }
+      final levels = loaded.value ?? const <String, int>{};
 
       setState(() {
         _allFoodPreferences = primaryFoods;
@@ -271,45 +282,15 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
         _userFoods = userFoods;
         _isLoading = false;
 
-        // Initialize slider levels based on existing preferences
-        for (final food in primaryFoods) {
-          if (existingPreferences != null &&
-              existingPreferences.containsKey(food.name)) {
-            final level =
-                (sliderLevels[food.name] ??
-                        _preferenceToLevel(existingPreferences[food.name]!))
-                    .clamp(0, 4);
-            _sliderLevels[food.name] = level.toInt();
-          } else {
-            _sliderLevels[food.name] = 2;
-          }
-        }
-
-        for (final food in additionalFoods) {
-          if (existingPreferences != null &&
-              existingPreferences.containsKey(food.name)) {
-            final level =
-                (sliderLevels[food.name] ??
-                        _preferenceToLevel(existingPreferences[food.name]!))
-                    .clamp(0, 4);
-            _sliderLevels[food.name] = level.toInt();
-          } else {
-            _sliderLevels[food.name] = 0;
-          }
-        }
-
-        for (final food in userFoods) {
-          if (existingPreferences != null &&
-              existingPreferences.containsKey(food.name)) {
-            final level =
-                (sliderLevels[food.name] ??
-                        _preferenceToLevel(existingPreferences[food.name]!))
-                    .clamp(0, 4);
-            _sliderLevels[food.name] = level.toInt();
-          } else {
-            _sliderLevels[food.name] = 2;
-          }
-        }
+        _keyByFoodId
+          ..clear()
+          ..addAll({
+            for (final f in [...primaryFoods, ...additionalFoods, ...userFoods])
+              f.id: foodPreferenceKey(f),
+          });
+        _sliderLevels
+          ..clear()
+          ..addAll(levels);
       });
 
       // Seed search controller after food data loads
@@ -347,32 +328,25 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
     });
 
     try {
-      final authService = ref.read(authServiceProvider);
-
-      // Convert slider levels (0-4) to backend preferences (3 states)
-      final Map<String, FoodPreference> preferences = {};
-      for (final entry in _sliderLevels.entries) {
-        preferences[entry.key] = _levelToPreference(entry.value);
-      }
-
-      final currentUser = await authService.getCurrentUser();
-      if (currentUser != null) {
-        await authService.saveFoodPreferences(
-          currentUser.id,
-          preferences,
-          sliderLevels: _sliderLevels,
-        );
+      final levels = Map<String, int>.from(_sliderLevels);
+      final controller = ref.read(foodPreferencesControllerProvider.notifier);
+      await controller.save(levels);
+      if (!mounted) return;
+      final saved = ref.read(foodPreferencesControllerProvider);
+      if (saved.hasError) {
+        Error.throwWithStackTrace(saved.error!, saved.stackTrace!);
       }
 
       final analytics = ref.read(appExternalDepsProvider).analytics;
       await analytics.track(
         'food_preferences_saved',
         properties: {
-          'total_foods': preferences.length,
-          'preferences': preferences.map(
-            (key, value) => MapEntry(key, value.toString()),
+          'total_foods': levels.length,
+          'preferences': levels.map(
+            (key, level) =>
+                MapEntry(key, foodPreferenceForLevel(level).toString()),
           ),
-          'slider_levels': _sliderLevels,
+          'slider_levels': levels,
           'source': 'settings',
         },
       );
@@ -398,26 +372,9 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
     }
   }
 
-  int _preferenceToLevel(FoodPreference preference) {
-    switch (preference) {
-      case FoodPreference.dislike:
-        return 1;
-      case FoodPreference.willingToTry:
-        return 2;
-      case FoodPreference.like:
-        return 3;
-    }
-  }
-
-  FoodPreference _levelToPreference(int level) {
-    if (level <= 1) {
-      return FoodPreference.dislike;
-    } else if (level >= 3) {
-      return FoodPreference.like;
-    } else {
-      return FoodPreference.willingToTry;
-    }
-  }
+  /// A search result's preference key: its catalog name when it is one of
+  /// the loaded foods, else its name (a user food).
+  String _keyForFood(Food food) => _keyByFoodId[food.id] ?? food.name;
 
   Future<void> _handleCatalogResultTap(CatalogSearchResult result) async {
     final preCheckedCategories = <int>[1, 2, 3];
@@ -648,7 +605,7 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
 
       if (!mounted) return;
       setState(() {
-        _sliderLevels[foodItem.name] = 2;
+        _sliderLevels[foodPreferenceKey(foodItem)] = 2;
       });
 
       _onClearSearch();
@@ -699,7 +656,7 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
       if (!mounted) return;
       setState(() {
         _userFoods.removeWhere((f) => f.id == food.id);
-        _sliderLevels.remove(food.name);
+        _sliderLevels.remove(foodPreferenceKey(food));
       });
 
       // Re-seed search controller
@@ -803,7 +760,7 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
         if (!mounted) return;
         setState(() {
           _userFoods.insert(0, foodItem);
-          _sliderLevels[food.name] = 2;
+          _sliderLevels[foodPreferenceKey(foodItem)] = 2;
         });
 
         // Re-seed search controller
@@ -998,30 +955,32 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
             controllerKey: _searchControllerKey,
             userFoodItemBuilder: (food) {
               final foodItem = _convertFoodToFoodItem(food);
-              final sliderLevel = _sliderLevels[food.name] ?? 2;
+              final key = _keyForFood(food);
+              final sliderLevel = _sliderLevels[key] ?? 2;
               return UserFoodItemWidget(
                 food: foodItem,
                 sliderLevel: sliderLevel,
                 onLevelChanged: (newLevel) {
                   setState(() {
-                    _sliderLevels[food.name] = newLevel;
+                    _sliderLevels[key] = newLevel;
                   });
-                  _trackPreferenceChange(food.name, newLevel);
+                  _trackPreferenceChange(key, newLevel);
                 },
                 onEditTap: () => _showUserFoodEditSheet(foodItem),
               );
             },
             templateFoodItemBuilder: (food) {
               final foodItem = _convertFoodToFoodItem(food);
-              final sliderLevel = _sliderLevels[food.name] ?? 2;
+              final key = _keyForFood(food);
+              final sliderLevel = _sliderLevels[key] ?? 2;
               return FoodPreferenceItemWidget(
                 food: foodItem,
                 sliderLevel: sliderLevel,
                 onLevelChanged: (newLevel) {
                   setState(() {
-                    _sliderLevels[food.name] = newLevel;
+                    _sliderLevels[key] = newLevel;
                   });
-                  _trackPreferenceChange(food.name, newLevel);
+                  _trackPreferenceChange(key, newLevel);
                 },
               );
             },
@@ -1064,7 +1023,7 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
 
         // Primary foods
         ..._allFoodPreferences.map((food) {
-          final sliderLevel = _sliderLevels[food.name] ?? 2;
+          final sliderLevel = _sliderLevels[foodPreferenceKey(food)] ?? 2;
           return Padding(
             padding: const EdgeInsets.only(bottom: AppSpacing.md),
             child: _buildFoodPreferenceItem(context, food, sliderLevel),
@@ -1084,7 +1043,7 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
     return UserFoodsSectionWidget(
       foodCount: _userFoods.length,
       children: _userFoods.map((food) {
-        final sliderLevel = _sliderLevels[food.name] ?? 2;
+        final sliderLevel = _sliderLevels[foodPreferenceKey(food)] ?? 2;
         return Padding(
           padding: const EdgeInsets.only(bottom: AppSpacing.md),
           child: _buildUserFoodPreferenceItem(context, food, sliderLevel),
@@ -1103,9 +1062,9 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
       sliderLevel: sliderLevel,
       onLevelChanged: (newLevel) {
         setState(() {
-          _sliderLevels[food.name] = newLevel;
+          _sliderLevels[foodPreferenceKey(food)] = newLevel;
         });
-        _trackPreferenceChange(food.name, newLevel);
+        _trackPreferenceChange(foodPreferenceKey(food), newLevel);
       },
       onEditTap: () => _showUserFoodEditSheet(food),
     );
@@ -1175,9 +1134,9 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
       sliderLevel: sliderLevel,
       onLevelChanged: (newLevel) {
         setState(() {
-          _sliderLevels[food.name] = newLevel;
+          _sliderLevels[foodPreferenceKey(food)] = newLevel;
         });
-        _trackPreferenceChange(food.name, newLevel);
+        _trackPreferenceChange(foodPreferenceKey(food), newLevel);
       },
     );
   }
@@ -1191,7 +1150,7 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
         });
       },
       children: _additionalFoodPreferences.map((food) {
-        final sliderLevel = _sliderLevels[food.name] ?? 0;
+        final sliderLevel = _sliderLevels[foodPreferenceKey(food)] ?? 0;
         return Padding(
           padding: const EdgeInsets.only(bottom: AppSpacing.md),
           child: _buildFoodPreferenceItem(context, food, sliderLevel),
@@ -1200,14 +1159,14 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
     );
   }
 
-  void _trackPreferenceChange(String foodName, int newLevel) {
+  void _trackPreferenceChange(String foodKey, int newLevel) {
     final analytics = ref.read(appExternalDepsProvider);
     analytics.analytics.track(
       'food_preference_changed',
       properties: {
-        'food_name': foodName,
+        'food_name': foodKey,
         'slider_level': newLevel,
-        'backend_preference': _levelToPreference(newLevel).toString(),
+        'backend_preference': foodPreferenceForLevel(newLevel).toString(),
         'source': 'settings',
       },
     );

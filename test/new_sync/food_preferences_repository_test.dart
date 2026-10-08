@@ -195,6 +195,10 @@ void main() {
               updatedAt: Value(updatedAtUtc),
             ),
           );
+      // uploadDirtyRecords sends only while the pending flag is set (ticket 58).
+      SharedPreferences.setMockInitialValues({
+        foodPreferencesUploadPendingKey(testUserId): true,
+      });
 
       final result = await repository.uploadDirtyRecords(testUserId);
       expect(result.success, isTrue);
@@ -225,9 +229,7 @@ void main() {
       await repository.saveFoodPreferences(testUserId, {
         'Banana': FoodPreference.like,
       });
-      for (var i = 0; i < 100 && server.writes.isEmpty; i++) {
-        await Future<void>.delayed(const Duration(milliseconds: 10));
-      }
+      await FoodPreferencesRepository.inFlightUploadFor(testUserId);
 
       final sent = firstRow(
         server.writes.singleWhere((w) => w.table == 'food_preferences').body,
@@ -239,6 +241,89 @@ void main() {
         expect(at.isBefore(before), isFalse, reason: key);
         expect(at.isAfter(DateTime.now()), isFalse, reason: key);
       }
+    });
+  });
+
+  // develop-2026-10 ticket 58: one immediate upload in flight per user; a
+  // save during it reruns it once, so the last save's rows go last.
+  group('immediate uploads are serialised', () {
+    Map<String, Object?> rowFor(Object? body, String food) =>
+        ((body as List).cast<Map>().singleWhere(
+          (r) => r['food_name'] == food,
+        )).cast<String, Object?>();
+
+    test('two saves at once send the second save\'s rows last', () async {
+      final server = FakePostgrest();
+      final repository = FoodPreferencesRepository(
+        supabase: server.client,
+        database: database,
+        report: report,
+      );
+
+      final first = repository.saveFoodPreferences(
+        testUserId,
+        {'sports_drink': FoodPreference.like},
+        sliderLevels: {'sports_drink': 3},
+        mergeMode: true,
+        upload: true,
+      );
+      final second = repository.saveFoodPreferences(
+        testUserId,
+        {'sports_drink': FoodPreference.like},
+        sliderLevels: {'sports_drink': 4},
+        mergeMode: true,
+        upload: true,
+      );
+      await Future.wait([first, second]);
+      await FoodPreferencesRepository.inFlightUploadFor(testUserId);
+
+      final writes = server.writes
+          .where((w) => w.table == 'food_preferences')
+          .toList();
+      expect(writes.length, inInclusiveRange(1, 2));
+      expect(rowFor(writes.last.body, 'sports_drink')['preference_level'], 4);
+      final prefs = await SharedPreferences.getInstance();
+      expect(
+        prefs.getBool(foodPreferencesUploadPendingKey(testUserId)),
+        isNull,
+        reason: 'the last pass landed, so nothing is pending',
+      );
+    });
+
+    test('a save while an upload is in flight reruns it once', () async {
+      final server = FakePostgrest();
+      final repository = FoodPreferencesRepository(
+        supabase: server.client,
+        database: database,
+        report: report,
+      );
+
+      // Both saves are issued before either's upload can finish, so the
+      // second finds the first's upload in flight and owes it one rerun.
+      await Future.wait([
+        repository.saveFoodPreferences(
+          testUserId,
+          {'gel': FoodPreference.like},
+          sliderLevels: {'gel': 3},
+          mergeMode: true,
+          upload: true,
+        ),
+        repository.saveFoodPreferences(
+          testUserId,
+          {'gel': FoodPreference.dislike},
+          sliderLevels: {'gel': 0},
+          mergeMode: true,
+          upload: true,
+        ),
+      ]);
+      await FoodPreferencesRepository.inFlightUploadFor(testUserId);
+
+      final writes = server.writes
+          .where((w) => w.table == 'food_preferences')
+          .toList();
+      expect(writes, hasLength(2), reason: 'the first pass plus one rerun');
+      expect(rowFor(writes.last.body, 'gel')['preference_level'], 0);
+      expect(FoodPreferencesRepository.inFlightUploadFor(testUserId), isNull);
     });
   });
 }

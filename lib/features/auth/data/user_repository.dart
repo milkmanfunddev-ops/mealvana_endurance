@@ -2,8 +2,11 @@ import 'dart:async';
 
 import 'package:drift/drift.dart' show Variable;
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../domain/user_preferences.dart';
+import '../../food_preferences/data/food_preferences_repository.dart'
+    show foodPreferencesUploadPendingKey;
 import '../../../shared/database/app_database.dart';
 import '../../../shared/database/database_provider.dart';
 import '../../../shared/services/app_external_deps.dart';
@@ -494,7 +497,9 @@ class UserRepository with SyncableRepository {
       mergeMode: mergeMode,
       source: source,
     );
-    // Remote sync is handled via the edge function in AuthService; avoid direct Supabase client writes here.
+    // Drift only: this method's callers are server pulls and the
+    // anonymous-to-real migration. A user edit goes through
+    // FoodPreferencesRepository.saveFoodPreferences, which uploads (ticket 58).
   }
 
   /// Remove food preferences by source
@@ -828,6 +833,20 @@ class UserRepository with SyncableRepository {
   Future<Map<String, FoodPreference>> fetchAndCacheRemoteFoodPreferences(
     String userId,
   ) async {
+    // A local edit the server has not taken yet is newer than the server's
+    // set; replacing local with it would wipe the edit (ticket 58).
+    final prefs = await SharedPreferences.getInstance();
+    if (prefs.getBool(foodPreferencesUploadPendingKey(userId)) ?? false) {
+      final local = await database.foodPreferencesDao.getUserFoodPreferences(
+        userId,
+      );
+      await _r.note(
+        'Food preference reconcile skipped: local upload pending',
+        area: 'sync',
+        data: {'user_id': userId, 'local_count': local.length},
+      );
+      return local;
+    }
     try {
       final response = await supabase
           .from('food_preferences')
