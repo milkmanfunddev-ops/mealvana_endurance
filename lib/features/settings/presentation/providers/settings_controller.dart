@@ -247,11 +247,13 @@ class SettingsController extends _$SettingsController {
       }
     }
 
-    final profileEmail = displayProfile?.email?.trim();
-    final authEmail = supabaseUser?.email.trim();
-    final effectiveEmail = (profileEmail != null && profileEmail.isNotEmpty)
-        ? profileEmail
-        : ((authEmail != null && authEmail.isNotEmpty) ? authEmail : null);
+    // Auth owns the login address; the profile column is a contact email
+    // only when auth has none worth showing (ticket 36). A stored relay
+    // string (echoed there by the old save) reads as empty.
+    final rawAuthEmail = supabaseUser?.email.trim();
+    final authEmail = (rawAuthEmail != null && rawAuthEmail.isNotEmpty)
+        ? rawAuthEmail
+        : null;
 
     return SettingsState(
       title: title,
@@ -303,9 +305,13 @@ class SettingsController extends _$SettingsController {
       isAnonymous: displayProfile?.isAnonymous ?? true,
       authProvider: displayProfile?.authProvider ?? 'anonymous',
       authUserId: displayProfile?.authUserId,
-      // Prefer the user-editable profile email. Fall back to auth email only
-      // when profile email is missing.
-      email: effectiveEmail,
+      // Editable: the contact email from the profile row. Read-only: the
+      // login address from auth (ticket 36).
+      email: SettingsState.displayEmailFor(
+        authEmail: authEmail,
+        profileEmail: displayProfile?.email,
+      ),
+      authEmail: authEmail,
       // Coach mode - check coaches table for approved status
       isCoach: await _checkIsApprovedCoach(coachRepository, displayProfile?.id),
       // Optional name fields for coach mode athlete identification
@@ -801,9 +807,16 @@ class SettingsController extends _$SettingsController {
         clearFirstName: currentState.firstName?.isEmpty ?? false,
         lastName: currentState.lastName ?? existingProfile.lastName,
         clearLastName: currentState.lastName?.isEmpty ?? false,
-        // Contact information
-        email: currentState.email ?? existingProfile.email,
-        clearEmail: currentState.email?.isEmpty ?? false,
+        // Contact information. Only an editable contact email is written;
+        // when the field shows the auth login address it is display only, so
+        // the row keeps its value (ticket 36: no echo of the auth address,
+        // or an Apple relay string, into public.users.email).
+        email: currentState.emailEditable
+            ? (currentState.email ?? existingProfile.email)
+            : existingProfile.email,
+        clearEmail:
+            currentState.emailEditable &&
+            (currentState.email?.isEmpty ?? false),
         // Nutrition target overrides
         nutritionTargetOverrides:
             currentState.nutritionTargetOverrides ??
