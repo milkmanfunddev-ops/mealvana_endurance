@@ -94,15 +94,17 @@ Their dates come from the wave each entry names.
   unfiltered codegen rewrote it, and 56, 58 and 55 each spent a step reverting a file outside their Touches. Rule: the
   lead runs unfiltered codegen and commits what changes BEFORE cutting the worktrees (beside the IMPROVEMENTS fixes in
   "before the wave" step 1). Done 2026-10-08: this entry; the skill's step 1 says it from the next wave.
-- 2026-10-08 · develop-2026-10 · open · **#125 a ruling that adds work surfaces a new risk the ruling never saw (wave 6).**
+- 2026-10-08 · develop-2026-10 · done · **#125 a ruling that adds work surfaces a new risk the ruling never saw (wave 6).**
   Ticket 65's ruling added a unique index on events; the agent then found that the index makes one in-app duplicate
   wedge an athlete's whole event upload batch (Q3). The fix wave applied the index on dev as ruled and the risk went to
   the close-out questions. Rule to consider: a "Questions for Lee" that names a risk of a ruling is answered before the
   lead runs that ruling's SQL on dev, or the dev step waits for the next triage.
-- 2026-10-08 · develop-2026-10 · open · **#126 `secrets/` is not in a worktree (wave 6).** A fix-wave agent allowed a
+  Done 2026-10-08 (before wave 7): the runbook's after-the-wave step 3 says it.
+- 2026-10-08 · develop-2026-10 · done · **#126 `secrets/` is not in a worktree (wave 6).** A fix-wave agent allowed a
   read-only Management API query (65) looked for `secrets/supabase_management_api.env` in its worktree and had to
   guess the main clone's path. The prompt should name the absolute path of any secret file an agent may read, and
   nothing else under `secrets/`.
+  Done 2026-10-08 (before wave 7): the runbook's lead step 5 says it; wave 7's prompts name the paths.
 - 2026-10-08 · develop-2026-10 · done · **#127 nine fix agents at once was fine; three passes by Touches cost one hour
   of lead waiting (wave 6).** Pass A (9 agents) took 5 to 16 minutes each; B and C were two serial waits of 6 to 10
   minutes. The chains came from shared files (`connect_training_controller.dart` in four tickets,

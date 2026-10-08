@@ -343,6 +343,9 @@ Finding that raises a real product question goes to the review queue
      to, order the two with a flag file in a shared scratch folder (#72).
    - A ticket that touches notifications, scheduling or deep links follows CLAUDE.md's notification
      rule.
+   - `secrets/` is not in a worktree (#126). The prompt names the absolute path of every secret file
+     the agent may read (the main clone's `secrets/supabase_management_api.env`,
+     `secrets/revenuecat.env`), and nothing else under `secrets/`.
 
 **Fix waves: keep them fast (Lee, 2026-09-25).** A fix wave runs no scenario, so it skips most of
 the above and follows this instead:
@@ -418,6 +421,9 @@ A fix ticket closes when its retest passes on a simulator in the next wave.
      carried forward as it stands (#99).
    - A ticket that adds a timeout or a retry lists each write it covers and says whether repeating
      that write is safe; a write that is not safe gets an idempotency key or no timeout (#82).
+   - A "Questions for Lee" that names a risk of a ruling (a unique index that wedges an upload batch,
+     65 Q3) is answered before the lead runs that ruling's SQL on dev; otherwise the dev step waits
+     for the next triage (#125).
    - A fix ticket's Touches lists every file the fix will change; two tickets whose Touches overlap
      never run in the same fix wave (#63). A fix to how the app reaches a screen greps for the route
      and lists every call site in Touches, not only the button the Finding named (Lee, 2026-09-25,
