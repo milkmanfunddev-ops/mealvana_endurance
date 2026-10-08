@@ -22,24 +22,6 @@ void main() {
 
   const testUserId = 'user-abc-123';
 
-  domain.Activity _makeActivity({
-    required String id,
-    required DateTime scheduledDateTime,
-    ActivityType type = ActivityType.running,
-    domain.ActivityStatus status = domain.ActivityStatus.planned,
-  }) {
-    return domain.Activity(
-      id: id,
-      userId: testUserId,
-      activityType: type,
-      title: 'Test Activity $id',
-      scheduledDateTime: scheduledDateTime,
-      status: status,
-      createdAt: DateTime(2026, 1, 1),
-      updatedAt: DateTime(2026, 1, 1),
-    );
-  }
-
   setUp(() async {
     db = AppDatabase.forTesting(NativeDatabase.memory());
     mockActivitiesService = MockActivitiesService();
