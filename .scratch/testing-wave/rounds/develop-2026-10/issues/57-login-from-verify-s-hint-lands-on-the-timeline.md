@@ -40,16 +40,46 @@
 
 **Overlaps:** 55 edits `post_onboarding_auth_screen.dart` (`_handleError` only) and `post_onboarding_auth_controller.dart`; run them sequentially, and the second re-reads line numbers. 56 edits `onboarding_controller.dart` (`saveAllOnboardingData` calls a snapshot refresh on success); 57 calls through it unchanged. No shared file.
 
-- [ ] Widget test of the login's success navigation (`hint_login_lands_on_main_test.dart`, on the real `AppRouter.routerProvider` as `page_not_found_go_home_test.dart` builds it, with a mocked GoTrue). Start at `/auth/post-onboarding`, tap Sign up with Email, Create Account with address B, and have `signUp` answer as GoTrue does for a confirmation-required signup (a user with `session: null`). On Verify, tap `auth.verify_log_in`. On Log In, B is prefilled; enter A and a password, with `signInWithPassword` answering A's session. Assert the router's location is `/main`, no `EmailSignupScreen`, `VerifyEmailScreen` or `PostOnboardingAuthScreen` is in the tree, and the navigator cannot pop. Run it twice: with `hasCompletedProfileDraft` true and A already onboarded (the info snackbar shows, `saveAllOnboardingData` not called), and with A having no profile (`saveAllOnboardingData` called once). Also assert that `PendingSignupStore` holds no record.
-- [ ] Widget (`verify_email_screen_test.dart`): Log in pops `VerifyEmailExit.logIn` and pushes nothing; Use a different email pops `differentEmail`; a good code pops `verified`.
-- [ ] Widget: from `EmailLoginScreen._finishVerifying`, Verify's Log in leaves exactly one Log In screen on the stack.
-- [ ] Widget: email-signup's account-exists dialog → Sign In → a successful login also lands on `/main`.
-- [ ] `anonymous_account_upgrade_test.dart`: the `EmailSignupScreen routing` cases (`:524-578`) and `PostOnboardingAuthScreen upgrade from Settings` (`:579-`) stay green with the new pop values. Add one case: the upgrade path (anonymous session, `emailChange`) → Verify → Log in as another account ends on `/main` with the draft policy applied.
-- [ ] `pending_signup_resume_seam_test.dart` stays green (the resume path reads the new enum through `_reopenVerify`).
-- [ ] #116: `grep -rl` under `test/` for `VerifyEmailScreen`, `EmailSignupScreen`, `EmailLoginScreen`, `_openVerify`, `_finishVerifying`, `_handleEmailSignUp`, `_finishLoginPreservingDraft`, `auth.verify_log_in`, and run every file named.
-- [ ] #117: no new Report helper or silent catch. Run `test/shared/source_guard/` if any catch is added.
-- [ ] #118: no notifier state is written by this ticket.
-- [ ] `flutter analyze` clean on touched files.
+- [x] Widget test of the login's success navigation (`hint_login_lands_on_main_test.dart`, on the real `AppRouter.routerProvider` as `page_not_found_go_home_test.dart` builds it, with a mocked GoTrue). Start at `/auth/post-onboarding`, tap Sign up with Email, Create Account with address B, and have `signUp` answer as GoTrue does for a confirmation-required signup (a user with `session: null`). On Verify, tap `auth.verify_log_in`. On Log In, B is prefilled; enter A and a password, with `signInWithPassword` answering A's session. Assert the router's location is `/main`, no `EmailSignupScreen`, `VerifyEmailScreen` or `PostOnboardingAuthScreen` is in the tree, and the navigator cannot pop. Run it twice: with `hasCompletedProfileDraft` true and A already onboarded (the info snackbar shows, `saveAllOnboardingData` not called), and with A having no profile (`saveAllOnboardingData` called once). Also assert that `PendingSignupStore` holds no record.
+- [x] Widget (`verify_email_screen_test.dart`): Log in pops `VerifyEmailExit.logIn` and pushes nothing; Use a different email pops `differentEmail`; a good code pops `verified`.
+- [x] Widget: from `EmailLoginScreen._finishVerifying`, Verify's Log in leaves exactly one Log In screen on the stack.
+- [x] Widget: email-signup's account-exists dialog → Sign In → a successful login also lands on `/main`.
+- [x] `anonymous_account_upgrade_test.dart`: the `EmailSignupScreen routing` cases (`:524-578`) and `PostOnboardingAuthScreen upgrade from Settings` (`:579-`) stay green with the new pop values. Add one case: the upgrade path (anonymous session, `emailChange`) → Verify → Log in as another account ends on `/main` with the draft policy applied.
+- [x] `pending_signup_resume_seam_test.dart` stays green (the resume path reads the new enum through `_reopenVerify`).
+- [x] #116: `grep -rl` under `test/` for `VerifyEmailScreen`, `EmailSignupScreen`, `EmailLoginScreen`, `_openVerify`, `_finishVerifying`, `_handleEmailSignUp`, `_finishLoginPreservingDraft`, `auth.verify_log_in`, and run every file named.
+- [x] #117: no new Report helper or silent catch. Run `test/shared/source_guard/` if any catch is added.
+- [x] #118: no notifier state is written by this ticket.
+- [x] `flutter analyze` clean on touched files.
 - [ ] Retest in test wave 7, retest ticket 67 (auth). Account A exists and is signed out. Build My Plan → onboarding → Save My Plan → Sign up with Email with a new address B → Verify your email → Log in → A's address and password → the Timeline as A (the "existing account settings" line if A is set up). Back does not reach Sign Up or Create Your Account. A relaunch does not reopen Verify.
 
 Next: /testing-wave develop-2026-10 (fix wave 6)
+
+## Fix notes
+
+Wave 6 pass A, branch `testing-wave/develop-2026-10/57` (base `876ca27e`), fix commit `320617f1`.
+
+**What changed.**
+- `verify_email_screen.dart`: new `enum VerifyEmailExit { verified, differentEmail, logIn }` beside the screen. A used code pops `verified`, "Use a different email" pops `differentEmail`, the hint's Log in pops `logIn`. Log in no longer reads `GoRouter` or pushes `/auth/email-login`; the discard and `abandonPendingSignup('log_in')` still run first. A `_leaving` flag stops a second tap on Log in or "Use a different email" from popping again before the route is gone. The `go_router` import is gone.
+- `email_signup_screen.dart`: new `enum EmailSignupResult { loggedIn }`. `_openVerify` returns `VerifyEmailExit?`. A fresh Create Account and `_reopenVerify` (ticket 42 resume) both route `logIn` to the new `_logInInstead(email)`, which awaits `context.push<bool>('/auth/email-login', extra: {'email': …})` and pops `EmailSignupResult.loggedIn` on true. `verified` → `_finishCreated()` as before; `differentEmail` or null → stay on the form. The account-exists dialog's Sign In now goes through `_logInInstead(null)` too: it used to push Log In and drop the result.
+- `email_login_screen.dart`: `_finishVerifying` reads `VerifyEmailExit`. Anything but `verified` stays on this Log In screen with the address filled. No second Log In is pushed.
+- `post_onboarding_auth_screen.dart` (only the hunks the ticket names): `_handleEmailSignUp` handles `EmailSignupResult.loggedIn` with `_handOff(() => _finishLoginPreservingDraft(authProvider: 'email'))`, the path `_handleEmailLogin` already takes. The breadcrumb logs the enum by name. The account-exists dialog's "Use Email Instead" calls `unawaited(_handleEmailSignUp())` in place of the bare `context.push('/auth/email-signup')`. `_handleError` is untouched (ticket 55's).
+
+**Async paths (twice at once / after a refresh).**
+- Verify Log in tapped twice in one frame: the first sets `_leaving` and pops; the second returns at the guard. Test: "a second Log in tap in the same frame pops nothing more".
+- `_logInInstead` while the signup screen is disposed (a system back while Log In is open): the `mounted` check drops the result. The athlete is signed in on whatever screen is left, the same as any login with no parent. Two `_logInInstead` calls cannot overlap: the dialog and Verify are modal, and the second is only reachable once the first push has returned.
+- `_handleEmailSignUp` from "Use Email Instead" while another email hand-off runs: the dialog only opens from an OAuth attempt, which keeps the screen busy until it returns. `_handOff` keeps the screen busy for the whole finish, so a second hand-off cannot start while one runs.
+- No notifier state is written by this ticket (#118). No new catch or Report helper (#117), so `test/shared/source_guard/` was not needed.
+
+**Tests.**
+- New `test/features/auth/presentation/hint_login_lands_on_main_test.dart` (6 tests) on the real `AppRouter.routerProvider`, real screens, the real `PostOnboardingAuthController` and `EmailAuthService`, with a mocked GoTrue (`signUp` answers a user with no session, `signInWithPassword` answers A's session): A already set up (info line shown, `saveAllOnboardingData` not called), A with no profile (`saveAllOnboardingData` called once), the upgrade path (anonymous session, `emailChange`), Log In left without signing in (back on the form), the account-exists dialog → Sign In → `/main`, and Log In's own Verify → Log in leaving exactly one Log In screen. Each landing asserts `/main`, no auth screen in the tree, `router.canPop()` false and no `PendingSignupStore` record. Red on the base code for 5 of 6 (checked by reverting `lib/` to the base and re-running; the "back on the form" case passes on both).
+- `verify_email_screen_test.dart`: +4 (Log in pops `logIn` and pushes nothing; a double tap pops once; a different email pops `differentEmail`; a good code pops `verified`). 12/12 pass.
+- #116 sweep: `grep -rl` under `test/` for `VerifyEmailScreen`, `VerifyEmailExit`, `EmailSignupScreen`, `EmailSignupResult`, `EmailLoginScreen`, `_openVerify`, `_reopenVerify`, `_finishVerifying`, `_handleEmailSignUp`, `_finishLoginPreservingDraft`, `_logInInstead`, `auth.verify_log_in` and `PostOnboardingAuthScreen` named 15 files. Ran them together with the rest of `test/features/auth/presentation/`: +95 ~1, all passed (the one skip is an existing skip). Those files include `anonymous_account_upgrade_test.dart`, `pending_signup_resume_seam_test.dart`, the three code-field/cooldown files, `email_login_busy_test.dart`, `onboarding_auth_back_navigation_test.dart` and both smoke files.
+- `flutter analyze` on the 4 lib files and 2 test files: no errors or warnings. Two `use_build_context_synchronously` infos remain in `post_onboarding_auth_screen.dart` (`_navigateToMain`'s `context.go`, `_saveOnboardingDataAndNavigate`'s error snackbar). Both were there at the base and are not in hunks this ticket touched.
+
+**Left for the lead.**
+- The anonymous-upgrade case is in `hint_login_lands_on_main_test.dart`, not in `anonymous_account_upgrade_test.dart` as the exit box said. It needs the real router and the full signup → Verify → login flow, which that file's `_routerFor` stub does not have. That file's existing cases ran green, unchanged.
+- No test drives post-onboarding's account-exists dialog → "Use Email Instead" (item 4). Reaching that dialog needs an OAuth link that fails as already-linked. The change is one line, and it runs the same `_handleEmailSignUp` the tests above cover.
+- Ticket 55 re-reads line numbers in `post_onboarding_auth_screen.dart`: this commit adds about 15 lines above `_handleError`'s callers (an import, the `resultTag` line and the `loggedIn` branch).
+- Retest is in test wave 7 (ticket 67); exit box left open.
+
+**Questions for Lee.** None.
