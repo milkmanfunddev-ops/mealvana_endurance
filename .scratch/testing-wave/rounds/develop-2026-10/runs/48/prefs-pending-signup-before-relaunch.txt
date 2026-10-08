@@ -1,0 +1,7 @@
+pending_signup_v1 keys: ['anonymous_user_id', 'code_sent_at', 'draft', 'email', 'otp_type', 'pending_user_id', 'version']
+otp_type = emailChange
+code_sent_at = 2026-10-08T17:29:52.602190Z
+anonymous_user_id = 1c31d98e-1413-4233-92ad-1991d1737355
+pending_user_id = None
+draft keys: ['birth_year', 'connected_provider', 'declined_training_apps', 'email', 'first_name', 'gender', 'goals', 'gut_training', 'height_feet', 'height_inches', 'last_name', 'pitfalls', 'plan_edits', 'sports', 'sweat_rate', 'sweat_test_interest', 'tridot_notify_requested', 'use_metric_units', 'version', 'weight_pounds']
+analytics_consent_status = granted regime = strict at = 2026-10-08T12:23:11.370899

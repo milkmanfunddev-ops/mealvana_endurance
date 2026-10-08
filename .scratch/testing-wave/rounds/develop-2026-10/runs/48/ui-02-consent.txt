@@ -1,0 +1,5 @@
+Application ' ' '' 0 0 402 874
+StaticText '“Endurance Dev” Would Like to Send You Notifications' '' 71 366 260 42
+StaticText 'Notifications may include alerts, sounds, and icon badges. These can be configured in Set '' 71 415 260 58
+Button 'Don’t Allow' '' 57 494 140 48
+Button 'Allow' '' 205 494 140 48

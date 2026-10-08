@@ -1,0 +1,43 @@
+=== tape after launch before #1 (terminated 17:33:55Z)
+flutter.launch_trail_current = native ios_delegate_after_delay=AppDelegate
+native ios_delegate_at_launch=AppDelegate
+native ios_launch_options=(none)
+12:30:14.711 pending signup: resuming verify (emailChange)
+12:30:17.371 nudge sweep activities=0 estimated=0 longCandidates=0
+12:30:17.373 nudge evaluate candidates=0 fastFire=false
+12:30:17.736 plugin.initialize() starting (handler not yet attached)
+12:30:17.749 plugin.initialize() done (handler attached)
+12:30:17.997 launchDetails didNotificationLaunchApp=false payload=null
+12:30:17.999 onesignal started; permission ask + heal wait for an athlete id
+12:30:18.023 permission prompt wait 22ms granted=false
+12:30:18.023 notification permission answer: granted=false
+12:30:18.088 notification answer not stored: no local profile
+12:30:18.090 push heal: permission=false optedIn=false (hydration wait 0ms)
+12:30:18.090 push heal: no action
+=== tape after launch before #2 (terminated 17:34:10Z)
+flutter.launch_trail_current = native ios_delegate_after_delay=AppDelegate
+native ios_delegate_at_launch=AppDelegate
+native ios_launch_options=(none)
+12:33:58.525 pending signup: none
+12:34:00.556 plugin.initialize() starting (handler not yet attached)
+12:34:00.566 plugin.initialize() done (handler attached)
+12:34:00.568 launchDetails didNotificationLaunchApp=false payload=null
+12:34:00.571 onesignal started; permission ask + heal wait for an athlete id
+=== tape after launch before #3 (terminated 17:34:24Z)
+flutter.launch_trail_current = native ios_delegate_after_delay=AppDelegate
+native ios_delegate_at_launch=AppDelegate
+native ios_launch_options=(none)
+12:34:13.226 pending signup: none
+12:34:14.566 plugin.initialize() starting (handler not yet attached)
+12:34:14.574 plugin.initialize() done (handler attached)
+12:34:14.584 launchDetails didNotificationLaunchApp=false payload=null
+12:34:14.586 onesignal started; permission ask + heal wait for an athlete id
+=== tape after launch #3
+flutter.launch_trail_current = native ios_delegate_after_delay=AppDelegate
+native ios_delegate_at_launch=AppDelegate
+native ios_launch_options=(none)
+12:34:27.304 pending signup: none
+12:34:28.458 plugin.initialize() starting (handler not yet attached)
+12:34:28.467 plugin.initialize() done (handler attached)
+12:34:28.478 launchDetails didNotificationLaunchApp=false payload=null
+12:34:28.479 onesignal started; permission ask + heal wait for an athlete id

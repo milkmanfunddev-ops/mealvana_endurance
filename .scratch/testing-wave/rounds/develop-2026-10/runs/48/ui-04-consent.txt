@@ -1,0 +1,9 @@
+Application 'Endurance Dev' '' 0 0 402 874
+ScrollArea '' '' 0 62 402 705
+StaticText 'Your privacy' '' 20 130 144 26
+StaticText 'You choose what we can learn from how you use the app.' '' 20 176 362 48
+CheckBox 'Share usage data' '0' 20 256 362 48
+StaticText 'Optional. Sends which screens you use, plus basic profile details (age, gender, weight),  '' 20 312 362 60
+Button 'Privacy Policy' '' 20 396 109 48
+Button 'Terms' '' 145 396 64 48
+Button 'Continue' '' 20 767 362 48

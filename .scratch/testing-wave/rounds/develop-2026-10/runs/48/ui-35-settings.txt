@@ -1,0 +1,26 @@
+Application 'Endurance Dev' '' 0 0 402 874
+Button 'Back\nBack' '' 12 70 44 40
+Heading 'Settings' '' 166 77 69 26
+ScrollArea '' '' 0 118 402 722
+StaticText 'Account' '' 32 154 128 22
+StaticText 'Signed in with Email' '' 72 192 130 21
+StaticText 'lee+e2e-48-20261008t1726z@rightpathprogramming.com' '' 72 221 298 42
+Button 'Sign Out' '' 32 279 338 56
+Button 'Delete Account' '' 32 351 338 48
+StaticText 'Profile & Preferences\nEdit your profile, units, and preferences' '' 32 451 338 103
+StaticText 'Appearance\nTheme mode (light/dark/system)' '' 32 566 338 82
+StaticText 'Diet, Allergies & Formulas\nDietary preference, allergies, and nutrition formulas' '' 32 660 338 103
+StaticText 'Sport Preferences\nRunning, cycling, and swimming' '' 32 775 338 65
+StaticText 'Body Composition\nWeight, height, body fat, training phase, lifestyle' '' 0 0 0 0
+StaticText 'Nutrition Targets\nSet default macro targets' '' 0 0 0 0
+StaticText 'Coach Connection\nConnect with your coach or manage your connection' '' 0 0 0 0
+StaticText 'Connected Apps\nFinal Surge, TrainingPeaks, Garmin, V.O2, Runna' '' 0 0 0 0
+StaticText 'Privacy\nUsage data, privacy policy and terms' '' 0 0 0 0
+StaticText 'Help & Feedback\nGet help and send feedback' '' 0 0 0 0
+StaticText 'Version 1.29.0 (6)' '' 0 0 0 0
+StaticText 'User ID: 1c31d98e-1413-4233-92ad-1991d1737355' '' 0 0 0 0
+StaticText 'Developer / Tester' '' 0 0 0 0
+StaticText 'These settings are only visible to internal testers.' '' 0 0 0 0
+CheckBox 'Mark this device as internal\nTester features (incl. the $0.99 test pack) are visible, an '1' 0 0 0 0
+Button 'Device ID\n3BB29A66-9112-436E-B8BE-8563416D18AD' '' 0 0 0 0
+Button 'Debug console\nReport log, manual sync, Sentry pipeline probes' '' 0 0 0 0
