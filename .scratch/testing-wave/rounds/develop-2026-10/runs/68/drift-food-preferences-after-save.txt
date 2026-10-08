@@ -1,0 +1,14 @@
+Bagel (plain)|willing_to_try|2|manual|2026-10-08 23:12:05|2026-10-08 23:12:05
+Bananas|willing_to_try|2|manual|2026-10-08 23:12:05|2026-10-08 23:12:05
+carb_drink_mix|willing_to_try|2|manual|2026-10-08 23:16:23|2026-10-08 23:16:23
+energy_bar|willing_to_try|2|manual|2026-10-08 23:16:23|2026-10-08 23:16:23
+energy_chews|willing_to_try|2|manual|2026-10-08 23:16:23|2026-10-08 23:16:23
+energy_chews_mini_pack|willing_to_try|2|manual|2026-10-08 23:16:23|2026-10-08 23:16:23
+energy_gel|willing_to_try|2|manual|2026-10-08 23:16:23|2026-10-08 23:16:23
+fig_bar|dislike|0|manual|2026-10-08 23:16:23|2026-10-08 23:16:23
+granola_bar|willing_to_try|2|manual|2026-10-08 23:16:23|2026-10-08 23:16:23
+high_carb_drink_mix|willing_to_try|2|manual|2026-10-08 23:16:23|2026-10-08 23:16:23
+oatmeal_cooked|willing_to_try|2|manual|2026-10-08 23:12:05|2026-10-08 23:12:05
+protein_bar|willing_to_try|2|manual|2026-10-08 23:16:23|2026-10-08 23:16:23
+sports_drink|like|3|manual|2026-10-08 23:16:23|2026-10-08 23:16:23
+toast|willing_to_try|2|manual|2026-10-08 23:12:05|2026-10-08 23:12:05

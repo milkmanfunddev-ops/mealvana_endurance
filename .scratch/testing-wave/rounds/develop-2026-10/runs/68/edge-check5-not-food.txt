@@ -1,0 +1,4 @@
+# query_logs dev, function_edge_logs + function_logs, 23:19:50Z-23:20:20Z
+2026-10-08T23:19:58.230 function_logs info [describe-meal] Processing description for user 607f9dd5-…, length: 12 chars, model: anthropic/claude-sonnet-4.6
+2026-10-08T23:20:02.757 function_logs info [describe-meal] Not food for user 607f9dd5-…: 422, no debit (notes: The description 'My bike ride' refers to a physical activity, not a food or drink. …)
+2026-10-08T23:20:02.796 function_edge_logs POST | 422 | /functions/v1/describe-meal

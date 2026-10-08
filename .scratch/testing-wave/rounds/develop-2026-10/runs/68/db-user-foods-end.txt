@@ -1,0 +1,2 @@
+{"id": "4fe1717b-3dfa-4f20-b839-c13a9e03cb73", "name": "tw68 rice cup", "is_deleted": true, "updated_at": "2026-10-08 23:47:25.39841+00"}
+(1 rows)

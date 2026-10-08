@@ -1,0 +1,7 @@
+# EXIF of meal-photos/607f9dd5-…/b1ccbabe-f422-494b-a20d-99de4a2772b2.jpg, downloaded read-only to SCRATCH as test@test.com (PIL 12.1)
+source (SCRATCH tw68-gps.jpg, GPS written by PIL) size (4032, 3024)
+  GPS IFD: {1: 'N', 2: (40.0, 44.0, 30.0), 3: 'W', 4: (73.0, 59.0, 15.0), 5: b'\x00', 6: 10.0}
+  Make/Model/DateTime: Apple iPhone 14 Plus 2025:07:19 11:13:21
+uploaded object size (1333, 1000)
+  GPS IFD: {1: 'N', 2: (40.0, 44.0, 30.0), 3: 'W', 4: (73.0, 59.0, 15.0), 5: b'\x00', 6: 10.0}
+  Make/Model/DateTime: Apple iPhone 14 Plus 2025:07:19 11:13:21

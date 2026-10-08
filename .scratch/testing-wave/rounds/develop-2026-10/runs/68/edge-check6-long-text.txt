@@ -1,0 +1,4 @@
+# query_logs dev, function_edge_logs + function_logs, 23:22:10Z-23:22:40Z
+2026-10-08T23:22:19.501 function_logs booted (time: 90ms)
+2026-10-08T23:22:19.691 function_edge_logs POST | 400 | /functions/v1/describe-meal
+(no "[describe-meal] Processing description" line: the 400 came before any model call)

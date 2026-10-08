@@ -1,0 +1,12 @@
+# dev Sentry (read-only) MEALVANA-ENDURANCE-DEV-BX, event f4257d0e33324e6f801ff888f57f89e3
+FlutterError: Tried to modify a provider while the widget tree was building.
+2026-10-08T23:28:38.167Z, level fatal, handled no, transaction swap-food, user 607f9dd5-…, device_id 1F993564-5078-45DC-8B2E-E575405EE4CD (this simulator), release mealvana_endurance@1.29.0+6, compile_mode debug
+context: thrown building SwapFoodScreen(dirty, …)
+First-party frames (innermost last):
+  _SwapFoodScreenState.build (swap_food_screen.dart:765:34)
+  AsyncValueExtensions.when (async_value.dart:266:16)
+  _SwapFoodScreenState.build.<fn> (swap_food_screen.dart:770:15)
+  _SwapFoodScreenState._seedSearchController (swap_food_screen.dart:128:20)
+  FoodSearchController.updateFoodPool (food_search_controller.dart:239:7)
+  FoodSearchController.updateSearch (food_search_controller.dart:265:5)
+  AnyNotifier.state= (notifier_provider.dart:93:18) -> _debugCanModifyProviders
