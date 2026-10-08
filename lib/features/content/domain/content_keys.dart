@@ -54,6 +54,14 @@ class ContentKeys {
   // short-input minimum; `{n}` is the minimum character count).
   static const String mealLogReviewNameRequired =
       'meal_log.review.name_required';
+  // Review & Log: a removed item's Undo bar and the Back guard
+  // (testing-wave develop-2026-10 ticket 66, 49-003).
+  static const String mealLogReviewItemRemoved = 'meal_log.review.item_removed';
+  static const String mealLogReviewDiscardTitle =
+      'meal_log.review.discard_title';
+  static const String mealLogReviewDiscardBody = 'meal_log.review.discard_body';
+  static const String mealLogReviewDiscard = 'meal_log.review.discard';
+  static const String mealLogReviewKeepEditing = 'meal_log.review.keep_editing';
   static const String mealLogDescribeNotFood = 'meal_log.describe.not_food';
   static const String mealLogDescribeReviewAgain =
       'meal_log.describe.review_again';

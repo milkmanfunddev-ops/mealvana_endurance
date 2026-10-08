@@ -372,7 +372,12 @@
     "serving_singular": "serving",
     "serving_plural": "servings",
     "review": {
-      "name_required": "Give this meal a name to log it."
+      "name_required": "Give this meal a name to log it.",
+      "item_removed": "Item removed",
+      "discard_title": "Discard changes?",
+      "discard_body": "Your edits to this meal will be lost.",
+      "discard": "Discard",
+      "keep_editing": "Keep editing"
     },
     "describe": {
       "not_food": "That doesn't sound like food or drink. Describe what you ate or drank.",

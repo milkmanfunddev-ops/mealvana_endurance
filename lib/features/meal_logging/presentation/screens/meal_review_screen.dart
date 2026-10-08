@@ -1,7 +1,10 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../shared/widgets/custom_app_bar_back_button.dart';
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../../content/application/content_service.dart';
 import '../../../content/domain/content_keys.dart';
@@ -25,6 +28,10 @@ import '../widgets/slot_chip_selector.dart' show OptionalSlotChipSelector;
 /// Route: `/meal-log/review` reads the same values from the GoRouter extras
 /// when [result] is null:
 /// `{ 'result': MealAnalysisResult, 'source': String, 'logDate': String, 'photoPath': String? }`
+///
+/// Back with a changed name or items asks "Discard changes?"; a swiped-away
+/// item offers a 3 s Undo (testing-wave develop-2026-10 ticket 66, 49-003).
+/// Changing only the meal type does not ask (Lee, 2026-10-08).
 class MealReviewScreen extends ConsumerStatefulWidget {
   const MealReviewScreen({
     super.key,
@@ -63,9 +70,14 @@ class _MealReviewScreenState extends ConsumerState<MealReviewScreen> {
 
   bool get _nameIsEmpty => _nameCtrl.text.trim().isEmpty;
 
+  /// Taken while mounted so [dispose] can hide an Undo bar that would
+  /// otherwise act on a gone screen.
+  ScaffoldMessengerState? _messenger;
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    _messenger = ScaffoldMessenger.maybeOf(context);
     if (!_initialized) {
       if (widget.result != null) {
         _result = widget.result;
@@ -93,6 +105,7 @@ class _MealReviewScreenState extends ConsumerState<MealReviewScreen> {
 
   @override
   void dispose() {
+    _messenger?.hideCurrentSnackBar();
     _nameCtrl.dispose();
     super.dispose();
   }
@@ -107,6 +120,50 @@ class _MealReviewScreenState extends ConsumerState<MealReviewScreen> {
       fatG: item.fatG,
       sodiumMg: item.sodiumMg,
     );
+  }
+
+  static String _encodeComponents(List<MealComponent> components) =>
+      jsonEncode(components.map((c) => c.toJson()).toList());
+
+  /// A rename, swap, removal or Edit Item change since the analysis. The meal
+  /// type alone does not count (Lee, 2026-10-08). An undone removal compares
+  /// equal again.
+  bool _hasEdits() {
+    final result = _result;
+    if (result == null) return false;
+    if (_nameCtrl.text.trim() != result.name.trim()) return true;
+    return _encodeComponents(_components) !=
+        _encodeComponents(result.items.map(_itemToComponent).toList());
+  }
+
+  /// Handles a blocked back-navigation attempt (see [PopScope]): no edits
+  /// leaves at once; edits ask Keep editing / Discard. Discard pops with no
+  /// result, so Describe keeps its text (ticket 45).
+  Future<void> _onPopInvoked(bool didPop) async {
+    if (didPop) return;
+    if (!_hasEdits()) {
+      if (mounted) Navigator.of(context).pop();
+      return;
+    }
+    final content = ref.read(contentServiceProvider);
+    final discard = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(content.getValue(ContentKeys.mealLogReviewDiscardTitle)),
+        content: Text(content.getValue(ContentKeys.mealLogReviewDiscardBody)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: Text(content.getValue(ContentKeys.mealLogReviewKeepEditing)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: Text(content.getValue(ContentKeys.mealLogReviewDiscard)),
+          ),
+        ],
+      ),
+    );
+    if (discard == true && mounted) Navigator.of(context).pop();
   }
 
   /// Opens the shared food-swap picker (returnSelection mode) and maps the
@@ -186,93 +243,111 @@ class _MealReviewScreenState extends ConsumerState<MealReviewScreen> {
       );
     }
 
-    return Scaffold(
-      backgroundColor: isDark ? AppColors.blackberry : AppColors.cream,
-      appBar: AppBar(
+    final content = ref.watch(contentServiceProvider);
+
+    return PopScope(
+      // A logged meal pops `true` through the navigator directly, which this
+      // guard does not block; every other Back runs [_onPopInvoked].
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) => _onPopInvoked(didPop),
+      child: Scaffold(
         backgroundColor: isDark ? AppColors.blackberry : AppColors.cream,
-        title: const Text('Review & Log'),
-        elevation: 0,
-      ),
-      body: SingleChildScrollView(
-        padding: AppSpacing.screenPaddingHorizontal,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const SizedBox(height: AppSpacing.md),
-
-            // Confidence badge
-            _ConfidenceBadge(confidence: _result!.confidence),
-            const SizedBox(height: AppSpacing.md),
-
-            // Meal name
-            TextFormField(
-              controller: _nameCtrl,
-              decoration: InputDecoration(
-                labelText: 'Meal name',
-                border: const OutlineInputBorder(),
-                errorText: nameError,
-              ),
-              textCapitalization: TextCapitalization.sentences,
-              onChanged: (_) => setState(() => _nameEdited = true),
-            ),
-            const SizedBox(height: AppSpacing.md),
-
-            // Slot selector (optional — build-a-meal redesign)
-            Text('Meal type', style: Theme.of(context).textTheme.labelLarge),
-            const SizedBox(height: 6),
-            OptionalSlotChipSelector(
-              selectedSlot: _slot,
-              onSlotSelected: (s) => setState(() => _slot = s),
-            ),
-            const SizedBox(height: AppSpacing.md),
-
-            // Items editor — shared with the build-a-meal draft editor and
-            // Edit Meal (item 13): independently editable quantity per item,
-            // swipe-to-swap via the shared food-swap picker.
-            MealComponentEditor(
-              initialComponents: _components,
-              onComponentsChanged: (updated) =>
-                  setState(() => _components = updated),
-              onRequestSwap: _swapComponentFood,
-            ),
-
-            // AI notes
-            if (_result!.notes != null) ...[
+        appBar: AppBar(
+          // Through maybePop so the PopScope guard above runs.
+          leading: CustomAppBarBackButton(
+            onPressed: () => Navigator.of(context).maybePop(),
+          ),
+          backgroundColor: isDark ? AppColors.blackberry : AppColors.cream,
+          title: const Text('Review & Log'),
+          elevation: 0,
+        ),
+        body: SingleChildScrollView(
+          padding: AppSpacing.screenPaddingHorizontal,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
               const SizedBox(height: AppSpacing.md),
-              Container(
-                padding: const EdgeInsets.all(AppSpacing.sm),
-                decoration: BoxDecoration(
-                  color: isDark
-                      ? Colors.white10
-                      : Colors.black.withValues(alpha: 0.05),
-                  borderRadius: BorderRadius.circular(8),
+
+              // Confidence badge
+              _ConfidenceBadge(confidence: _result!.confidence),
+              const SizedBox(height: AppSpacing.md),
+
+              // Meal name
+              TextFormField(
+                controller: _nameCtrl,
+                decoration: InputDecoration(
+                  labelText: 'Meal name',
+                  border: const OutlineInputBorder(),
+                  errorText: nameError,
                 ),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Icon(Icons.info_outline, size: 16),
-                    const SizedBox(width: 6),
-                    Expanded(
-                      child: Text(
-                        _result!.notes!,
-                        style: Theme.of(context).textTheme.bodySmall,
-                      ),
-                    ),
-                  ],
+                textCapitalization: TextCapitalization.sentences,
+                onChanged: (_) => setState(() => _nameEdited = true),
+              ),
+              const SizedBox(height: AppSpacing.md),
+
+              // Slot selector (optional — build-a-meal redesign)
+              Text('Meal type', style: Theme.of(context).textTheme.labelLarge),
+              const SizedBox(height: 6),
+              OptionalSlotChipSelector(
+                selectedSlot: _slot,
+                onSlotSelected: (s) => setState(() => _slot = s),
+              ),
+              const SizedBox(height: AppSpacing.md),
+
+              // Items editor — shared with the build-a-meal draft editor and
+              // Edit Meal (item 13): independently editable quantity per item,
+              // swipe-to-swap via the shared food-swap picker.
+              MealComponentEditor(
+                initialComponents: _components,
+                onComponentsChanged: (updated) =>
+                    setState(() => _components = updated),
+                onRequestSwap: _swapComponentFood,
+                removeUndoLabels: (
+                  removed: content.getValue(
+                    ContentKeys.mealLogReviewItemRemoved,
+                  ),
+                  undo: content.getValue(ContentKeys.mealLogActionsUndo),
                 ),
               ),
+
+              // AI notes
+              if (_result!.notes != null) ...[
+                const SizedBox(height: AppSpacing.md),
+                Container(
+                  padding: const EdgeInsets.all(AppSpacing.sm),
+                  decoration: BoxDecoration(
+                    color: isDark
+                        ? Colors.white10
+                        : Colors.black.withValues(alpha: 0.05),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Icon(Icons.info_outline, size: 16),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          _result!.notes!,
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+
+              const SizedBox(height: AppSpacing.xl),
+
+              KylePrimaryButton(
+                text: 'Log this meal',
+                isLoading: isLoading,
+                // An empty name cannot be logged; the field says why (31-002).
+                onPressed: isLoading || _nameIsEmpty ? null : _logMeal,
+              ),
+              const SizedBox(height: AppSpacing.xl),
             ],
-
-            const SizedBox(height: AppSpacing.xl),
-
-            KylePrimaryButton(
-              text: 'Log this meal',
-              isLoading: isLoading,
-              // An empty name cannot be logged; the field says why (31-002).
-              onPressed: isLoading || _nameIsEmpty ? null : _logMeal,
-            ),
-            const SizedBox(height: AppSpacing.xl),
-          ],
+          ),
         ),
       ),
     );

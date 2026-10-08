@@ -1,6 +1,10 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../../../shared/widgets/kyle_design/kyle_design.dart'
+    show MealvanaSnackbar;
 import '../../../../shared/widgets/swipe_action_background.dart';
 import '../../domain/consumed_totals.dart' show MealTotals;
 import '../../domain/meal_component.dart';
@@ -19,6 +23,7 @@ class MealComponentEditor extends StatefulWidget {
     required this.initialComponents,
     required this.onComponentsChanged,
     this.onRequestSwap,
+    this.removeUndoLabels,
   });
 
   final List<MealComponent> initialComponents;
@@ -28,6 +33,12 @@ class MealComponentEditor extends StatefulWidget {
   /// component, returns a replacement (e.g. via the food-swap picker) or null
   /// if the user cancels. When null, swipe-to-swap is disabled.
   final Future<MealComponent?> Function(MealComponent current)? onRequestSwap;
+
+  /// When set, a swiped-away item shows a 3 s bar ([removed]) with an
+  /// [undo] action that puts it back at its index (testing-wave
+  /// develop-2026-10 ticket 66, 49-003). Null keeps the plain remove. Only
+  /// the latest removal can be undone: a second swipe clears the first bar.
+  final ({String removed, String undo})? removeUndoLabels;
 
   @override
   State<MealComponentEditor> createState() => _MealComponentEditorState();
@@ -69,11 +80,32 @@ class _MealComponentEditorState extends State<MealComponentEditor> {
   }
 
   void _deleteItem(int index) {
+    final removed = _items[index];
+    final removedRowId = _rowIds[index];
     setState(() {
       _items.removeAt(index);
       _rowIds.removeAt(index);
     });
     widget.onComponentsChanged(List.unmodifiable(_items));
+
+    final labels = widget.removeUndoLabels;
+    if (labels == null) return;
+    ScaffoldMessenger.of(context).clearSnackBars();
+    MealvanaSnackbar.showInfo(
+      context,
+      labels.removed,
+      actionLabel: labels.undo,
+      onAction: () {
+        if (!mounted) return;
+        final at = math.min(index, _items.length);
+        setState(() {
+          _items.insert(at, removed);
+          // The row's own id comes back, so the Dismissible key stays unique.
+          _rowIds.insert(at, removedRowId);
+        });
+        widget.onComponentsChanged(List.unmodifiable(_items));
+      },
+    );
   }
 
   Future<void> _swapItem(int index) async {

@@ -31,6 +31,7 @@
 
 **Questions for Lee.**
 1. Does changing only the meal type (the slot chips, `meal_review_screen.dart:223-226`) count as an edit that asks on Back? The ruling lists name and items. Recommended: no; a slot is one tap to set again.
+2. (Fix agent, 2026-10-08.) On a phone where Log this meal sits at the bottom of the screen, the floating "Item removed" bar covers the button for its 3 s; a tap there lands on the bar, not the button (seen in the widget test at 390 × 844). Is that acceptable for a 3 s bar, or should Review lift the bar above the button? Recommended: accept; the bar is short-lived and Undo is the likelier tap right after a swipe.
 
 **Touches:** lib/features/meal_logging/presentation/screens/log_meal_screen.dart, lib/features/meal_logging/presentation/screens/meal_review_screen.dart, lib/features/meal_logging/presentation/widgets/meal_component_editor.dart, lib/features/content/domain/content_keys.dart, assets/config/content_defaults.json, ios/Runner/Info.plist, test/features/meal_logging/describe_error_lines_wrap_test.dart (new), test/features/meal_logging/review_remove_undo_and_discard_test.dart (new), test/shared/ios_bundle_name_test.dart (new). 9 files. No annotated file changes, no codegen, no Drift change, no edge function.
 
@@ -38,16 +39,16 @@
 
 Deploy after merge: nothing to deploy. Item 4 needs an app build to show; the wave-7 rebuild carries it.
 
-- [ ] Widget (`describe_error_lines_wrap_test.dart`, on the `test/features/meal_logging/describe_not_food_test.dart` harness, real `LogMealScreen` → Describe, view set to 402 × 874 logical pixels): type "egg", tap Analyze; the error `Text` shows the whole `too_short` line from content with `n` 5, its `maxLines` is 3 and its `RenderParagraph.didExceedMaxLines` is false; `invoke` was never called. The not-food case (the `FunctionException` 422 from `describe_not_food_test.dart`) shows its whole line the same way.
-- [ ] Widget (`review_remove_undo_and_discard_test.dart`, on the `test/features/meal_logging/review_empty_name_test.dart` harness: real `MealReviewScreen` pushed with constructor params over a host route, real `MealLogController`, in-memory Drift): three items; swipe the second left to right → "Item removed" with Undo shows and the total drops; tap Undo → the item is back second and the total is restored. Swipe again and pump 3 s → the bar is gone and the item stays removed.
-- [ ] Same file: rename, then tap the app-bar Back → "Discard changes?" with Keep editing and Discard; Keep editing → still on Review with the new name; Discard → the route pops with `null` (the host's `push` future completes null). With no edits, Back pops at once with no dialog. Remove then Undo, then Back → no dialog. Log this meal after edits still pops `true` with no dialog, and a `meal_logs` row is written.
-- [ ] Unit (`test/shared/ios_bundle_name_test.dart`): read `ios/Runner/Info.plist` as text; the string after `<key>CFBundleName</key>` is `Mealvana`, and `CFBundleDisplayName` is still `$(BUNDLE_DISPLAY_NAME)`.
-- [ ] `flutter analyze` clean on touched files.
-- [ ] Before committing, `grep -rl` under `test/` for every changed class and method (`MealComponentEditor`, `MealReviewScreen`, `LogMealScreen`, `ContentKeys`, the `meal_log` defaults) and run every file it names, not only this list (IMPROVEMENTS #116): the editor's existing tests, `describe_back_keeps_analysis_test.dart`, `review_empty_name_test.dart`, `ai_note_survives_the_save_test.dart`, `meal_swap_test.dart`, and any content-defaults or content-keys guard test.
-- [ ] No new Report helper or silent catch is expected. If one is added, it goes into `test/shared/source_guard/source_guard.dart`'s `reportCalls` or a reasoned `allow_list.md` entry in the same commit, and `test/shared/source_guard/` runs (#117).
-- [ ] No expected failure is written into notifier state (#118); this ticket changes no notifier.
-- [ ] Async paths, written down in Fix notes: Undo tapped after Review closed (the bar is hidden in `dispose`; `onAction` also checks `mounted`); two swipes inside 3 s (the second clears the first bar; only the second can be undone); Back pressed twice while the dialog is open (the first `maybePop` holds the dialog; the second is absorbed by the dialog route); the dialog open while a swap result arrives (`_swapItem` checks `mounted` and applies, `meal_component_editor.dart:79-86`; Discard still drops it).
-- [ ] Codegen: none expected; unfiltered if an annotated file's generated part changes.
+- [x] Widget (`describe_error_lines_wrap_test.dart`, on the `test/features/meal_logging/describe_not_food_test.dart` harness, real `LogMealScreen` → Describe, view set to 402 × 874 logical pixels): type "egg", tap Analyze; the error `Text` shows the whole `too_short` line from content with `n` 5, its `maxLines` is 3 and its `RenderParagraph.didExceedMaxLines` is false; `invoke` was never called. The not-food case (the `FunctionException` 422 from `describe_not_food_test.dart`) shows its whole line the same way.
+- [x] Widget (`review_remove_undo_and_discard_test.dart`, on the `test/features/meal_logging/review_empty_name_test.dart` harness: real `MealReviewScreen` pushed with constructor params over a host route, real `MealLogController`, in-memory Drift): three items; swipe the second left to right → "Item removed" with Undo shows and the total drops; tap Undo → the item is back second and the total is restored. Swipe again and pump 3 s → the bar is gone and the item stays removed.
+- [x] Same file: rename, then tap the app-bar Back → "Discard changes?" with Keep editing and Discard; Keep editing → still on Review with the new name; Discard → the route pops with `null` (the host's `push` future completes null). With no edits, Back pops at once with no dialog. Remove then Undo, then Back → no dialog. Log this meal after edits still pops `true` with no dialog, and a `meal_logs` row is written.
+- [x] Unit (`test/shared/ios_bundle_name_test.dart`): read `ios/Runner/Info.plist` as text; the string after `<key>CFBundleName</key>` is `Mealvana`, and `CFBundleDisplayName` is still `$(BUNDLE_DISPLAY_NAME)`.
+- [x] `flutter analyze` clean on touched files.
+- [x] Before committing, `grep -rl` under `test/` for every changed class and method (`MealComponentEditor`, `MealReviewScreen`, `LogMealScreen`, `ContentKeys`, the `meal_log` defaults) and run every file it names, not only this list (IMPROVEMENTS #116): the editor's existing tests, `describe_back_keeps_analysis_test.dart`, `review_empty_name_test.dart`, `ai_note_survives_the_save_test.dart`, `meal_swap_test.dart`, and any content-defaults or content-keys guard test.
+- [x] No new Report helper or silent catch is expected. If one is added, it goes into `test/shared/source_guard/source_guard.dart`'s `reportCalls` or a reasoned `allow_list.md` entry in the same commit, and `test/shared/source_guard/` runs (#117).
+- [x] No expected failure is written into notifier state (#118); this ticket changes no notifier.
+- [x] Async paths, written down in Fix notes: Undo tapped after Review closed (the bar is hidden in `dispose`; `onAction` also checks `mounted`); two swipes inside 3 s (the second clears the first bar; only the second can be undone); Back pressed twice while the dialog is open (the first `maybePop` holds the dialog; the second is absorbed by the dialog route); the dialog open while a swap result arrives (`_swapItem` checks `mounted` and applies, `meal_component_editor.dart:79-86`; Discard still drops it).
+- [x] Codegen: none expected; unfiltered if an annotated file's generated part changes.
 - [ ] Retest on a simulator in wave 7 retest ticket 68 (meal logging): check 4 (the short-input line shows whole, wrapped), check 5 (the not-food line whole), check 9 (a swiped Review item shows Undo and Undo restores the item and total; Back after a rename asks Discard). The bundle-name half (50-008) is read on V.O2 Connect by whichever wave-7 run opens it (ticket 69 owns Connected Apps): the prompt reads "“Mealvana” Wants to Use “vdoto2.com” to Sign In".
 
 **Rulings (Lee, 2026-10-08, after drafting).**
@@ -55,3 +56,35 @@ Deploy after merge: nothing to deploy. Item 4 needs an app build to show; the wa
 
 
 Next: /testing-wave develop-2026-10 (fix wave 6)
+
+## Fix notes
+
+**Branch** `testing-wave/develop-2026-10/66`, code commit `02a71059` (base `876ca27e`).
+
+**What changed.**
+1. `lib/features/meal_logging/presentation/screens/log_meal_screen.dart`: `errorMaxLines: 3` on the Describe field's `InputDecoration` (still `const`). Only that hunk; `_pickPhoto` is untouched for ticket 60.
+2. `lib/features/meal_logging/presentation/widgets/meal_component_editor.dart`: optional `removeUndoLabels` (`({String removed, String undo})?`). Null keeps today's remove. Set: `_deleteItem` keeps the component, its row id and index, removes, clears the messenger's bars, then `MealvanaSnackbar.showInfo(removed, actionLabel: undo, onAction: …)` (3 s, `persist: false`). `onAction` returns if unmounted, else re-inserts both at `min(index, _items.length)` and calls `onComponentsChanged`.
+3. `lib/features/meal_logging/presentation/screens/meal_review_screen.dart`: passes the labels (`meal_log.review.item_removed`, `meal_log_actions.undo`); takes `ScaffoldMessenger.maybeOf` in `didChangeDependencies` and calls `hideCurrentSnackBar()` in `dispose`; `_hasEdits()` (trimmed name vs `_result.name`, components JSON vs the analysis's) ignoring the slot per Lee's ruling; `PopScope(canPop: false)` with `_onPopInvoked`: no edits pops at once, edits show an `AlertDialog` (Keep editing / Discard, Discard pops with no result); app-bar `leading` is `CustomAppBarBackButton(onPressed: maybePop)`. Log this meal still pops `true` through the navigator.
+4. `lib/features/content/domain/content_keys.dart` + `assets/config/content_defaults.json`: `meal_log.review.{item_removed, discard_title, discard_body, discard, keep_editing}` only, beside `name_required`.
+5. `ios/Runner/Info.plist`: `CFBundleName` `Mealvana`. Nothing else under `ios/`.
+6. Tests (new): `test/features/meal_logging/describe_error_lines_wrap_test.dart` (2), `test/features/meal_logging/review_remove_undo_and_discard_test.dart` (7), `test/shared/ios_bundle_name_test.dart` (2).
+
+**Async paths.**
+- Undo tapped after Review closed: Review's `dispose` hides the current bar, and `onAction` checks `mounted` first. Tested on the Discard path: the bar is gone after the pop (fails with the `dispose` line removed).
+- Two swipes inside 3 s: the second `clearSnackBars()` drops the first bar, so only the latest removal can be undone; the first stays removed.
+- Undo after a swap or another edit moved things: the item goes back at `min(index, length)`, so it never throws; with its own row id the `Dismissible` key stays unique.
+- Back pressed twice while the dialog is open: the dialog route is on top, so the second Back pops the dialog (= Keep editing), not Review. `CustomAppBarBackButton` also debounces 500 ms.
+- Swap result arriving while the dialog is open: `_swapItem` checks `mounted` and applies; Discard still drops it.
+- Log this meal pressed twice: unchanged from before (button disabled while `AsyncLoading`).
+- Hiding in `dispose` hides whatever bar is current when Review leaves. Describe shows no bar after Review pops, so nothing of another screen's is lost today.
+
+**Tests run.**
+- New files: 2 + 7 + 2, all pass. The wrap test fails (maxLines null) with `errorMaxLines` removed.
+- #116: `grep -rlE "MealComponentEditor|MealReviewScreen|LogMealScreen|_deleteItem|removeUndoLabels|content_defaults|meal_log\.review|mealLogReview|Info\.plist|ContentKeys" test` plus `content_defaults_resolve_without_caller_test.dart` and `edit_meal_log_guard_test.dart`: 29 files, +151, all passed (includes the three `meal_component_editor_*` tests, `describe_back_keeps_analysis`, `review_empty_name`, `ai_note_survives_the_save`, `meal_swap`, `describe_not_food`).
+- `flutter analyze` on the four lib files and three test files: no issues.
+- No catch or Report helper added, so `test/shared/source_guard/` was not needed. No codegen (no annotated file touched).
+
+**For the lead.**
+- The "Log this meal after edits" test lets the Undo bar time out before tapping, because the floating bar covers the button at 390 × 844 (Question 2).
+- Retest box stays open for wave 7 (ticket 68 checks 4, 5, 9; the V.O2 prompt needs the rebuild).
+
