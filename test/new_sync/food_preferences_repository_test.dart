@@ -1,11 +1,14 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mealvana_endurance/features/food_preferences/data/food_preferences_repository.dart';
 import 'package:mealvana_endurance/shared/database/app_database.dart';
+import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
+import 'package:mealvana_endurance/features/auth/domain/user_preferences.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:mocktail/mocktail.dart';
 
+import '../helpers/fakes/fake_postgrest.dart';
 import '../helpers/fakes/recording_report.dart';
 
 // Mocks
@@ -162,4 +165,80 @@ void main() {
   // - Network error handling and retry logic
   // - Data consistency between Drift and Supabase
   // - Merge mode behavior when syncing from server
+
+  // develop-2026-10 ticket 39: food_preferences.created_at/updated_at are
+  // timestamptz. Drift reads them back local; the upload now sends UTC.
+  group('timestamptz writes go out in UTC', () {
+    // Whole seconds: Drift keeps epoch seconds.
+    final createdAtUtc = DateTime.utc(2026, 10, 7, 11, 11, 3);
+    final updatedAtUtc = DateTime.utc(2026, 10, 8, 2, 40, 9);
+
+    Map<String, dynamic> firstRow(Object? raw) =>
+        ((raw is List ? raw.first : raw) as Map).cast<String, dynamic>();
+
+    test('uploadDirtyRecords sends the stored instants, ending in Z', () async {
+      final server = FakePostgrest();
+      final repository = FoodPreferencesRepository(
+        supabase: server.client,
+        database: database,
+        report: report,
+      );
+      await database
+          .into(database.foodPreferencesTable)
+          .insert(
+            FoodPreferencesTableCompanion.insert(
+              id: '11111111-2222-4333-8444-555555555555',
+              userId: testUserId,
+              foodName: 'Banana',
+              preference: 'like',
+              createdAt: Value(createdAtUtc),
+              updatedAt: Value(updatedAtUtc),
+            ),
+          );
+
+      final result = await repository.uploadDirtyRecords(testUserId);
+      expect(result.success, isTrue);
+
+      final sent = firstRow(
+        server.writes.singleWhere((w) => w.table == 'food_preferences').body,
+      );
+      for (final (key, instant) in [
+        ('created_at', createdAtUtc),
+        ('updated_at', updatedAtUtc),
+      ]) {
+        final value = sent[key] as String;
+        expect(value, endsWith('Z'), reason: '$key carries its offset');
+        expect(DateTime.parse(value).isAtSameMomentAs(instant), isTrue);
+      }
+    });
+
+    test('a local edit\'s immediate upload sends UTC', () async {
+      final server = FakePostgrest();
+      final repository = FoodPreferencesRepository(
+        supabase: server.client,
+        database: database,
+        report: report,
+      );
+      // Drift truncates to whole seconds.
+      final before = DateTime.now().subtract(const Duration(seconds: 1));
+
+      await repository.saveFoodPreferences(testUserId, {
+        'Banana': FoodPreference.like,
+      });
+      for (var i = 0; i < 100 && server.writes.isEmpty; i++) {
+        await Future<void>.delayed(const Duration(milliseconds: 10));
+      }
+
+      final sent = firstRow(
+        server.writes.singleWhere((w) => w.table == 'food_preferences').body,
+      );
+      for (final key in ['created_at', 'updated_at']) {
+        final value = sent[key] as String;
+        expect(value, endsWith('Z'), reason: '$key carries its offset');
+        final at = DateTime.parse(value);
+        expect(at.isBefore(before), isFalse, reason: key);
+        expect(at.isAfter(DateTime.now()), isFalse, reason: key);
+      }
+    });
+  });
 }

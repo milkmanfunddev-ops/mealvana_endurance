@@ -10,6 +10,7 @@ import 'package:mocktail/mocktail.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../helpers/fakes/fake_postgrest.dart';
 import '../../helpers/fakes/recording_report.dart';
 
 // ============================================================
@@ -843,6 +844,73 @@ void main() {
       expect(copy.name, 'Copied');
       expect(copy.activityType, original.activityType);
       expect(copy.userId, original.userId);
+    });
+  });
+
+  // ============================================================
+  // develop-2026-10 ticket 39: personal_templates.created_at/updated_at are
+  // timestamptz. Drift reads them back local; toSupabaseJson now sends UTC.
+  // ============================================================
+  group('timestamptz writes go out in UTC', () {
+    late FakePostgrest server;
+    late PersonalTemplatesRepository utcRepository;
+
+    setUp(() {
+      server = FakePostgrest();
+      utcRepository = PersonalTemplatesRepository(
+        supabase: server.client,
+        database: database,
+        report: RecordingReport(),
+      );
+    });
+
+    Future<Map<String, dynamic>> templateWrite() async {
+      for (var i = 0; i < 200 && server.writes.isEmpty; i++) {
+        await Future<void>.delayed(const Duration(milliseconds: 10));
+      }
+      final body = server.writes
+          .singleWhere((w) => w.table == 'personal_templates')
+          .body;
+      return ((body is List ? body.single : body) as Map)
+          .cast<String, dynamic>();
+    }
+
+    void expectUtc(
+      Map<String, dynamic> sent,
+      DateTime createdAt,
+      DateTime before,
+    ) {
+      final created = sent['created_at'] as String;
+      expect(created, endsWith('Z'));
+      expect(DateTime.parse(created).isAtSameMomentAs(createdAt), isTrue);
+      final updated = sent['updated_at'] as String;
+      expect(updated, endsWith('Z'));
+      final at = DateTime.parse(updated);
+      expect(at.isBefore(before), isFalse);
+      expect(at.isAfter(DateTime.now()), isFalse);
+    }
+
+    test('createTemplate\'s immediate upload sends UTC', () async {
+      final template = _buildTemplate(id: 'tpl-utc');
+      final before = DateTime.now();
+
+      final created = await utcRepository.createTemplate(template);
+      expect(created.createdAt.isUtc, isFalse, reason: 'reads back local');
+
+      expectUtc(await templateWrite(), template.createdAt, before);
+    });
+
+    test('uploadDirtyRecords sends UTC', () async {
+      final template = _buildTemplate(id: 'tpl-dirty');
+      await database
+          .into(database.personalTemplatesTable)
+          .insert(template.copyWith(needsUpload: true).toDriftCompanion());
+      final before = DateTime.now();
+
+      final result = await utcRepository.uploadDirtyRecords(testUserId);
+      expect(result.success, isTrue);
+
+      expectUtc(await templateWrite(), template.createdAt, before);
     });
   });
 }

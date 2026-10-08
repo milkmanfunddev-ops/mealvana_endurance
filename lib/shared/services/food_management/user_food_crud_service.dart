@@ -332,9 +332,9 @@ class UserFoodCrudService {
       'is_electrolyte': false,
       'to_exclude_from_solver': false,
       'is_deleted': false,
-      'created_at': DateTime.now().toIso8601String(),
-      'updated_at': DateTime.now().toIso8601String(),
-      'client_updated_at': DateTime.now().toIso8601String(),
+      'created_at': DateTime.now().toUtc().toIso8601String(),
+      'updated_at': DateTime.now().toUtc().toIso8601String(),
+      'client_updated_at': DateTime.now().toUtc().toIso8601String(),
     });
 
     await _database.customStatement(
@@ -349,7 +349,7 @@ class UserFoodCrudService {
         .from('user_foods')
         .update({
           'is_deleted': true,
-          'updated_at': DateTime.now().toIso8601String(),
+          'updated_at': DateTime.now().toUtc().toIso8601String(),
         })
         .eq('id', foodId)
         .eq('device_id', deviceId);
@@ -381,8 +381,8 @@ class UserFoodCrudService {
   }) async {
     // Build update map with only provided fields
     final updateData = <String, dynamic>{
-      'updated_at': DateTime.now().toIso8601String(),
-      'client_updated_at': DateTime.now().toIso8601String(),
+      'updated_at': DateTime.now().toUtc().toIso8601String(),
+      'client_updated_at': DateTime.now().toUtc().toIso8601String(),
     };
 
     if (name != null) {

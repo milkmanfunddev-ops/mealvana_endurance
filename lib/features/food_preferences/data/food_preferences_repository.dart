@@ -144,8 +144,8 @@ class FoodPreferencesRepository with SyncableRepository {
               'preference': pref.preference,
               'preference_level': pref.preferenceLevel,
               'preference_source': pref.preferenceSource,
-              'created_at': pref.createdAt.toIso8601String(),
-              'updated_at': pref.updatedAt.toIso8601String(),
+              'created_at': pref.createdAt.toUtc().toIso8601String(),
+              'updated_at': pref.updatedAt.toUtc().toIso8601String(),
             },
           )
           .toList();
@@ -454,8 +454,8 @@ class FoodPreferencesRepository with SyncableRepository {
             'preference': pref.preference,
             'preference_level': pref.preferenceLevel,
             'preference_source': pref.preferenceSource,
-            'created_at': pref.createdAt.toIso8601String(),
-            'updated_at': pref.updatedAt.toIso8601String(),
+            'created_at': pref.createdAt.toUtc().toIso8601String(),
+            'updated_at': pref.updatedAt.toUtc().toIso8601String(),
           },
         )
         .toList(growable: false);

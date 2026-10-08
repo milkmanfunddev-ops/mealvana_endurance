@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mealvana_endurance/features/feedback/data/feedback_repository.dart';
+import 'package:mealvana_endurance/features/feedback/domain/feedback_data.dart';
 import 'package:mealvana_endurance/shared/database/app_database.dart';
 import 'package:mealvana_endurance/shared/data/syncable_repository.dart';
 import 'package:drift/drift.dart';
@@ -8,6 +9,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:mocktail/mocktail.dart';
 
+import '../helpers/fakes/fake_postgrest.dart';
 import '../helpers/fakes/recording_report.dart';
 
 // Mocks
@@ -213,6 +215,83 @@ void main() {
 
       final lastSync = await repository.getLastSyncTime();
       expect(lastSync == null, true); // Should treat as never synced
+    });
+  });
+
+  // develop-2026-10 ticket 39: feedback.created_at and feedback.timestamp
+  // are timestamptz. Drift reads them back local; the writes now send UTC.
+  group('FeedbackRepository timestamptz writes go out in UTC', () {
+    // Whole seconds: Drift keeps epoch seconds.
+    final createdAtUtc = DateTime.utc(2026, 10, 7, 11, 11, 3);
+    final answeredAtUtc = DateTime.utc(2026, 10, 7, 23, 5, 41);
+
+    late FakePostgrest server;
+    late FeedbackRepository utcRepository;
+
+    setUp(() {
+      server = FakePostgrest();
+      utcRepository = FeedbackRepository(database, server.client, report);
+    });
+
+    Map<String, dynamic> firstRow(Object? raw) =>
+        ((raw is List ? raw.first : raw) as Map).cast<String, dynamic>();
+
+    test('uploadDirtyRecords sends the stored instants, ending in Z', () async {
+      await database
+          .into(database.feedbackTable)
+          .insert(
+            FeedbackTableCompanion(
+              id: const Value('fb-39'),
+              deviceId: const Value(testUserId),
+              satisfactionLevel: const Value(4),
+              satisfactionEmoji: const Value('🙂'),
+              satisfactionLabel: const Value('Very'),
+              timestamp: Value(answeredAtUtc),
+              needsUpload: const Value(true),
+              createdAt: Value(createdAtUtc),
+            ),
+          );
+
+      final result = await utcRepository.uploadDirtyRecords(testUserId);
+      expect(result.success, isTrue);
+
+      final sent = firstRow(
+        server.writes.singleWhere((w) => w.table == 'feedback').body,
+      );
+      for (final (key, instant) in [
+        ('created_at', createdAtUtc),
+        ('timestamp', answeredAtUtc),
+      ]) {
+        final value = sent[key] as String;
+        expect(value, endsWith('Z'), reason: '$key carries its offset');
+        expect(DateTime.parse(value).isAtSameMomentAs(instant), isTrue);
+      }
+    });
+
+    test('saveSurveyResponse sends UTC', () async {
+      final answeredAt = DateTime(2026, 10, 7, 18, 5, 41, 250);
+      final before = DateTime.now();
+
+      await utcRepository.saveSurveyResponse(
+        SurveyResponse(
+          confidenceLevel: ConfidenceLevel.very,
+          reuseIntent: ReuseIntent.yes,
+          deviceId: testUserId,
+          timestamp: answeredAt,
+        ),
+      );
+
+      final sent = firstRow(
+        server.writes.singleWhere((w) => w.table == 'feedback').body,
+      );
+      final timestamp = sent['timestamp'] as String;
+      expect(timestamp, endsWith('Z'));
+      expect(DateTime.parse(timestamp).isAtSameMomentAs(answeredAt), isTrue);
+      final createdAt = sent['created_at'] as String;
+      expect(createdAt, endsWith('Z'));
+      final at = DateTime.parse(createdAt);
+      expect(at.isBefore(before), isFalse);
+      expect(at.isAfter(DateTime.now()), isFalse);
     });
   });
 }

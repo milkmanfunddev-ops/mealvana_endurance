@@ -151,8 +151,8 @@ class PersonalTemplate {
       'total_fluids_ml': totalFluidsMl,
       'total_calories': totalCalories,
       'brick_segment_order': brickSegmentOrder,
-      'created_at': createdAt.toIso8601String(),
-      'updated_at': DateTime.now().toIso8601String(),
+      'created_at': createdAt.toUtc().toIso8601String(),
+      'updated_at': DateTime.now().toUtc().toIso8601String(),
     };
   }
 
