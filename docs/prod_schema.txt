@@ -5201,6 +5201,13 @@ CREATE INDEX idx_events_event_date ON public.events USING btree (event_date);
 
 
 --
+-- Name: events_user_date_name_unique; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX events_user_date_name_unique ON public.events USING btree (user_id, event_date, event_name);
+
+
+--
 -- Name: idx_feature_survey_needs_upload; Type: INDEX; Schema: public; Owner: -
 --
 
