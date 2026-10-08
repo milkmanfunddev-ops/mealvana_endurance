@@ -20,6 +20,7 @@ import 'package:mealvana_endurance/features/auth/domain/user_preferences.dart';
 import 'package:mealvana_endurance/features/content/application/content_service.dart';
 import 'package:mealvana_endurance/features/integrations/data/integrations_repository.dart';
 import 'package:mealvana_endurance/features/integrations/domain/integration.dart';
+import 'package:mealvana_endurance/features/integrations/domain/integration_exceptions.dart';
 import 'package:mealvana_endurance/features/integrations/presentation/providers/connect_training_controller.dart';
 import 'package:mealvana_endurance/features/integrations/presentation/providers/integrations_providers.dart';
 import 'package:mealvana_endurance/features/settings/presentation/screens/connected_apps_screen.dart';
@@ -214,8 +215,11 @@ void main() {
       final row = await repository.getIntegration(_profileId, 'garmin');
       expect(row!.lastSyncStatus, requiresReauthStatus);
       expect(row.lastSyncError, isNot(contains('FunctionException')));
+      // Ticket 37: the row holds the code; the screen never shows it.
+      expect(row.lastSyncError, reauthRequiredCode);
       expect(inCard(garmin, find.text(reconnect)), findsOneWidget);
       expect(inCard(garmin, find.text('Sync Now')), findsNothing);
+      expect(find.textContaining('reauth_required'), findsNothing);
     },
   );
 
@@ -228,12 +232,13 @@ void main() {
         _profileId,
         'garmin',
         status: requiresReauthStatus,
-        error: 'Garmin needs you to sign in again. Please reconnect.',
+        error: reauthRequiredCode,
       );
     });
 
     await pumpSettings(tester);
 
     expect(inCard(garmin, find.text(reconnect)), findsOneWidget);
+    expect(find.textContaining('reauth_required'), findsNothing);
   });
 }

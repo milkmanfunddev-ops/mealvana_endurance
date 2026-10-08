@@ -6,6 +6,7 @@ import '../../../shared/services/report/report.dart';
 import '../data/integrations_repository.dart';
 import '../data/training_peaks_api_client.dart';
 import '../domain/integration.dart';
+import '../domain/integration_exceptions.dart';
 
 /// Service for TrainingPeaks OAuth authentication flow
 ///
@@ -321,9 +322,8 @@ class TrainingPeaksOAuthService {
       userId,
       'training_peaks',
       status: forGood ? requiresReauthStatus : 'error',
-      error: forGood
-          ? 'Token refresh refused. Please reconnect.'
-          : 'Token refresh failed (status: ${e.statusCode}).',
+      // Ticket 37: the row holds a code, mapped to content at display time.
+      error: forGood ? reauthRequiredCode : syncErrorCode(e),
     );
   }
 

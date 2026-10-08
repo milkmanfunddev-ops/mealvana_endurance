@@ -5,10 +5,7 @@
  * Run with: deno test --allow-all supabase/functions/_shared/garmin/token.test.ts
  */
 
-import {
-  assertEquals,
-  assertStringIncludes,
-} from "https://deno.land/std@0.168.0/testing/asserts.ts";
+import { assertEquals } from "https://deno.land/std@0.168.0/testing/asserts.ts";
 import { describe, it } from "https://deno.land/std@0.168.0/testing/bdd.ts";
 
 import {
@@ -327,13 +324,14 @@ describe("isGarminTokenInactive", () => {
 });
 
 describe("markGarminRequiresReauth", () => {
-  it("stamps the garmin integrations row requires_reauth with a plain message", async () => {
+  it("stamps the garmin integrations row requires_reauth with the reauth_required code", async () => {
     const { supabase, updates } = fakeSupabase();
     await markGarminRequiresReauth(supabase, "u1");
     assertEquals(updates.length, 1);
     assertEquals(updates[0].table, "integrations");
     assertEquals(updates[0].values.last_sync_status, "requires_reauth");
-    assertStringIncludes(String(updates[0].values.last_sync_error), "reconnect");
+    // Ticket 37: the column holds a code the app maps to content, never text.
+    assertEquals(updates[0].values.last_sync_error, "reauth_required");
     assertEquals(updates[0].filters, [["user_id", "u1"], ["provider", "garmin"]]);
   });
 

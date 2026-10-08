@@ -34,6 +34,7 @@ import '../../application/vdot_oauth_service.dart';
 import '../../application/vdot_sync_service.dart';
 import '../../data/runna_ics_client.dart';
 import '../../domain/integration.dart';
+import '../../domain/integration_exceptions.dart';
 import '../../../onboarding/presentation/providers/onboarding_controller.dart';
 import '../../domain/runna_defaults.dart';
 import 'integrations_providers.dart';
@@ -89,6 +90,7 @@ class ConnectTrainingState {
     this.syncingProvider,
     this.importProgress = 0.0,
     this.errorMessage,
+    this.errorProvider,
     this.hasNextEvent = false,
     this.nextEventName,
     this.finalSurgeNeedsReauth = false,
@@ -121,6 +123,11 @@ class ConnectTrainingState {
 
   final double importProgress;
   final String? errorMessage;
+
+  /// Ticket 37: the provider id whose sync failed. A failed sync leaves a
+  /// wire code (`SyncErrorCode`) in [errorMessage]; the screen maps it to
+  /// content text with this provider's name. Cleared with [errorMessage].
+  final String? errorProvider;
   final bool hasNextEvent;
   final String? nextEventName;
 
@@ -169,6 +176,7 @@ class ConnectTrainingState {
     bool clearSyncingProvider = false,
     double? importProgress,
     String? errorMessage,
+    String? errorProvider,
     bool clearErrorMessage = false,
     bool? hasNextEvent,
     String? nextEventName,
@@ -215,6 +223,9 @@ class ConnectTrainingState {
       errorMessage: clearErrorMessage
           ? null
           : (errorMessage ?? this.errorMessage),
+      errorProvider: clearErrorMessage
+          ? null
+          : (errorProvider ?? this.errorProvider),
       hasNextEvent: hasNextEvent ?? this.hasNextEvent,
       nextEventName: nextEventName ?? this.nextEventName,
       finalSurgeNeedsReauth:
@@ -1123,11 +1134,8 @@ class ConnectTrainingController extends _$ConnectTrainingController {
           userId,
           'garmin',
           status: requiresReauthStatus,
-          // TODO(content): stored server-side in
-          // `integrations.last_sync_error` and shown on the card as stored;
-          // moving it to the content system needs a key-based design (store
-          // a reason code, render the text from content).
-          error: 'Garmin needs you to sign in again. Please reconnect.',
+          // Ticket 37: the row holds the code; the text is content.
+          error: reauthRequiredCode,
         );
     if (!ref.mounted) return;
     final current = state.value;
@@ -1248,7 +1256,8 @@ class ConnectTrainingController extends _$ConnectTrainingController {
             state.value!.copyWith(
               isImporting: false,
               clearSyncingProvider: true,
-              errorMessage: result.summary,
+              errorMessage: reauthRequiredCode, // ticket 37
+              errorProvider: 'vdot',
               vdotNeedsReauth: true,
             ),
           );
@@ -1265,7 +1274,8 @@ class ConnectTrainingController extends _$ConnectTrainingController {
               isImporting: false,
               clearSyncingProvider: true,
               isNetworkError: true,
-              errorMessage: result.summary,
+              errorMessage: SyncErrorCode.network.wire, // ticket 37
+              errorProvider: 'vdot',
             ),
           );
           _trackIntegrationSyncFailed(
@@ -1279,7 +1289,9 @@ class ConnectTrainingController extends _$ConnectTrainingController {
           state.value!.copyWith(
             isImporting: false,
             clearSyncingProvider: true,
-            errorMessage: result.error ?? 'Failed to import workouts',
+            // Ticket 37: a wire code; English from a result reads `unknown`.
+            errorMessage: syncFailureCode(error: result.error),
+            errorProvider: 'vdot',
           ),
         );
         _trackIntegrationSyncFailed(
@@ -1386,7 +1398,9 @@ class ConnectTrainingController extends _$ConnectTrainingController {
           state.value!.copyWith(
             isImporting: false,
             clearSyncingProvider: true,
-            errorMessage: 'Failed to import workouts: $e',
+            // Ticket 37: a wire code, never the raw exception text.
+            errorMessage: syncErrorCode(e),
+            errorProvider: 'vdot',
           ),
         );
       }
@@ -1396,7 +1410,7 @@ class ConnectTrainingController extends _$ConnectTrainingController {
         'exception',
         errorMessage: e.toString(),
       );
-      return VdotSyncResult.error(e.toString());
+      return VdotSyncResult.error(syncErrorCode(e)); // ticket 37
     } finally {
       _syncingProviders.remove('vdot');
     }
@@ -1571,7 +1585,8 @@ class ConnectTrainingController extends _$ConnectTrainingController {
               isImporting: false,
               clearSyncingProvider: true,
               isNetworkError: true,
-              errorMessage: result.summary,
+              errorMessage: SyncErrorCode.network.wire, // ticket 37
+              errorProvider: 'runna',
             ),
           );
           _trackIntegrationSyncFailed(
@@ -1585,7 +1600,9 @@ class ConnectTrainingController extends _$ConnectTrainingController {
           state.value!.copyWith(
             isImporting: false,
             clearSyncingProvider: true,
-            errorMessage: result.error ?? 'Failed to import workouts',
+            // Ticket 37: a wire code; English from a result reads `unknown`.
+            errorMessage: syncFailureCode(error: result.error),
+            errorProvider: 'runna',
           ),
         );
         _trackIntegrationSyncFailed(
@@ -1670,7 +1687,9 @@ class ConnectTrainingController extends _$ConnectTrainingController {
           state.value!.copyWith(
             isImporting: false,
             clearSyncingProvider: true,
-            errorMessage: 'Failed to import workouts: $e',
+            // Ticket 37: a wire code, never the raw exception text.
+            errorMessage: syncErrorCode(e),
+            errorProvider: 'runna',
           ),
         );
       }
@@ -1680,7 +1699,7 @@ class ConnectTrainingController extends _$ConnectTrainingController {
         'exception',
         errorMessage: e.toString(),
       );
-      return RunnaSyncResult.error(e.toString());
+      return RunnaSyncResult.error(syncErrorCode(e)); // ticket 37
     } finally {
       _syncingProviders.remove('runna');
     }
@@ -1744,14 +1763,16 @@ class ConnectTrainingController extends _$ConnectTrainingController {
                   clearSyncingProvider: true,
                   finalSurgeNeedsReauth: true,
                   isFinalSurgeConnected: false,
-                  errorMessage: getSummary(result),
+                  errorMessage: reauthRequiredCode, // ticket 37
+                  errorProvider: providerId,
                 )
               : state.value!.copyWith(
                   isImporting: false,
                   clearSyncingProvider: true,
                   trainingPeaksNeedsReauth: true,
                   isTrainingPeaksConnected: false,
-                  errorMessage: getSummary(result),
+                  errorMessage: reauthRequiredCode, // ticket 37
+                  errorProvider: providerId,
                 );
           state = AsyncData(stateUpdate);
           _trackIntegrationSyncFailed(
@@ -1769,7 +1790,8 @@ class ConnectTrainingController extends _$ConnectTrainingController {
               isImporting: false,
               clearSyncingProvider: true,
               isNetworkError: true,
-              errorMessage: getSummary(result),
+              errorMessage: SyncErrorCode.network.wire, // ticket 37
+              errorProvider: providerId,
             ),
           );
           _trackIntegrationSyncFailed(
@@ -1785,7 +1807,9 @@ class ConnectTrainingController extends _$ConnectTrainingController {
           state.value!.copyWith(
             isImporting: false,
             clearSyncingProvider: true,
-            errorMessage: getError(result) ?? 'Failed to import workouts',
+            // Ticket 37: a wire code; English from a result reads `unknown`.
+            errorMessage: syncFailureCode(error: getError(result)),
+            errorProvider: providerId,
           ),
         );
         _trackIntegrationSyncFailed(
@@ -1911,7 +1935,9 @@ class ConnectTrainingController extends _$ConnectTrainingController {
           state.value!.copyWith(
             isImporting: false,
             clearSyncingProvider: true,
-            errorMessage: 'Failed to import workouts: $e',
+            // Ticket 37: a wire code, never the raw exception text.
+            errorMessage: syncErrorCode(e),
+            errorProvider: providerId,
           ),
         );
       }
@@ -1921,7 +1947,7 @@ class ConnectTrainingController extends _$ConnectTrainingController {
         'exception',
         errorMessage: e.toString(),
       );
-      return createError(e.toString());
+      return createError(syncErrorCode(e)); // ticket 37
     } finally {
       _syncingProviders.remove(providerId);
     }

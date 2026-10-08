@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mealvana_endurance/shared/widgets/kyle_design/kyle_design.dart';
 
 import '../../activities/data/activities_repository.dart';
+import '../../content/application/content_service.dart';
+import '../../content/domain/content_keys.dart';
 import '../../activities/presentation/providers/activities_controller.dart';
 import '../../../shared/data/syncable_repository.dart' as syncable_repo;
 import '../../../shared/services/app_external_deps.dart';
@@ -10,7 +12,53 @@ import '../application/final_surge_sync_service.dart';
 import '../application/runna_sync_service.dart';
 import '../application/training_peaks_sync_service.dart';
 import '../application/vdot_sync_service.dart';
+import '../domain/integration.dart';
+import '../domain/integration_exceptions.dart';
 import 'providers/connect_training_controller.dart';
+
+/// The athlete's text for a stored sync error [code] (ticket 37): the code
+/// maps to an `integrations.sync_error_*` content key, `{provider}` becomes
+/// [providerName] and `{status}` the HTTP status. Anything that is not a
+/// code (a row written before ticket 37) reads as `unknown`.
+String syncErrorText(
+  ContentService content,
+  String? code,
+  String providerName,
+) {
+  final error = SyncError.parse(code);
+  final key = switch (error.code) {
+    SyncErrorCode.network => ContentKeys.integrationsSyncErrorNetwork,
+    SyncErrorCode.rateLimited => ContentKeys.integrationsSyncErrorRateLimited,
+    SyncErrorCode.httpStatus => ContentKeys.integrationsSyncErrorHttp,
+    SyncErrorCode.reauthRequired => ContentKeys.integrationsSyncErrorReauth,
+    SyncErrorCode.unknown => ContentKeys.integrationsSyncErrorUnknown,
+  };
+  return ContentKeys.format(content.getValue(key), {
+    'provider': providerName,
+    'status': error.status ?? '',
+  });
+}
+
+/// The athlete's name for a provider id (`training_peaks` → TrainingPeaks).
+String integrationProviderName(String providerId) =>
+    IntegrationProvider.fromValue(providerId)?.displayName ?? providerId;
+
+/// The text of a failed-sync snackbar or the Connected Apps error line
+/// (ticket 37). The controller's failure branches leave a wire code in
+/// [stateMessage]; a result's own code is the fallback. A message that is
+/// not a code (the upload-retry note, a connect failure) is already the
+/// athlete's text and shows as is.
+String syncFailureText(
+  ContentService content, {
+  required String providerName,
+  String? stateMessage,
+  String? resultCode,
+}) {
+  if (stateMessage != null && SyncError.tryParse(stateMessage) == null) {
+    return stateMessage;
+  }
+  return syncErrorText(content, stateMessage ?? resultCode, providerName);
+}
 
 /// Shared sync helpers for integration screens.
 ///
@@ -77,7 +125,17 @@ Future<void> syncFinalSurge(
     } else if (!result.success || state?.errorMessage != null) {
       MealvanaSnackbar.showError(
         context,
-        'Sync failed: ${state?.errorMessage ?? result.error ?? 'Unknown error'}',
+        // Ticket 37: content text for the code, never the code or English.
+        syncFailureText(
+          ref.read(contentServiceProvider),
+          providerName: 'Final Surge',
+          stateMessage: state?.errorMessage,
+          resultCode: syncFailureCode(
+            error: result.error,
+            needsReauth: result.needsReauth,
+            isNetworkError: result.isNetworkError,
+          ),
+        ),
         duration: const Duration(seconds: 4),
       );
     } else {
@@ -166,7 +224,16 @@ Future<void> syncTrainingPeaks(
     } else if (!result.success || state?.errorMessage != null) {
       MealvanaSnackbar.showError(
         context,
-        'Sync failed: ${state?.errorMessage ?? result.error ?? 'Unknown error'}',
+        // Ticket 37: content text for the code, never the code or English.
+        syncFailureText(
+          ref.read(contentServiceProvider),
+          providerName: 'TrainingPeaks',
+          stateMessage: state?.errorMessage,
+          resultCode: syncFailureCode(
+            error: result.error,
+            needsReauth: result.tokenExpired,
+          ),
+        ),
         duration: const Duration(seconds: 4),
       );
     } else {
@@ -366,7 +433,16 @@ Future<void> syncRunna(
   } else if (!result.success || state?.errorMessage != null) {
     MealvanaSnackbar.showError(
       context,
-      'Sync failed: ${state?.errorMessage ?? result.error ?? 'Unknown error'}',
+      // Ticket 37: content text for the code, never the code or English.
+      syncFailureText(
+        ref.read(contentServiceProvider),
+        providerName: 'Runna',
+        stateMessage: state?.errorMessage,
+        resultCode: syncFailureCode(
+          error: result.error,
+          isNetworkError: result.isNetworkError,
+        ),
+      ),
       duration: const Duration(seconds: 4),
     );
   } else {
@@ -431,7 +507,17 @@ Future<void> syncVdot(
   } else if (!result.success || state?.errorMessage != null) {
     MealvanaSnackbar.showError(
       context,
-      'Sync failed: ${state?.errorMessage ?? result.error ?? 'Unknown error'}',
+      // Ticket 37: content text for the code, never the code or English.
+      syncFailureText(
+        ref.read(contentServiceProvider),
+        providerName: 'V.O2',
+        stateMessage: state?.errorMessage,
+        resultCode: syncFailureCode(
+          error: result.error,
+          needsReauth: result.needsReauth,
+          isNetworkError: result.isNetworkError,
+        ),
+      ),
       duration: const Duration(seconds: 4),
     );
   } else {

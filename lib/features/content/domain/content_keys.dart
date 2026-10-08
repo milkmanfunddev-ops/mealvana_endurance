@@ -318,6 +318,20 @@ class ContentKeys {
   static const String aiCreditsOutNotNow = 'ai_credits.out_not_now';
   static const String aiCreditsOutGetCredits = 'ai_credits.out_get_credits';
 
+  // Sync errors (testing-wave develop-2026-10 ticket 37): the row stores a
+  // code (`SyncErrorCode`), these keys hold the text. `{provider}` is the
+  // provider's name, `{status}` the HTTP status.
+  static const String integrationsSyncErrorNetwork =
+      'integrations.sync_error_network';
+  static const String integrationsSyncErrorRateLimited =
+      'integrations.sync_error_rate_limited';
+  static const String integrationsSyncErrorHttp =
+      'integrations.sync_error_http';
+  static const String integrationsSyncErrorReauth =
+      'integrations.sync_error_reauth';
+  static const String integrationsSyncErrorUnknown =
+      'integrations.sync_error_unknown';
+
   /// Interpolates `{name}` placeholders in a content value:
   /// `format('Give me {n} seconds', {'n': 30})`. (From mealplanning 7b206f04;
   /// the code screens' countdown reads it.)

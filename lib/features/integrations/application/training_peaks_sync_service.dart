@@ -144,7 +144,7 @@ class TrainingPeaksSyncService {
       return TrainingPeaksSyncResult.tokenExpired();
     } on TrainingPeaksApiException catch (e) {
       await _recordRefreshFailed(userId, e);
-      return TrainingPeaksSyncResult.error(e.toString());
+      return TrainingPeaksSyncResult.error(syncErrorCode(e)); // ticket 37
     }
     final freshToken = !identical(integration, stored);
 
@@ -353,7 +353,7 @@ class TrainingPeaksSyncService {
         userId,
         'training_peaks',
         status: 'error',
-        error: plainSyncErrorMessage(e, providerName: 'TrainingPeaks'),
+        error: syncErrorCode(e), // ticket 37: a code, not English
       );
 
       await _r.fault(
@@ -363,7 +363,7 @@ class TrainingPeaksSyncService {
         message: 'TrainingPeaks workout sync failed',
       );
 
-      return TrainingPeaksSyncResult.error(e.toString());
+      return TrainingPeaksSyncResult.error(syncErrorCode(e)); // ticket 37
     }
   }
 
@@ -405,7 +405,7 @@ class TrainingPeaksSyncService {
       return TrainingPeaksSyncResult.tokenExpired();
     } on TrainingPeaksApiException catch (e) {
       await _recordRefreshFailed(userId, e);
-      return TrainingPeaksSyncResult.error(e.toString());
+      return TrainingPeaksSyncResult.error(syncErrorCode(e)); // ticket 37
     }
     final freshToken = !identical(integration, stored);
 
@@ -561,7 +561,7 @@ class TrainingPeaksSyncService {
         userId,
         'training_peaks',
         status: 'error',
-        error: plainSyncErrorMessage(e, providerName: 'TrainingPeaks'),
+        error: syncErrorCode(e), // ticket 37: a code, not English
       );
       await _r.fault(
         e,
@@ -569,7 +569,7 @@ class TrainingPeaksSyncService {
         area: _area,
         message: 'TrainingPeaks date-range sync failed',
       );
-      return TrainingPeaksSyncResult.error(e.toString());
+      return TrainingPeaksSyncResult.error(syncErrorCode(e)); // ticket 37
     }
   }
 
@@ -1016,7 +1016,7 @@ class TrainingPeaksSyncService {
     userId,
     'training_peaks',
     status: 'error',
-    error: plainSyncErrorMessage(e, providerName: 'TrainingPeaks'),
+    error: syncErrorCode(e), // ticket 37: a code, not English
   );
 
   Future<void> _markNeedsReconnect(String userId) =>
@@ -1024,7 +1024,7 @@ class TrainingPeaksSyncService {
         userId,
         'training_peaks',
         status: requiresReauthStatus,
-        error: 'Token refresh refused. Please reconnect.',
+        error: reauthRequiredCode, // ticket 37
       );
 
   /// Dedupe remote workouts so sync remains idempotent even when provider APIs

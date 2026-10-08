@@ -7,6 +7,10 @@
 // Drift → the real ConnectTrainingController's build → ConnectedAppsScreen.
 // V.O2's sync service already stored `requires_reauth` before this ticket; its
 // row is seeded with that stored value.
+//
+// Ticket 37 (develop-2026-10): the row holds the code `reauth_required`, and
+// the snackbar and the card's error line show its content text, never the
+// code.
 
 import 'dart:convert';
 
@@ -28,6 +32,7 @@ import 'package:mealvana_endurance/features/integrations/application/training_pe
 import 'package:mealvana_endurance/features/integrations/data/integrations_repository.dart';
 import 'package:mealvana_endurance/features/integrations/data/training_peaks_api_client.dart';
 import 'package:mealvana_endurance/features/integrations/domain/integration.dart';
+import 'package:mealvana_endurance/features/integrations/domain/integration_exceptions.dart';
 import 'package:mealvana_endurance/features/integrations/presentation/providers/integrations_providers.dart';
 import 'package:mealvana_endurance/features/settings/presentation/screens/connected_apps_screen.dart';
 import 'package:mealvana_endurance/shared/database/app_database.dart';
@@ -117,7 +122,10 @@ void main() {
     await db.userDao.saveUserProfile(_athlete());
   });
 
-  Future<void> pumpSettings(WidgetTester tester) async {
+  Future<void> pumpSettings(
+    WidgetTester tester, {
+    TrainingPeaksApiClient? tpApi,
+  }) async {
     tester.view.physicalSize = standardPhoneSize;
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
@@ -133,6 +141,16 @@ void main() {
           activitiesRepositoryProvider.overrideWithValue(activitiesRepository),
           userIdProvider.overrideWith((ref) async => _authUid),
           contentServiceProvider.overrideWith(testContentService),
+          if (tpApi != null)
+            trainingPeaksSyncServiceProvider.overrideWith(
+              (ref) async => TrainingPeaksSyncService(
+                apiClient: tpApi,
+                integrationsRepository: repository,
+                activitiesRepository: activitiesRepository,
+                transformer: const TrainingPeaksTransformer(),
+                changeDetectionService: ChangeDetectionService(),
+              ),
+            ),
         ],
         // Settings mode: no onContinue.
         child: wrapForTest(const ConnectedAppsScreen()),
@@ -183,7 +201,7 @@ void main() {
         _profileId,
         'vdot',
         status: requiresReauthStatus,
-        error: 'Please reconnect your V.O2 account',
+        error: reauthRequiredCode,
       );
     });
 
@@ -192,7 +210,64 @@ void main() {
     const vdot = 'connected_apps.vdot_connect_button';
     expect(inCard(vdot, find.text(reconnect)), findsOneWidget);
     expect(inCard(vdot, find.text('Sync Now')), findsNothing);
+    // The stored code never reaches the screen.
+    expect(find.textContaining('reauth_required'), findsNothing);
   });
+
+  testWidgets(
+    'Sync Now refused by TrainingPeaks: the row holds reauth_required and '
+    'the snackbar and card show the content text, never the code',
+    (tester) async {
+      await tester.runAsync(() async {
+        await repository.upsertIntegration(
+          _row('training_peaks', expired: true),
+        );
+      });
+
+      await pumpSettings(tester, tpApi: _tpRefusingRefresh());
+
+      const tp = 'connected_apps.trainingpeaks_connect_button';
+      expect(inCard(tp, find.text('Sync Now')), findsOneWidget);
+      await tester.tap(inCard(tp, find.text('Sync Now')));
+      // The sync runs real Drift and HTTP-double futures.
+      await tester.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 500)),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 400));
+
+      final row = await tester.runAsync(
+        () => repository.getIntegration(_profileId, 'training_peaks'),
+      );
+      expect(row!.lastSyncStatus, requiresReauthStatus);
+      expect(row.lastSyncError, 'reauth_required');
+
+      final reauthText = content['integrations.sync_error_reauth']!
+          .replaceAll('{provider}', 'TrainingPeaks');
+      // The snackbar.
+      expect(
+        find.descendant(
+          of: find.byType(SnackBar),
+          matching: find.text(reauthText),
+        ),
+        findsOneWidget,
+      );
+      // The error line under the cards (built once scrolled into view).
+      const errorLine = ValueKey('connected_apps.error_line');
+      await tester.scrollUntilVisible(
+        find.byKey(errorLine),
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
+      expect(tester.widget<Text>(find.byKey(errorLine)).data, reauthText);
+      expect(find.textContaining('reauth_required'), findsNothing);
+      expect(find.textContaining('Sync failed:'), findsNothing);
+
+      // Let the snackbar's 4 s timer run out inside the test body.
+      await tester.pump(const Duration(seconds: 5));
+      await tester.pumpAndSettle();
+    },
+  );
 
   testWidgets('a working connection still shows Sync Now', (tester) async {
     await tester.runAsync(() async {

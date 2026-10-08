@@ -26,11 +26,20 @@
 
 Deploy (dev, by the lead, from the merged tree): every function that imports `_shared/garmin/token.ts` (`grep -rl "garmin/token" supabase/functions`): garmin-backfill, garmin-push, garmin-user-mapping, garmin-ping, garmin-deregistration at least; read the import list before deploying.
 
-- [ ] Unit (`sync_error_code_test.dart`): each exception class → its code; a legacy English string parses to `unknown`; `syncErrorText` for each code and a `{provider}` substitution.
-- [ ] Seam (`sync_status_write_seam_test.dart:128, 142-146`): the stored `last_sync_error` is the code, and `keepsReauth` keeps `reauth_required` over a later `network`.
-- [ ] Widget (`connected_apps_garmin_reauth_test.dart:216`, `connected_apps_reconnect_test.dart`): the card and snackbar show the content text for `reauth_required`, never the code.
-- [ ] Deno `token.test.ts` green (`deno test --allow-all`).
-- [ ] `flutter analyze` clean on touched files.
+- [x] Unit (`sync_error_code_test.dart`): each exception class → its code; a legacy English string parses to `unknown`; `syncErrorText` for each code and a `{provider}` substitution.
+- [x] Seam (`sync_status_write_seam_test.dart:128, 142-146`): the stored `last_sync_error` is the code, and `keepsReauth` keeps `reauth_required` over a later `network`.
+- [x] Widget (`connected_apps_garmin_reauth_test.dart:216`, `connected_apps_reconnect_test.dart`): the card and snackbar show the content text for `reauth_required`, never the code.
+- [x] Deno `token.test.ts` green (`deno test --allow-all`).
+- [x] `flutter analyze` clean on touched files.
 - [ ] Retest on a simulator (ticket 14's dead-Garmin-token check or the next retest ticket): a 409 `garmin_reauth_required` shows the reconnect text and the row holds `reauth_required`.
+
+**Fix notes (wave 4).**
+- Codes: `SyncErrorCode` + `SyncError.parse`/`tryParse` + `syncErrorCode(e)` + `syncFailureCode(...)` + `reauthRequiredCode` in `integration_exceptions.dart`; `plainSyncErrorMessage` is gone. A `TokenRefreshException(requiresReauth: true)` maps to `reauth_required`; an API 429 to `rate_limited`.
+- Writers: TP (3 + `_markNeedsReconnect`), Final Surge (2 + 2 reconnect), V.O2 (1 + reconnect), the Garmin controller mirror, and one writer the ticket did not list: `training_peaks_oauth_service.dart` `_recordRefreshFailure` (wrote `Token refresh refused. Please reconnect.` / `Token refresh failed (status: N).`), now `reauth_required` / `http_N`. Not changed: `runna_sync_service.dart` still writes `e.message` / `e.toString()` (not in this ticket; it reads as `unknown` on display). The services' failure results (`*.error(e.toString())`) now carry the code too, so no raw exception reaches a snackbar.
+- `keepsReauth` keeps the reconnect when the stored status is `requires_reauth` OR the stored error is `reauth_required` (the status check stays so pre-37 English rows keep their reconnect).
+- Display: `syncErrorText(content, code, providerName)` and `syncFailureText(...)` in `integration_sync_helpers.dart`. The controller's sync-failure branches now leave the code in `errorMessage` plus a new `errorProvider` field; the four helper snackbars, the five "Sync failed" snackbars in `connected_apps_screen.dart` (FS/TP/V.O2 x2/Runna onboarding and connect paths) and the card error line (keyed `connected_apps.error_line`) map it to content. Non-code messages (the upload-retry note, connect failures) still show as they are.
+- Content keys `integrations.sync_error_network|_rate_limited|_http|_reauth|_unknown`. `_unknown` is new copy ("{provider} sync failed. Please try again."); it replaces the old "sync failed: <stripped exception text>".
+- Server: `markGarminRequiresReauth` writes `reauth_required` (`GARMIN_REAUTH_REQUIRED_CODE`). Functions importing `_shared/garmin/token.ts` (`grep -rl "garmin/token" supabase/functions`): **garmin-backfill**, **garmin-user-mapping**, **delete-user**. Only garmin-backfill calls `markGarminRequiresReauth`, so it is the one whose behaviour changes; garmin-push, garmin-ping and garmin-deregistration do not import the file.
+- Twice at once / after a refresh: no new async path. Two failing syncs at once both write a code through `updateSyncStatus`; the last write wins and both are codes, and a stored `reauth_required` survives a concurrent `network` (keepsReauth). The controller's `_syncingProviders` guard still drops a second import of the same provider. After a refresh (provider rebuild) `errorMessage`/`errorProvider` reset with the state; the row keeps its code and `needsReconnect` still comes from `last_sync_status`. A content refresh between the failure and the render only changes the text, never the code.
 
 Next: /testing-wave develop-2026-10 (fix wave 4)
