@@ -72,6 +72,13 @@ class PostOnboardingAuthController extends _$PostOnboardingAuthController {
           'Post-onboarding auth: Apple sign-in cancelled',
           area: 'auth',
         );
+      } else if (error is AppleNoAccountException) {
+        // No Apple account on the device (ticket 55): the service noted and
+        // counted it; iOS's own sheet told the athlete what to do.
+        report.info(
+          'Post-onboarding auth: no Apple account on this device',
+          area: 'auth',
+        );
       } else {
         report.fault(
           error!,
@@ -203,6 +210,12 @@ class PostOnboardingAuthController extends _$PostOnboardingAuthController {
         // The sheet was closed (125-003): not a failure, nothing to report.
         report.info(
           'Post-onboarding auth: Apple sign-in cancelled',
+          area: 'auth',
+        );
+      } else if (result.error is AppleNoAccountException) {
+        // No Apple account on the device (ticket 55): noted by the service.
+        report.info(
+          'Post-onboarding auth: no Apple account on this device',
           area: 'auth',
         );
       } else {

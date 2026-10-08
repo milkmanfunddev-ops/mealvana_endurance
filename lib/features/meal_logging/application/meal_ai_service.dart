@@ -8,6 +8,8 @@ import 'package:uuid/uuid.dart';
 
 import '../../ai_credits/application/credits_controller.dart';
 import '../../ai_credits/domain/insufficient_credits_exception.dart';
+import '../../../shared/services/analytics/analytics_tracker.dart';
+import '../../../shared/services/app_external_deps.dart';
 import '../../../shared/services/report/report.dart';
 import '../../../shared/services/supabase/supabase_client_provider.dart';
 import '../domain/meal_analysis_result.dart';
@@ -82,6 +84,8 @@ MealAiService mealAiService(Ref ref) {
     supabase: ref.watch(supabaseClientProvider),
     report: ref.watch(reportProvider),
     onCreditsChanged: credits.refresh,
+    // Held by the service so a not-food count survives a disposed screen.
+    analytics: ref.read(appExternalDepsProvider).analytics,
   );
 }
 
@@ -99,12 +103,18 @@ class MealAiService {
     required SupabaseClient supabase,
     Report? report,
     Future<void> Function()? onCreditsChanged,
+    AnalyticsTracker? analytics,
   }) : _supabase = supabase,
        _report = report,
-       _onCreditsChanged = onCreditsChanged;
+       _onCreditsChanged = onCreditsChanged,
+       _analytics = analytics;
 
   final SupabaseClient _supabase;
   final Report? _report;
+
+  /// Where a not-food answer's `expected_failure` count goes (ticket 55).
+  /// Null (a test, or no tracker): the count is a Sentry counter instead.
+  final AnalyticsTracker? _analytics;
 
   /// Re-reads the credit balance after the server may have changed it: a 200
   /// (the function debited before answering) or a 402 (the balance the pill
@@ -185,7 +195,7 @@ class MealAiService {
         debugMessage: e.toString(),
       );
     } on FunctionException catch (e) {
-      throw _mapFunctionException(e, functionName: 'describe-meal');
+      throw await _mapFunctionException(e, functionName: 'describe-meal');
     } catch (e, st) {
       _r.fault(
         e,
@@ -277,7 +287,7 @@ class MealAiService {
         debugMessage: e.toString(),
       );
     } on FunctionException catch (e) {
-      throw _mapFunctionException(e, functionName: 'analyze-meal-photo');
+      throw await _mapFunctionException(e, functionName: 'analyze-meal-photo');
     } catch (e, st) {
       _r.fault(
         e,
@@ -356,10 +366,25 @@ class MealAiService {
   }
 
   /// Map a [FunctionException] from the Supabase client to a [MealAiException].
-  MealAiException _mapFunctionException(
+  Future<MealAiException> _mapFunctionException(
     FunctionException e, {
     required String functionName,
-  }) {
+  }) async {
+    // A not-food answer is the athlete's turn, free and expected (ticket 45;
+    // ticket 55, 49-005): a note and one count, never degraded. Keyed on the
+    // server's flag, not the status alone, so a future 422 meaning something
+    // else still reports.
+    if (isNotFoodAnswer(e)) {
+      await _r.noteExpected(
+        '$functionName: not food',
+        area: _area,
+        reason: 'not_food',
+        analytics: _analytics,
+        data: {'status': 422},
+      );
+      return _notFood(functionName);
+    }
+
     // 402 is a business outcome (out of credits), not a failure.
     if (e.status != 402) {
       _r.degraded(
@@ -378,14 +403,8 @@ class MealAiService {
     }
 
     // FunctionException.status is non-nullable (int).
-    if (e.status == 422) {
-      return MealAiException(
-        kind: MealAiFailureKind.notFood,
-        userMessage:
-            "The photo doesn't appear to contain food. Please try a different image.",
-        debugMessage: 'FunctionException 422 from $functionName',
-      );
-    }
+    // A 422 with no flag (an older deployment) was reported above.
+    if (e.status == 422) return _notFood(functionName);
 
     return MealAiException(
       kind: MealAiFailureKind.serverError,
@@ -393,6 +412,22 @@ class MealAiService {
       debugMessage: 'FunctionException ${e.status} from $functionName: $e',
     );
   }
+
+  /// Whether [e] is describe-meal's or analyze-meal-photo's not-food answer:
+  /// 422 with `not_food: true` in the body (`errorResponse`'s additional
+  /// data, `_shared/responses.ts`).
+  @visibleForTesting
+  static bool isNotFoodAnswer(FunctionException e) {
+    final details = e.details;
+    return e.status == 422 && details is Map && details['not_food'] == true;
+  }
+
+  static MealAiException _notFood(String functionName) => MealAiException(
+    kind: MealAiFailureKind.notFood,
+    userMessage:
+        "The photo doesn't appear to contain food. Please try a different image.",
+    debugMessage: 'FunctionException 422 from $functionName',
+  );
 
   /// Kick off the credits refresh without waiting on it.
   void _creditsChanged(String functionName) {

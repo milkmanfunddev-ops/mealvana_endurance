@@ -479,6 +479,8 @@ void main() {
       AccountAlreadyExistsException('This email is already registered'),
       const OAuthAccountNotFoundException(provider: 'google'),
       const OAuthCancelledException(provider: 'apple'),
+      // ticket 55 (48-001): Apple's 1000 with no Apple account.
+      const AppleNoAccountException(),
       const WrongCredentialsException(),
       const NoConnectionException('offline'),
       const EmailNotConfirmedException('a@b.com'),

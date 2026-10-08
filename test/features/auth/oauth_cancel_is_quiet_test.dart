@@ -147,8 +147,21 @@ const _appleChannel = MethodChannel(
   _DedupingReport report,
   RecordingAnalyticsTracker analytics,
 })
-_realService() {
+_realService({bool anonymousSession = false}) {
   final goTrue = fakeGoTrueClient() as MockGoTrueClient;
+  if (anonymousSession) {
+    // The link flows start from the onboarding's anonymous session.
+    when(() => goTrue.currentUser).thenReturn(
+      const User(
+        id: 'anon-user',
+        appMetadata: <String, dynamic>{},
+        userMetadata: <String, dynamic>{},
+        aud: 'authenticated',
+        createdAt: '2026-10-08T00:00:00Z',
+        isAnonymous: true,
+      ),
+    );
+  }
   final prefs = MockSharedPreferences();
   when(() => prefs.getString(any())).thenReturn(null);
   final analytics = RecordingAnalyticsTracker();
@@ -197,16 +210,31 @@ void main() {
       );
     });
 
-    test('Apple: the simulator\'s unknown stays a failure', () {
+    test('Apple: unknown (1000) is not a cancel but is no Apple account '
+        '(ticket 55)', () {
+      const unknown = SignInWithAppleAuthorizationException(
+        code: AuthorizationErrorCode.unknown,
+        message: 'The operation couldn\'t be completed. (error 1000.)',
+      );
+      expect(OAuthService.isCancellation(unknown), isFalse);
+      expect(OAuthService.isAppleNoAccount(unknown), isTrue);
       expect(
-        OAuthService.isCancellation(
-          const SignInWithAppleAuthorizationException(
-            code: AuthorizationErrorCode.unknown,
-            message: 'The operation couldn\'t be completed. (error 1000.)',
+        OAuthService.isAppleNoAccount(
+          Exception(
+            'com.apple.AuthenticationServices.AuthorizationError error 1000.',
           ),
         ),
-        isFalse,
+        isTrue,
       );
+    });
+
+    test('Apple: failed (1004) is neither a cancel nor no account', () {
+      const failed = SignInWithAppleAuthorizationException(
+        code: AuthorizationErrorCode.failed,
+        message: 'The operation couldn\'t be completed. (error 1004.)',
+      );
+      expect(OAuthService.isCancellation(failed), isFalse);
+      expect(OAuthService.isAppleNoAccount(failed), isFalse);
     });
 
     test('Google: the plugin\'s cancel codes are cancels', () {
@@ -319,39 +347,82 @@ void main() {
       );
       expect(w.report.faults, isEmpty);
       expect(w.report.degradeds, isEmpty);
-      expect(
-        w.analytics.findEvents(expectedFailureEvent).single.properties,
-        {'area': 'auth', 'reason': 'oauth_cancelled'},
-      );
-    });
-
-    test('Apple\'s unknown (1000) is exactly one report, with area auth, '
-        'and no count', () async {
-      messenger.setMockMethodCallHandler(_appleChannel, (call) async {
-        throw PlatformException(
-          code: 'authorization-error/unknown',
-          message:
-              'The operation couldn\'t be completed. '
-              '(com.apple.AuthenticationServices.AuthorizationError error '
-              '1000.)',
-        );
+      expect(w.analytics.findEvents(expectedFailureEvent).single.properties, {
+        'area': 'auth',
+        'reason': 'oauth_cancelled',
       });
-      final w = _realService();
-
-      final ok = await w.container
-          .read(postOnboardingAuthControllerProvider.notifier)
-          .signInWithApple();
-      await Future<void>.delayed(Duration.zero);
-
-      expect(ok, isFalse);
-      final reports = [...w.report.faults, ...w.report.degradeds];
-      expect(reports, hasLength(1));
-      expect(reports.single.area, 'auth');
-      expect(
-        reports.single.error,
-        isA<SignInWithAppleAuthorizationException>(),
-      );
-      expect(w.analytics.findEvents(expectedFailureEvent), isEmpty);
     });
+
+    void appleThrows(String code, String message) {
+      messenger.setMockMethodCallHandler(_appleChannel, (call) async {
+        throw PlatformException(code: code, message: message);
+      });
+    }
+
+    const error1000 =
+        'The operation couldn\'t be completed. '
+        '(com.apple.AuthenticationServices.AuthorizationError error 1000.)';
+
+    for (final link in [false, true]) {
+      final flow = link ? 'linkAppleAccount' : 'signInWithApple';
+      test('$flow: Apple\'s unknown (1000) is no Apple account: no fault, '
+          'no degraded, one note, one apple_no_account count '
+          '(ticket 55)', () async {
+        appleThrows('authorization-error/unknown', error1000);
+        final w = _realService(anonymousSession: link);
+        final controller = w.container.read(
+          postOnboardingAuthControllerProvider.notifier,
+        );
+
+        final ok = link
+            ? await controller.linkAppleAccount()
+            : await controller.signInWithApple();
+        await Future<void>.delayed(Duration.zero);
+
+        expect(ok, isFalse);
+        expect(
+          w.container.read(postOnboardingAuthControllerProvider).error,
+          isA<AppleNoAccountException>(),
+        );
+        expect(w.report.faults, isEmpty);
+        expect(w.report.degradeds, isEmpty);
+        expect(w.report.notes.where((n) => n.area == 'auth'), hasLength(1));
+        expect(w.analytics.findEvents(expectedFailureEvent).single.properties, {
+          'area': 'auth',
+          'reason': 'apple_no_account',
+        });
+        expect(w.analytics.findEvents('auth_apple_native_failed'), isEmpty);
+        expect(w.analytics.findEvents('auth_flow_failed'), isEmpty);
+      });
+
+      test('$flow: Apple\'s failed (1004) is exactly one report, with area '
+          'auth, and no count', () async {
+        appleThrows(
+          'authorization-error/failed',
+          'The operation couldn\'t be completed. '
+              '(com.apple.AuthenticationServices.AuthorizationError error '
+              '1004.)',
+        );
+        final w = _realService(anonymousSession: link);
+        final controller = w.container.read(
+          postOnboardingAuthControllerProvider.notifier,
+        );
+
+        final ok = link
+            ? await controller.linkAppleAccount()
+            : await controller.signInWithApple();
+        await Future<void>.delayed(Duration.zero);
+
+        expect(ok, isFalse);
+        final reports = [...w.report.faults, ...w.report.degradeds];
+        expect(reports, hasLength(1));
+        expect(reports.single.area, 'auth');
+        expect(
+          reports.single.error,
+          isA<SignInWithAppleAuthorizationException>(),
+        );
+        expect(w.analytics.findEvents(expectedFailureEvent), isEmpty);
+      });
+    }
   });
 }

@@ -1,6 +1,7 @@
 // Tests for ContentRepository — caching, staleness, fallback chain
 // Uses SharedPreferences mock + SupabaseClient mock (no real network calls)
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
@@ -9,6 +10,9 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:mealvana_endurance/features/content/data/content_repository.dart';
 import 'package:mealvana_endurance/features/content/domain/app_content.dart';
+import 'package:mealvana_endurance/shared/services/report/report.dart';
+
+import '../../helpers/fakes/recording_report.dart';
 
 // ---------------------------------------------------------------------------
 // Mocks — we only need to stub Supabase; SharedPreferences uses the in-memory mock
@@ -237,32 +241,164 @@ void main() {
   });
 
   // ---------------------------------------------------------------------------
-  // refreshContent — clears cache and re-fetches
+  // refreshContent — keeps the cache until a fetch succeeds (ticket 55)
   // ---------------------------------------------------------------------------
 
   group('ContentRepository.refreshContent', () {
-    test('removes cache key before re-fetching', () async {
-      final cachedData = _contentJson(version: 1);
-      await prefs.setString('app_content_cache', json.encode(cachedData));
+    const offline = SocketException(
+      'Failed host lookup',
+      osError: OSError('nodename nor servname provided', 8),
+    );
 
-      // Supabase throws → falls through to empty default
-      when(() => mockSupabase.from(any())).thenThrow(Exception('no network'));
+    test(
+      'a failed fetch keeps the cached server copy and answers with it',
+      () async {
+        final cachedData = _contentJson(version: 7, content: {'k': 'server'});
+        await prefs.setString('app_content_cache', json.encode(cachedData));
 
-      final repo = _makeRepo();
+        final repo = ContentRepository(
+          supabase: mockSupabase,
+          sharedPreferences: prefs,
+          report: RecordingReport(),
+          fetchRow: (_, _) async => throw offline,
+        );
+        final result = await repo.refreshContent();
+
+        expect(result.version, 7);
+        expect(result.content['k'], 'server');
+        expect(
+          AppContent.fromJson(
+            json.decode(prefs.getString('app_content_cache')!)
+                as Map<String, dynamic>,
+          ).version,
+          7,
+          reason: 'an offline launch must not throw away a good cache',
+        );
+      },
+    );
+
+    test('a successful fetch replaces the cache', () async {
+      await prefs.setString(
+        'app_content_cache',
+        json.encode(_contentJson(version: 7)),
+      );
+
+      final repo = ContentRepository(
+        supabase: mockSupabase,
+        sharedPreferences: prefs,
+        report: RecordingReport(),
+        fetchRow: (_, _) async => _contentJson(version: 8),
+      );
+      final result = await repo.refreshContent();
+
+      expect(result.version, 8);
+      final cached = AppContent.fromJson(
+        json.decode(prefs.getString('app_content_cache')!)
+            as Map<String, dynamic>,
+      );
+      expect(cached.version, 8);
+    });
+
+    test('a fetch that finds no active row clears the cache', () async {
+      await prefs.setString(
+        'app_content_cache',
+        json.encode(_contentJson(version: 7)),
+      );
+
+      final repo = ContentRepository(
+        supabase: mockSupabase,
+        sharedPreferences: prefs,
+        report: RecordingReport(),
+        fetchRow: (_, _) async => null,
+      );
       await repo.refreshContent();
 
-      // After refreshContent, cache was cleared and re-populated (or empty default used)
-      // Either way — no stale v1 cache was used
-      final remaining = prefs.getString('app_content_cache');
-      // The cache key may have been repopulated with whatever was returned.
-      // What matters: the old v1 value is not blindly used — version may still
-      // be 1 from the fallback, but the important thing is refreshContent didn't throw.
-      // We verify the cache was at least cleared at some point in the call.
-      expect(
-        remaining,
-        isNull,
-      ); // fallback (asset load fails in test) leaves no cache
+      expect(prefs.getString('app_content_cache'), isNull);
     });
+  });
+
+  // ---------------------------------------------------------------------------
+  // What a failed fetch reports (ticket 55, 50-003)
+  // ---------------------------------------------------------------------------
+
+  group('ContentRepository fetch failures', () {
+    test('offline: a content.weather breadcrumb and one count, no fault, '
+        'and the defaults', () async {
+      final report = RecordingReport();
+      when(
+        () => mockSupabase.from(any()),
+      ).thenThrow(const SocketException('Network is unreachable'));
+      final repo = ContentRepository(
+        supabase: mockSupabase,
+        sharedPreferences: prefs,
+        report: report,
+      );
+
+      final result = await repo.getActiveContent();
+
+      expect(result, isNotNull);
+      expect(report.faults, isEmpty);
+      expect(report.degradeds, isEmpty);
+      expect(
+        report.calls.where(
+          (c) => c.severity == 'breadcrumb' && c.area == 'content.weather',
+        ),
+        hasLength(1),
+      );
+      expect(report.counts.single.message, expectedFailureEvent);
+      expect(report.counts.single.tags, containsPair('area', 'content'));
+    });
+
+    test('a PostgrestException still faults, with area content', () async {
+      final report = RecordingReport();
+      when(() => mockSupabase.from(any())).thenThrow(
+        const PostgrestException(message: 'permission denied', code: '42501'),
+      );
+      final repo = ContentRepository(
+        supabase: mockSupabase,
+        sharedPreferences: prefs,
+        report: report,
+      );
+
+      await repo.getActiveContent();
+
+      expect(report.faults, hasLength(1));
+      expect(report.faults.single.area, 'content');
+      expect(report.counts, isEmpty);
+    });
+
+    // ContentService.initialize runs getActiveContent, then refreshContent in
+    // the background (content_service.dart). With no cache (dev: app_content
+    // is empty, so nothing is ever cached) that is two selects per launch;
+    // with a cache, one.
+    test(
+      'the cold-start pair: two selects on a cache miss, one on a hit',
+      () async {
+        var selects = 0;
+        ContentRepository repo() => ContentRepository(
+          supabase: mockSupabase,
+          sharedPreferences: prefs,
+          report: RecordingReport(),
+          fetchRow: (_, _) async {
+            selects++;
+            return null;
+          },
+        );
+
+        await repo().getActiveContent();
+        await repo().refreshContent();
+        expect(selects, 2);
+
+        selects = 0;
+        await prefs.setString(
+          'app_content_cache',
+          json.encode(_contentJson(version: 7)),
+        );
+        await repo().getActiveContent();
+        await repo().refreshContent();
+        expect(selects, 1);
+      },
+    );
   });
 }
 

@@ -88,6 +88,21 @@ class OAuthService extends _$OAuthService {
         message.contains('1001'); // ASAuthorizationError.canceled
   }
 
+  /// Whether [error] is Apple's `ASAuthorizationError.unknown` (1000), which
+  /// is what Close answers on a device with no Apple account (ticket 55,
+  /// 48-001): the plugin types it as [AuthorizationErrorCode.unknown]; the
+  /// string forms cover a raw plugin error. Not a cancel ([isCancellation]
+  /// stays false for it); an expected outcome, [AppleNoAccountException].
+  @visibleForTesting
+  static bool isAppleNoAccount(Object error) {
+    if (error is SignInWithAppleAuthorizationException) {
+      return error.code == AuthorizationErrorCode.unknown;
+    }
+    final message = error.toString();
+    return message.contains('AuthorizationErrorCode.unknown') ||
+        message.contains('AuthorizationError error 1000');
+  }
+
   /// Ends a sign-in or link: [onError] reports the failure (or notes the
   /// outcome) and throws what the caller gets; only then is [state] written
   /// (ticket 41, 30-005). Writing state first let the Riverpod net capture
@@ -310,6 +325,14 @@ class OAuthService extends _$OAuthService {
           properties: {'platform': PlatformInfo.operatingSystem},
         );
         throw cancel;
+      }
+
+      // No Apple account on the device (ticket 55): an outcome, not a
+      // failure. The count replaces `auth_apple_native_failed`.
+      if (isAppleNoAccount(error)) {
+        const outcome = AppleNoAccountException();
+        await _expectedOutcome('Apple link', outcome);
+        throw outcome;
       }
 
       _report.fault(error, area: 'auth', message: 'Apple Sign-In failed');
@@ -761,6 +784,12 @@ class OAuthService extends _$OAuthService {
           properties: {'platform': PlatformInfo.operatingSystem},
         );
         throw cancel;
+      }
+      // No Apple account on the device (ticket 55).
+      if (isAppleNoAccount(error)) {
+        const outcome = AppleNoAccountException();
+        await _expectedOutcome('Apple sign in', outcome);
+        throw outcome;
       }
       _report.fault(error, area: 'auth', message: 'Apple Sign-In failed');
       throw error;

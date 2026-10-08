@@ -5,6 +5,8 @@
 //
 // Seam: the cache holds rows as the server sent them (snake_case JSON),
 // never the repository's own parsed output.
+import 'dart:io';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -14,6 +16,8 @@ import 'package:mealvana_endurance/features/education/data/education_cache.dart'
 import 'package:mealvana_endurance/features/education/data/education_repository.dart';
 
 import 'package:mealvana_endurance/shared/services/report/report.dart';
+
+import '../../helpers/fakes/recording_report.dart';
 
 class _MockSupabase extends Mock implements SupabaseClient {}
 
@@ -81,6 +85,78 @@ void main() {
     await repo(() async => [_row('new')]).getPublishedContent();
 
     expect(EducationCache(prefs).read()!.single['id'], 'new');
+  });
+
+  // develop-2026-10 ticket 55 (50-003): offline is weather, not a report.
+  group('what a failed fetch reports', () {
+    late RecordingReport report;
+
+    EducationRepository recorded(Future<List<dynamic>> Function() fetch) =>
+        EducationRepository(
+          supabase: _MockSupabase(),
+          report: report,
+          cache: EducationCache(prefs),
+          fetchRows: fetch,
+        );
+
+    setUp(() => report = RecordingReport());
+
+    test('offline with a cache: the cached rows, one education.weather '
+        'breadcrumb, one count, no fault or degraded', () async {
+      await EducationCache(prefs).write([_row('cached')]);
+
+      final content = await recorded(
+        () async => throw const SocketException(
+          'Failed host lookup',
+          osError: OSError('nodename nor servname provided', 8),
+        ),
+      ).getPublishedContent();
+
+      expect(content.single.id, 'cached');
+      expect(report.faults, isEmpty);
+      expect(report.degradeds, isEmpty);
+      expect(
+        report.calls.where(
+          (c) => c.severity == 'breadcrumb' && c.area == 'education.weather',
+        ),
+        hasLength(1),
+      );
+      expect(report.counts.single.message, expectedFailureEvent);
+      expect(report.counts.single.tags, containsPair('area', 'education'));
+    });
+
+    test(
+      'offline with no cache: the thrown exception is already reported',
+      () async {
+        Object? thrown;
+        try {
+          await recorded(
+            () async => throw const SocketException('Network is unreachable'),
+          ).getPublishedContent();
+        } catch (e) {
+          thrown = e;
+        }
+
+        expect(thrown, isA<EducationUnavailableException>());
+        expect(SentryReport.wasReported(thrown!), isTrue);
+        expect(report.faults, isEmpty);
+      },
+    );
+
+    test('a server error still faults, with area education', () async {
+      await EducationCache(prefs).write([_row('cached')]);
+
+      await recorded(
+        () async => throw const PostgrestException(
+          message: 'permission denied',
+          code: '42501',
+        ),
+      ).getPublishedContent();
+
+      expect(report.faults, hasLength(1));
+      expect(report.faults.single.area, 'education');
+      expect(report.counts, isEmpty);
+    });
   });
 
   test('an unreadable cache reads as no cache', () async {

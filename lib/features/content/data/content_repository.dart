@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:flutter/services.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -16,7 +17,11 @@ class ContentRepository {
     required this.supabase,
     required this.sharedPreferences,
     Report? report,
-  }) : _reportOverride = report;
+    @visibleForTesting
+    Future<Map<String, dynamic>?> Function(String environment, String locale)?
+    fetchRow,
+  }) : _reportOverride = report,
+       _fetchRow = fetchRow;
 
   static const String _contentKey = 'app_content_cache';
   static const String _defaultsAssetPath =
@@ -26,6 +31,13 @@ class ContentRepository {
   final SupabaseClient supabase;
   final SharedPreferences sharedPreferences;
   final Report? _reportOverride;
+
+  /// Tests stand in for the PostgREST query; the app leaves it null.
+  final Future<Map<String, dynamic>?> Function(
+    String environment,
+    String locale,
+  )?
+  _fetchRow;
 
   Report get _report => _reportOverride ?? SentryReport.global;
 
@@ -45,7 +57,10 @@ class ContentRepository {
     }
 
     // Try to fetch from Supabase
-    final remoteContent = await _fetchFromSupabase(environment, locale);
+    final (:remoteContent, fetched: _) = await _fetchFromSupabase(
+      environment,
+      locale,
+    );
     if (remoteContent != null) {
       await _cacheContent(remoteContent);
       return remoteContent;
@@ -90,13 +105,39 @@ class ContentRepository {
     }
   }
 
-  /// Fetch content from Supabase
-  Future<AppContent?> _fetchFromSupabase(
+  /// Fetch content from Supabase. [fetched] is false when the fetch itself
+  /// failed (offline, a server error), so [refreshContent] can keep the cache
+  /// it has; true with a null [remoteContent] means the server has no active
+  /// row.
+  Future<({AppContent? remoteContent, bool fetched})> _fetchFromSupabase(
     String environment,
     String locale,
   ) async {
     try {
-      final response = await supabase
+      final response =
+          await (_fetchRow?.call(environment, locale) ??
+              _queryRow(environment, locale));
+      return (
+        remoteContent: response == null ? null : AppContent.fromJson(response),
+        fetched: true,
+      );
+    } catch (e, stackTrace) {
+      // Offline at cold start is weather (ticket 55, 50-003): a
+      // `content.weather` breadcrumb and one count; the app runs on the cache
+      // or the bundled defaults. Runs before analytics starts, so the count
+      // is a Sentry counter. Anything else faults.
+      await _report.faultUnlessWeather(
+        e,
+        stackTrace: stackTrace,
+        area: 'content',
+        message: 'Error fetching content from Supabase',
+      );
+    }
+    return (remoteContent: null, fetched: false);
+  }
+
+  Future<Map<String, dynamic>?> _queryRow(String environment, String locale) =>
+      supabase
           .from(supabaseTableName)
           .select()
           .eq('environment', environment)
@@ -105,20 +146,6 @@ class ContentRepository {
           .order('version', ascending: false)
           .limit(1)
           .maybeSingle();
-
-      if (response != null) {
-        return AppContent.fromJson(response);
-      }
-    } catch (e, stackTrace) {
-      _report.fault(
-        e,
-        stackTrace: stackTrace,
-        area: 'content',
-        message: 'Error fetching content from Supabase',
-      );
-    }
-    return null;
-  }
 
   /// Load default content from assets
   Future<AppContent> _loadDefaultContent() async {
@@ -154,20 +181,39 @@ class ContentRepository {
     }
   }
 
-  /// Force refresh content from remote
+  /// Force refresh content from remote.
+  ///
+  /// The cache is kept until a fetch succeeds (ticket 55, Lee 2026-10-08):
+  /// deleting it first meant an offline launch threw away a good server copy
+  /// and the next launches ran on bundled defaults until a fetch got through.
+  /// A fetch that fails keeps the cache and answers with it (or the defaults
+  /// when there is none); a fetch that succeeds replaces it, and one that
+  /// finds no active row clears it, so content the server withdrew goes.
   Future<AppContent> refreshContent({
     String environment = 'production',
     String locale = 'en',
   }) async {
-    // Clear local cache
-    await sharedPreferences.remove(_contentKey);
-
-    // Force fetch from remote
-    final content = await getActiveContent(
-      environment: environment,
-      locale: locale,
+    final (:remoteContent, :fetched) = await _fetchFromSupabase(
+      environment,
+      locale,
     );
-    return content ?? await _loadDefaultContent();
+    if (remoteContent != null) {
+      await _cacheContent(remoteContent);
+      return remoteContent;
+    }
+    if (fetched) {
+      await sharedPreferences.remove(_contentKey);
+      return _loadDefaultContent();
+    }
+
+    final cached = await _getCachedContent();
+    if (cached != null &&
+        cached.environment == environment &&
+        cached.locale == locale &&
+        cached.isActive) {
+      return cached;
+    }
+    return _loadDefaultContent();
   }
 
   /// Get specific content value by key path (dot notation)

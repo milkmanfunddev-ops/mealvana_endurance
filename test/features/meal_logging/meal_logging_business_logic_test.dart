@@ -39,10 +39,13 @@ import 'package:mealvana_endurance/features/meal_logging/domain/quick_assembly.d
 import 'package:mealvana_endurance/features/meal_logging/domain/saved_meal.dart';
 import 'package:mealvana_endurance/shared/database/app_database.dart';
 import 'package:mealvana_endurance/shared/services/report/decode_issue_report.dart';
+import 'package:mealvana_endurance/shared/services/report/report.dart'
+    show expectedFailureEvent;
 import 'package:mocktail/mocktail.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../helpers/fakes/recording_analytics_tracker.dart';
 import '../../helpers/fakes/recording_report.dart';
 
 // ─── Mocks ───────────────────────────────────────────────────────────────────
@@ -1743,6 +1746,79 @@ void main() {
             MealAiFailureKind.notFood,
           ),
         ),
+      );
+    });
+
+    // develop-2026-10 ticket 55 (49-005): the server's not-food answer is the
+    // athlete's turn. The wire shape is `errorResponse(msg, 422, undefined,
+    // { not_food: true })` (`_shared/responses.ts`).
+    group('not-food 422', () {
+      late RecordingAnalyticsTracker analytics;
+
+      setUp(() {
+        analytics = RecordingAnalyticsTracker();
+        service = MealAiService(
+          supabase: mockSupabase,
+          report: report,
+          analytics: analytics,
+        );
+      });
+
+      test('flagged: notFood, no degraded, one note, one count', () async {
+        when(
+          () => mockFunctions.invoke('describe-meal', body: any(named: 'body')),
+        ).thenThrow(
+          FunctionException(
+            status: 422,
+            details: {
+              'success': false,
+              'error': "That doesn't describe food or drink.",
+              'not_food': true,
+            },
+          ),
+        );
+
+        await expectLater(
+          () => service.describeMeal('my bike ride'),
+          throwsA(
+            isA<MealAiException>().having(
+              (e) => e.kind,
+              'kind',
+              MealAiFailureKind.notFood,
+            ),
+          ),
+        );
+        expect(report.degradeds, isEmpty);
+        expect(report.faults, isEmpty);
+        expect(report.notes, hasLength(1));
+        expect(report.notes.single.area, 'meal_logging');
+        expect(analytics.findEvents(expectedFailureEvent).single.properties, {
+          'area': 'meal_logging',
+          'reason': 'not_food',
+        });
+      });
+
+      test(
+        'no flag (an older deployment): still one degraded, no count',
+        () async {
+          when(
+            () =>
+                mockFunctions.invoke('describe-meal', body: any(named: 'body')),
+          ).thenThrow(FunctionException(status: 422, details: 'Not food'));
+
+          await expectLater(
+            () => service.describeMeal('abstract concept'),
+            throwsA(
+              isA<MealAiException>().having(
+                (e) => e.kind,
+                'kind',
+                MealAiFailureKind.notFood,
+              ),
+            ),
+          );
+          expect(report.degradeds, hasLength(1));
+          expect(analytics.findEvents(expectedFailureEvent), isEmpty);
+        },
       );
     });
 

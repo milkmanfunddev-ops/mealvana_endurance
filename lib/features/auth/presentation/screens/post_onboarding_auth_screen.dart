@@ -212,6 +212,11 @@ class _PostOnboardingAuthScreenState
     // nothing is said.
     if (state.hasError && state.error is OAuthCancelledException) return;
 
+    // No Apple account on the device (ticket 55, 48-001): iOS's own sheet has
+    // just told the athlete to sign in to their Apple Account in Settings,
+    // and Google and email are on this screen. Nothing more to say.
+    if (state.hasError && state.error is AppleNoAccountException) return;
+
     // Check if the error is because the account already exists
     if (state.hasError && state.error is AccountAlreadyExistsException) {
       final exception = state.error as AccountAlreadyExistsException;
