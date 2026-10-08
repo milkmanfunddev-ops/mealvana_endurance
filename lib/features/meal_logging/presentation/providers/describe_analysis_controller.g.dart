@@ -60,7 +60,7 @@ final class DescribeAnalysisControllerProvider
 }
 
 String _$describeAnalysisControllerHash() =>
-    r'381750daee10bd1ca824364e256436a159a1bc8e';
+    r'305f6c51fe132322766b0798bf153b54bec3fd66';
 
 /// Holds the Describe tab's last analysis for as long as Log a Meal is open
 /// (testing-wave develop-2026-10 ticket 45, Finding 31-004).
