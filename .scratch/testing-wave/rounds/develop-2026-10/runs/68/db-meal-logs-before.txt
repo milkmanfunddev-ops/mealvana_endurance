@@ -1,0 +1,7 @@
+{"id": "187c53ea-dfd0-4f5f-b545-3b3c83be9980", "name": "Salted Edamame (half bowl)", "log_date": "2026-10-08", "eaten_at": "2026-10-08 15:38:00+00", "created_at": "2026-10-08 17:38:32.435244+00"}
+{"id": "b92d5c35-caec-4c14-a7ca-a308e754c21a", "name": "Tw49 eggs toast banana", "log_date": "2026-10-08", "eaten_at": "2026-10-08 17:32:00+00", "created_at": "2026-10-08 17:32:06.656478+00"}
+{"id": "b2e89db8-aa28-4e11-8d7f-3b55cbba1845", "name": "Tw49 eggs toast banana", "log_date": "2026-10-08", "eaten_at": "2026-10-08 17:30:00+00", "created_at": "2026-10-08 17:30:46.264006+00"}
+{"id": "4a3f9e5e-b3f4-4d00-ba57-976ccfbd6a8a", "name": "Bread slices and orange (from food spread)", "log_date": "2026-10-08", "eaten_at": "2026-10-08 13:11:00+00", "created_at": "2026-10-08 13:11:21.324012+00"}
+{"id": "2627444d-fec4-4c60-af2e-a600dbb0acf0", "name": "tw31 eggs toast banana", "log_date": "2026-10-08", "eaten_at": "2026-10-08 13:06:00+00", "created_at": "2026-10-08 13:06:28.081382+00"}
+{"id": "40600e48-f359-48f6-b59f-d49a5c473bee", "name": "Scrambled Eggs, Whole Wheat Toast with Butter, and Banana", "log_date": "2026-10-07", "eaten_at": "2026-10-07 11:10:00+00", "created_at": "2026-10-07 11:10:15.93897+00"}
+(6 rows)

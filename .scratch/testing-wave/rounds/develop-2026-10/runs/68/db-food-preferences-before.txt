@@ -1,0 +1,10 @@
+{"id": "6e80c835-bc29-4e78-967e-dec2bd387854", "food_name": "Bagel (plain)", "preference": "willing_to_try", "preference_level": 2, "preference_source": "manual", "created_at": "2026-10-08 17:23:53+00", "updated_at": "2026-10-08 17:23:53+00"}
+{"id": "27c65ee7-9db7-4868-981b-653730e1b0d2", "food_name": "Bananas", "preference": "willing_to_try", "preference_level": 2, "preference_source": "manual", "created_at": "2026-10-08 17:23:53+00", "updated_at": "2026-10-08 17:23:53+00"}
+{"id": "4b88d39b-2a51-45c2-8d85-c5194243a8b5", "food_name": "energy_bar", "preference": "willing_to_try", "preference_level": 2, "preference_source": "manual", "created_at": "2026-10-08 17:23:53+00", "updated_at": "2026-10-08 17:23:53+00"}
+{"id": "4d56ba15-ffc2-45f1-a373-3ece68e73274", "food_name": "energy_chews", "preference": "willing_to_try", "preference_level": 2, "preference_source": "manual", "created_at": "2026-10-08 17:23:53+00", "updated_at": "2026-10-08 17:23:53+00"}
+{"id": "9a715ab3-7699-4d39-a816-a6293132ea74", "food_name": "energy_gel", "preference": "willing_to_try", "preference_level": 2, "preference_source": "manual", "created_at": "2026-10-08 17:23:53+00", "updated_at": "2026-10-08 17:23:53+00"}
+{"id": "0fe52a55-3f8e-4090-aee1-de38146fb2e5", "food_name": "oatmeal_cooked", "preference": "willing_to_try", "preference_level": 2, "preference_source": "manual", "created_at": "2026-10-08 17:23:53+00", "updated_at": "2026-10-08 17:23:53+00"}
+{"id": "37c26b71-6ee8-4244-87b5-a9f26dcff2e1", "food_name": "protein_bar", "preference": "willing_to_try", "preference_level": 2, "preference_source": "manual", "created_at": "2026-10-08 17:23:53+00", "updated_at": "2026-10-08 17:23:53+00"}
+{"id": "f410fe6a-37c5-4efd-ac84-7cd145db900f", "food_name": "sports_drink", "preference": "like", "preference_level": 4, "preference_source": "manual", "created_at": "2026-10-08 17:23:53+00", "updated_at": "2026-10-08 17:23:53+00"}
+{"id": "f6eca557-9f93-4740-b4e7-ba4ff7a131eb", "food_name": "toast", "preference": "willing_to_try", "preference_level": 2, "preference_source": "manual", "created_at": "2026-10-08 17:23:53+00", "updated_at": "2026-10-08 17:23:53+00"}
+(9 rows)

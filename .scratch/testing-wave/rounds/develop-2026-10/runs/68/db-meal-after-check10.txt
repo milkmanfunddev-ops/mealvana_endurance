@@ -1,0 +1,2 @@
+{"id": "f380f4c8-17f2-42d8-a3a1-5cfa46dfcecd", "name": "Salted Edamame in the Pod tw68", "calories": 600, "carbs_g": "135.0", "items": [{"name": "tw68 rice cup", "fat_g": 3, "carb_g": 135, "portion": "1 cup", "calories": 600, "quantity": 3, "protein_g": 12, "sodium_mg": 15}], "updated_at": "2026-10-08 23:34:34.200296+00"}
+(1 rows)

@@ -1,0 +1,6 @@
+{"id": "3120a9bd-ca68-42dd-8eff-b8f588276af1", "delta": -1, "reason": "debit_usage", "ref": "analyze-meal-photo", "balance_after": 2488, "created_at": "2026-10-08 17:38:20.234123+00"}
+{"id": "6f6fa747-0893-4e4f-bcfb-56be7ffff948", "delta": -1, "reason": "debit_usage", "ref": "describe-meal", "balance_after": 2489, "created_at": "2026-10-08 17:27:09.217194+00"}
+{"id": "d9cf04e7-fc93-4c4b-a90c-cb4defc9e6f4", "delta": -1, "reason": "debit_usage", "ref": "describe-meal", "balance_after": 2490, "created_at": "2026-10-08 13:12:03.060501+00"}
+{"id": "b7184339-2c75-4279-95f2-10436d69cb0d", "delta": -1, "reason": "debit_usage", "ref": "analyze-meal-photo", "balance_after": 2491, "created_at": "2026-10-08 13:10:56.475408+00"}
+{"id": "6a108adf-7cc2-4932-9865-5ea052888fa5", "delta": -1, "reason": "debit_usage", "ref": "describe-meal", "balance_after": 2492, "created_at": "2026-10-08 13:02:50.29965+00"}
+(5 rows)

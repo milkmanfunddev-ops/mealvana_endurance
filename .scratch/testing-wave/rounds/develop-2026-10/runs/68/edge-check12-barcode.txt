@@ -1,0 +1,8 @@
+# query_logs dev, function_edge_logs + function_logs, lookup-product (garmin-push lines from other users omitted)
+23:40:37.720 Lookup Product - Request received: { barcode: "3017620422003" } ... Cache hit (nutrition_products): Nutella, origin open_food_facts
+23:40:38.119 POST | 200 | /functions/v1/lookup-product
+(23:41:08Z first 12345670 lookup: NO request reached the server; the client timed out at 18:41:37 local, SocketException errno 60 to vlmtsdzpnjnavdgytcmi.supabase.co)
+23:42:32.482 Request received: { barcode: "12345670" } ... Found via OFF (USDA miss) "Double burger"
+23:42:33.417 POST | 200 | /functions/v1/lookup-product
+23:43:01.502 Request received: { barcode: "98765432109871" } ... No USDA gtinUpc match ... "❌ Lookup Product - No product found"
+23:43:02.438 POST | 404 | /functions/v1/lookup-product

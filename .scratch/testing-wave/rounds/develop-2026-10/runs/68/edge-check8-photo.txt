@@ -1,0 +1,7 @@
+# query_logs dev, 23:24:30Z-23:25:00Z (function_edge_logs, function_logs, edge_logs for meal-photos/analyze)
+2026-10-08T23:24:38.669 edge_logs POST | 200 | /storage/v1/object/meal-photos/607f9dd5-…/b1ccbabe-f422-494b-a20d-99de4a2772b2.jpg | Dart/3.12 (dart:io)   <- the only upload
+2026-10-08T23:24:39.923 edge_logs GET | 200 | /storage/v1/object/meal-photos/…/b1ccbabe-….jpg | Deno (analyze-meal-photo reads it)
+2026-10-08T23:24:40.167 function_logs [analyze-meal-photo] Analyzing photo for user 607f9dd5-…, path: …/b1ccbabe-….jpg, model: anthropic/claude-sonnet-4.6
+2026-10-08T23:24:45.723 function_logs [analyze-meal-photo] Success for user 607f9dd5-…: "Salted Edamame in the Pod", 1 items, confidence=medium
+2026-10-08T23:24:45.739 function_edge_logs POST | 200 | /functions/v1/analyze-meal-photo   <- the only request
+(also in window: 23:24:35 calculate-daily-macros-v6 200 with six "sessionCost: unknown sport \"other\" — F4a zero-with-estimate-flag" lines: the Timeline's macro call, by design per the ruled F4a)
