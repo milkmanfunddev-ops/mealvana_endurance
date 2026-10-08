@@ -6,6 +6,7 @@ import '../../domain/activity.dart';
 import '../../../../shared/domain/activity_type.dart';
 import '../../../../shared/services/app_external_deps.dart';
 import '../../../../shared/services/analytics/analytics_events.dart';
+import '../../../../shared/services/device_info_service.dart';
 import '../../../../shared/providers/unit_system_provider.dart';
 import '../../../../shared/utils/unit_formatter.dart';
 import '../../../nutrition_plan/domain/run_parameters.dart';
@@ -292,15 +293,16 @@ class ActivityCard extends ConsumerWidget {
   }
 
   void _handleTap(BuildContext context, WidgetRef ref) {
-    // Track activity viewed with synced workout info
-    // Use activity.userId as the device_id (userId is the Supabase auth user ID)
+    // Track activity viewed with synced workout info. `device_id` is the
+    // device id `app_opened` sends, not the activity owner's user id
+    // (ticket 70).
     final isSyncedWorkout = activity.syncedFromProvider != null;
 
     ref
         .read(appExternalDepsProvider)
         .analytics
         .trackActivityViewed(
-          deviceId: activity.userId,
+          deviceId: ref.read(deviceInfoServiceProvider).deviceId,
           activityId: activity.id,
           activityType: activity.activityType.name,
           hasNutritionPlan: activity.nutritionPlanData != null,

@@ -28,6 +28,7 @@ class BrickMacroService {
     required this.macroRepository,
     required this.authService,
     required this.analytics,
+    required this.analyticsDeviceId,
     Report? report,
   }) : _report = report;
 
@@ -35,6 +36,11 @@ class BrickMacroService {
   final MacroRepository macroRepository;
   final AuthService authService;
   final AnalyticsTracker analytics;
+
+  /// The device id analytics events carry (`deviceInfoServiceProvider`), the
+  /// one `app_opened` sends. Not the `deviceId` the generate methods take:
+  /// that one is the user id the edge function reads (ticket 70).
+  final String analyticsDeviceId;
   final Report? _report;
   Report get _r => _report ?? SentryReport.global;
   static const String _area = 'nutrition_plan';
@@ -177,7 +183,7 @@ class BrickMacroService {
           : 0.0;
 
       await analytics.trackPlanGenerated(
-        deviceId: deviceId,
+        deviceId: analyticsDeviceId,
         activityId: activityId,
         activityType: 'brick',
         distanceMiles: macroTargets.metrics.distanceMi,

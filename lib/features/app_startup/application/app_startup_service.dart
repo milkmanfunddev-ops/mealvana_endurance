@@ -535,6 +535,7 @@ class AppStartupService {
       NotificationService.configure(
         _analytics,
         oneSignalAppId: config.oneSignalAppId,
+        deviceInfo: ref.read(deviceInfoServiceProvider),
       );
 
       // Track app opened event with session ID

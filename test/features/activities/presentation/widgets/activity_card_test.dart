@@ -11,6 +11,9 @@ import 'package:mealvana_endurance/features/activities/presentation/widgets/acti
 import 'package:mealvana_endurance/shared/domain/activity_type.dart';
 import 'package:mealvana_endurance/shared/services/analytics/analytics_tracker.dart';
 import 'package:mealvana_endurance/shared/services/app_external_deps.dart';
+import 'package:mealvana_endurance/shared/services/device_info_service.dart';
+
+import '../../../../helpers/fakes/recording_analytics_tracker.dart';
 
 /// Records delete/restore calls without touching the real service/DB stack.
 ///
@@ -38,6 +41,16 @@ class _FakeActivitiesController extends ActivitiesController {
 }
 
 class _MockAppExternalDeps extends Mock implements AppExternalDeps {}
+
+const _deviceId = 'C8EEF12E-60FE-49A1-80F8-6C51A4BE767D';
+
+class _FakeDeviceInfo implements DeviceInfoService {
+  @override
+  String get deviceId => _deviceId;
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
 
 void main() {
   group('ActivityCard Widget Tests', () {
@@ -384,6 +397,48 @@ void main() {
       await tester.tap(find.text('Morning Run'));
       await tester.pumpAndSettle();
       expect(find.text('activity-editor-screen'), findsOneWidget);
+    });
+
+    // Ticket 70: `activity_viewed` carries the device id `app_opened` sends,
+    // not the activity owner's user id.
+    testWidgets('tap tracks activity_viewed with the device id, not the user id', (
+      tester,
+    ) async {
+      final analytics = RecordingAnalyticsTracker();
+      when(() => deps.analytics).thenReturn(analytics);
+      final router = GoRouter(
+        routes: [
+          GoRoute(
+            path: '/',
+            builder: (_, __) =>
+                Scaffold(body: ActivityCard(activity: activity())),
+          ),
+          GoRoute(
+            path: '/distancepacegut',
+            builder: (_, __) =>
+                const Scaffold(body: Text('activity-editor-screen')),
+          ),
+        ],
+      );
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            activitiesControllerProvider.overrideWith(
+              () => _FakeActivitiesController([], []),
+            ),
+            appExternalDepsProvider.overrideWithValue(deps),
+            deviceInfoServiceProvider.overrideWithValue(_FakeDeviceInfo()),
+          ],
+          child: MaterialApp.router(routerConfig: router),
+        ),
+      );
+      await tester.tap(find.text('Morning Run'));
+      await tester.pumpAndSettle();
+
+      final viewed = analytics.events.where((e) => e.name == 'activity_viewed');
+      expect(viewed, hasLength(1));
+      expect(viewed.single.properties?['device_id'], _deviceId);
+      expect(viewed.single.properties?['device_id'], isNot('test-user-1'));
     });
 
     testWidgets('selection-mode tap toggles selection instead of navigating', (
