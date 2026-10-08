@@ -13,7 +13,7 @@ between branches again: a branch that needs a fix to the runbook or a tool merge
 | [`SPEC.md`](SPEC.md) | The rules: what a run checks, Findings, accounts, cost caps, parallelism, triage. |
 | [`RUNBOOK.md`](RUNBOOK.md) | How one ticket runs, step by step, and the wave lead's routine. |
 | `scripts/testing-wave/` | The tools: `findings.mjs`, `simulator.mjs`, `lock.mjs`, `cost.mjs`, `cred.mjs`, `clear-app.sh`, and the rest. Each script's header is its manual. |
-| `.claude/skills/testing-wave/` | `/testing-wave <round> [--only NN,..]`, the wave lead's routine as a skill. |
+| `~/.claude/skills/testing-wave/` (Lee's user-level skills, not in the repo since 2026-10-08) | `/testing-wave <round> [--only NN,..]`, the wave lead's routine as a skill. |
 
 ## The three ledgers
 
