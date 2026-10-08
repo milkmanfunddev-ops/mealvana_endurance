@@ -60,6 +60,11 @@ approved card or a ruling in the round's TRIAGE.md, and leaves this file. Rewrit
    answers, so "my bike ride" costs one; the photo function already refuses non-food before charging.
    Recommend: make describe free for non-food too (one line in describe-meal).
 
+6. **Offline and login-failure counts (ticket 41, before wave 4).** Since 2026-10-05 expected failures go to
+   Sentry as warnings so you can count how often athletes are offline or fail login. Ticket 41 turns them into
+   breadcrumbs at the named sites, which loses those counts there. Keep a plain analytics event
+   (`expected_failure` with a reason) instead? Recommend yes.
+
 ## Tasks, not decisions
 
 - Lee: the phone run of the store checks on both stores (paywall ticket 13).

@@ -4,7 +4,7 @@
 **Labels:** retest, round:develop-2026-10, area:meal-logging, ai-call
 **Branch:** `develop-next` (worktree per ticket, branched from the round's base after fix wave 4 lands)
 **Source:** TRIAGE.md rulings of 2026-10-08 (wave 3 triage): followups 31-006, 31-009, 31-010, 31-011; fix retests for tickets 38 (swap quantity), 45 (31-002, 31-003, 31-004, 31-005, 31-007), 39 (one food_preferences row's updated_at offset)
-**Blocked by:** fix wave 4 (38, 39, 45) and its rebuild; runs in wave 5
+**Blocked by:** fix wave 4 (38, 39, 41, 45) and its rebuild; runs in wave 5
 **Next:** `/testing-wave develop-2026-10 --only 49`
 **Model:** opus
 
