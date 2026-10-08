@@ -42,6 +42,7 @@ import { z } from 'npm:zod@3';
 
 import { MealAnalysisSchema, MealItemSchema } from '../_shared/meal_analysis/schema.ts';
 import { ANALYZE_MEAL_PHOTO_MODEL } from '../_shared/ai/model.ts';
+import { NOT_FOOD_MESSAGE, notFoodResponse } from './not_food.ts';
 
 // ---------------------------------------------------------------------------
 // A. MealAnalysisSchema — shape validation
@@ -373,5 +374,25 @@ describe('F. ANALYZE_MEAL_PHOTO_MODEL default', () => {
     // on prod (the table is dev-only) and raised a warning on every call.
     const src = await Deno.readTextFile(new URL('./index.ts', import.meta.url));
     assertEquals(/["']jade_calls["']/.test(src), false);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// G. The not-food answer carries the flag (develop-2026-10 ticket 55, 49-005)
+// ---------------------------------------------------------------------------
+
+describe('G. not-food response', () => {
+  it('answers 422 with not_food: true, the shape describe-meal sends', async () => {
+    const res = notFoodResponse();
+    assertEquals(res.status, 422);
+    const body = await res.json();
+    assertEquals(body.not_food, true);
+    assertEquals(body.success, false);
+    assertEquals(body.error, NOT_FOOD_MESSAGE);
+  });
+
+  it('index.ts answers not-food through it', async () => {
+    const src = await Deno.readTextFile(new URL('./index.ts', import.meta.url));
+    assert(src.includes('return notFoodResponse();'));
   });
 });

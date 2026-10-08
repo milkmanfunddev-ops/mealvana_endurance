@@ -13,6 +13,7 @@ abstract interface class AuthFlowOutcome implements Exception {}
 /// analytics event (ticket 41). Stable once it has reached Mixpanel.
 String authOutcomeReason(Object outcome) => switch (outcome) {
   OAuthCancelledException() => 'oauth_cancelled',
+  AppleNoAccountException() => 'apple_no_account',
   AccountAlreadyExistsException() => 'account_exists',
   OAuthAccountNotFoundException() => 'oauth_account_not_found',
   WrongCredentialsException() => 'wrong_credentials',
@@ -68,6 +69,21 @@ class OAuthCancelledException implements AuthFlowOutcome {
 
   @override
   String toString() => 'OAuthCancelledException: $provider sign-in cancelled';
+}
+
+/// Apple's sheet answered `ASAuthorizationError.unknown` (1000): on a device
+/// with no Apple account iOS shows "Sign in to your Apple Account" and Close
+/// answers 1000 (develop-2026-10 ticket 55, 48-001). Lee ruled it an expected
+/// outcome (2026-10-08): the screen shows nothing (iOS's own sheet has told
+/// the athlete what to do) and the `expected_failure {reason:
+/// apple_no_account}` count is the only signal. A misconfigured Sign in with
+/// Apple answers the same 1000 and cannot be told apart; it would show as
+/// that count climbing with no Apple sign-ins completing.
+class AppleNoAccountException implements AuthFlowOutcome {
+  const AppleNoAccountException();
+
+  @override
+  String toString() => 'AppleNoAccountException: no Apple account on device';
 }
 
 /// Signup succeeded but the address must be verified before a session exists.

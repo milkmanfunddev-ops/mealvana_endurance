@@ -13,18 +13,23 @@
 /// 2026-10-08: keep the counts), and the screen still gets the typed error.
 library;
 
+import 'dart:async' show FutureOr;
 import 'dart:io';
 
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:supabase_flutter/supabase_flutter.dart'
     hide AuthUser, AuthException;
 
+import 'package:mealvana_endurance/features/auth/application/apple_web_authentication.dart';
 import 'package:mealvana_endurance/features/auth/application/email_auth_service.dart';
 import 'package:mealvana_endurance/features/auth/domain/auth_exceptions.dart';
 import 'package:mealvana_endurance/features/auth/presentation/providers/post_onboarding_auth_controller.dart';
+import 'package:mealvana_endurance/features/auth/presentation/screens/post_onboarding_auth_screen.dart';
 import 'package:mealvana_endurance/shared/services/analytics/analytics_tracker.dart';
+import 'package:mealvana_endurance/shared/services/app_config.dart';
 import 'package:mealvana_endurance/shared/services/app_external_deps.dart';
 import 'package:mealvana_endurance/shared/services/report/report.dart';
 import 'package:mealvana_endurance/shared/services/sentry/sentry_provider_observer.dart';
@@ -189,6 +194,68 @@ void _isAnOutcome(_Wired w, {required String reason, required Type type}) {
   }
 }
 
+/// The Apple sheet's answer, pinned on the controller the screen reads: the
+/// state and the `false` the real controller leaves after the service threw
+/// [error] (ticket 55's widget half; the service and controller halves are in
+/// `oauth_cancel_is_quiet_test.dart`).
+class _AppleAnswersController extends PostOnboardingAuthController {
+  _AppleAnswersController(this.error);
+
+  final Object error;
+
+  @override
+  FutureOr<void> build() {}
+
+  Future<bool> _fail() async {
+    state = AsyncError<void>(error, StackTrace.current);
+    return false;
+  }
+
+  @override
+  Future<bool> linkAppleAccount() => _fail();
+
+  @override
+  Future<bool> signInWithApple() => _fail();
+}
+
+/// Create Your Account on an anonymous session (the Apple button links).
+Future<void> _tapAppleOnCreateYourAccount(
+  WidgetTester tester,
+  Object error,
+) async {
+  final goTrue = fakeGoTrueClient() as MockGoTrueClient;
+  when(() => goTrue.currentUser).thenReturn(
+    const User(
+      id: 'anon-user',
+      appMetadata: <String, dynamic>{},
+      userMetadata: <String, dynamic>{},
+      aud: 'authenticated',
+      createdAt: '2026-10-08T00:00:00Z',
+      isAnonymous: true,
+    ),
+  );
+  await smokeScreen(
+    tester,
+    const PostOnboardingAuthScreen(),
+    // Its own Supabase client: smokeScreen's default deps would be a second
+    // override of the same provider.
+    withAppDeps: false,
+    overrides: [
+      mockAppExternalDeps(supabaseClient: fakeSupabaseClient(auth: goTrue)),
+      appConfigProvider.overrideWithValue(AppConfig.forTesting()),
+      mockSharedPreferences(),
+      appleSignInAvailableProvider.overrideWithValue(true),
+      postOnboardingAuthControllerProvider.overrideWith(
+        () => _AppleAnswersController(error),
+      ),
+    ],
+  );
+  final apple = find.byKey(const ValueKey('post_onboarding.apple_button'));
+  await tester.scrollUntilVisible(apple, 200);
+  await tester.tap(apple);
+  await tester.pumpAndSettle();
+}
+
 void main() {
   setUpAll(() {
     registerFallbackValue(StackTrace.empty);
@@ -325,6 +392,29 @@ void main() {
       expect(w.report.faults, hasLength(1));
       expect(w.report.faults.single.area, 'auth');
       expect(w.analytics.findEvents(expectedFailureEvent), isEmpty);
+    });
+  });
+
+  // develop-2026-10 ticket 55 (48-001): Close on iOS's "Sign in to your Apple
+  // Account" sheet answers 1000. The sheet has said what to do; the screen
+  // says nothing more.
+  group('Create Your Account after an Apple answer', () {
+    testWidgets('no Apple account (1000) shows no snackbar', (tester) async {
+      await _tapAppleOnCreateYourAccount(
+        tester,
+        const AppleNoAccountException(),
+      );
+
+      expect(find.byType(SnackBar), findsNothing);
+      expect(find.textContaining('Sign in failed'), findsNothing);
+    });
+
+    testWidgets('any other Apple failure still says Sign in failed', (
+      tester,
+    ) async {
+      await _tapAppleOnCreateYourAccount(tester, Exception('error 1004'));
+
+      expect(find.textContaining('Sign in failed'), findsOneWidget);
     });
   });
 }

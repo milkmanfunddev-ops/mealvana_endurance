@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart' show PlatformException;
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' show FunctionException;
@@ -630,6 +631,11 @@ class ConnectTrainingController extends _$ConnectTrainingController {
     final userId = _currentUserId!;
     final deps = _providerDataDeps(providerId);
     final integrationsRepo = ref.read(integrationsRepositoryProvider);
+    // Ticket 55: a cancel's note and count still go if this provider is
+    // disposed while the sign-in sheet is up, so both are read now (the
+    // state write above means ref is mounted here).
+    final report = _report;
+    final analytics = ref.read(appExternalDepsProvider).analytics;
 
     try {
       _trackIntegrationConnectStarted(providerId);
@@ -674,6 +680,28 @@ class ConnectTrainingController extends _$ConnectTrainingController {
       );
       return true;
     } catch (e, stackTrace) {
+      // The athlete closed the provider's sign-in sheet (ticket 55, 50-007):
+      // FlutterWebAuth2's CANCELED, from all four connects. Their turn, not a
+      // failure: a note and one count, no error line, the card back to
+      // Connect.
+      if (e is PlatformException && e.code == 'CANCELED') {
+        await report.noteExpected(
+          '$providerId connect cancelled',
+          area: providerId,
+          reason: 'oauth_cancelled',
+          analytics: analytics,
+        );
+        if (ref.mounted) {
+          state = AsyncData(
+            state.value!.copyWith(
+              isConnecting: false,
+              clearConnectingProvider: true,
+              clearErrorMessage: true,
+            ),
+          );
+        }
+        return false;
+      }
       _report.integrationFailure(providerId, 'connect', e, stackTrace);
       if (ref.mounted) {
         state = AsyncData(

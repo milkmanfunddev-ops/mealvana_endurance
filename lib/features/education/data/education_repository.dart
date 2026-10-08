@@ -65,14 +65,23 @@ class EducationRepository {
     try {
       rows = await (_fetchRows?.call() ?? _queryRows());
     } catch (e, stackTrace) {
-      _report.degraded(
+      // Offline is weather (ticket 55, 50-003): an `education.weather`
+      // breadcrumb and one count, no event. Anything else faults. Runs at
+      // cold start, before analytics starts, so the count is a Sentry counter.
+      await _report.faultUnlessWeather(
         e,
         stackTrace: stackTrace,
         area: 'education',
         message: 'Failed to fetch education content',
       );
       final cached = _cache?.read();
-      if (cached == null) throw EducationUnavailableException(e);
+      if (cached == null) {
+        // Written down above; EducationController puts this in its state, and
+        // the Riverpod net would capture it again with area unknown (#118).
+        final unavailable = EducationUnavailableException(e);
+        SentryReport.markReported(unavailable);
+        throw unavailable;
+      }
       _report.info(
         'Showing ${cached.length} cached education rows after a failed fetch',
         area: 'education',

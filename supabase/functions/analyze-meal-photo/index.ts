@@ -37,6 +37,7 @@ import {
 import { ANALYZE_MEAL_PHOTO_MODEL } from "../_shared/ai/model.ts";
 import { gatewayCostUsd, logAiUsage } from "../_shared/ai/usage.ts";
 import { MealAnalysisSchema } from "../_shared/meal_analysis/schema.ts";
+import { notFoodResponse } from "./not_food.ts";
 import { initSentry, withSentry } from "../_shared/sentry.ts";
 import {
   debitForUsage,
@@ -273,10 +274,8 @@ Return your answer as structured JSON matching the requested schema.`,
       if (
         errStr.includes("not_food") || errStr.toLowerCase().includes("not food")
       ) {
-        return errorResponse(
-          "The photo doesn't appear to contain food. Please try a different image.",
-          422,
-        );
+        // Flagged like describe-meal's, so the client notes it (ticket 55).
+        return notFoodResponse();
       }
       throw aiError;
     }
