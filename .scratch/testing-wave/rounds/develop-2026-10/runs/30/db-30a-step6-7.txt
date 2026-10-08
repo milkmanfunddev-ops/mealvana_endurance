@@ -1,0 +1,20 @@
+## 30a steps 6-7 at 13:02:48Z (Timeline shown 13:02:41Z)
+[
+ {
+  "id": "a869be25-c973-46f8-ba86-7a665c079913",
+  "auth_email": "lee+e2e-30-20261008t125637z@rightpathprogramming.com",
+  "email_confirmed_at": "2026-10-08 13:02:18.574409+00",
+  "public_email": "lee+e2e-30-20261008t125637z@rightpathprogramming.com",
+  "equal": true,
+  "users_created_at": "2026-10-08 13:02:18+00",
+  "dmt_first_created_at": "2026-10-08 13:02:21.710418+00",
+  "dmt_rows": 7,
+  "survey_created_at": "2026-10-08 13:02:19+00"
+ }
+]
+## mixed-case rows left in public.users
+[
+ {
+  "mixed_case_rows": 0
+ }
+]

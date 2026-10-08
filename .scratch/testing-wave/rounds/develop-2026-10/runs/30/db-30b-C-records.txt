@@ -1,0 +1,12 @@
+[
+ {
+  "id": "9f270ed1-2b60-414a-9d10-ed4148e251bf",
+  "is_anonymous": false,
+  "auth_email": "lee+e2e-30-20261008t132333z@rightpathprogramming.com",
+  "email_confirmed_at": "2026-10-08 13:25:05.142677+00",
+  "public_email": "lee+e2e-30-20261008t132333z@rightpathprogramming.com",
+  "users_created_at": "2026-10-08 13:25:06+00",
+  "dmt_first": "2026-10-08 13:25:08.169312+00",
+  "survey_created_at": "2026-10-08 13:25:06+00"
+ }
+]

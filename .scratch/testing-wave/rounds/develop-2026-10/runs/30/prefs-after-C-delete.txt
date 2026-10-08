@@ -1,0 +1,6 @@
+    "flutter.analytics_consent_at" = "2026-10-08T08:23:49.007833";
+    "flutter.analytics_consent_regime" = strict;
+    "flutter.analytics_consent_status" = denied;
+    "flutter.analytics_consent_version" = 1;
+    "flutter.privacy_geo_country" = GB;
+    "flutter.privacy_region_source" = geo;

@@ -1,0 +1,5 @@
+keys: ['flutter._wiredashAppUsageID', 'flutter.cached_min_app_version', 'flutter.cached_min_supported_schema_version', 'flutter.cached_remote_schema_version', 'flutter.education.published_rows', 'flutter.io.wiredash.app_starts', 'flutter.io.wiredash.device_registered_date', 'flutter.io.wiredash.last_successful_ping', 'flutter.ios_delegate_after_delay', 'flutter.ios_delegate_at_launch', 'flutter.ios_launch_options', 'flutter.last_full_db_health_check', 'flutter.last_sync_timestamp_a869be25-c973-46f8-ba86-7a665c079913', 'flutter.launch_trail_current', 'flutter.launch_trail_previous', 'flutter.night_before_nudge_armed', 'flutter.privacy_geo_country', 'flutter.privacy_geo_region', 'flutter.privacy_region_at', 'flutter.privacy_region_source', 'flutter.version_check_cache_timestamp']
+flutter.privacy_geo_country = US
+flutter.privacy_geo_region = AL
+flutter.privacy_region_source = geo
+flutter.privacy_region_at = 2026-10-08T08:04:59.523934

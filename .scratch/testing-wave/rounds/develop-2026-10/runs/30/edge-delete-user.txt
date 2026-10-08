@@ -1,0 +1,4 @@
+# Supabase MCP query_logs, dev vlmtsdzpnjnavdgytcmi, function_edge_logs, event_message like '%delete-user%', 12:55Z-13:23:30Z
+2026-10-08T13:04:38.967Z POST | 200 | /functions/v1/delete-user   (A's delete, tapped 13:04:36Z)
+2026-10-08T13:22:07.084Z POST | 200 | /functions/v1/delete-user   (B's delete, Delete double-tapped 13:22:05.7Z, one request)
+(the offline attempt at 13:21:38Z never reached the server: no line)

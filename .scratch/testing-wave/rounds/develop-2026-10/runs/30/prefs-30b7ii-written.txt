@@ -1,0 +1,2 @@
+flutter.privacy_geo_country = GB
+flutter.privacy_region_source = geo

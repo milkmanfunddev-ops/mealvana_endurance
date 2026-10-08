@@ -1,0 +1,12 @@
+[
+ {
+  "id": "a869be25-c973-46f8-ba86-7a665c079913",
+  "is_anonymous": false,
+  "email": "lee+e2e-30-20261008t125637z@rightpathprogramming.com",
+  "email_change": "",
+  "confirmation_sent_at": "2026-10-08 12:59:28.474534+00",
+  "email_change_sent_at": null,
+  "email_confirmed_at": null,
+  "created_at": "2026-10-08 12:59:28.357053+00"
+ }
+]
