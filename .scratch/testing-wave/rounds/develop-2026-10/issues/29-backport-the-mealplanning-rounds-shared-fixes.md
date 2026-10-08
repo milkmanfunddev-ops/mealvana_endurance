@@ -1,6 +1,6 @@
 # 29: Backport the mealplanning round's fixes to shared code
 
-**Status:** in-progress (wave 2, 2026-10-07)
+**Status:** in-progress — fixed, awaiting retest (wave 2, 2026-10-07)
 **Labels:** fix, round:develop-2026-10, area:backport
 **Branch:** `develop-next` (fix-wave worktree)
 **Blocked by:** none. **Runs first and alone in the fix wave** (Overlaps below: it shares files with 21, 22, 23,

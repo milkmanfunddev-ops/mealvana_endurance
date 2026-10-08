@@ -1,4 +1,13 @@
-# Wave 2 (fix wave) handoff — paused 2026-10-07 by Lee
+# Wave 2 (fix wave) handoff — paused 2026-10-07 by Lee; resumed and closed out 2026-10-08
+
+## Close-out (2026-10-08, lead)
+- Review fixes committed (`c22ff8d1`) and merged `--no-ff` (`b24c1242`); gates on the fix tree: codegen clean, analyze 977 (baseline), touched folders 1132 + 516 tests green, Deno 17 green. Worktree and branch removed.
+- Dev deploys done from the merged tree (13 functions, exit 0). `REVENUECAT_SECRET_KEY` was already on dev with the same digest as `secrets/revenuecat.env`. One real Describe call (test@test.com, 02:15Z): 200, wallet 2494→2493, `ai_usage` row written, `query_logs` shows no "Failed to log ai usage" and no error.
+- Lead Findings filed: 22-001 (consumeLegacyResumeTap uncalled, bug), 22-002 (pullNative never reloads, followup-test → ticket 32), 29-001 (override save wiped profile fields, bug, fixed by 29).
+- Tickets 21–29: "fixed, awaiting retest (wave 2, 2026-10-07)"; 24 → retest home 31; 25 return-rows box accepted.
+- IMPROVEMENTS #108–#111 added.
+- The ops repo (`../ops`) is not checked out on this machine, so the current bundle runbook status header could not be read before the deploys; the deploys were dev-only function redeploys named by this handoff.
+- Still owed: Lee's go for the push; `/design-sync`; Xuan's prod blocker; the 13 product questions below; wave 3.
 
 Resume with `/testing-wave develop-2026-10` (continue wave 2; do NOT open a new wave). Lead on Fable, agents on Opus.
 Everything lives in the develop-next worktree `../mealvana_endurance-waves/branch-split/develop-next` (branch `develop-next`); the main clone is on `sentry`, leave it alone.

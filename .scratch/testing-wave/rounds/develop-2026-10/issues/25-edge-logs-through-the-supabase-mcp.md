@@ -1,6 +1,6 @@
 # 25: Edge-function logs through the Supabase MCP; delete `scripts/edge_logs.sh`
 
-**Status:** in-progress (wave 2, 2026-10-07)
+**Status:** in-progress — fixed, awaiting retest (wave 2, 2026-10-07)
 **Labels:** fix, round:develop-2026-10, area:harness
 **Branch:** `develop-next` (fix-wave worktree)
 **Blocked by:** none (no code overlap)
@@ -99,3 +99,5 @@ docs/integration/garmin_push_copy_rollout.md, scripts/testing-wave/findings.mjs 
 - [ ] Both SQL blocks in the rollout doc are run once through `query_logs` on dev, over a window holding a
       garmin-push call, and return rows. Paste the row count into the commit body.
 - [ ] No Node test: `findings.mjs` changes only in a comment, and develop-next has no findings.mjs test file.
+
+**Lead note (2026-10-07):** the "return rows" box is accepted as a real zero: no push was sent that day, so an empty result was right.

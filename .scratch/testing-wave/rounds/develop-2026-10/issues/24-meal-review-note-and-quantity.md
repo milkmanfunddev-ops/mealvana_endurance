@@ -1,6 +1,6 @@
 # 24: Meal review saves the note and keeps quantity separate
 
-**Status:** in-progress (wave 2b, 2026-10-07)
+**Status:** in-progress — fixed, awaiting retest (wave 2, 2026-10-07)
 **Labels:** fix, round:develop-2026-10, area:meal-logging
 **Branch:** `develop-next` (fix-wave worktree)
 **Blocked by:** 29 (the backport ticket runs first, alone).
@@ -35,3 +35,5 @@ No edge-function or schema change. Nothing to deploy.
 - [ ] Retest on device: the note on the stored row, and the edit round trip. Ticket 31 (meal logging, wave 3) is the natural home, but the triage does not yet assign 02-003 and 02-005 to it, so the lead names the retest.
 
 Next: /testing-wave develop-2026-10 (fix wave)
+
+**Retest home (lead, 2026-10-07):** ticket 31.
