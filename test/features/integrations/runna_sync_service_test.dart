@@ -545,7 +545,7 @@ void main() {
           _userId,
           _provider,
           status: 'error',
-          error: 'not a calendar',
+          error: 'http_404', // ticket 52: the code, not the message
         ),
       ).called(1);
     });

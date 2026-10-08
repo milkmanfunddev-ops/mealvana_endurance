@@ -552,7 +552,9 @@ class UserProfile {
       'known_sweat_rate_ml_per_hour': knownSweatRateMlPerHour,
       'known_sodium_concentration_mg_per_liter':
           knownSodiumConcentrationMgPerLiter,
-      'sweat_test_date': sweatTestDate?.toIso8601String(),
+      // A `timestamptz` column (develop-2026-10 ticket 53): UTC with its
+      // offset, as created_at above. A naive local string read as UTC.
+      'sweat_test_date': sweatTestDate?.toUtc().toIso8601String(),
       'sweat_test_source': sweatTestSource,
       'weight_pounds_updated_at': weightPoundsUpdatedAt
           ?.toUtc()
