@@ -299,11 +299,9 @@ class CalendarController extends _$CalendarController {
       final user = await authService.getCurrentUser();
       final userId = user?.id ?? 'unknown';
 
-      // Parse eventDate from startTime for calendar display
-      DateTime? eventDate;
-      if (startTime != null && startTime.isNotEmpty) {
-        eventDate = DateTime.tryParse(startTime);
-      }
+      // eventDate is the date written in startTime, never its time of day
+      // (ticket 65: one derivation, Event.dateFromStartTime).
+      final eventDate = Event.dateFromStartTime(startTime);
 
       final now = DateTime.now();
       await eventsRepo.createEvent(

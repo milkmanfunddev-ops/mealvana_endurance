@@ -229,11 +229,9 @@ class CalendarService {
     String? packetPickupInfo,
   }) async {
     try {
-      // Parse eventDate from startTime for calendar display
-      DateTime? eventDate;
-      if (startTime != null && startTime.isNotEmpty) {
-        eventDate = DateTime.tryParse(startTime);
-      }
+      // eventDate is the date written in startTime, never its time of day
+      // (ticket 65: one derivation, Event.dateFromStartTime).
+      final eventDate = domain.Event.dateFromStartTime(startTime);
 
       final companion = EventsTableCompanion.insert(
         userId: userId,
@@ -288,6 +286,9 @@ class CalendarService {
         location: Value(event.location),
         registrationUrl: Value(event.registrationUrl),
         startTime: Value(event.startTime),
+        // eventDate moves with startTime (ticket 65); writing startTime alone
+        // left the calendar on the old date.
+        eventDate: Value(event.withDerivedEventDate().eventDate),
         goalTimeMinutes: Value(event.goalTimeMinutes),
         goalPaceMinutesPerMile: Value(event.goalPaceMinutesPerMile),
         predictedFinishTimeMinutes: Value(event.predictedFinishTimeMinutes),

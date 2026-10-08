@@ -48,12 +48,11 @@ class EventsService {
   /// `event.eventDate` straight through, so editing an event's date saved
   /// `startTime` but not `eventDate`, and the calendar kept the old date
   /// (Claudia, 2026-09-10: "shows correct… but it's not saving").
-  static DateTime? eventDateFromStartTime(String? startTime) {
-    if (startTime == null || startTime.isEmpty) return null;
-    final parsed = DateTime.tryParse(startTime);
-    if (parsed == null) return null;
-    return DateTime(parsed.year, parsed.month, parsed.day);
-  }
+  ///
+  /// The derivation lives on the domain ([domain.Event.dateFromStartTime]) so
+  /// the data layer can apply it too; this forwards.
+  static DateTime? eventDateFromStartTime(String? startTime) =>
+      domain.Event.dateFromStartTime(startTime);
 
   /// Get event for a specific activity
   Future<domain.Event?> getEventForActivity(String activityId) async {
