@@ -35,7 +35,7 @@ import {
 import { describe, it } from 'https://deno.land/std@0.177.1/testing/bdd.ts';
 import { z } from 'npm:zod@3';
 
-import { MealAnalysisSchema } from '../_shared/meal_analysis/schema.ts';
+import { isNotFood, MealAnalysisSchema } from '../_shared/meal_analysis/schema.ts';
 import { creditCost } from '../_shared/ai/credits.ts';
 import { DESCRIBE_MEAL_MODEL } from '../_shared/ai/model.ts';
 
@@ -240,7 +240,7 @@ INSTRUCTIONS:
 - Compute accurate totals across all items.
 - Suggest the meal slot (breakfast, lunch, dinner, snack) based on the foods described.
 - Set confidence to "high" if the description is precise (weights, brand names, counts); "medium" if typical portions can be inferred; "low" if too vague to estimate reliably.
-- If the description clearly does not describe food (e.g. a movie title, a random sentence), set confidence to "low", return a single placeholder item, and set notes to explain.
+- If the description does not describe any food or drink (an activity, a movie title, a random sentence), set \`not_food\` to true, return one placeholder item, and set notes to explain.
 
 Return your answer as structured JSON matching the requested schema.`;
   }
@@ -268,9 +268,10 @@ Return your answer as structured JSON matching the requested schema.`;
     assert(prompt.includes('"low"'));
   });
 
-  it('prompt handles non-food input: instructs low confidence + placeholder', () => {
+  it('prompt handles non-food input: sets not_food + placeholder', () => {
     const prompt = buildDescribeMealPrompt('test meal');
-    assert(prompt.includes('does not describe food'));
+    assert(prompt.includes('does not describe any food or drink'));
+    assert(prompt.includes('set `not_food` to true'));
     assert(prompt.includes('placeholder item'));
   });
 
@@ -381,5 +382,64 @@ describe('H. Schema edge cases', () => {
       totals: { calories: 1000, carb_g: 200, protein_g: 50, fat_g: 20, sodium_mg: 500 },
     });
     assert(result.success);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// I. Not food (testing-wave develop-2026-10, ticket 45, Finding 31-003)
+// ---------------------------------------------------------------------------
+
+describe('I. Not food is a free 422', () => {
+  const placeholder = {
+    name: 'Not a meal',
+    suggested_slot: 'snack',
+    confidence: 'low',
+    items: [
+      { name: 'No food described', portion: '0', calories: 0, carb_g: 0, protein_g: 0, fat_g: 0, sodium_mg: 0 },
+    ],
+    totals: { calories: 0, carb_g: 0, protein_g: 0, fat_g: 0, sodium_mg: 0 },
+    notes: '"my bike ride" describes an activity, not food or drink.',
+  };
+
+  it('schema parses a model object with not_food: true', () => {
+    const result = MealAnalysisSchema.safeParse({ ...placeholder, not_food: true });
+    assert(result.success);
+    if (result.success) assertEquals(result.data.not_food, true);
+  });
+
+  it('schema parses a model object with not_food absent (photo output, stored analyses)', () => {
+    const { notes: _notes, ...food } = placeholder;
+    const result = MealAnalysisSchema.safeParse(food);
+    assert(result.success);
+    if (result.success) assertEquals(result.data.not_food, undefined);
+  });
+
+  it('isNotFood is true only for not_food === true', () => {
+    assertEquals(isNotFood({ not_food: true }), true);
+    assertEquals(isNotFood({ not_food: false }), false);
+    assertEquals(isNotFood({}), false);
+    // A zero-kcal item is food (a glass of water); only the verdict counts.
+    assertEquals(isNotFood(MealAnalysisSchema.parse(placeholder)), false);
+  });
+
+  it('the real prompt in index.ts carries the not_food rule', async () => {
+    const src = await Deno.readTextFile(new URL('./index.ts', import.meta.url));
+    assert(src.includes('does not describe any food or drink'));
+    assert(src.includes('set \\`not_food\\` to true'));
+  });
+
+  // Lee's ruling 2026-10-08: a describe call that finds no food is FREE. The
+  // 422 returns before debitForUsage runs, so a not-food answer makes no debit.
+  it('a not-food answer returns 422 before any debit (free), after the usage line', async () => {
+    const src = await Deno.readTextFile(new URL('./index.ts', import.meta.url));
+    const usage = src.indexOf('logAiUsage(serviceClient');
+    const notFood = src.indexOf('if (isNotFood(analysis))');
+    const notFood422 = src.indexOf('422,', notFood);
+    const debit = src.indexOf('await debitForUsage(');
+    assert(usage > 0 && notFood > 0 && notFood422 > 0 && debit > 0);
+    assert(usage < notFood, 'the usage line is still logged for a not-food answer');
+    assert(notFood422 < debit, 'the not-food 422 must return before debitForUsage');
+    assertEquals(src.split('await debitForUsage(').length - 1, 1, 'one debit site');
+    assert(src.includes('{ not_food: true }'), 'the 422 body carries not_food: true');
   });
 });
