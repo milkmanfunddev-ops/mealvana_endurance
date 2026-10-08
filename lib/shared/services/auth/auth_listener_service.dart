@@ -11,6 +11,7 @@ import '../sync/sync_coordinator.dart';
 import '../../database/database_provider.dart';
 import '../../providers/user_id_provider.dart';
 import '../../core/app_router.dart';
+import '../../../features/app_startup/application/app_startup_provider.dart';
 import '../../../features/settings/presentation/providers/settings_controller.dart';
 import '../../../features/activities/presentation/providers/activities_controller.dart';
 import '../../../features/events/presentation/providers/events_controller.dart'
@@ -26,13 +27,17 @@ import '../../../features/nutrition_plan/presentation/providers/macro_targets_co
 ///
 /// This service is initialized ONCE at app startup and NEVER torn down.
 /// It listens for auth state changes and invalidates the appropriate providers,
-/// but NEVER invalidates appStartupProvider to avoid infinite loops.
+/// but NEVER invalidates appStartupProvider: that re-runs the whole startup
+/// (version check, region, schema) behind the loading screen.
 ///
 /// Key design principles:
 /// 1. ONE listener for the lifetime of the app
-/// 2. Invalidates user-specific providers AND appStartupProvider on sign-out
-/// 3. appStartupProvider invalidation triggers router redirect to /welcome
-/// 4. Skips invalidation during onboarding sign-out to preserve cached data
+/// 2. Invalidates user-specific providers on sign-out
+/// 3. Refreshes the startup snapshot in place on sign-in and sign-out
+///    (`AppStartup.refreshSession`, ticket 56), so the root redirect reads
+///    the live account rather than the launch-time one
+/// 4. Skips invalidation and the refresh during onboarding sign-out to
+///    preserve cached data
 class AuthListenerService {
   AuthListenerService(this._ref);
 
@@ -215,6 +220,11 @@ class AuthListenerService {
       // Nutrition plan
       _ref.invalidate(macroTargetsControllerProvider);
 
+      // The startup snapshot follows the sign-out (ticket 56) before the
+      // redirect re-runs, so `/` reads "signed out", not the launch answer.
+      // Never throws; a skip or failure is written down inside.
+      await refreshStartupSnapshot(_ref, reason: 'signed_out');
+
       // Notify GoRouter to re-evaluate redirects on the current route.
       // The redirect function checks Supabase session directly and
       // redirects to /welcome when no session exists.
@@ -250,6 +260,13 @@ class AuthListenerService {
     );
 
     _ref.invalidate(userIdProvider);
+
+    // The startup snapshot follows the sign-in (ticket 56): without this a
+    // login in the same session left the launch-time "no user" in place, and
+    // every later go('/') landed on Welcome (49-001). Includes an anonymous
+    // sign-in (Build My Plan), which resolves to "not onboarded" as at a cold
+    // start. Never throws; a skip or failure is written down inside.
+    await refreshStartupSnapshot(_ref, reason: 'signed_in');
 
     await _sweepOtherAccounts(userId);
 
