@@ -499,6 +499,12 @@ class OnboardingController extends _$OnboardingController {
     ref.notifyListeners();
   }
 
+  /// Puts back the answers a pending signup stored (testing-wave
+  /// develop-2026-10 ticket 42, 30-007): a relaunch on Verify your email
+  /// resumes with them, so the verified signup saves them as an unbroken one
+  /// would. Through [_updateDraft], so preview watchers refresh.
+  void restoreDraft(OnboardingDraft draft) => _updateDraft(draft);
+
   void updateSports(Set<OnboardingSport> sports) =>
       _updateDraft(_draft.copyWith(sports: sports));
 

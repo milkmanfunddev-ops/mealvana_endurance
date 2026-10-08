@@ -1,10 +1,15 @@
 import 'dart:async';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../../../shared/services/analytics/analytics_tracker.dart';
+import '../../../../shared/services/app_external_deps.dart';
 import '../../../../shared/services/report/report.dart';
+import '../../../onboarding/domain/onboarding_draft.dart';
+import '../../../onboarding/presentation/providers/onboarding_controller.dart';
 import '../../application/oauth_service.dart';
 import '../../application/email_auth_service.dart';
+import '../../data/pending_signup_store.dart';
 import '../../domain/auth_exceptions.dart';
+import '../../domain/pending_signup.dart';
 
 part 'post_onboarding_auth_controller.g.dart';
 
@@ -21,6 +26,10 @@ class PostOnboardingAuthController extends _$PostOnboardingAuthController {
   OAuthService get _oauthService => ref.read(oAuthServiceProvider.notifier);
   EmailAuthService get _emailAuthService =>
       ref.read(emailAuthServiceProvider.notifier);
+  PendingSignupStore get _pendingSignups =>
+      ref.read(pendingSignupStoreProvider);
+  OnboardingController get _onboarding =>
+      ref.read(onboardingControllerProvider.notifier);
 
   @override
   FutureOr<void> build() {
@@ -264,6 +273,11 @@ class PostOnboardingAuthController extends _$PostOnboardingAuthController {
     final report = _report;
     final analytics = _analytics;
     final emailAuth = _emailAuthService;
+    final pending = _pendingSignupDraft(
+      email: email,
+      password: password,
+      verb: 'link',
+    );
 
     report.info(
       'Post-onboarding auth: Starting email account creation',
@@ -285,6 +299,7 @@ class PostOnboardingAuthController extends _$PostOnboardingAuthController {
         analytics: analytics,
         source: 'post_onboarding',
         verb: 'link',
+        pending: pending,
       );
       // State last (ticket 41): see [linkAppleAccount].
       if (ref.mounted) state = result;
@@ -314,21 +329,39 @@ class PostOnboardingAuthController extends _$PostOnboardingAuthController {
   /// cause (MEALVANA-ENDURANCE-CG). The user still sees that sentence: the
   /// signup screen shows it from the content system for every failure it
   /// does not route on.
+  ///
+  /// A code that went out is written down as a [PendingSignup] before this
+  /// returns, so the record exists before the screen pushes Verify your
+  /// email and a relaunch from there resumes it (ticket 42, 30-007).
   Future<bool> _emailCreationFailed(
     AsyncValue<void> result, {
     required Report report,
     required AnalyticsTracker analytics,
     required String source,
     required String verb,
+    required _PendingSignupDraft pending,
   }) async {
     final error = result.error!;
 
     // Routing signals, not failures: the screen inspects state.error and
-    // pushes the verify-code screen or the "sign in instead" dialog.
+    // pushes the verify-code screen, the "sign in instead" dialog, or the
+    // Create Account countdown.
     if (error is EmailVerificationRequiredException) {
       report.info(
         'Post-onboarding auth: email $verb pending verification',
         area: 'auth',
+      );
+      await pending.write(error);
+      return false;
+    }
+    if (error is ResendRateLimitedException) {
+      // GoTrue's gap between two emails to one address (30-008): the
+      // service noted it; the form counts it down. No fault, no
+      // `auth_flow_failed`.
+      report.info(
+        'Post-onboarding auth: email $verb rate limited',
+        area: 'auth',
+        data: {'retry_after_s': error.retryAfterSeconds},
       );
       return false;
     }
@@ -374,6 +407,11 @@ class PostOnboardingAuthController extends _$PostOnboardingAuthController {
     final report = _report;
     final analytics = _analytics;
     final emailAuth = _emailAuthService;
+    final pending = _pendingSignupDraft(
+      email: email,
+      password: password,
+      verb: 'signup',
+    );
 
     report.info(
       'Post-onboarding auth: Starting email signup (new user)',
@@ -395,6 +433,7 @@ class PostOnboardingAuthController extends _$PostOnboardingAuthController {
         analytics: analytics,
         source: 'post_onboarding_signup',
         verb: 'signup',
+        pending: pending,
       );
       // State last (ticket 41): see [linkAppleAccount].
       if (ref.mounted) state = result;
@@ -482,6 +521,58 @@ class PostOnboardingAuthController extends _$PostOnboardingAuthController {
     return !result.hasError;
   }
 
+  /// What [_emailCreationFailed] needs to write the pending signup, read
+  /// before the first await (this controller can be disposed mid-call).
+  _PendingSignupDraft _pendingSignupDraft({
+    required String email,
+    required String password,
+    required String verb,
+  }) => _PendingSignupDraft(
+    store: _pendingSignups,
+    email: email,
+    password: password,
+    isLink: verb == 'link',
+    draft: _onboarding.draft,
+    anonymousUserId: verb == 'link'
+        ? ref.read(appExternalDepsProvider).supabaseClient.auth.currentUser?.id
+        : null,
+  );
+
+  /// The pending signup a relaunch found (ticket 42, 30-007), with its
+  /// onboarding answers put back into the draft so the verified signup saves
+  /// them; null when there is none any more (verified or abandoned since).
+  ///
+  /// Running twice: the second call reads the same record and restores the
+  /// same answers.
+  Future<PendingSignup?> resumePendingSignup() async {
+    final report = _report;
+    final onboarding = _onboarding;
+    final lookup = await _pendingSignups.read();
+    final record = lookup.record;
+    if (record == null) {
+      await report.note(
+        'Resume verify found no pending signup',
+        area: 'auth',
+        data: {'unreadable': lookup.unreadable},
+      );
+      return null;
+    }
+    onboarding.restoreDraft(OnboardingDraft.fromJson(record.draft));
+    report.info(
+      'Pending signup resumed',
+      area: 'auth',
+      data: {'otp_type': record.otpType},
+    );
+    return record;
+  }
+
+  /// The upgrade path's deferred password for a resumed [record], from
+  /// secure storage; null on the plain path or when it cannot be read.
+  Future<String?> resumedPassword(PendingSignup record) async {
+    if (!record.isEmailChange) return null;
+    return _pendingSignups.readPassword();
+  }
+
   /// Track when user skips authentication
   Future<void> skipAuthentication() async {
     final analytics = _analytics;
@@ -495,4 +586,39 @@ class PostOnboardingAuthController extends _$PostOnboardingAuthController {
       properties: {'source': 'post_onboarding'},
     );
   }
+}
+
+/// A pending signup about to be written: everything but the answer that
+/// decides it (the [EmailVerificationRequiredException]).
+class _PendingSignupDraft {
+  const _PendingSignupDraft({
+    required this.store,
+    required this.email,
+    required this.password,
+    required this.isLink,
+    required this.draft,
+    required this.anonymousUserId,
+  });
+
+  final PendingSignupStore store;
+  final String email;
+  final String password;
+  final bool isLink;
+  final OnboardingDraft draft;
+  final String? anonymousUserId;
+
+  /// Never throws: the store notes its own failures.
+  Future<bool> write(EmailVerificationRequiredException sent) => store.write(
+    PendingSignup(
+      email: email.trim(),
+      otpType: isLink ? PendingSignup.otpEmailChange : PendingSignup.otpSignup,
+      codeSentAt: DateTime.now().toUtc(),
+      pendingUserId: isLink ? null : sent.userId,
+      anonymousUserId: isLink ? anonymousUserId : null,
+      draft: draft.toJson(),
+    ),
+    // GoTrue refuses the upgrade's password until the address is
+    // confirmed; the plain path's is already set.
+    password: isLink ? password : null,
+  );
 }

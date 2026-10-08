@@ -15,6 +15,8 @@
 //    returns false on corrupt JSON; context.mounted=false guard returns false
 //  - _getTableNameFromRepositoryKey (known-key coverage via knownKeys list)
 //  - AppStartupData model: default values, version fields, resync fields
+//  - pendingSignupAtLaunch (ticket 42): every branch leaves a LaunchTrail
+//    line and a note; a record that cannot resume is cleared
 //
 // Pattern: mocktail mocks; AppDatabase.memory() (NativeDatabase in-memory) for
 // Drift; ProviderContainer overrides for Riverpod wiring.
@@ -30,6 +32,7 @@ import 'dart:io';
 import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
 import 'package:flutter/widgets.dart' show BuildContext;
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:package_info_plus/package_info_plus.dart';
@@ -42,11 +45,14 @@ import 'package:supabase_flutter/supabase_flutter.dart' hide AuthException;
 
 import 'package:mealvana_endurance/features/app_startup/application/app_startup_provider.dart';
 import 'package:mealvana_endurance/features/app_startup/application/app_startup_service.dart';
+import 'package:mealvana_endurance/features/auth/data/pending_signup_store.dart';
+import 'package:mealvana_endurance/features/auth/domain/pending_signup.dart';
 import 'package:mealvana_endurance/features/nutrition_plan/data/food_repository.dart';
 import 'package:mealvana_endurance/shared/database/app_database.dart';
 import 'package:mealvana_endurance/shared/database/database_provider.dart';
 import 'package:mealvana_endurance/shared/services/analytics/analytics_tracker.dart';
 import 'package:mealvana_endurance/shared/services/app_external_deps.dart';
+import 'package:mealvana_endurance/shared/services/launch_trail.dart';
 import 'package:mealvana_endurance/shared/services/report/report.dart';
 
 import '../../helpers/fakes/recording_report.dart';
@@ -727,6 +733,258 @@ void main() {
         'coach_messages',
       ];
       expect(knownKeys.contains(unknownKey), isFalse);
+    });
+  });
+
+  // ─── pendingSignupAtLaunch (ticket 42) ───────────────────────────────────────
+
+  group('pendingSignupAtLaunch', () {
+    const anonUid = '1ffc8851-0000-4000-8000-000000000030';
+    late SharedPreferences prefs;
+
+    User user({
+      String id = anonUid,
+      bool anonymous = true,
+      String email = '',
+      String? confirmedAt,
+    }) => User.fromJson({
+      'id': id,
+      'aud': 'authenticated',
+      'email': email,
+      'email_confirmed_at': confirmedAt,
+      'is_anonymous': anonymous,
+      'app_metadata': <String, dynamic>{},
+      'user_metadata': <String, dynamic>{},
+      'created_at': '2026-10-08T14:00:00Z',
+    })!;
+
+    PendingSignup upgrade() => PendingSignup(
+      email: 'athlete@example.com',
+      otpType: PendingSignup.otpEmailChange,
+      codeSentAt: DateTime.now().toUtc().subtract(const Duration(minutes: 2)),
+      anonymousUserId: anonUid,
+      draft: const {
+        'sports': <String>['running'],
+      },
+    );
+
+    setUp(() async {
+      LaunchTrail.debugReset();
+      FlutterSecureStorage.setMockInitialValues({});
+      prefs = await SharedPreferences.getInstance();
+    });
+
+    ProviderContainer container() {
+      final c = ProviderContainer(
+        overrides: [
+          appExternalDepsProvider.overrideWithValue(
+            AppExternalDeps(
+              supabaseClient: mockSupabase,
+              analytics: mockAnalytics,
+              sharedPreferences: prefs,
+            ),
+          ),
+          reportProvider.overrideWithValue(report),
+          appDatabaseProvider.overrideWithValue(database),
+        ],
+      );
+      addTearDown(c.dispose);
+      return c;
+    }
+
+    Future<void> store(PendingSignup record, {String? password}) async {
+      final ok = await PendingSignupStore(
+        prefs: prefs,
+        report: RecordingReport(),
+      ).write(record, password: password);
+      expect(ok, isTrue);
+    }
+
+    Future<String?> storedPassword() =>
+        const FlutterSecureStorage().read(key: PendingSignupStore.passwordKey);
+
+    List<String?> noteMessages() => report.notes.map((n) => n.message).toList();
+
+    test('no record: nothing to resume, said once', () async {
+      final result = await container()
+          .read(appStartupServiceProvider)
+          .pendingSignupAtLaunch();
+
+      expect(result, isNull);
+      expect(LaunchTrail.text, contains('pending signup: none'));
+      expect(noteMessages(), ['No pending signup at launch']);
+    });
+
+    test('an unreadable record is cleared, with its password', () async {
+      await prefs.setString(PendingSignupStore.prefsKey, '{"email": 42');
+      FlutterSecureStorage.setMockInitialValues({
+        PendingSignupStore.passwordKey: 'deferred-pw',
+      });
+
+      final result = await container()
+          .read(appStartupServiceProvider)
+          .pendingSignupAtLaunch();
+
+      expect(result, isNull);
+      expect(prefs.getString(PendingSignupStore.prefsKey), isNull);
+      expect(await storedPassword(), isNull);
+      expect(LaunchTrail.text, contains('pending signup: record unreadable'));
+      expect(
+        noteMessages(),
+        contains('pending signup record unreadable; cleared'),
+      );
+    });
+
+    test('an upgrade whose anonymous session is gone is cleared', () async {
+      await store(upgrade(), password: 'deferred-pw');
+      when(() => mockAuth.currentUser).thenReturn(user(id: 'a-different-anon'));
+
+      final result = await container()
+          .read(appStartupServiceProvider)
+          .pendingSignupAtLaunch();
+
+      expect(result, isNull);
+      expect(prefs.getString(PendingSignupStore.prefsKey), isNull);
+      expect(await storedPassword(), isNull);
+      expect(
+        LaunchTrail.text,
+        contains('pending signup: upgrade session lost'),
+      );
+      expect(
+        report.notes.where((n) => n.data?['reason'] == 'session_lost'),
+        hasLength(1),
+      );
+    });
+
+    test('a session already holding the confirmed address: verified before '
+        'the clear; cleared', () async {
+      await store(upgrade(), password: 'deferred-pw');
+      when(() => mockAuth.currentUser).thenReturn(
+        user(
+          anonymous: false,
+          email: 'Athlete@Example.com',
+          confirmedAt: '2026-10-08T14:03:00Z',
+        ),
+      );
+
+      final result = await container()
+          .read(appStartupServiceProvider)
+          .pendingSignupAtLaunch();
+
+      expect(result, isNull);
+      expect(prefs.getString(PendingSignupStore.prefsKey), isNull);
+      expect(LaunchTrail.text, contains('pending signup: already verified'));
+      expect(
+        noteMessages(),
+        contains('Pending signup already verified at launch; cleared'),
+      );
+    });
+
+    test(
+      'another real account signed in: the record is stale; cleared',
+      () async {
+        await store(
+          PendingSignup(
+            email: 'athlete@example.com',
+            otpType: PendingSignup.otpSignup,
+            codeSentAt: DateTime.now().toUtc(),
+            pendingUserId: 'new-user',
+          ),
+        );
+        when(() => mockAuth.currentUser).thenReturn(
+          user(
+            id: 'someone-else',
+            anonymous: false,
+            email: 'other@example.com',
+            confirmedAt: '2026-01-01T00:00:00Z',
+          ),
+        );
+
+        final result = await container()
+            .read(appStartupServiceProvider)
+            .pendingSignupAtLaunch();
+
+        expect(result, isNull);
+        expect(prefs.getString(PendingSignupStore.prefsKey), isNull);
+        expect(LaunchTrail.text, contains('another account signed in'));
+        expect(
+          report.notes.where((n) => n.data?['reason'] == 'other_account'),
+          hasLength(1),
+        );
+      },
+    );
+
+    test('the same anonymous session: resumes, record kept', () async {
+      await store(upgrade(), password: 'deferred-pw');
+      when(() => mockAuth.currentUser).thenReturn(user());
+
+      final result = await container()
+          .read(appStartupServiceProvider)
+          .pendingSignupAtLaunch();
+
+      expect(result?.isEmailChange, isTrue);
+      expect(result?.draft['sports'], ['running']);
+      expect(prefs.getString(PendingSignupStore.prefsKey), isNotNull);
+      expect(await storedPassword(), 'deferred-pw');
+      expect(
+        LaunchTrail.text,
+        contains('pending signup: resuming verify (emailChange)'),
+      );
+      expect(noteMessages(), contains('Pending signup resumed at launch'));
+      // Never the address or the password in a note.
+      for (final note in report.notes) {
+        expect('${note.data}', isNot(contains('athlete@example.com')));
+        expect('${note.data}', isNot(contains('deferred-pw')));
+      }
+    });
+
+    test('a plain signup with no session resumes', () async {
+      await store(
+        PendingSignup(
+          email: 'athlete@example.com',
+          otpType: PendingSignup.otpSignup,
+          codeSentAt: DateTime.now().toUtc(),
+          pendingUserId: 'new-user',
+        ),
+      );
+
+      final result = await container()
+          .read(appStartupServiceProvider)
+          .pendingSignupAtLaunch();
+
+      expect(result?.pendingUserId, 'new-user');
+      expect(
+        LaunchTrail.text,
+        contains('pending signup: resuming verify (signup)'),
+      );
+    });
+
+    test('a store that throws never reaches startup: the check is noted and '
+        'startup goes on', () async {
+      final c = ProviderContainer(
+        overrides: [
+          appExternalDepsProvider.overrideWithValue(
+            AppExternalDeps(
+              supabaseClient: mockSupabase,
+              analytics: mockAnalytics,
+              sharedPreferences: mockPrefs,
+            ),
+          ),
+          reportProvider.overrideWithValue(report),
+          pendingSignupStoreProvider.overrideWith(
+            (ref) => throw StateError('store unavailable'),
+          ),
+        ],
+      );
+      addTearDown(c.dispose);
+
+      final result = await c
+          .read(appStartupServiceProvider)
+          .pendingSignupAtLaunch();
+
+      expect(result, isNull);
+      expect(LaunchTrail.text, contains('pending signup: check FAILED'));
+      expect(noteMessages(), contains('Pending signup check failed at launch'));
     });
   });
 }
