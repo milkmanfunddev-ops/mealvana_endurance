@@ -43,6 +43,10 @@ approved card or a ruling in the round's TRIAGE.md, and leaves this file. Rewrit
    30-016).** The onboarding preview's fluid and sodium line looks computed at 22 °C / 50 %; the ruled
    fallback for a failed weather fetch is 20 °C / 60 %, but the preview never fetches. Which conditions
    should the preview use? Recommend: the ruled fallback, so the preview and the first real day agree.
+11. **The daily-macros README's mirror list omits the protein bump (PREVIEW-SPEC-WORDING-001, develop-2026-10,
+   ticket 44).** `docs/ssot/spec/daily-macros/README.md:13-16` lists what the Dart preview mirror covers and does
+   not name the session protein bump (`session-demand.md` §Protein bump), which fix ticket 44 adds to the
+   `DailyBaselineCalculator` twin. Wording only, in the QA repo's spec: add the bump to the list. Recommend yes.
 
 ## For Lee (decisions)
 
