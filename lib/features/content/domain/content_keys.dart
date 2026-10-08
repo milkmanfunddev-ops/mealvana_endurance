@@ -46,6 +46,15 @@ class ContentKeys {
   // (112-002). The word is written into the logged row's portion.
   static const String mealLogServingSingular = 'meal_log.serving_singular';
   static const String mealLogServingPlural = 'meal_log.serving_plural';
+  // Review & Log and Describe (testing-wave develop-2026-10 ticket 45:
+  // 31-002 empty name, 31-003 not food, 31-004 Review again, 31-007 the
+  // short-input minimum; `{n}` is the minimum character count).
+  static const String mealLogReviewNameRequired =
+      'meal_log.review.name_required';
+  static const String mealLogDescribeNotFood = 'meal_log.describe.not_food';
+  static const String mealLogDescribeReviewAgain =
+      'meal_log.describe.review_again';
+  static const String mealLogDescribeTooShort = 'meal_log.describe.too_short';
 
   // Main Screen
   static const String mainScreenTitle = 'main_screen.title';

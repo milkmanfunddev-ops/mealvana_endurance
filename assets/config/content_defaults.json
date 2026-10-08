@@ -369,7 +369,15 @@
   },
   "meal_log": {
     "serving_singular": "serving",
-    "serving_plural": "servings"
+    "serving_plural": "servings",
+    "review": {
+      "name_required": "Give this meal a name to log it."
+    },
+    "describe": {
+      "not_food": "That doesn't sound like food or drink. Describe what you ate or drank.",
+      "review_again": "Review again",
+      "too_short": "Add a bit more: at least {n} characters, like what you ate and how much."
+    }
   },
   "meal_log_actions": {
     "saved_meal_removed": "Saved meal removed",

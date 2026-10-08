@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
+import '../../../content/application/content_service.dart';
+import '../../../content/domain/content_keys.dart';
 import '../../../nutrition_plan/presentation/providers/swap_food_controller.dart';
 import '../../domain/log_date_time.dart';
 import '../../domain/meal_analysis_result.dart';
@@ -16,10 +18,28 @@ import '../widgets/slot_chip_selector.dart' show OptionalSlotChipSelector;
 
 /// Review & confirm screen shown after AI analysis (photo or describe flows).
 ///
-/// Route: `/meal-log/review`
-/// Extras: `{ 'result': MealAnalysisResult, 'source': String, 'logDate': String, 'photoPath': String? }`
+/// Log a Meal → Describe pushes it on top of itself with the constructor
+/// params, so Back returns to the typed text and the stored analysis
+/// (testing-wave develop-2026-10 ticket 45, 31-004); a logged meal pops `true`.
+///
+/// Route: `/meal-log/review` reads the same values from the GoRouter extras
+/// when [result] is null:
+/// `{ 'result': MealAnalysisResult, 'source': String, 'logDate': String, 'photoPath': String? }`
 class MealReviewScreen extends ConsumerStatefulWidget {
-  const MealReviewScreen({super.key});
+  const MealReviewScreen({
+    super.key,
+    this.result,
+    this.source,
+    this.logDate,
+    this.photoPath,
+  });
+
+  final MealAnalysisResult? result;
+  final String? source;
+  final String? logDate;
+
+  /// The uploaded photo's storage path, when the analysis was a photo.
+  final String? photoPath;
 
   @override
   ConsumerState<MealReviewScreen> createState() => _MealReviewScreenState();
@@ -37,15 +57,28 @@ class _MealReviewScreenState extends ConsumerState<MealReviewScreen> {
 
   bool _initialized = false;
 
+  /// True once the athlete has edited the name; only then does an empty name
+  /// show its error (31-002).
+  bool _nameEdited = false;
+
+  bool get _nameIsEmpty => _nameCtrl.text.trim().isEmpty;
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     if (!_initialized) {
-      final extra = GoRouterState.of(context).extra as Map<String, dynamic>?;
-      _result = extra?['result'] as MealAnalysisResult?;
-      _source = extra?['source'] as String?;
-      _logDate = extra?['logDate'] as String?;
-      _photoPath = extra?['photoPath'] as String?;
+      if (widget.result != null) {
+        _result = widget.result;
+        _source = widget.source;
+        _logDate = widget.logDate;
+        _photoPath = widget.photoPath;
+      } else {
+        final extra = GoRouterState.of(context).extra as Map<String, dynamic>?;
+        _result = extra?['result'] as MealAnalysisResult?;
+        _source = extra?['source'] as String?;
+        _logDate = extra?['logDate'] as String?;
+        _photoPath = extra?['photoPath'] as String?;
+      }
 
       if (_result != null) {
         _nameCtrl.text = _result!.name;
@@ -96,6 +129,7 @@ class _MealReviewScreenState extends ConsumerState<MealReviewScreen> {
 
   Future<void> _logMeal() async {
     final name = _nameCtrl.text.trim();
+    // Backstop: the button is disabled for an empty name (31-002).
     if (name.isEmpty || _logDate == null) return;
 
     final source = MealLogSource.fromWireValue(_source) ?? MealLogSource.photo;
@@ -119,7 +153,13 @@ class _MealReviewScreenState extends ConsumerState<MealReviewScreen> {
     if (!mounted) return;
     final state = ref.read(mealLogControllerProvider);
     if (state is AsyncData) {
-      context.go('/main');
+      // Pushed by Log a Meal → Describe: hand back `true` so it closes too.
+      final navigator = Navigator.of(context);
+      if (navigator.canPop()) {
+        navigator.pop(true);
+      } else {
+        context.go('/main');
+      }
     } else if (state is AsyncError) {
       MealvanaSnackbar.showError(
         context,
@@ -133,6 +173,11 @@ class _MealReviewScreenState extends ConsumerState<MealReviewScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final controllerState = ref.watch(mealLogControllerProvider);
     final isLoading = controllerState is AsyncLoading;
+    final nameError = _nameEdited && _nameIsEmpty
+        ? ref
+              .watch(contentServiceProvider)
+              .getValue(ContentKeys.mealLogReviewNameRequired)
+        : null;
 
     if (_result == null) {
       return Scaffold(
@@ -162,11 +207,13 @@ class _MealReviewScreenState extends ConsumerState<MealReviewScreen> {
             // Meal name
             TextFormField(
               controller: _nameCtrl,
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 labelText: 'Meal name',
-                border: OutlineInputBorder(),
+                border: const OutlineInputBorder(),
+                errorText: nameError,
               ),
               textCapitalization: TextCapitalization.sentences,
+              onChanged: (_) => setState(() => _nameEdited = true),
             ),
             const SizedBox(height: AppSpacing.md),
 
@@ -221,7 +268,8 @@ class _MealReviewScreenState extends ConsumerState<MealReviewScreen> {
             KylePrimaryButton(
               text: 'Log this meal',
               isLoading: isLoading,
-              onPressed: isLoading ? null : _logMeal,
+              // An empty name cannot be logged; the field says why (31-002).
+              onPressed: isLoading || _nameIsEmpty ? null : _logMeal,
             ),
             const SizedBox(height: AppSpacing.xl),
           ],

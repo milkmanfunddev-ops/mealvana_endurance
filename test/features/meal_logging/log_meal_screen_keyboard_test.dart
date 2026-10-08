@@ -8,8 +8,10 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mealvana_endurance/features/content/application/content_service.dart';
 import 'package:mealvana_endurance/features/meal_logging/presentation/screens/log_meal_screen.dart';
 
+import '../../helpers/test_content.dart';
 import '../../helpers/widget_test_harness.dart';
 
 /// An iPhone keyboard with its suggestion bar, in logical pixels.
@@ -20,6 +22,7 @@ Future<void> _openDescribe(WidgetTester tester) async {
     tester,
     const LogMealScreen(logDate: '2026-09-25', source: 'test'),
     settle: false,
+    overrides: [contentServiceProvider.overrideWith(testContentService)],
   );
   addTearDown(tester.view.reset);
   await tester.tap(find.text('Describe'));
@@ -85,6 +88,7 @@ void main() {
     await tester.tap(find.text('Analyze').hitTestable());
     await tester.pump();
 
-    expect(find.text('Please describe your meal'), findsOneWidget);
+    // The short-input line from content, naming the minimum (ticket 45).
+    expect(find.textContaining('at least 5 characters'), findsOneWidget);
   });
 }
