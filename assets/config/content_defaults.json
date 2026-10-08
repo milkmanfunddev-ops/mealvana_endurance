@@ -395,7 +395,9 @@
     "out_title": "Out of AI credits",
     "out_body": "You've used all your AI credits. Get more to keep using AI features.",
     "out_not_now": "Not now",
-    "out_get_credits": "Get credits"
+    "out_get_credits": "Get credits",
+    "how_title": "How credits work",
+    "how_body": "AI credits pay for meal descriptions, meal photo analysis and Formula Kit coach insights. Each request uses credits, and credits never expire."
   },
   "integrations": {
     "sync_error_network": "Could not reach {provider}. Check your connection and try again.",

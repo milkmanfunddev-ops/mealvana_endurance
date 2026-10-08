@@ -1,6 +1,6 @@
 # 46: Go Home goes home, AI Credits can be closed, and the credits copy names what credits buy
 
-**Status:** in-progress (wave 4, 2026-10-08)
+**Status:** fixed (wave 4, 672aa89e) awaiting retest
 **Labels:** fix, round:develop-2026-10, area:navigation, area:ai-credits, copy
 **Branch:** `develop-next` (fix-wave worktree)
 **Blocked by:** 37 (shared `content_keys.dart` and `content_defaults.json`, which 35+36 also edit); run after 37 merges.
@@ -31,10 +31,10 @@
 
 No edge-function or schema change. Nothing to deploy. The new keys ship in the bundled `content_defaults.json`. A server content row is optional, and the default is the fallback.
 
-- [ ] Widget test (`page_not_found_go_home_test.dart`) through the real `AppRouter.routerProvider` in `MaterialApp.router`. Overrides: `appStartupProvider` with `AsyncData` of an `AppStartupData` shaped like a real launch (user present, `hasCompletedOnboarding: true`, `isLoggedOut: false`, no force-upgrade or resync); `appExternalDepsProvider` with a mocktail `SupabaseClient` whose `auth.currentSession` is a `Session`; `analyticsConsentProvider` not needing a prompt. `router.go('/pro')` shows "Page not found". Tap Go Home: the location is `/main`. Second case: the same with `isLoggedOut: true` lands on `/welcome`. If `/main`'s `TabsScreen` cannot be built under test overrides, assert `router.routerDelegate.currentConfiguration.uri.path` after one `pump()`, since the redirect has already run by then. Do not add a production seam for the test.
-- [ ] Widget test (`buy_credits_back_and_copy_test.dart`): a `GoRouter` with `/` (a stub home) and `/buy-credits` → the real `BuyCreditsScreen` with `aiCreditsEnabled: true` and the credits, offering and purchase providers overridden. Opened as `initialLocation: '/buy-credits'`, the back control is present and tapping it lands on `/`. Pushed from `/`, tapping it pops back to `/`. The explanation shows the `ai_credits.how_body` default and no text containing "Mealvana AI conversations". The coming-soon path also shows the back control.
-- [ ] `test/smoke_tests/misc_smoke_test.dart` (BuyCreditsScreen disabled) still passes. It is run, not changed.
-- [ ] `flutter analyze` clean on touched files.
+- [x] Widget test (`page_not_found_go_home_test.dart`) through the real `AppRouter.routerProvider` in `MaterialApp.router`. Overrides: `appStartupProvider` with `AsyncData` of an `AppStartupData` shaped like a real launch (user present, `hasCompletedOnboarding: true`, `isLoggedOut: false`, no force-upgrade or resync); `appExternalDepsProvider` with a mocktail `SupabaseClient` whose `auth.currentSession` is a `Session`; `analyticsConsentProvider` not needing a prompt. `router.go('/pro')` shows "Page not found". Tap Go Home: the location is `/main`. Second case: the same with `isLoggedOut: true` lands on `/welcome`. If `/main`'s `TabsScreen` cannot be built under test overrides, assert `router.routerDelegate.currentConfiguration.uri.path` after one `pump()`, since the redirect has already run by then. Do not add a production seam for the test.
+- [x] Widget test (`buy_credits_back_and_copy_test.dart`): a `GoRouter` with `/` (a stub home) and `/buy-credits` → the real `BuyCreditsScreen` with `aiCreditsEnabled: true` and the credits, offering and purchase providers overridden. Opened as `initialLocation: '/buy-credits'`, the back control is present and tapping it lands on `/`. Pushed from `/`, tapping it pops back to `/`. The explanation shows the `ai_credits.how_body` default and no text containing "Mealvana AI conversations". The coming-soon path also shows the back control.
+- [x] `test/smoke_tests/misc_smoke_test.dart` (BuyCreditsScreen disabled) still passes. It is run, not changed.
+- [x] `flutter analyze` clean on touched files.
 - [ ] Retest on a simulator in wave 5 retest ticket 50 (startup/tabs/connected apps): signed in, `/pro`, `/jade` and the two-slash `athlete/feedback` → Go Home → Timeline. `/buy-credits` by `simctl openurl` shows a back control that lands on the Timeline. In-app Get credits → Back returns to where it came from. "How credits work" reads the new copy.
 
 Next: /testing-wave develop-2026-10 (fix wave 4)
