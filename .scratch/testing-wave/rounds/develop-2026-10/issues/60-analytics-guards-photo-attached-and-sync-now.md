@@ -1,6 +1,6 @@
 # 60: Analytics guards: photo_attached only on a real photo, Sync Now tracks a sync, device_id is the device
 
-**Status:** ready (round develop-2026-10, fix wave 6)
+**Status:** in-progress (wave 6, 2026-10-08) (round develop-2026-10, fix wave 6)
 **Labels:** fix, round:develop-2026-10, area:analytics
 **Branch:** `develop-next` (fix-wave worktree)
 **Blocked by:** nothing in code. Shares `log_meal_screen.dart` with 66 and `connect_training_controller.dart` with 55 and 63 (see Overlaps): not in the same batch as any of them unless one agent holds both.
