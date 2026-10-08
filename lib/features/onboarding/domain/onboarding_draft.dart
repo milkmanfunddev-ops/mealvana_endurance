@@ -165,6 +165,32 @@ class OnboardingPlanEdits {
   final double? fluidMlPerHr;
   final double? sodiumMgPerHr;
 
+  /// Stored with a pending signup (ticket 42) so a relaunch on Verify your
+  /// email keeps the edits.
+  Map<String, dynamic> toJson() => {
+    'long_run_carb_gph': longRunCarbGph,
+    'long_ride_carb_gph': longRideCarbGph,
+    'fluid_ml_per_hr': fluidMlPerHr,
+    'sodium_mg_per_hr': sodiumMgPerHr,
+  };
+
+  /// The edits [json] holds; a missing or non-numeric field is left at the
+  /// algorithm default. Never throws.
+  factory OnboardingPlanEdits.fromJson(Object? json) {
+    if (json is! Map) return const OnboardingPlanEdits();
+    double? number(String key) {
+      final value = json[key];
+      return value is num ? value.toDouble() : null;
+    }
+
+    return OnboardingPlanEdits(
+      longRunCarbGph: number('long_run_carb_gph'),
+      longRideCarbGph: number('long_ride_carb_gph'),
+      fluidMlPerHr: number('fluid_ml_per_hr'),
+      sodiumMgPerHr: number('sodium_mg_per_hr'),
+    );
+  }
+
   bool get hasAnyEdit =>
       longRunCarbGph != null ||
       longRideCarbGph != null ||
@@ -267,6 +293,96 @@ class OnboardingDraft {
 
   bool get wantsRunFueling => sports.any((s) => s.impliesRunning);
   bool get wantsRideFueling => sports.any((s) => s.impliesCycling);
+
+  /// Stored with a pending signup (testing-wave develop-2026-10 ticket 42,
+  /// 30-007), so a relaunch on Verify your email restores the answers. Sets
+  /// are `dbValue` lists, as the onboarding snapshot stores them; enums by
+  /// `name`.
+  Map<String, dynamic> toJson() => {
+    'version': 1,
+    'sports': [for (final s in sports) s.dbValue],
+    'goals': [for (final g in goals) g.dbValue],
+    'pitfalls': [for (final p in pitfalls) p.dbValue],
+    'first_name': firstName,
+    'last_name': lastName,
+    'email': email,
+    'gender': gender?.name,
+    'birth_year': birthYear,
+    'use_metric_units': useMetricUnits,
+    'height_feet': heightFeet,
+    'height_inches': heightInches,
+    'weight_pounds': weightPounds,
+    'gut_training': gutTraining.name,
+    'sweat_rate': sweatRate.name,
+    'plan_edits': planEdits.toJson(),
+    'connected_provider': connectedProvider,
+    'declined_training_apps': declinedTrainingApps,
+    'tridot_notify_requested': tridotNotifyRequested,
+    'sweat_test_interest': sweatTestInterest,
+  };
+
+  /// The draft [json] holds. Never throws: an unknown enum value or a
+  /// wrongly typed field is dropped and the field keeps its default, so a
+  /// record written by another build still restores what it can.
+  factory OnboardingDraft.fromJson(Object? json) {
+    if (json is! Map) return const OnboardingDraft();
+    String? text(String key) {
+      final value = json[key];
+      return value is String ? value : null;
+    }
+
+    int? whole(String key) {
+      final value = json[key];
+      return value is num ? value.toInt() : null;
+    }
+
+    bool flag(String key, bool fallback) {
+      final value = json[key];
+      return value is bool ? value : fallback;
+    }
+
+    Set<T> setOf<T>(String key, T? Function(String?) parse) {
+      final value = json[key];
+      if (value is! List) return const {};
+      return Set.unmodifiable({
+        for (final item in value)
+          if (item is String && parse(item) != null) parse(item) as T,
+      });
+    }
+
+    T? byName<T extends Enum>(List<T> values, String key) {
+      final name = text(key);
+      for (final value in values) {
+        if (value.name == name) return value;
+      }
+      return null;
+    }
+
+    final weight = json['weight_pounds'];
+    return OnboardingDraft(
+      sports: setOf('sports', OnboardingSport.fromDbValue),
+      goals: setOf('goals', OnboardingGoal.fromDbValue),
+      pitfalls: setOf('pitfalls', OnboardingPitfall.fromDbValue),
+      firstName: text('first_name'),
+      lastName: text('last_name'),
+      email: text('email'),
+      gender: byName(Gender.values, 'gender'),
+      birthYear: whole('birth_year'),
+      useMetricUnits: flag('use_metric_units', false),
+      heightFeet: whole('height_feet'),
+      heightInches: whole('height_inches'),
+      weightPounds: weight is num ? weight.toDouble() : null,
+      gutTraining:
+          byName(GutTraining.values, 'gut_training') ?? GutTraining.moderate,
+      sweatRate:
+          byName(SweatRateCat.values, 'sweat_rate') ?? SweatRateCat.medium,
+      planEdits: OnboardingPlanEdits.fromJson(json['plan_edits']),
+      connectedProvider: text('connected_provider'),
+      declinedTrainingApps: flag('declined_training_apps', false),
+      tridotNotifyRequested: flag('tridot_notify_requested', false),
+      sweatTestInterest: flag('sweat_test_interest', false),
+    );
+  }
 
   OnboardingDraft copyWith({
     Set<OnboardingSport>? sports,

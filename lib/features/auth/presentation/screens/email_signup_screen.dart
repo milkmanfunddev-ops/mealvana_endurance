@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -13,13 +15,19 @@ import '../../../content/domain/content_keys.dart';
 import '../providers/post_onboarding_auth_controller.dart';
 import '../../application/email_auth_service.dart';
 import '../../domain/auth_exceptions.dart';
+import '../../domain/pending_signup.dart';
 import 'verify_email_screen.dart';
 
 /// Email Signup Screen
 /// Allows users to create an account with email and password
 /// Links email to existing anonymous account (preserves data)
+///
+/// [resume] is a signup quit on Verify your email (ticket 42, 30-007): the
+/// form fills its address and reopens Verify for the code already sent.
 class EmailSignupScreen extends ConsumerStatefulWidget {
-  const EmailSignupScreen({super.key});
+  const EmailSignupScreen({super.key, this.resume});
+
+  final PendingSignup? resume;
 
   @override
   ConsumerState<EmailSignupScreen> createState() => _EmailSignupScreenState();
@@ -35,10 +43,22 @@ class _EmailSignupScreenState extends ConsumerState<EmailSignupScreen> {
   bool _obscureConfirmPassword = true;
   bool _hasTrackedScreenView = false;
 
+  /// Seconds until Create Account may be tapped again after GoTrue's 429
+  /// (30-008); 0 when it may.
+  int _createIn = 0;
+  Timer? _createTimer;
+
   @override
   void initState() {
     super.initState();
     // Analytics tracking moved to didChangeDependencies for safety
+    final resume = widget.resume;
+    if (resume != null) {
+      _emailController.text = resume.email;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) unawaited(_reopenVerify(resume));
+      });
+    }
   }
 
   @override
@@ -56,6 +76,7 @@ class _EmailSignupScreenState extends ConsumerState<EmailSignupScreen> {
 
   @override
   void dispose() {
+    _createTimer?.cancel();
     _emailController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
@@ -123,24 +144,17 @@ class _EmailSignupScreenState extends ConsumerState<EmailSignupScreen> {
     if (!success && mounted) {
       final state = ref.read(postOnboardingAuthControllerProvider);
       if (state.error case final EmailVerificationRequiredException pending) {
-        final verified = await Navigator.of(context).push<bool>(
-          MaterialPageRoute(
-            builder: (_) => VerifyEmailScreen(
-              email: email,
-              // A fresh signup's user, so leaving without a code can discard
-              // it (121-003); the upgrade path keeps its uid.
-              pendingUserId: isAnonymousUpgrade ? null : pending.userId,
-              // GoTrue models "attach an email to an existing user" as an
-              // email change, so the upgrade code is not a signup code.
-              otpType: isAnonymousUpgrade
-                  ? OtpType.emailChange
-                  : OtpType.signup,
-              // Deferred on the upgrade path only: GoTrue rejects a password
-              // on an anonymous user whose email is still unconfirmed.
-              pendingPassword: isAnonymousUpgrade ? password : null,
-            ),
-            fullscreenDialog: true,
-          ),
+        final verified = await _openVerify(
+          email: email,
+          // A fresh signup's user, so leaving without a code can discard
+          // it (121-003); the upgrade path keeps its uid.
+          pendingUserId: isAnonymousUpgrade ? null : pending.userId,
+          // GoTrue models "attach an email to an existing user" as an
+          // email change, so the upgrade code is not a signup code.
+          otpType: isAnonymousUpgrade ? OtpType.emailChange : OtpType.signup,
+          // Deferred on the upgrade path only: GoTrue rejects a password
+          // on an anonymous user whose email is still unconfirmed.
+          pendingPassword: isAnonymousUpgrade ? password : null,
         );
         if (verified != true) {
           // User backed out to change address — leave them on the form. The
@@ -152,20 +166,17 @@ class _EmailSignupScreenState extends ConsumerState<EmailSignupScreen> {
     }
 
     if (success && mounted) {
-      // Show success message
-      MealvanaSnackbar.showSuccess(
-        context,
-        contentService.getValue(
-          'auth.post_onboarding.success_linked',
-          defaultValue: 'Account created successfully!',
-        ),
-      );
-
-      // Return to post-onboarding auth screen which will navigate to main
-      context.pop(true);
+      _finishCreated();
     } else if (!success && mounted) {
-      // Check if the error is because the account already exists
       final state = ref.read(postOnboardingAuthControllerProvider);
+      // GoTrue's gap between two emails to one address (30-008): a wait,
+      // not a failure. The button counts it down; no snackbar.
+      if (state.error case final ResendRateLimitedException wait) {
+        _startCreateCooldown(wait.retryAfterSeconds);
+        return;
+      }
+
+      // Check if the error is because the account already exists
       if (state.hasError && state.error is AccountAlreadyExistsException) {
         final exception = state.error as AccountAlreadyExistsException;
         await _showAccountExistsDialog(context, email, exception.email);
@@ -181,6 +192,75 @@ class _EmailSignupScreenState extends ConsumerState<EmailSignupScreen> {
         ),
       );
     }
+  }
+
+  /// Verify your email for a code that went out; true once it is used.
+  Future<bool?> _openVerify({
+    required String email,
+    required OtpType otpType,
+    String? pendingUserId,
+    String? pendingPassword,
+    DateTime? codeSentAt,
+  }) {
+    return Navigator.of(context).push<bool>(
+      MaterialPageRoute(
+        builder: (_) => VerifyEmailScreen(
+          email: email,
+          pendingUserId: pendingUserId,
+          otpType: otpType,
+          pendingPassword: pendingPassword,
+          codeSentAt: codeSentAt,
+        ),
+        fullscreenDialog: true,
+      ),
+    );
+  }
+
+  /// The account exists and is verified: back to the post-onboarding screen,
+  /// which saves the answers and goes on.
+  void _finishCreated() {
+    final contentService = ref.read(contentServiceProvider);
+    MealvanaSnackbar.showSuccess(
+      context,
+      contentService.getValue(
+        'auth.post_onboarding.success_linked',
+        defaultValue: 'Account created successfully!',
+      ),
+    );
+
+    // Return to post-onboarding auth screen which will navigate to main
+    context.pop(true);
+  }
+
+  /// A signup quit on Verify your email (ticket 42): reopen Verify for the
+  /// code the record names, with the upgrade path's deferred password from
+  /// secure storage. Used: on as after a fresh code. Left: stay on the form.
+  Future<void> _reopenVerify(PendingSignup record) async {
+    final password = await ref
+        .read(postOnboardingAuthControllerProvider.notifier)
+        .resumedPassword(record);
+    if (!mounted) return;
+    final verified = await _openVerify(
+      email: record.email,
+      otpType: record.isEmailChange ? OtpType.emailChange : OtpType.signup,
+      pendingUserId: record.isEmailChange ? null : record.pendingUserId,
+      pendingPassword: password,
+      codeSentAt: record.codeSentAt.toLocal(),
+    );
+    if (verified == true && mounted) _finishCreated();
+  }
+
+  /// Create Account waits [seconds] (30-008). Across a rebuild the timer
+  /// lives in this state; a new countdown replaces a running one.
+  void _startCreateCooldown(int seconds) {
+    _createTimer?.cancel();
+    setState(() => _createIn = seconds);
+    if (seconds <= 0) return;
+    _createTimer = Timer.periodic(const Duration(seconds: 1), (t) {
+      if (!mounted) return t.cancel();
+      setState(() => _createIn--);
+      if (_createIn <= 0) t.cancel();
+    });
   }
 
   Future<void> _showAccountExistsDialog(
@@ -443,15 +523,24 @@ class _EmailSignupScreenState extends ConsumerState<EmailSignupScreen> {
               // Create account button
               KylePrimaryButton(
                 key: const ValueKey('signup_email.create_account_button'),
-                text: contentService.getValue(
-                  asyncState.isLoading
-                      ? 'auth.email_signup.creating_button'
-                      : 'auth.email_signup.create_button',
-                  defaultValue: asyncState.isLoading
-                      ? 'Creating Account...'
-                      : 'Create Account',
-                ),
-                onPressed: asyncState.isLoading ? null : _handleCreateAccount,
+                text: _createIn > 0
+                    ? ContentKeys.format(
+                        contentService.getValue(
+                          ContentKeys.emailSignupCreateIn,
+                        ),
+                        {'n': _createIn},
+                      )
+                    : contentService.getValue(
+                        asyncState.isLoading
+                            ? 'auth.email_signup.creating_button'
+                            : 'auth.email_signup.create_button',
+                        defaultValue: asyncState.isLoading
+                            ? 'Creating Account...'
+                            : 'Create Account',
+                      ),
+                onPressed: asyncState.isLoading || _createIn > 0
+                    ? null
+                    : _handleCreateAccount,
               ),
 
               const SizedBox(height: AppSpacing.md),

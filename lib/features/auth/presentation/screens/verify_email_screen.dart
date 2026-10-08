@@ -39,9 +39,15 @@ class VerifyEmailScreen extends ConsumerStatefulWidget {
     this.otpType = OtpType.signup,
     this.pendingPassword,
     this.pendingUserId,
+    this.codeSentAt,
   });
 
   final String email;
+
+  /// When the code was sent, for a signup resumed after a relaunch (ticket
+  /// 42): the code's age and the Resend countdown run from it. Null means
+  /// the code went out just now.
+  final DateTime? codeSentAt;
 
   /// The auth user a fresh signup created, for `discard-signup` when the
   /// athlete leaves without a code (121-003). Null on the upgrade path and
@@ -76,9 +82,10 @@ class _VerifyEmailScreenState extends ConsumerState<VerifyEmailScreen> {
   /// tells a wrong code from an expired one (01-002).
   late DateTime _codeSentAt;
 
-  /// Seconds until Resend becomes available again. Starts at the server's
-  /// own gap between two emails (60 s, `smtp_max_frequency`) because a code
-  /// was just sent by the signup itself; a shorter countdown let an enabled
+  /// Seconds until Resend becomes available again. Starts at what is left of
+  /// the server's own gap between two emails (60 s, `smtp_max_frequency`)
+  /// since the code was sent: the full gap for a code sent just now, less
+  /// for a resumed one (ticket 42); a shorter countdown let an enabled
   /// Resend hit a 429 (121-001).
   int _resendIn = ResendRateLimitedException.serverGapSeconds;
   Timer? _resendTimer;
@@ -86,8 +93,10 @@ class _VerifyEmailScreenState extends ConsumerState<VerifyEmailScreen> {
   @override
   void initState() {
     super.initState();
-    _codeSentAt = DateTime.now();
-    _startResendCooldown();
+    _codeSentAt = widget.codeSentAt ?? DateTime.now();
+    const gap = ResendRateLimitedException.serverGapSeconds;
+    final age = DateTime.now().difference(_codeSentAt).inSeconds;
+    _startResendCooldown((gap - age).clamp(0, gap));
   }
 
   @override
@@ -122,8 +131,19 @@ class _VerifyEmailScreenState extends ConsumerState<VerifyEmailScreen> {
     );
   }
 
+  /// The pending signup a relaunch would resume is cleared (ticket 42), on
+  /// both paths. Fire-and-forget; the service notes the [reason].
+  void _abandonPendingSignup(String reason) {
+    unawaited(
+      ref
+          .read(emailAuthServiceProvider.notifier)
+          .abandonPendingSignup(reason: reason),
+    );
+  }
+
   void _useDifferentEmail() {
     _discardAbandonedSignup();
+    _abandonPendingSignup('different_email');
     Navigator.of(context).pop(false);
   }
 
@@ -133,6 +153,7 @@ class _VerifyEmailScreenState extends ConsumerState<VerifyEmailScreen> {
   void _logIn() {
     final router = GoRouter.of(context);
     _discardAbandonedSignup();
+    _abandonPendingSignup('log_in');
     Navigator.of(context).pop(false);
     router.push('/auth/email-login', extra: {'email': widget.email});
   }

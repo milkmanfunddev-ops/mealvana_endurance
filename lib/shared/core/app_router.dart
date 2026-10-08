@@ -22,6 +22,8 @@ import '../../features/onboarding/presentation/screens/cycling_details_screen.da
 import '../../features/onboarding/presentation/screens/swimming_details_screen.dart';
 import '../../features/auth/presentation/screens/post_onboarding_auth_screen.dart';
 import '../../features/auth/presentation/screens/email_signup_screen.dart';
+import '../../features/auth/data/pending_signup_store.dart';
+import '../../features/auth/domain/pending_signup.dart';
 import '../../features/auth/presentation/screens/email_login_screen.dart';
 import '../../features/auth/presentation/screens/forgot_password_screen.dart';
 import '../../features/auth/presentation/screens/verify_reset_code_screen.dart';
@@ -130,6 +132,63 @@ final authChangeNotifierProvider = Provider<AuthChangeNotifier>((ref) {
 /// Central router configuration for the Mealvana Endurance app
 /// Following Andrea Bizzotto's deep link pattern
 class AppRouter {
+  /// Where '/' goes once startup has data: the `data:` branch of the
+  /// redirect, as a function so tests can ask it directly (ticket 42).
+  static String? rootRedirect(
+    AppStartupData appStartupData, {
+    required bool Function() pendingSignupOpen,
+    required bool Function() needsConsentPrompt,
+  }) {
+    // CRITICAL: Force upgrade required - block all other navigation
+    if (appStartupData.forceUpgradeRequired) {
+      return '/force-upgrade';
+    }
+    // Schema resync failed - send to welcome to re-authenticate
+    // (Successful resync continues with normal startup in app_startup_provider)
+    if (appStartupData.resyncRequired) {
+      return '/welcome';
+    }
+    // A signup quit on Verify your email (ticket 42, 30-007): resume
+    // it before the no-user and not-onboarded checks would send the
+    // athlete to Welcome. Only while the record is still open: after
+    // a verify or an abandon in this process, a later go('/') must
+    // not reopen it.
+    if (appStartupData.pendingSignup != null && pendingSignupOpen()) {
+      return '/auth/post-onboarding?resume=verify';
+    }
+    // User not created yet - go to welcome
+    if (appStartupData.user == null) {
+      return '/welcome';
+    }
+    // User exists but hasn't completed onboarding - start over from welcome
+    if (!appStartupData.hasCompletedOnboarding) {
+      return '/welcome';
+    }
+    // User has logged out but still has local data - go to welcome to sign back in
+    // This allows them to sign in and access their existing data
+    if (appStartupData.isLoggedOut) {
+      return '/welcome';
+    }
+
+    // Existing user, onboarded before the consent prompt existed, in a
+    // strict region. New users can't reach this — !hasCompletedOnboarding
+    // short-circuits to /welcome above — so this is only the backfill.
+    //
+    // Placed HERE, not at the top of the redirect, on purpose: reaching
+    // this branch means appStartupProvider has returned data, which
+    // means the region lookup has completed (it is awaited in that
+    // provider's Future.wait). A top-of-redirect check would run on the
+    // very first parse of '/', while startup is still loading and the
+    // region is still an unresolved device-signal guess — and would
+    // prompt Californians.
+    if (needsConsentPrompt()) {
+      return '/privacy-consent';
+    }
+
+    // User is fully onboarded - go to main app
+    return '/main';
+  }
+
   // Router provider with ref access for redirect logic
   static final routerProvider = Provider<GoRouter>((ref) {
     final authChangeNotifier = ref.read(authChangeNotifierProvider);
@@ -210,48 +269,13 @@ class AppRouter {
         final appStartupState = ref.read(appStartupProvider);
 
         return appStartupState.maybeWhen(
-          data: (appStartupData) {
-            // CRITICAL: Force upgrade required - block all other navigation
-            if (appStartupData.forceUpgradeRequired) {
-              return '/force-upgrade';
-            }
-            // Schema resync failed - send to welcome to re-authenticate
-            // (Successful resync continues with normal startup in app_startup_provider)
-            if (appStartupData.resyncRequired) {
-              return '/welcome';
-            }
-            // User not created yet - go to welcome
-            if (appStartupData.user == null) {
-              return '/welcome';
-            }
-            // User exists but hasn't completed onboarding - start over from welcome
-            if (!appStartupData.hasCompletedOnboarding) {
-              return '/welcome';
-            }
-            // User has logged out but still has local data - go to welcome to sign back in
-            // This allows them to sign in and access their existing data
-            if (appStartupData.isLoggedOut) {
-              return '/welcome';
-            }
-
-            // Existing user, onboarded before the consent prompt existed, in a
-            // strict region. New users can't reach this — !hasCompletedOnboarding
-            // short-circuits to /welcome above — so this is only the backfill.
-            //
-            // Placed HERE, not at the top of the redirect, on purpose: reaching
-            // this branch means appStartupProvider has returned data, which
-            // means the region lookup has completed (it is awaited in that
-            // provider's Future.wait). A top-of-redirect check would run on the
-            // very first parse of '/', while startup is still loading and the
-            // region is still an unresolved device-signal guess — and would
-            // prompt Californians.
-            if (ref.read(analyticsConsentProvider).needsPrompt) {
-              return '/privacy-consent';
-            }
-
-            // User is fully onboarded - go to main app
-            return '/main';
-          },
+          data: (appStartupData) => rootRedirect(
+            appStartupData,
+            pendingSignupOpen: () =>
+                ref.read(pendingSignupStoreProvider).isOpen,
+            needsConsentPrompt: () =>
+                ref.read(analyticsConsentProvider).needsPrompt,
+          ),
           // While loading or on error, stay on root (AppStartupWidget handles UI)
           orElse: () => null,
         );
@@ -326,14 +350,24 @@ class AppRouter {
           name: 'auth-post-onboarding',
           builder: (context, state) {
             final mode = state.uri.queryParameters['mode'] ?? 'signup';
-            return PostOnboardingAuthScreen(mode: mode);
+            // `resume=verify`: the root redirect found a signup quit on
+            // Verify your email (ticket 42).
+            return PostOnboardingAuthScreen(
+              mode: mode,
+              resume: state.uri.queryParameters['resume'],
+            );
           },
         ),
 
         GoRoute(
           path: '/auth/email-signup',
           name: 'auth-email-signup',
-          builder: (context, state) => const EmailSignupScreen(),
+          // A resumed signup (ticket 42) arrives with its record as `extra`.
+          builder: (context, state) => EmailSignupScreen(
+            resume: state.extra is PendingSignup
+                ? state.extra as PendingSignup
+                : null,
+          ),
         ),
 
         GoRoute(

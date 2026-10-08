@@ -31,6 +31,9 @@ class ContentKeys {
       'auth.verify_email.error_generic';
   static const String verifyEmailErrorResendFailed =
       'auth.verify_email.error_resend_failed';
+  // Create Account's countdown after GoTrue's 429 (develop-2026-10 ticket 42,
+  // 30-008).
+  static const String emailSignupCreateIn = 'auth.email_signup.create_in';
   // Enter Reset Code (124-004): the same countdown on the reset screen.
   static const String verifyCodeResendIn = 'auth.verify_code.resend_in';
   static const String verifyCodeResent = 'auth.verify_code.resent';

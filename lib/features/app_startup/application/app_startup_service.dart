@@ -29,6 +29,8 @@ import '../../auth/application/auth_service.dart';
 import '../../auth/data/user_repository.dart';
 import '../../../shared/services/launch_trail.dart';
 import '../../auth/domain/password_recovery_marker.dart';
+import '../../auth/data/pending_signup_store.dart';
+import '../../auth/domain/pending_signup.dart';
 
 /// Service responsible for providing individual startup operations using Drift
 /// Following Andrea Bizzotto's app initialization patterns
@@ -434,10 +436,9 @@ class AppStartupService {
   /// (ticket 138). A method of its own so a test can reach the no-profile
   /// path through NotificationService's callback (ticket 41).
   @visibleForTesting
-  void armPermissionAnswer() =>
-      NotificationService.configurePermissionAnswer(
-        _storeNotificationPermission,
-      );
+  void armPermissionAnswer() => NotificationService.configurePermissionAnswer(
+    _storeNotificationPermission,
+  );
 
   Future<void> _storeNotificationPermission(bool granted) async {
     final users = await ref.read(userRepositoryProvider.future);
@@ -550,9 +551,7 @@ class AppStartupService {
       // (offline version check, region lookup) go out now, and later ones
       // with no tracker in hand follow. Read per count, so a consent
       // withdrawal (a Noop tracker) is honoured.
-      await ExpectedFailureCounts.attach(
-        () => ref.mounted ? _analytics : null,
-      );
+      await ExpectedFailureCounts.attach(() => ref.mounted ? _analytics : null);
     } catch (e, stackTrace) {
       // Allow a later attempt (e.g. the post-consent call) to retry.
       _analyticsInitialized = false;
@@ -687,6 +686,108 @@ class AppStartupService {
         area: 'auth',
         message: 'Ending the abandoned recovery session failed',
       );
+    }
+  }
+
+  /// A signup the app was quit on while its emailed code was outstanding
+  /// (testing-wave develop-2026-10 ticket 42, 30-007). Returns the record
+  /// when Verify your email should reopen, null otherwise. Never throws, and
+  /// every branch writes a LaunchTrail line and a note (D9):
+  ///
+  /// - no record: nothing to resume;
+  /// - unreadable: cleared;
+  /// - an upgrade whose anonymous session is gone: that code can no longer
+  ///   complete it; cleared, and the launch lands on Welcome as before;
+  /// - the session already holds the confirmed address: verified, but quit
+  ///   before the clear; cleared;
+  /// - another real account is signed in: the record is stale; cleared;
+  /// - otherwise: resume.
+  ///
+  /// No age cap: Verify tells an expired code apart and Resend sends a new
+  /// one on both paths.
+  ///
+  /// Running twice (two launches reading one record): each reads the same
+  /// record and decides the same way; a clear that already happened leaves
+  /// the second with no record.
+  Future<PendingSignup?> pendingSignupAtLaunch() async {
+    try {
+      final store = ref.read(pendingSignupStoreProvider);
+      final lookup = await store.read();
+      final record = lookup.record;
+      if (lookup.unreadable) {
+        await store.clear(reason: 'unreadable');
+        LaunchTrail.add('pending signup: record unreadable, cleared');
+        await _report.note(
+          'pending signup record unreadable; cleared',
+          area: 'auth',
+        );
+        return null;
+      }
+      if (record == null) {
+        LaunchTrail.add('pending signup: none');
+        await _report.note('No pending signup at launch', area: 'auth');
+        return null;
+      }
+
+      final user = _supabase.auth.currentUser;
+      if (record.isEmailChange && record.anonymousUserId != user?.id) {
+        await store.clear(reason: 'session_lost');
+        LaunchTrail.add('pending signup: upgrade session lost, cleared');
+        await _report.note(
+          'Pending upgrade signup found without its anonymous session; '
+          'cleared',
+          area: 'auth',
+          data: {'has_session': user != null},
+        );
+        return null;
+      }
+
+      if (user != null && !user.isAnonymous) {
+        final confirmed =
+            user.emailConfirmedAt != null &&
+            (user.email ?? '').trim().toLowerCase() ==
+                record.email.trim().toLowerCase();
+        await store.clear(
+          reason: confirmed ? 'verified_before_clear' : 'other_account',
+        );
+        LaunchTrail.add(
+          confirmed
+              ? 'pending signup: already verified, cleared'
+              : 'pending signup: another account signed in, cleared',
+        );
+        await _report.note(
+          confirmed
+              ? 'Pending signup already verified at launch; cleared'
+              : 'Pending signup found under another signed-in account; '
+                    'cleared',
+          area: 'auth',
+          data: {'otp_type': record.otpType},
+        );
+        return null;
+      }
+
+      LaunchTrail.add('pending signup: resuming verify (${record.otpType})');
+      await _report.note(
+        'Pending signup resumed at launch',
+        area: 'auth',
+        data: {
+          'otp_type': record.otpType,
+          'code_age_s': DateTime.now()
+              .toUtc()
+              .difference(record.codeSentAt)
+              .inSeconds,
+        },
+      );
+      return record;
+    } catch (e) {
+      // Swallowed so startup continues on Welcome as before; recorded (D9).
+      LaunchTrail.add('pending signup: check FAILED');
+      await _report.note(
+        'Pending signup check failed at launch',
+        area: 'auth',
+        data: {'error_type': e.runtimeType.toString()},
+      );
+      return null;
     }
   }
 

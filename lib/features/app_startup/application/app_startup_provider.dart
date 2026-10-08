@@ -10,6 +10,7 @@ import '../../../shared/services/privacy/privacy_region_service.dart';
 import '../../../shared/services/report/performance_telemetry.dart';
 import '../../../shared/models/version_check_result.dart';
 import '../../../features/auth/data/user_repository.dart';
+import '../../../features/auth/domain/pending_signup.dart';
 import '../../../features/auth/domain/user_preferences.dart';
 import '../../../features/onboarding/application/onboarding_snapshot_service.dart';
 import '../../../features/onboarding/data/onboarding_survey_repository.dart';
@@ -28,6 +29,7 @@ class AppStartupData {
     this.resyncRequired = false,
     this.localSchemaVersion,
     this.remoteSchemaVersion,
+    this.pendingSignup,
   });
 
   final UserProfile? user;
@@ -46,6 +48,10 @@ class AppStartupData {
   final bool resyncRequired;
   final int? localSchemaVersion;
   final int? remoteSchemaVersion;
+
+  /// A signup quit on Verify your email (ticket 42, 30-007): the root
+  /// redirect resumes it at `/auth/post-onboarding?resume=verify`.
+  final PendingSignup? pendingSignup;
 }
 
 /// AsyncNotifier for app startup initialization using Drift
@@ -80,6 +86,10 @@ class AppStartup extends _$AppStartup {
       // 0a'. A reset the app was quit on (124-003): its recovery session is
       // signed out before anything reads the session, RevenueCat included.
       await startupService.endAbandonedRecovery();
+
+      // 0a''. A signup quit on Verify your email (ticket 42): read once,
+      // after any recovery session is gone. Never throws.
+      final pendingSignup = await startupService.pendingSignupAtLaunch();
 
       // 0. VERSION CHECK: Check app version and schema version BEFORE database initialization
       // This prevents incompatible app versions from accessing the database
@@ -250,6 +260,7 @@ class AppStartup extends _$AppStartup {
         user: user,
         hasCompletedOnboarding: hasCompletedOnboarding,
         isLoggedOut: isLoggedOut,
+        pendingSignup: pendingSignup,
       );
     } catch (e, stackTrace) {
       await report.fault(

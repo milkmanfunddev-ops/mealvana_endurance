@@ -21,6 +21,7 @@ import '../../application/apple_web_authentication.dart';
 import '../../application/auth_service.dart';
 import '../providers/post_onboarding_auth_controller.dart';
 import '../../domain/auth_exceptions.dart';
+import '../../domain/pending_signup.dart';
 import '../../../coach_mode/application/coach_service.dart';
 
 /// Post-Onboarding Authentication Screen
@@ -32,9 +33,18 @@ import '../../../coach_mode/application/coach_service.dart';
 /// saveAllOnboardingData, background upload, Settings anon→upgrade branch)
 /// is unchanged from the pre-redesign screen.
 class PostOnboardingAuthScreen extends ConsumerStatefulWidget {
-  const PostOnboardingAuthScreen({super.key, this.mode = 'signup'});
+  const PostOnboardingAuthScreen({
+    super.key,
+    this.mode = 'signup',
+    this.resume,
+  });
 
   final String mode;
+
+  /// `verify` when the root redirect found a signup quit on Verify your
+  /// email (ticket 42, 30-007): the screen reopens it once, after the first
+  /// frame.
+  final String? resume;
 
   @override
   ConsumerState<PostOnboardingAuthScreen> createState() =>
@@ -63,6 +73,25 @@ class _PostOnboardingAuthScreenState
             'mode': widget.mode,
           },
         );
+
+    if (widget.resume == 'verify') {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) unawaited(_resumePendingSignup());
+      });
+    }
+  }
+
+  /// Ticket 42: the controller puts the stored answers back into the draft
+  /// and hands over the record; the email form reopens Verify from it, and a
+  /// used code completes through [_handleEmailSignUp]'s usual hand-off. No
+  /// record any more (verified or abandoned since launch): the screen stays
+  /// as it is.
+  Future<void> _resumePendingSignup() async {
+    final record = await ref
+        .read(postOnboardingAuthControllerProvider.notifier)
+        .resumePendingSignup();
+    if (record == null || !mounted) return;
+    await _handleEmailSignUp(resume: record);
   }
 
   Future<void> _handleAppleSignIn() async {
@@ -380,12 +409,16 @@ class _PostOnboardingAuthScreenState
     await _navigateToMain();
   }
 
-  Future<void> _handleEmailSignUp() async {
+  Future<void> _handleEmailSignUp({PendingSignup? resume}) async {
     final report = ref.read(reportProvider);
 
     // Navigate to email signup screen
-    report.info('Navigating to email signup screen', area: 'auth');
-    final result = await context.push('/auth/email-signup');
+    report.info(
+      'Navigating to email signup screen',
+      area: 'auth',
+      data: {'resume': resume != null},
+    );
+    final result = await context.push('/auth/email-signup', extra: resume);
 
     report.info(
       'Email signup returned',
@@ -714,11 +747,7 @@ class _PostOnboardingAuthScreenState
 
     return AdaptivePageScaffold(
       backgroundColor: OnbTokens.bg,
-      appBar: _buildAppBar(
-        context,
-        isLoading: isBusy,
-        isLogin: isLogin,
-      ),
+      appBar: _buildAppBar(context, isLoading: isBusy, isLogin: isLogin),
       contentWidth: AdaptiveContentWidth.narrow,
       body: Stack(
         children: [

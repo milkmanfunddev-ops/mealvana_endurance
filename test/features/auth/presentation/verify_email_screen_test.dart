@@ -2,6 +2,7 @@
 /// 01-003). A wrong code and an expired one each say so, from the content
 /// system; Resend waits as long as the server does, counts down a 429's N,
 /// says when it failed, and a code that went out restarts the code's age.
+/// A resumed code (ticket 42) counts Resend down from when it was sent.
 library;
 
 import 'dart:async';
@@ -61,19 +62,23 @@ class _FakeEmailAuthService extends EmailAuthService {
     required String userId,
     required String email,
   }) async {}
+
+  @override
+  Future<void> abandonPendingSignup({required String reason}) async {}
 }
 
 final _content = loadDefaultContent();
 final _resend = find.byKey(const ValueKey('auth.verify_resend'));
 
-Future<void> _pump(WidgetTester tester, _Spy spy) => smokeScreen(
-  tester,
-  const VerifyEmailScreen(email: 'a@b.com'),
-  overrides: [
-    contentServiceProvider.overrideWith(testContentService),
-    emailAuthServiceProvider.overrideWith(() => _FakeEmailAuthService(spy)),
-  ],
-);
+Future<void> _pump(WidgetTester tester, _Spy spy, {DateTime? codeSentAt}) =>
+    smokeScreen(
+      tester,
+      VerifyEmailScreen(email: 'a@b.com', codeSentAt: codeSentAt),
+      overrides: [
+        contentServiceProvider.overrideWith(testContentService),
+        emailAuthServiceProvider.overrideWith(() => _FakeEmailAuthService(spy)),
+      ],
+    );
 
 Future<void> _enterCode(WidgetTester tester, String code) async {
   await tester.enterText(find.byType(TextField), code);
@@ -175,5 +180,34 @@ void main() {
     final secondSentAt = spy.codeSentAts.last!;
     expect(secondSentAt.isBefore(beforeResend), isFalse);
     expect(secondSentAt.isAfter(firstSentAt), isTrue);
+  });
+
+  group('a resumed code (ticket 42)', () {
+    testWidgets('sent 20 s ago: Resend counts down from 40', (tester) async {
+      await _pump(
+        tester,
+        _Spy(),
+        codeSentAt: DateTime.now().subtract(const Duration(seconds: 20)),
+      );
+
+      expect(find.text('Resend code in 40s'), findsOneWidget);
+      expect(tester.widget<TextButton>(_resend).onPressed, isNull);
+
+      // The countdown's timer goes with the screen, inside the test body.
+      await tester.pumpWidget(const SizedBox());
+    });
+
+    testWidgets('sent 70 s ago: Resend is enabled', (tester) async {
+      final spy = _Spy();
+      final sentAt = DateTime.now().subtract(const Duration(seconds: 70));
+      await _pump(tester, spy, codeSentAt: sentAt);
+
+      expect(find.text('Resend code'), findsOneWidget);
+      expect(tester.widget<TextButton>(_resend).onPressed, isNotNull);
+
+      // The code's age runs from the stored send time, not the screen's.
+      await _enterCode(tester, '111111');
+      expect(spy.codeSentAts.single, sentAt);
+    });
   });
 }

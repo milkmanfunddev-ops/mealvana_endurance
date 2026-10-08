@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io' show SocketException;
+import 'dart:math' show max;
 import 'package:http/http.dart' as http;
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart'
@@ -9,6 +10,7 @@ import '../../../shared/services/analytics/analytics_tracker.dart';
 import '../../../shared/services/report/report.dart';
 import '../../../shared/services/sync/sync_coordinator.dart';
 import '../../../shared/providers/user_id_provider.dart';
+import '../data/pending_signup_store.dart';
 import '../domain/auth_exceptions.dart';
 import '../domain/signup_code.dart';
 import 'auth_migration_service.dart';
@@ -24,6 +26,8 @@ class EmailAuthService extends _$EmailAuthService {
   SupabaseClient get _supabase =>
       ref.read(appExternalDepsProvider).supabaseClient;
   AnalyticsTracker get _analytics => ref.read(analyticsTrackerProvider);
+  PendingSignupStore get _pendingSignups =>
+      ref.read(pendingSignupStoreProvider);
 
   @override
   FutureOr<void> build() {
@@ -294,6 +298,29 @@ class EmailAuthService extends _$EmailAuthService {
     final trace = stackTrace ?? StackTrace.current;
 
     if (error is AuthApiException &&
+        ResendRateLimitedException.matches(
+          code: error.code,
+          statusCode: error.statusCode,
+          message: error.message,
+        )) {
+      // A second Create Account inside GoTrue's gap between two emails to
+      // one address (ticket 42, 30-008): a wait, not a failure. The form
+      // counts it down. Run 30's 429 said "after 0 seconds"; at least 1 s
+      // keeps the button from coming back while the server still refuses.
+      final seconds = max(
+        1,
+        ResendRateLimitedException.secondsFrom(error.message) ??
+            ResendRateLimitedException.serverGapSeconds,
+      );
+      await report.note(
+        'Create account rate limited',
+        area: 'auth',
+        data: {'retry_after_s': seconds},
+      );
+      throw ResendRateLimitedException(seconds);
+    }
+
+    if (error is AuthApiException &&
         (error.message.contains('already registered') ||
             error.message.contains('already been registered'))) {
       // An athlete's own turn, not a failure (ticket 41, 30-005): a note and
@@ -328,10 +355,11 @@ class EmailAuthService extends _$EmailAuthService {
   }
 
   /// The state a failed signup or link leaves (ticket 41, 30-005): the
-  /// [AccountAlreadyExistsException] [_failAccountCreation] threw in place of
-  /// GoTrue's 422, so the Riverpod net files an `auth.flow` breadcrumb and
-  /// not a fault with no area; for anything else the original [result],
-  /// which [_failAccountCreation] has already reported, so the net skips it.
+  /// [AccountAlreadyExistsException] or [ResendRateLimitedException]
+  /// [_failAccountCreation] threw in place of GoTrue's 422 or 429, so the
+  /// Riverpod net files an `auth.flow` breadcrumb and not a fault with no
+  /// area; for anything else the original [result], which
+  /// [_failAccountCreation] has already reported, so the net skips it.
   /// Runs after the report, never before it.
   void _writeFailedCreation(
     AsyncValue<void> result,
@@ -339,7 +367,9 @@ class EmailAuthService extends _$EmailAuthService {
     StackTrace stack,
   ) {
     if (!ref.mounted) return;
-    state = thrown is AccountAlreadyExistsException
+    state =
+        thrown is AccountAlreadyExistsException ||
+            thrown is ResendRateLimitedException
         ? AsyncError<void>(thrown, stack)
         : result;
   }
@@ -546,6 +576,7 @@ class EmailAuthService extends _$EmailAuthService {
     final report = _report;
     final supabase = _supabase;
     final analytics = _analytics;
+    final pendingSignups = _pendingSignups;
     state = const AsyncLoading();
 
     final result = await AsyncValue.guard(() async {
@@ -595,6 +626,11 @@ class EmailAuthService extends _$EmailAuthService {
         // doing, so a real failure (the screen shows its generic line).
         throw StateError('verifyOTP accepted the code but returned no session');
       }
+
+      // The code is spent: a relaunch from here on must not reopen Verify
+      // (ticket 42). Cleared before the upgrade's password step, so the
+      // deferred password leaves the Keychain whatever that step does.
+      await pendingSignups.clear(reason: 'verified');
 
       ref.invalidate(userIdProvider);
 
@@ -704,6 +740,9 @@ class EmailAuthService extends _$EmailAuthService {
   /// Running twice at once: the screen disables Resend while it counts down,
   /// and GoTrue answers the second request inside its gap with a 429, which
   /// becomes a countdown. Nothing here holds state between calls.
+  ///
+  /// A code that went out moves the pending signup's send time (ticket 42),
+  /// so a relaunch counts Resend down from this code, not the first one.
   Future<void> resendVerificationCode({
     required String email,
     OtpType type = OtpType.signup,
@@ -712,6 +751,7 @@ class EmailAuthService extends _$EmailAuthService {
     final report = _report;
     final supabase = _supabase;
     final analytics = _analytics;
+    final pendingSignups = _pendingSignups;
     try {
       // OtpType.emailChange belongs to the anonymous upgrade and goes with
       // its removal (Lee's ruling 2026-10-07); left as it is.
@@ -747,6 +787,7 @@ class EmailAuthService extends _$EmailAuthService {
       );
       throw VerificationResendFailedException(e);
     }
+    await pendingSignups.markResent(DateTime.now(), email: email);
     await analytics.track('email_verification_resent');
     await report.note(
       'Verification code resent',
@@ -797,6 +838,15 @@ class EmailAuthService extends _$EmailAuthService {
       );
     }
   }
+
+  /// The athlete left Verify your email without a code ("Use a different
+  /// email" or "Log in"; ticket 42): the pending signup and the upgrade
+  /// path's deferred password are cleared, and the note says which
+  /// ([reason]: `different_email` or `log_in`). Never throws.
+  ///
+  /// Running twice: the second call finds nothing and notes that.
+  Future<void> abandonPendingSignup({required String reason}) =>
+      _pendingSignups.clear(reason: reason);
 
   Future<void> signInWithEmail({
     required String email,

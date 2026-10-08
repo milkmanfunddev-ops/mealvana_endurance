@@ -286,6 +286,7 @@
       "password_mismatch": "Passwords do not match",
       "create_button": "Create Account",
       "creating_button": "Creating Account...",
+      "create_in": "Create Account in {n}s",
       "back_button": "Back",
       "email_verification_notice": "We'll send a confirmation email to verify your address",
       "email_verification_optional": "(Optional - you can use the app immediately)"

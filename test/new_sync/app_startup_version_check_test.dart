@@ -79,6 +79,10 @@ void main() {
       when(
         () => mockAppStartupService.endAbandonedRecovery(),
       ).thenAnswer((_) async {});
+      // No signup quit on Verify your email (ticket 42).
+      when(
+        () => mockAppStartupService.pendingSignupAtLaunch(),
+      ).thenAnswer((_) async => null);
 
       // Setup default mocks
       when(() => mockSupabaseClient.auth).thenReturn(mockGoTrueClient);
