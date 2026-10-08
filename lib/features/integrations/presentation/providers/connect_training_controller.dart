@@ -32,6 +32,7 @@ import '../../application/training_peaks_oauth_service.dart';
 import '../../application/training_peaks_sync_service.dart';
 import '../../application/vdot_oauth_service.dart';
 import '../../application/vdot_sync_service.dart';
+import '../../data/integrations_repository.dart';
 import '../../data/runna_ics_client.dart';
 import '../../domain/integration.dart';
 import '../../domain/integration_exceptions.dart';
@@ -623,9 +624,30 @@ class ConnectTrainingController extends _$ConnectTrainingController {
       ),
     );
 
+    // Ticket 63: captured before the awaits so the reconnect unhide below
+    // completes even if this provider is disposed during OAuth.
+    final userId = _currentUserId!;
+    final deps = _providerDataDeps(providerId);
+    final integrationsRepo = ref.read(integrationsRepositoryProvider);
+
     try {
       _trackIntegrationConnectStarted(providerId);
+      // The athlete the disconnected row belonged to, read before the OAuth
+      // upsert overwrites it (deactivateIntegration keeps the id).
+      final previousAthleteId = await _previousAthleteId(
+        integrationsRepo,
+        userId,
+        providerId,
+      );
       final integration = await authenticate();
+
+      await _unhideProviderData(
+        providerId: providerId,
+        userId: userId,
+        previousAthleteId: previousAthleteId,
+        newAthleteId: integration.providerAthleteId as String?,
+        deps: deps,
+      );
 
       // OAuth easily outlives this auto-dispose provider (user backgrounds
       // the app / navigates away). The integration row is already persisted
@@ -770,6 +792,18 @@ class ConnectTrainingController extends _$ConnectTrainingController {
       _report.integrationFailure(providerId, 'hide_workouts', e, stackTrace);
     }
 
+    // Ticket 63: the hide reaches the server now, not at the next upload
+    // chance (Sign Out, in run 50).
+    if (hidden > 0) {
+      await _uploadProviderVisibility(
+        providerId: providerId,
+        userId: userId,
+        activitiesRepo: deps.activitiesRepo,
+        step: 'disconnect_hide',
+        rows: hidden,
+      );
+    }
+
     if (providerId == 'garmin') {
       // Wellness rows live only server-side; hide them there. Best effort —
       // a network failure must not fail the disconnect (the tokens are
@@ -799,6 +833,160 @@ class ConnectTrainingController extends _$ConnectTrainingController {
 
     await _invalidateMacroWindows(userId, providerId, deps);
     return hidden;
+  }
+
+  /// Ticket 63: the athlete id on [providerId]'s existing row (active or
+  /// not), or null when there is no row. A failed read counts as unknown,
+  /// which the reconnect treats like the same athlete.
+  Future<String?> _previousAthleteId(
+    IntegrationsRepository integrationsRepo,
+    String userId,
+    String providerId,
+  ) async {
+    try {
+      final existing = await integrationsRepo.getIntegration(
+        userId,
+        providerId,
+      );
+      return existing?.providerAthleteId;
+    } catch (e, stackTrace) {
+      _report.integrationFailure(
+        providerId,
+        'read_previous_athlete',
+        e,
+        stackTrace,
+      );
+      return null;
+    }
+  }
+
+  /// Ticket 63 (Finding 50-006): a successful connect unhides every row this
+  /// provider's disconnect hid, and uploads the unhide at once. Lee
+  /// (2026-10-08): only a same-athlete reconnect, or one whose previous
+  /// athlete id is unknown or absent, unhides; a different athlete leaves the
+  /// first athlete's rows hidden. Never fails the connect.
+  Future<void> _unhideProviderData({
+    required String providerId,
+    required String userId,
+    required String? previousAthleteId,
+    required String? newAthleteId,
+    required _ProviderDataDeps deps,
+  }) async {
+    final previous = previousAthleteId?.trim() ?? '';
+    final current = newAthleteId?.trim() ?? '';
+    if (previous.isNotEmpty && previous != current) {
+      var stillHidden = 0;
+      try {
+        stillHidden = await deps.activitiesRepo
+            .countActivitiesHiddenByDisconnect(
+              userId: userId,
+              provider: providerId,
+            );
+      } catch (e, stackTrace) {
+        _report.integrationFailure(providerId, 'count_hidden', e, stackTrace);
+      }
+      // D9: a skipped step on a sync path.
+      await _report.note(
+        'Reconnect as a different athlete; hidden workouts stay hidden',
+        area: providerId,
+        data: {'hidden': stillHidden},
+      );
+      return;
+    }
+
+    var unhidden = 0;
+    try {
+      unhidden = await deps.activitiesRepo.unhideActivitiesForProviderReconnect(
+        userId: userId,
+        provider: providerId,
+      );
+    } catch (e, stackTrace) {
+      _report.integrationFailure(providerId, 'unhide_workouts', e, stackTrace);
+    }
+
+    if (providerId == 'garmin') {
+      // The mirror of the disconnect's wellness hide. Best effort: the flag
+      // is re-appliable and must not fail the connect.
+      try {
+        await deps.externalDeps.supabaseClient
+            .from('garmin_health_data')
+            .update({'hidden_by_disconnect': false})
+            .eq('user_id', userId);
+      } catch (e, stackTrace) {
+        _report.integrationFailure(
+          providerId,
+          'unhide_wellness',
+          e,
+          stackTrace,
+        );
+      }
+    }
+
+    if (unhidden > 0) {
+      await _uploadProviderVisibility(
+        providerId: providerId,
+        userId: userId,
+        activitiesRepo: deps.activitiesRepo,
+        step: 'reconnect_unhide',
+        rows: unhidden,
+      );
+      // F27: the sessions are back in the engine's inputs.
+      await _invalidateMacroWindows(userId, providerId, deps);
+    }
+  }
+
+  /// Ticket 63: upload a disconnect hide or reconnect unhide at once, and
+  /// check the result (`uploadDirtyRecords` swallows errors into a failed
+  /// result). A failure leaves the rows dirty for the next upload pass and is
+  /// recorded (D9). Deferred during onboarding: the users row is not remote
+  /// yet, so the upload would hit FK 23503.
+  Future<void> _uploadProviderVisibility({
+    required String providerId,
+    required String userId,
+    required ActivitiesRepository activitiesRepo,
+    required String step,
+    required int rows,
+  }) async {
+    if (_isUsingTempUserId || _isOnboardingInProgress) {
+      await _report.note(
+        'Provider visibility upload deferred until onboarding completes',
+        area: 'sync',
+        data: {
+          'provider': providerId,
+          'step': step,
+          'rows': rows,
+          'tempUserId': _isUsingTempUserId,
+        },
+      );
+      return;
+    }
+    final message = step == 'disconnect_hide'
+        ? 'Disconnect hide upload failed; rows stay dirty for retry'
+        : 'Reconnect unhide upload failed; rows stay dirty for retry';
+    try {
+      final result = await activitiesRepo.uploadDirtyRecords(userId);
+      if (!result.success) {
+        _report.degraded(
+          LoggedFault(message),
+          area: 'sync',
+          message: message,
+          extra: {
+            'provider': providerId,
+            'step': step,
+            'rows': rows,
+            'error': result.error,
+          },
+        );
+      }
+    } catch (e, stackTrace) {
+      _report.degraded(
+        e,
+        stackTrace: stackTrace,
+        area: 'sync',
+        message: message,
+        extra: {'provider': providerId, 'step': step, 'rows': rows},
+      );
+    }
   }
 
   /// F27: the engine inputs changed (sessions hidden or purged) — drop the
@@ -1443,6 +1631,9 @@ class ConnectTrainingController extends _$ConnectTrainingController {
       return false;
     }
     final integrationsRepo = ref.read(integrationsRepositoryProvider);
+    // Ticket 63: captured before the awaits (see _connectProvider).
+    final userId = _currentUserId!;
+    final deps = _providerDataDeps('runna');
 
     state = AsyncData(
       state.value!.copyWith(
@@ -1482,6 +1673,17 @@ class ConnectTrainingController extends _$ConnectTrainingController {
               'runna-${RunnaSyncService.stableFeedFingerprint(normalized)}',
           isActive: true,
         ),
+      );
+
+      // Ticket 63: Runna's disconnect deletes its row, so there is no
+      // previous athlete to compare; a reconnect unhides every hidden Runna
+      // row (the ticket's Decisions).
+      await _unhideProviderData(
+        providerId: 'runna',
+        userId: userId,
+        previousAthleteId: null,
+        newAthleteId: null,
+        deps: deps,
       );
 
       if (!ref.mounted) return true;
@@ -1838,37 +2040,44 @@ class ConnectTrainingController extends _$ConnectTrainingController {
       // CRITICAL: Upload dirty activities to Supabase immediately after sync.
       // This prevents duplicates on logout→login→re-sync because remote
       // hydration will find the activities in Supabase.
+      //
+      // Ticket 63: every time, not only when this sync imported or updated
+      // something. uploadDirtyRecords is also the retry path for rows an
+      // earlier write left dirty (a hide or unhide whose upload failed), the
+      // same reasoning as the V.O2 sync's upload.
       final newWorkouts = getNewWorkouts(result);
-      final updated = getUpdated(result);
-      if (newWorkouts > 0 || updated > 0) {
-        if (_isUsingTempUserId || _isOnboardingInProgress) {
-          if (kDebugMode) {
-            print(
-              '⏸️ Skipping Supabase activity upload during onboarding (${_isUsingTempUserId ? "temp user ID" : "profile not yet uploaded"})',
-            );
-          }
-        } else {
-          try {
-            final uploadResult = await _activitiesRepo.uploadDirtyRecords(
-              _currentUserId!,
-            );
-            if (kDebugMode) {
-              if (uploadResult.success) {
-                print(
-                  '☁️ Uploaded ${uploadResult.count} synced activities to Supabase',
-                );
-              } else {
-                print('⚠️ Upload to Supabase failed: ${uploadResult.error}');
-              }
-            }
-          } catch (e, stackTrace) {
-            _report.fault(
-              e,
-              stackTrace: stackTrace,
+      if (_isUsingTempUserId || _isOnboardingInProgress) {
+        if (kDebugMode) {
+          print(
+            '⏸️ Skipping Supabase activity upload during onboarding (${_isUsingTempUserId ? "temp user ID" : "profile not yet uploaded"})',
+          );
+        }
+      } else {
+        try {
+          final uploadResult = await _activitiesRepo.uploadDirtyRecords(
+            _currentUserId!,
+          );
+          if (!uploadResult.success) {
+            // D9: was a kDebugMode-only print, so a failed upload left no
+            // PROD trace.
+            _report.degraded(
+              LoggedFault('Upload of synced $providerId activities failed'),
               area: 'sync',
-              message: 'Upload of synced $providerId activities threw',
+              message: 'Upload of synced activities failed; rows stay dirty',
+              extra: {'provider': providerId, 'error': uploadResult.error},
+            );
+          } else if (kDebugMode) {
+            print(
+              '☁️ Uploaded ${uploadResult.count} synced activities to Supabase',
             );
           }
+        } catch (e, stackTrace) {
+          _report.fault(
+            e,
+            stackTrace: stackTrace,
+            area: 'sync',
+            message: 'Upload of synced $providerId activities threw',
+          );
         }
       }
 
