@@ -27,7 +27,7 @@ class SelectedFoodDisplayWidget extends StatelessWidget {
     final totalCarbs = (food.carbsPerServing ?? 0) * quantity;
     final totalProtein = (food.proteinPerServing ?? 0) * quantity;
     final totalFat = (food.fatPerServing ?? 0) * quantity;
-    final totalCalories = ((food.caloriesPerServing ?? 0) * quantity).toInt();
+    final totalCalories = food.caloriesFor(quantity) ?? 0;
 
     return BaseCard(
       child: Padding(

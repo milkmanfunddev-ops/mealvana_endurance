@@ -35,12 +35,12 @@ import '../../application/meal_ai_service.dart';
 import '../../application/meal_logging_service.dart' show RecipeLogParams;
 import '../../domain/consumed_totals.dart';
 import '../../domain/macro_rounding.dart';
-import '../../domain/meal_analysis_result.dart';
 import '../../domain/log_date_time.dart';
 import '../../domain/meal_auto_name.dart';
 import '../../domain/meal_log_source.dart';
 import '../../domain/meal_relog.dart';
 import '../../domain/saved_meal.dart';
+import '../providers/describe_analysis_controller.dart';
 import '../providers/meal_log_providers.dart';
 import '../widgets/common_ingredients_section.dart';
 import '../widgets/meal_analysis_skeleton.dart';
@@ -50,6 +50,7 @@ import '../widgets/quick_log_confirm_sheet.dart';
 import '../widgets/unified_meal_search_results.dart';
 import 'build_meal_screen.dart';
 import 'log_scanned_food_screen.dart';
+import 'meal_review_screen.dart';
 
 // ---------------------------------------------------------------------------
 // Entry point
@@ -887,6 +888,10 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final bg = isDark ? AppColors.blackberry : AppColors.cream;
     final textColor = isDark ? AppColors.cream : AppColors.blackberry;
+    // The Describe tab's paid analysis lives as long as this screen: kept
+    // across tab switches and the Review route on top, dropped when Log a
+    // Meal closes (ticket 45, 31-004).
+    ref.watch(describeAnalysisControllerProvider);
     final searchState = ref.watch(
       foodSearchControllerProvider(_foodSearchControllerKey),
     );
@@ -1702,9 +1707,14 @@ class _TypeChip extends StatelessWidget {
 }
 
 // ---------------------------------------------------------------------------
-// AI tab — unchanged terminal flow (photo/describe review screen owns its
-// own name/slot/items confirmation).
+// AI tab — the photo/describe review screen owns its own name/slot/items
+// confirmation. The analysis itself lives in [DescribeAnalysisController], so
+// Review is pushed on top of this screen and Back returns here with the text
+// and the paid result (ticket 45, 31-004).
 // ---------------------------------------------------------------------------
+
+/// The shortest description Analyze sends without a photo (31-007).
+const describeMinChars = 5;
 
 class _AiTab extends ConsumerStatefulWidget {
   const _AiTab({
@@ -1726,6 +1736,13 @@ class _AiTabState extends ConsumerState<_AiTab> {
   final _ctrl = TextEditingController();
   bool _isAnalyzing = false;
 
+  /// The function's verdict that the text is not food or drink, shown under
+  /// the kept text until the text or the photo changes (31-003).
+  String? _notFoodError;
+
+  /// Review is on screen; a second tap does not push another (31-004).
+  bool _reviewOpen = false;
+
   /// A picked photo waits here until Analyze is pressed — attaching is free;
   /// Analyze is the single metered action whether it sends text, a photo, or
   /// both as one meal.
@@ -1744,10 +1761,25 @@ class _AiTabState extends ConsumerState<_AiTab> {
   void initState() {
     super.initState();
     _fieldFocus.addListener(_onFieldFocusChanged);
+    // Coming back to the tab: the stored analysis' input is put back, so the
+    // button reads "Review again" and seeing it again is free (31-004).
+    final stored = ref.read(describeAnalysisControllerProvider).value;
+    if (stored != null) {
+      _ctrl.text = stored.inputText;
+      if (stored.photoPath != null) _photo = XFile(stored.photoPath!);
+    }
+    _ctrl.addListener(_onTextChanged);
   }
 
   void _onFieldFocusChanged() {
     if (mounted) setState(() {});
+  }
+
+  /// Editing the text brings Analyze (and its price) back in place of
+  /// "Review again", and clears a not-food verdict about the old text.
+  void _onTextChanged() {
+    if (!mounted) return;
+    setState(() => _notFoodError = null);
   }
 
   @override
@@ -1755,8 +1787,38 @@ class _AiTabState extends ConsumerState<_AiTab> {
     _fieldFocus
       ..removeListener(_onFieldFocusChanged)
       ..dispose();
-    _ctrl.dispose();
+    _ctrl
+      ..removeListener(_onTextChanged)
+      ..dispose();
     super.dispose();
+  }
+
+  /// Push Review & Log on top of Log a Meal. A logged meal answers `true`:
+  /// the stored analysis is cleared and Log a Meal closes. Back answers null
+  /// and leaves the athlete here with the text and the stored result.
+  Future<void> _openReview(DescribeAnalysis analysis) async {
+    if (_reviewOpen) return;
+    _reviewOpen = true;
+    final bool? logged;
+    try {
+      logged = await Navigator.of(context).push<bool>(
+        MaterialPageRoute(
+          // Named, so the navigation breadcrumb still says where we went.
+          settings: const RouteSettings(name: '/meal-log/review'),
+          builder: (_) => MealReviewScreen(
+            result: analysis.result,
+            source: analysis.photoPath != null ? 'photo' : 'describe',
+            logDate: widget.logDate,
+            photoPath: analysis.storagePath,
+          ),
+        ),
+      );
+    } finally {
+      _reviewOpen = false;
+    }
+    if (!mounted || logged != true) return;
+    ref.read(describeAnalysisControllerProvider.notifier).clear();
+    widget.onNavigateAway();
   }
 
   Future<void> _analyze() async {
@@ -1775,6 +1837,13 @@ class _AiTabState extends ConsumerState<_AiTab> {
       'meal_ai_action_tapped',
       properties: {'method': method, 'has_text': text.isNotEmpty},
     );
+    // The same input was already analyzed: open it again, no call, no token.
+    final controller = ref.read(describeAnalysisControllerProvider.notifier);
+    final stored = controller.storedFor(text: text, photo: photo);
+    if (stored != null) {
+      await _openReview(stored);
+      return;
+    }
     // With a photo attached the text is optional colour; without one it is
     // the whole input, so only then does the validator gate the send.
     if (!hasPhoto && !_formKey.currentState!.validate()) {
@@ -1797,34 +1866,14 @@ class _AiTabState extends ConsumerState<_AiTab> {
       _isAnalyzing = true;
     });
     try {
-      final service = ref.read(mealAiServiceProvider);
-      final MealAnalysisResult result;
-      String? photoPath;
-      if (hasPhoto) {
-        // Photo (with the typed text riding along, if any) — one analysis,
-        // one token.
-        final description = text.isEmpty ? null : text;
-        MealPhotoAnalysis analysis;
-        if (kIsWeb) {
-          final bytes = await photo.readAsBytes();
-          final parts = photo.name.split('.');
-          final ext = (parts.length > 1 ? parts.last : 'jpg').toLowerCase();
-          analysis = await service.analyzePhotoBytes(
-            bytes,
-            extension: ext,
-            description: description,
-          );
-        } else {
-          analysis = await service.analyzePhoto(
-            File(photo.path),
-            description: description,
-          );
-        }
-        result = analysis.result;
-        photoPath = analysis.storagePath;
-      } else {
-        result = await service.describeMeal(text);
-      }
+      final outcome = await controller.analyze(text: text, photo: photo);
+      final analysis = switch (outcome) {
+        AsyncData(:final value) => value,
+        AsyncError(:final error, :final stackTrace) =>
+          Error.throwWithStackTrace(error, stackTrace),
+        _ => throw StateError('describe analysis did not finish'),
+      };
+      final result = analysis.result;
       stopwatch.stop();
       analytics.track(
         'meal_ai_completed',
@@ -1842,18 +1891,8 @@ class _AiTabState extends ConsumerState<_AiTab> {
         },
       );
       if (!mounted) return;
-      // Capture router before closing the screen.
-      final router = GoRouter.of(context);
-      widget.onNavigateAway();
-      router.push(
-        '/meal-log/review',
-        extra: {
-          'result': result,
-          'source': hasPhoto ? 'photo' : 'describe',
-          'logDate': widget.logDate,
-          'photoPath': photoPath,
-        },
-      );
+      setState(() => _isAnalyzing = false);
+      await _openReview(analysis);
     } on InsufficientCreditsException catch (e) {
       stopwatch.stop();
       analytics.track(
@@ -1891,7 +1930,18 @@ class _AiTabState extends ConsumerState<_AiTab> {
             area: 'meal_logging',
             data: {'method': method, 'debug': e.debugMessage},
           );
-      if (mounted) MealvanaSnackbar.showError(context, e.userMessage);
+      if (!mounted) return;
+      if (e.kind == MealAiFailureKind.notFood && !hasPhoto) {
+        // describe-meal's verdict on the typed text (422, not_food): say so
+        // under the kept text. `userMessage` is the photo sentence (31-003).
+        setState(() {
+          _notFoodError = ref
+              .read(contentServiceProvider)
+              .getValue(ContentKeys.mealLogDescribeNotFood);
+        });
+      } else {
+        MealvanaSnackbar.showError(context, e.userMessage);
+      }
     } catch (e, st) {
       ref
           .read(reportProvider)
@@ -1964,6 +2014,7 @@ class _AiTabState extends ConsumerState<_AiTab> {
     setState(() {
       _photo = file;
       _photoSource = source;
+      _notFoodError = null;
     });
   }
 
@@ -1971,6 +2022,7 @@ class _AiTabState extends ConsumerState<_AiTab> {
     setState(() {
       _photo = null;
       _photoSource = null;
+      _notFoodError = null;
     });
   }
 
@@ -1981,12 +2033,26 @@ class _AiTabState extends ConsumerState<_AiTab> {
 
     // Analyze sits below the inputs as the single metered action —
     // whatever is above it (text, photo, or both) goes as one analysis
-    // for one token. The price rides inside the button.
-    final analyze = KylePrimaryButton(
-      text: 'Analyze',
-      onPressed: _analyze,
-      trailing: const TokenCostChip(),
-    );
+    // for one token. The price rides inside the button. While the stored
+    // analysis answers exactly what is in the field, the button opens it
+    // again for free: "Review again", no price (31-004).
+    ref.watch(describeAnalysisControllerProvider);
+    final content = ref.watch(contentServiceProvider);
+    final canReviewAgain =
+        ref
+            .read(describeAnalysisControllerProvider.notifier)
+            .storedFor(text: _ctrl.text, photo: _photo) !=
+        null;
+    final analyze = canReviewAgain
+        ? KylePrimaryButton(
+            text: content.getValue(ContentKeys.mealLogDescribeReviewAgain),
+            onPressed: _analyze,
+          )
+        : KylePrimaryButton(
+            text: 'Analyze',
+            onPressed: _analyze,
+            trailing: const TokenCostChip(),
+          );
     // While the athlete types, the keyboard takes the bottom of the screen
     // and the list's own Analyze would sit under it (23-001). It is pinned
     // under the list instead, which the Scaffold keeps just above the keys.
@@ -2072,8 +2138,16 @@ class _AiTabState extends ConsumerState<_AiTab> {
                 border: OutlineInputBorder(),
                 alignLabelWithHint: true,
               ),
-              validator: (v) => (v == null || v.trim().length < 5)
-                  ? 'Please describe your meal'
+              forceErrorText: _notFoodError,
+              // The minimum is named in the line, from content (31-007).
+              validator: (v) =>
+                  (v == null || v.trim().length < describeMinChars)
+                  ? ContentKeys.format(
+                      ref
+                          .read(contentServiceProvider)
+                          .getValue(ContentKeys.mealLogDescribeTooShort),
+                      {'n': describeMinChars},
+                    )
                   : null,
             ),
           ),

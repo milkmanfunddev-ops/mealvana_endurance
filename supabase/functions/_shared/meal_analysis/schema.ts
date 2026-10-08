@@ -68,6 +68,21 @@ export const MealAnalysisSchema = z.object({
    * "Sauce portion estimated; could add 50–100 kcal"
    */
   notes: z.string().optional(),
+  /**
+   * True when the input describes no food or drink (an activity, a movie
+   * title, a random sentence). Optional, so the photo function's output and
+   * every stored analysis stay valid. `describe-meal` answers 422 when set.
+   */
+  not_food: z.boolean().optional(),
 });
 
 export type MealAnalysis = z.infer<typeof MealAnalysisSchema>;
+
+/**
+ * The model's verdict that the input describes no food or drink. Only an
+ * explicit `true` counts: an absent field is food, and a zero-kcal item (a
+ * glass of water) is food too. Testing-wave develop-2026-10, ticket 45.
+ */
+export function isNotFood(analysis: Pick<MealAnalysis, 'not_food'>): boolean {
+  return analysis.not_food === true;
+}

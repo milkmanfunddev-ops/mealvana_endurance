@@ -16,6 +16,7 @@
  * Error responses:
  *   400 — missing/invalid body or description too long
  *   401 — missing or invalid JWT
+ *   422 — the description is not food or drink ({ not_food: true }); free
  *   500 — missing AI_GATEWAY_API_KEY secret or unexpected server error
  */
 
@@ -31,7 +32,10 @@ import {
 } from "../_shared/responses.ts";
 import { DESCRIBE_MEAL_MODEL } from "../_shared/ai/model.ts";
 import { gatewayCostUsd, logAiUsage } from "../_shared/ai/usage.ts";
-import { MealAnalysisSchema } from "../_shared/meal_analysis/schema.ts";
+import {
+  isNotFood,
+  MealAnalysisSchema,
+} from "../_shared/meal_analysis/schema.ts";
 import { initSentry, withSentry } from "../_shared/sentry.ts";
 import {
   debitForUsage,
@@ -180,7 +184,7 @@ INSTRUCTIONS:
 - Compute accurate totals across all items.
 - Suggest the meal slot (breakfast, lunch, dinner, snack) based on the foods described.
 - Set confidence to "high" if the description is precise (weights, brand names, counts); "medium" if typical portions can be inferred; "low" if too vague to estimate reliably.
-- If the description clearly does not describe food (e.g. a movie title, a random sentence), set confidence to "low", return a single placeholder item, and set notes to explain.
+- If the description does not describe any food or drink (an activity, a movie title, a random sentence), set \`not_food\` to true, return one placeholder item, and set notes to explain.
 
 Return your answer as structured JSON matching the requested schema.`,
         },
@@ -218,6 +222,24 @@ Return your answer as structured JSON matching the requested schema.`,
         costUsd,
       }),
     );
+    // No food or drink found: answer 422 BEFORE the debit, so the call is
+    // free (Lee's ruling 2026-10-08, ticket 45; the photo function's 422 also
+    // returns before its debit). The usage line above still records the model
+    // cost, and this log line is the server-side record of the free answer
+    // (D9). The client maps 422 to MealAiFailureKind.notFood.
+    if (isNotFood(analysis)) {
+      console.log(
+        `[describe-meal] Not food for user ${user.id}: 422, no debit ` +
+          `(notes: ${analysis.notes ?? "none"})`,
+      );
+      return errorResponse(
+        "That doesn't describe food or drink.",
+        422,
+        undefined,
+        { not_food: true },
+      );
+    }
+
     // The debit is awaited, not handed to waitUntil, so the balance is final
     // by the time the client hears 200 and refreshes its pill (round
     // develop-2026-10, ticket 23). debitForUsage never throws.
