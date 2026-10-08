@@ -1,0 +1,9 @@
+[
+ {
+  "delta": -1,
+  "reason": "debit_usage",
+  "ref": "describe-meal",
+  "balance_after": 2489,
+  "created_at": "2026-10-08 17:27:09.217194+00"
+ }
+]

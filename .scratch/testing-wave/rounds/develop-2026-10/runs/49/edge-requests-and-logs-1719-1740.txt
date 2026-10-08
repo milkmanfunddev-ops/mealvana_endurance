@@ -1,0 +1,10 @@
+# function_edge_logs + function_logs for describe-meal / analyze-meal-photo, 17:19-17:40Z (Supabase MCP query_logs, project vlmtsdzpnjnavdgytcmi)
+2026-10-08T17:26:57.552Z function_logs      [describe-meal] Processing description for user 607f9dd5-…, length: 70 chars, model: anthropic/claude-sonnet-4.6
+2026-10-08T17:27:09.293Z function_logs      [describe-meal] Success for user 607f9dd5-…: "Scrambled eggs, whole wheat toast with butter, banana", 3 items, confidence=medium
+2026-10-08T17:27:09.309Z function_edge_logs POST | 200 | …/functions/v1/describe-meal
+2026-10-08T17:33:32.274Z function_logs      [describe-meal] Processing description for user 607f9dd5-…, length: 12 chars, model: anthropic/claude-sonnet-4.6
+2026-10-08T17:33:36.732Z function_logs      [describe-meal] Not food for user 607f9dd5-…: 422, no debit (notes: The description 'My bike ride' refers to a physical activity, …)
+2026-10-08T17:33:36.748Z function_edge_logs POST | 422 | …/functions/v1/describe-meal
+2026-10-08T17:38:14.118Z function_logs      [analyze-meal-photo] Analyzing photo for user 607f9dd5-…, path: 607f9dd5-…/ea467797-88ce-4994-a6ee-7a89a041841e.jpg, model: anthropic/claude-sonnet-4.6
+2026-10-08T17:38:20.309Z function_logs      [analyze-meal-photo] Success for user 607f9dd5-…: "Salted Edamame (half bowl)", 1 items, confidence=medium
+2026-10-08T17:38:20.325Z function_edge_logs POST | 200 | …/functions/v1/analyze-meal-photo

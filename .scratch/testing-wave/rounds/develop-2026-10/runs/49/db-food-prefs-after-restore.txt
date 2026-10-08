@@ -1,0 +1,47 @@
+[
+ {
+  "food_name": "Bagel (plain)",
+  "preference_level": 2,
+  "updated_at": "2026-10-08 08:07:20+00"
+ },
+ {
+  "food_name": "Bananas",
+  "preference_level": 2,
+  "updated_at": "2026-10-08 08:07:20+00"
+ },
+ {
+  "food_name": "energy_bar",
+  "preference_level": 2,
+  "updated_at": "2026-10-08 08:07:20+00"
+ },
+ {
+  "food_name": "energy_chews",
+  "preference_level": 2,
+  "updated_at": "2026-10-08 08:07:20+00"
+ },
+ {
+  "food_name": "energy_gel",
+  "preference_level": 2,
+  "updated_at": "2026-10-08 08:07:20+00"
+ },
+ {
+  "food_name": "oatmeal_cooked",
+  "preference_level": 2,
+  "updated_at": "2026-10-08 08:07:20+00"
+ },
+ {
+  "food_name": "protein_bar",
+  "preference_level": 2,
+  "updated_at": "2026-10-08 08:07:20+00"
+ },
+ {
+  "food_name": "sports_drink",
+  "preference_level": 4,
+  "updated_at": "2026-10-08 08:07:20+00"
+ },
+ {
+  "food_name": "toast",
+  "preference_level": 2,
+  "updated_at": "2026-10-08 08:07:20+00"
+ }
+]

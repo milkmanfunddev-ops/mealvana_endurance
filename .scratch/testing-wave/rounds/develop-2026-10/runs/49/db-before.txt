@@ -1,0 +1,156 @@
+## 2026-10-08T17:20:13Z before
+### wallet
+[
+ {
+  "balance": 2490,
+  "updated_at": "2026-10-08 13:12:03.060501+00"
+ }
+]
+### ledger newest 5
+[
+ {
+  "delta": -1,
+  "reason": "debit_usage",
+  "ref": "describe-meal",
+  "balance_after": 2490,
+  "created_at": "2026-10-08 13:12:03.060501+00"
+ },
+ {
+  "delta": -1,
+  "reason": "debit_usage",
+  "ref": "analyze-meal-photo",
+  "balance_after": 2491,
+  "created_at": "2026-10-08 13:10:56.475408+00"
+ },
+ {
+  "delta": -1,
+  "reason": "debit_usage",
+  "ref": "describe-meal",
+  "balance_after": 2492,
+  "created_at": "2026-10-08 13:02:50.29965+00"
+ },
+ {
+  "delta": -1,
+  "reason": "debit_usage",
+  "ref": "describe-meal",
+  "balance_after": 2493,
+  "created_at": "2026-10-08 02:15:20.330217+00"
+ },
+ {
+  "delta": -49894991,
+  "reason": "convert_credits",
+  "ref": "usd_micro->credit@20000 develop-2026-10#23",
+  "balance_after": 2494,
+  "created_at": "2026-10-07 16:02:17.935119+00"
+ }
+]
+### meal_logs newest 5
+[
+ {
+  "id": "4a3f9e5e-b3f4-4d00-ba57-976ccfbd6a8a",
+  "name": "Bread slices and orange (from food spread)",
+  "source": "photo",
+  "is_deleted": true,
+  "created_at": "2026-10-08 13:11:21.324012+00",
+  "updated_at": "2026-10-08 13:13:15.5689+00"
+ },
+ {
+  "id": "2627444d-fec4-4c60-af2e-a600dbb0acf0",
+  "name": "tw31 eggs toast banana",
+  "source": "describe",
+  "is_deleted": true,
+  "created_at": "2026-10-08 13:06:28.081382+00",
+  "updated_at": "2026-10-08 13:13:01.195008+00"
+ },
+ {
+  "id": "40600e48-f359-48f6-b59f-d49a5c473bee",
+  "name": "Scrambled Eggs, Whole Wheat Toast with Butter, and Banana",
+  "source": "describe",
+  "is_deleted": false,
+  "created_at": "2026-10-07 11:10:15.93897+00",
+  "updated_at": "2026-10-07 11:10:15.939748+00"
+ },
+ {
+  "id": "2acf4917-0efd-4359-8894-2ff584f66a8e",
+  "name": "Rice, baked tofu & roasted broccoli bowl with sriracha",
+  "source": "describe",
+  "is_deleted": false,
+  "created_at": "2026-09-26 17:41:04.668179+00",
+  "updated_at": "2026-09-26 17:41:04.668179+00"
+ },
+ {
+  "id": "4561f7ca-27f4-46e7-a6f6-6990812a83a7",
+  "name": "W40-113 Twice",
+  "source": "manual",
+  "is_deleted": true,
+  "created_at": "2026-09-26 11:07:36.135466+00",
+  "updated_at": "2026-09-26 11:14:10.759326+00"
+ }
+]
+### saved_meals newest 3
+[
+ {
+  "id": "85f10c75-c7fc-4bf0-9208-4ebdbb79fc92",
+  "name": "W40-113 Built bowl",
+  "created_at": "2026-09-26 11:06:12.993278+00"
+ },
+ {
+  "id": "85c22213-ca4d-4631-9260-51467511aab2",
+  "name": "E2E 112 throwaway",
+  "created_at": "2026-09-25 23:45:28+00"
+ },
+ {
+  "id": "09f59fb0-7c9c-4c57-89b7-d98979c7ed44",
+  "name": "Quinoa, mixed veg & walnuts",
+  "created_at": "2026-09-25 20:15:40.597889+00"
+ }
+]
+### food_preferences newest 3
+[
+ {
+  "food_name": "sports_drink",
+  "preference_level": 4,
+  "updated_at": "2026-10-08 08:07:20+00"
+ },
+ {
+  "food_name": "oatmeal_cooked",
+  "preference_level": 2,
+  "updated_at": "2026-10-08 08:07:20+00"
+ },
+ {
+  "food_name": "toast",
+  "preference_level": 2,
+  "updated_at": "2026-10-08 08:07:20+00"
+ }
+]
+### integrations
+[
+ {
+  "provider": "vdot",
+  "is_active": false,
+  "last_sync_status": "requires_reauth",
+  "last_sync_at": "2026-10-07 06:16:58+00",
+  "updated_at": "2026-10-08 13:26:26.703585+00"
+ },
+ {
+  "provider": "training_peaks",
+  "is_active": true,
+  "last_sync_status": "success",
+  "last_sync_at": "2026-10-08 13:29:18+00",
+  "updated_at": "2026-10-08 13:29:18.483036+00"
+ },
+ {
+  "provider": "garmin",
+  "is_active": true,
+  "last_sync_status": "success",
+  "last_sync_at": "2026-09-19 08:56:12.014+00",
+  "updated_at": "2026-09-19 08:56:12.195127+00"
+ },
+ {
+  "provider": "final_surge",
+  "is_active": true,
+  "last_sync_status": "success",
+  "last_sync_at": "2026-10-08 13:07:23+00",
+  "updated_at": "2026-10-08 13:07:23.392201+00"
+ }
+]
