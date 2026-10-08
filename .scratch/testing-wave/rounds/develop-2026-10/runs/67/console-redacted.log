@@ -1,0 +1,236 @@
+2026-10-08 18:09:17.261867-0500 0x2ba7c16  Default     0x0                  23469  0    Runner: (Flutter) flutter: The Dart VM service is listening on http://127.0.0.1:60609/ztzAU0UX978=/
+2026-10-08 18:09:17.296166-0500 0x2ba7b54  Default     0x0                  23469  0    Runner: (Flutter) Plugin AppLinksIosPlugin uses deprecated application lifecycle events. Please contact plugin maintainers and request UIScene lifecycle support. This will be required in a future version of Flutter. See https://docs.flutter.dev/release/breaking-changes/uiscenedelegate#migration-guide-for-flutter-plugins
+2026-10-08 18:09:17.303253-0500 0x2ba7b54  Default     0x0                  23469  0    Runner: (Flutter) Plugin FlutterWebAuth2Plugin uses deprecated application lifecycle events. Please contact plugin maintainers and request UIScene lifecycle support. This will be required in a future version of Flutter. See https://docs.flutter.dev/release/breaking-changes/uiscenedelegate#migration-guide-for-flutter-plugins
+2026-10-08 18:09:17.312141-0500 0x2ba7b54  Default     0x0                  23469  0    Runner: (Flutter) Plugin FLTGoogleSignInPlugin uses deprecated application lifecycle events. Please contact plugin maintainers and request UIScene lifecycle support. This will be required in a future version of Flutter. See https://docs.flutter.dev/release/breaking-changes/uiscenedelegate#migration-guide-for-flutter-plugins
+2026-10-08 18:09:18.347147-0500 0x2ba7b54  Default     0x0                  23469  0    Runner: (Flutter) flutter: -------------------------------------------------------------------------------
+2026-10-08 18:09:18.376041-0500 0x2ba7b54  Default     0x0                  23469  0    Runner: (Flutter) flutter: supabase.supabase_flutter: INFO: ***** Supabase init completed *****
+2026-10-08 18:09:18.619435-0500 0x2ba7b54  Default     0x0                  23469  0    Runner: (Flutter) flutter: [LAUNCH] pending signup: none
+2026-10-08 18:09:19.947150-0500 0x2ba7b54  Default     0x0                  23469  0    Runner: (Flutter) flutter: [LAUNCH] plugin.initialize() starting (handler not yet attached)
+2026-10-08 18:09:19.959446-0500 0x2ba7b54  Default     0x0                  23469  0    Runner: (Flutter) flutter: [LAUNCH] plugin.initialize() done (handler attached)
+2026-10-08 18:09:19.963276-0500 0x2ba7b54  Default     0x0                  23469  0    Runner: (Flutter) flutter: [LAUNCH] launchDetails didNotificationLaunchApp=false payload=null
+2026-10-08 18:09:19.964261-0500 0x2ba7b54  Default     0x0                  23469  0    Runner: (Flutter) flutter: [LAUNCH] onesignal started; permission ask + heal wait for an athlete id
+2026-10-08 18:09:20.051341-0500 0x2ba7b54  Default     0x0                  23469  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] app_opened {device_id: 204D89A9-B393-4591-B725-70E39F4D7C76, session_id: 8f7a2a8d-1194-4b8f-aa97-f4053826314b, timestamp: 2026-10-08T18:09:20.050800}
+2026-10-08 18:09:49.759753-0500 0x2ba8354  Default     0x0                  23689  0    Runner: (Flutter) flutter: The Dart VM service is listening on http://127.0.0.1:60766/8_M_2b9b1wU=/
+2026-10-08 18:09:49.769713-0500 0x2ba830d  Default     0x0                  23689  0    Runner: (Flutter) Plugin AppLinksIosPlugin uses deprecated application lifecycle events. Please contact plugin maintainers and request UIScene lifecycle support. This will be required in a future version of Flutter. See https://docs.flutter.dev/release/breaking-changes/uiscenedelegate#migration-guide-for-flutter-plugins
+2026-10-08 18:09:49.773875-0500 0x2ba830d  Default     0x0                  23689  0    Runner: (Flutter) Plugin FlutterWebAuth2Plugin uses deprecated application lifecycle events. Please contact plugin maintainers and request UIScene lifecycle support. This will be required in a future version of Flutter. See https://docs.flutter.dev/release/breaking-changes/uiscenedelegate#migration-guide-for-flutter-plugins
+2026-10-08 18:09:49.777767-0500 0x2ba830d  Default     0x0                  23689  0    Runner: (Flutter) Plugin FLTGoogleSignInPlugin uses deprecated application lifecycle events. Please contact plugin maintainers and request UIScene lifecycle support. This will be required in a future version of Flutter. See https://docs.flutter.dev/release/breaking-changes/uiscenedelegate#migration-guide-for-flutter-plugins
+2026-10-08 18:09:50.998351-0500 0x2ba830d  Default     0x0                  23689  0    Runner: (Flutter) flutter: -------------------------------------------------------------------------------
+2026-10-08 18:09:51.032123-0500 0x2ba830d  Default     0x0                  23689  0    Runner: (Flutter) flutter: supabase.supabase_flutter: INFO: ***** Supabase init completed *****
+2026-10-08 18:09:51.266042-0500 0x2ba830d  Default     0x0                  23689  0    Runner: (Flutter) flutter: [LAUNCH] pending signup: none
+2026-10-08 18:09:52.599514-0500 0x2ba830d  Default     0x0                  23689  0    Runner: (Flutter) flutter: [LAUNCH] plugin.initialize() starting (handler not yet attached)
+2026-10-08 18:09:52.606721-0500 0x2ba830d  Default     0x0                  23689  0    Runner: (Flutter) flutter: [LAUNCH] plugin.initialize() done (handler attached)
+2026-10-08 18:09:52.615106-0500 0x2ba830d  Default     0x0                  23689  0    Runner: (Flutter) flutter: [LAUNCH] launchDetails didNotificationLaunchApp=false payload=null
+2026-10-08 18:09:52.616073-0500 0x2ba830d  Default     0x0                  23689  0    Runner: (Flutter) flutter: [LAUNCH] onesignal started; permission ask + heal wait for an athlete id
+2026-10-08 18:09:53.112879-0500 0x2ba830d  Default     0x0                  23689  0    Runner: (Flutter) flutter: [LAUNCH] region lookup timeout: device fallback
+2026-10-08 18:10:02.054378-0500 0x2ba830d  Default     0x0                  23689  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] welcome_get_started_tapped {}
+2026-10-08 18:10:11.317942-0500 0x2ba830d  Default     0x0                  23689  0    Runner: (Flutter) flutter: [LAUNCH] permission prompt wait 9066ms granted=false
+2026-10-08 18:10:11.319722-0500 0x2ba830d  Default     0x0                  23689  0    Runner: (Flutter) flutter: [LAUNCH] notification permission answer: granted=false
+2026-10-08 18:10:11.340807-0500 0x2ba830d  Default     0x0                  23689  0    Runner: (Flutter) flutter: [LAUNCH] notification answer not stored: no local profile
+2026-10-08 18:10:11.341475-0500 0x2ba830d  Default     0x0                  23689  0    Runner: (Flutter) flutter: [LAUNCH] push heal: permission=false optedIn=false (hydration wait 0ms)
+2026-10-08 18:10:11.341633-0500 0x2ba830d  Default     0x0                  23689  0    Runner: (Flutter) flutter: [LAUNCH] push heal: no action
+2026-10-08 18:10:11.708540-0500 0x2ba830d  Default     0x5c6c21c            23689  0    Runner: (Flutter) flutter: [LAUNCH] app resumed
+2026-10-08 18:10:11.729516-0500 0x2ba830d  Default     0x0                  23689  0    Runner: (Flutter) flutter: [LAUNCH] nudge sweep activities=0 estimated=0 longCandidates=0
+2026-10-08 18:10:11.730659-0500 0x2ba830d  Default     0x0                  23689  0    Runner: (Flutter) flutter: [LAUNCH] nudge evaluate candidates=0 fastFire=false
+2026-10-08 18:10:11.821822-0500 0x2ba830d  Default     0x0                  23689  0    Runner: (Flutter) flutter: [LAUNCH] startup snapshot refreshed (signed_in): user=false onboarded=false
+2026-10-08 18:10:27.049115-0500 0x2ba830d  Default     0x0                  23689  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] app_opened {device_id: 204D89A9-B393-4591-B725-70E39F4D7C76, session_id: 25cb3235-4e89-4da2-851a-507868941b87, timestamp: 2026-10-08T18:10:27.045789}
+2026-10-08 18:10:27.211213-0500 0x2ba830d  Default     0x0                  23689  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] screen_viewed {screen_name: Sports Selection Onboarding, step_index: 0}
+2026-10-08 18:10:59.886930-0500 0x2ba830d  Default     0x0                  23689  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] sports_selected {sports: [running], running: true, cycling: false, swimming: false, triathlon: false, count: 1}
+2026-10-08 18:10:59.892746-0500 0x2ba830d  Default     0x0                  23689  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] onboarding_step_completed {step_name: sports_selection, step_index: 0}
+2026-10-08 18:10:59.947556-0500 0x2ba830d  Default     0x0                  23689  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] screen_viewed {screen_name: Goals Onboarding, step_index: 1}
+2026-10-08 18:11:07.750449-0500 0x2ba830d  Default     0x0                  23689  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] goals_selected {goals: [performance], count: 1}
+2026-10-08 18:11:07.751261-0500 0x2ba830d  Default     0x0                  23689  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] onboarding_step_completed {step_name: goals, step_index: 1}
+2026-10-08 18:11:07.778452-0500 0x2ba830d  Default     0x0                  23689  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] screen_viewed {screen_name: Pitfalls Onboarding, step_index: 2}
+2026-10-08 18:11:15.900513-0500 0x2ba830d  Default     0x0                  23689  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] pitfalls_selected {pitfalls: [energy_crash], count: 1}
+2026-10-08 18:11:15.901347-0500 0x2ba830d  Default     0x0                  23689  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] onboarding_step_completed {step_name: pitfalls, step_index: 2}
+2026-10-08 18:11:15.929083-0500 0x2ba830d  Default     0x0                  23689  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] screen_viewed {screen_name: Connect Training Onboarding, step_index: 3}
+2026-10-08 18:11:16.001025-0500 0x2ba830d  Default     0x0                  23689  0    Runner: (Flutter) flutter: 🔑 ConnectTrainingController: Using real user ID: e482a890-d753-4497-9d2e-74bf50be3931
+2026-10-08 18:11:16.001080-0500 0x2ba830d  Default     0x0                  23689  0    Runner: (Flutter) flutter:    (user profile exists: false, onboardingCompleted: null)
+2026-10-08 18:11:16.001120-0500 0x2ba830d  Default     0x0                  23689  0    Runner: (Flutter) flutter:    (auth user: e482a890-d753-4497-9d2e-74bf50be3931, resolved user: e482a890-d753-4497-9d2e-74bf50be3931)
+2026-10-08 18:11:29.851317-0500 0x2ba830d  Default     0x0                  23689  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] connect_training_declined {}
+2026-10-08 18:11:29.851581-0500 0x2ba830d  Default     0x0                  23689  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] onboarding_step_completed {step_name: connect_training, step_index: 3}
+2026-10-08 18:11:29.930983-0500 0x2ba830d  Default     0x0                  23689  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] screen_viewed {screen_name: Personal Info Onboarding, step_index: 4}
+2026-10-08 18:11:50.291132-0500 0x2ba830d  Default     0x0                  23689  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] onboarding_step_completed {step_name: personal_info, step_index: 4}
+2026-10-08 18:11:50.336256-0500 0x2ba830d  Default     0x0                  23689  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] screen_viewed {screen_name: Body Composition Onboarding, step_index: 5}
+2026-10-08 18:11:58.847148-0500 0x2ba830d  Default     0x0                  23689  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] onboarding_step_completed {step_name: body_composition, step_index: 5}
+2026-10-08 18:11:58.928187-0500 0x2ba830d  Default     0x0                  23689  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] screen_viewed {screen_name: Nutrition Settings Onboarding, step_index: 6}
+2026-10-08 18:12:06.945957-0500 0x2ba830d  Default     0x0                  23689  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] onboarding_step_completed {step_name: nutrition_settings, step_index: 6}
+2026-10-08 18:12:07.003838-0500 0x2ba830d  Default     0x0                  23689  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] screen_viewed {screen_name: Plan Reveal Onboarding, step_index: 7}
+2026-10-08 18:12:09.862844-0500 0x2ba830d  Default     0x0                  23689  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] plan_preview_viewed {is_generic: false, used_training_data: false}
+2026-10-08 18:12:14.630720-0500 0x2ba830d  Default     0x0                  23689  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] onboarding_step_completed {step_name: plan_reveal, step_index: 7}
+2026-10-08 18:12:14.661983-0500 0x2ba830d  Default     0x0                  23689  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] screen_viewed {screen_name: Daily Plan Preview Onboarding, step_index: 8}
+2026-10-08 18:12:14.662484-0500 0x2ba830d  Default     0x0                  23689  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] daily_preview_tab_viewed {tab: workout}
+2026-10-08 18:12:23.887309-0500 0x2ba830d  Default     0x0                  23689  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] onboarding_step_completed {step_name: daily_plan_preview, step_index: 8}
+2026-10-08 18:12:23.890403-0500 0x2ba830d  Default     0x0                  23689  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] onboarding_completed {step_count: 9, duration_sec: 141}
+2026-10-08 18:12:23.925884-0500 0x2ba830d  Default     0x0                  23689  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] screen_viewed {screen_name: Post-Onboarding Auth, mode: signup}
+2026-10-08 18:12:31.658861-0500 0x2ba830d  Default     0x0                  23689  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] auth_flow_started {provider: apple, source: post_onboarding}
+2026-10-08 18:12:31.664605-0500 0x2ba830d  Default     0x0                  23689  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] auth_apple_native_started {platform: ios}
+2026-10-08 18:12:40.762232-0500 0x2ba830d  Default     0x0                  23689  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] expected_failure {area: auth, reason: apple_no_account}
+2026-10-08 18:12:43.045430-0500 0x2ba830d  Default     0x5c6c21c            23689  0    Runner: (Flutter) flutter: [LAUNCH] app resumed
+2026-10-08 18:12:43.892645-0500 0x2ba830d  Default     0x0                  23689  0    Runner: (Flutter) flutter: [LAUNCH] nudge sweep activities=0 estimated=0 longCandidates=0
+2026-10-08 18:12:43.906759-0500 0x2ba830d  Default     0x0                  23689  0    Runner: (Flutter) flutter: [LAUNCH] nudge evaluate candidates=0 fastFire=false
+2026-10-08 18:15:16.616754-0500 0x2bb0003  Default     0x0                  26503  0    Runner: (Flutter) flutter: The Dart VM service is listening on http://127.0.0.1:61907/6kyVNpEjr_E=/
+2026-10-08 18:15:19.897958-0500 0x2bafa78  Default     0x0                  26503  0    Runner: (Flutter) flutter: -------------------------------------------------------------------------------
+2026-10-08 18:15:19.938225-0500 0x2bafa78  Default     0x0                  26503  0    Runner: (Flutter) flutter: supabase.supabase_flutter: INFO: ***** Supabase init completed *****
+2026-10-08 18:15:20.513879-0500 0x2bafa78  Default     0x0                  26503  0    Runner: (Flutter) flutter: [LAUNCH] pending signup: none
+2026-10-08 18:15:22.633453-0500 0x2bafa78  Default     0x0                  26503  0    Runner: (Flutter) flutter: [LAUNCH] region lookup timeout: device fallback
+2026-10-08 18:15:25.611454-0500 0x2bafa78  Default     0x0                  26503  0    Runner: (Flutter) flutter: [LAUNCH] version check timeout: cached result
+2026-10-08 18:15:30.183377-0500 0x2bafa78  Default     0x0                  26503  0    Runner: (Flutter) flutter: [LAUNCH] nudge sweep activities=0 estimated=0 longCandidates=0
+2026-10-08 18:15:30.187261-0500 0x2bafa78  Default     0x0                  26503  0    Runner: (Flutter) flutter: [LAUNCH] nudge evaluate candidates=0 fastFire=false
+2026-10-08 18:15:31.857924-0500 0x2bafa78  Default     0x0                  26503  0    Runner: (Flutter) flutter: [LAUNCH] plugin.initialize() starting (handler not yet attached)
+2026-10-08 18:15:31.907616-0500 0x2bafa78  Default     0x0                  26503  0    Runner: (Flutter) flutter: \^[[38;5;208m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+2026-10-08 18:15:31.907733-0500 0x2bafa78  Default     0x0                  26503  0    Runner: (Flutter) flutter: \^[[38;5;208m│ Slow operation: startup.total took 11860 ms\^[[0m
+2026-10-08 18:15:31.907844-0500 0x2bafa78  Default     0x0                  26503  0    Runner: (Flutter) flutter: \^[[38;5;208m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+2026-10-08 18:15:31.907884-0500 0x2bafa78  Default     0x0                  26503  0    Runner: (Flutter) flutter: \^[[38;5;208m│ #0   SentryReport._mirror (package:mealvana_endurance/shared/services/report/report.dart:637:22)\^[[0m
+2026-10-08 18:15:31.907955-0500 0x2bafa78  Default     0x0                  26503  0    Runner: (Flutter) flutter: \^[[38;5;208m│ #1   SentryReport._capture (package:mealvana_endurance/shared/services/report/report.dart:316:5)\^[[0m
+2026-10-08 18:15:31.907993-0500 0x2bafa78  Default     0x0                  26503  0    Runner: (Flutter) flutter: \^[[38;5;208m│ #2   SentryReport.degraded (package:mealvana_endurance/shared/services/report/report.dart:270:12)\^[[0m
+2026-10-08 18:15:31.908030-0500 0x2bafa78  Default     0x0                  26503  0    Runner: (Flutter) flutter: \^[[38;5;208m│ #3   PerformanceTelemetry._recordDuration (package:mealvana_endurance/shared/services/report/performance_telemetry.dart:134:17)\^[[0m
+2026-10-08 18:15:31.908075-0500 0x2bafa78  Default     0x0                  26503  0    Runner: (Flutter) flutter: \^[[38;5;208m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+2026-10-08 18:15:31.908109-0500 0x2bafa78  Default     0x0                  26503  0    Runner: (Flutter) flutter: \^[[38;5;208m│ 18:15:31.897 (+0:00:11.956621)\^[[0m
+2026-10-08 18:15:31.908161-0500 0x2bafa78  Default     0x0                  26503  0    Runner: (Flutter) flutter: \^[[38;5;208m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
+2026-10-08 18:15:31.908193-0500 0x2bafa78  Default     0x0                  26503  0    Runner: (Flutter) flutter: \^[[38;5;208m│ ⚠️ [performance] Slow operation: startup.total\^[[0m
+2026-10-08 18:15:31.908232-0500 0x2bafa78  Default     0x0                  26503  0    Runner: (Flutter) flutter: \^[[38;5;208m│ ⚠️ Data: {operation: startup.total, duration_ms: 11860, process_uptime_ms: 6132}\^[[0m
+2026-10-08 18:15:31.908282-0500 0x2bafa78  Default     0x0                  26503  0    Runner: (Flutter) flutter: \^[[38;5;208m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+2026-10-08 18:15:31.999373-0500 0x2bafa78  Default     0x0                  26503  0    Runner: (Flutter) flutter: [LAUNCH] plugin.initialize() done (handler attached)
+2026-10-08 18:15:32.014528-0500 0x2bafa78  Default     0x0                  26503  0    Runner: (Flutter) flutter: [LAUNCH] launchDetails didNotificationLaunchApp=false payload=null
+2026-10-08 18:15:32.020838-0500 0x2bafa78  Default     0x0                  26503  0    Runner: (Flutter) flutter: [LAUNCH] onesignal started; permission ask + heal wait for an athlete id
+2026-10-08 18:15:32.706578-0500 0x2bafa78  Default     0x0                  26503  0    Runner: (Flutter) flutter: [LAUNCH] permission prompt wait 684ms granted=false
+2026-10-08 18:15:32.707168-0500 0x2bafa78  Default     0x0                  26503  0    Runner: (Flutter) flutter: [LAUNCH] notification permission answer: granted=false
+2026-10-08 18:15:33.231920-0500 0x2bafa78  Default     0x0                  26503  0    Runner: (Flutter) flutter: [LAUNCH] notification answer not stored: no local profile
+2026-10-08 18:15:33.366471-0500 0x2bafa78  Default     0x0                  26503  0    Runner: (Flutter) flutter: [LAUNCH] push heal: permission=false optedIn=false (hydration wait 0ms)
+2026-10-08 18:15:33.366686-0500 0x2bafa78  Default     0x0                  26503  0    Runner: (Flutter) flutter: [LAUNCH] push heal: no action
+2026-10-08 18:15:33.511586-0500 0x2bafa78  Default     0x0                  26503  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] app_opened {device_id: 204D89A9-B393-4591-B725-70E39F4D7C76, session_id: 4fc31d24-32ea-4a25-b614-313622340807, timestamp: 2026-10-08T18:15:33.510702}
+2026-10-08 18:15:35.316113-0500 0x2bafa78  Default     0x0                  26503  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] error_reported {severity: degraded, area: performance, exception_type: SlowOperation, sentry_event_id: a9e66bbf54f54a4088d40fb3d8bb1e46}
+2026-10-08 18:16:37.157300-0500 0x2bafa78  Default     0x0                  26503  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] welcome_get_started_tapped {}
+2026-10-08 18:16:37.477112-0500 0x2bafa78  Default     0x0                  26503  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] screen_viewed {screen_name: Sports Selection Onboarding, step_index: 0}
+2026-10-08 18:16:51.544233-0500 0x2bafa78  Default     0x0                  26503  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] sports_selected {sports: [running], running: true, cycling: false, swimming: false, triathlon: false, count: 1}
+2026-10-08 18:16:51.550292-0500 0x2bafa78  Default     0x0                  26503  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] onboarding_step_completed {step_name: sports_selection, step_index: 0}
+2026-10-08 18:16:51.649487-0500 0x2bafa78  Default     0x0                  26503  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] screen_viewed {screen_name: Goals Onboarding, step_index: 1}
+2026-10-08 18:16:56.109426-0500 0x2bafa78  Default     0x0                  26503  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] goals_selected {goals: [performance], count: 1}
+2026-10-08 18:16:56.110066-0500 0x2bafa78  Default     0x0                  26503  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] onboarding_step_completed {step_name: goals, step_index: 1}
+2026-10-08 18:16:56.185129-0500 0x2bafa78  Default     0x0                  26503  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] screen_viewed {screen_name: Pitfalls Onboarding, step_index: 2}
+2026-10-08 18:17:01.383247-0500 0x2bafa78  Default     0x0                  26503  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] pitfalls_selected {pitfalls: [energy_crash], count: 1}
+2026-10-08 18:17:01.385457-0500 0x2bafa78  Default     0x0                  26503  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] onboarding_step_completed {step_name: pitfalls, step_index: 2}
+2026-10-08 18:17:01.795674-0500 0x2bafa78  Default     0x0                  26503  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] screen_viewed {screen_name: Connect Training Onboarding, step_index: 3}
+2026-10-08 18:17:03.134160-0500 0x2bafa78  Default     0x0                  26503  0    Runner: (Flutter) flutter: 🔑 ConnectTrainingController: Using real user ID: e482a890-d753-4497-9d2e-74bf50be3931
+2026-10-08 18:17:03.134252-0500 0x2bafa78  Default     0x0                  26503  0    Runner: (Flutter) flutter:    (user profile exists: false, onboardingCompleted: null)
+2026-10-08 18:17:03.134298-0500 0x2bafa78  Default     0x0                  26503  0    Runner: (Flutter) flutter:    (auth user: e482a890-d753-4497-9d2e-74bf50be3931, resolved user: e482a890-d753-4497-9d2e-74bf50be3931)
+2026-10-08 18:17:08.278243-0500 0x2bafa78  Default     0x0                  26503  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] connect_training_declined {}
+2026-10-08 18:17:08.278627-0500 0x2bafa78  Default     0x0                  26503  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] onboarding_step_completed {step_name: connect_training, step_index: 3}
+2026-10-08 18:17:08.360166-0500 0x2bafa78  Default     0x0                  26503  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] screen_viewed {screen_name: Personal Info Onboarding, step_index: 4}
+2026-10-08 18:17:23.557781-0500 0x2bafa78  Default     0x0                  26503  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] onboarding_step_completed {step_name: personal_info, step_index: 4}
+2026-10-08 18:17:23.642680-0500 0x2bafa78  Default     0x0                  26503  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] screen_viewed {screen_name: Body Composition Onboarding, step_index: 5}
+2026-10-08 18:17:28.019338-0500 0x2bafa78  Default     0x0                  26503  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] onboarding_step_completed {step_name: body_composition, step_index: 5}
+2026-10-08 18:17:28.088324-0500 0x2bafa78  Default     0x0                  26503  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] screen_viewed {screen_name: Nutrition Settings Onboarding, step_index: 6}
+2026-10-08 18:17:32.521989-0500 0x2bafa78  Default     0x0                  26503  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] onboarding_step_completed {step_name: nutrition_settings, step_index: 6}
+2026-10-08 18:17:32.596876-0500 0x2bafa78  Default     0x0                  26503  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] screen_viewed {screen_name: Plan Reveal Onboarding, step_index: 7}
+2026-10-08 18:17:35.509405-0500 0x2bafa78  Default     0x0                  26503  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] plan_preview_viewed {is_generic: false, used_training_data: false}
+2026-10-08 18:17:37.449183-0500 0x2bafa78  Default     0x0                  26503  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] onboarding_step_completed {step_name: plan_reveal, step_index: 7}
+2026-10-08 18:17:37.499478-0500 0x2bafa78  Default     0x0                  26503  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] screen_viewed {screen_name: Daily Plan Preview Onboarding, step_index: 8}
+2026-10-08 18:17:37.499962-0500 0x2bafa78  Default     0x0                  26503  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] daily_preview_tab_viewed {tab: workout}
+2026-10-08 18:17:42.227221-0500 0x2bafa78  Default     0x0                  26503  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] onboarding_step_completed {step_name: daily_plan_preview, step_index: 8}
+2026-10-08 18:17:42.229959-0500 0x2bafa78  Default     0x0                  26503  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] onboarding_completed {step_count: 9, duration_sec: 65}
+2026-10-08 18:17:42.260819-0500 0x2bafa78  Default     0x0                  26503  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] screen_viewed {screen_name: Post-Onboarding Auth, mode: signup}
+2026-10-08 18:17:50.768708-0500 0x2bafa78  Default     0x0                  26503  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] screen_viewed {screen_name: Email Signup}
+2026-10-08 18:18:41.088313-0500 0x2bafa78  Default     0x0                  26503  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] auth_flow_started {provider: email, source: post_onboarding}
+2026-10-08 18:18:42.008477-0500 0x2bafa78  Default     0x0                  26503  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] email_verification_required {user_id: e482a890-d753-4497-9d2e-74bf50be3931, flow: link}
+2026-10-08 18:18:58.253617-0500 0x2bafa78  Default     0x0                  26503  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] email_verification_completed {user_id: e482a890-d753-4497-9d2e-74bf50be3931, otp_type: emailChange}
+2026-10-08 18:18:58.862190-0500 0x2bafa78  Default     0x0                  26503  0    Runner: (Flutter) flutter: [LAUNCH] startup snapshot refreshed (anonymous_upgrade_saved): user=true onboarded=false
+2026-10-08 18:18:58.862615-0500 0x2bafa78  Default     0x0                  26503  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] email_account_linked {user_id: e482a890-d753-4497-9d2e-74bf50be3931}
+2026-10-08 18:18:59.125562-0500 0x2bafa78  Default     0x0                  26503  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] user_registered {device_id: 204D89A9-B393-4591-B725-70E39F4D7C76, timestamp: 2026-10-08T18:18:59.125311, registration_source: onboarding}
+2026-10-08 18:18:59.294642-0500 0x2bafa78  Default     0x0                  26503  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] dietary_preference_saved {preference: omnivore, skipped: false}
+2026-10-08 18:18:59.314498-0500 0x2bafa78  Default     0x0                  26503  0    Runner: (Flutter) flutter: [LAUNCH] startup snapshot refresh skipped (signed_in): superseded by a later refresh or rebuild
+2026-10-08 18:18:59.321672-0500 0x2bafa78  Default     0x0                  26503  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] allergies_saved {allergies: [], count: 0, skipped: true}
+2026-10-08 18:18:59.353236-0500 0x2bafa78  Default     0x0                  26503  0    Runner: (Flutter) flutter: [LAUNCH] startup snapshot refreshed (onboarding_saved): user=true onboarded=true
+2026-10-08 18:19:45.395443-0500 0x2bafa78  Default     0x0                  26503  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] settings_privacy_tapped {}
+2026-10-08 18:20:59.744654-0500 0x2bafa78  Default     0x0                  26503  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] settings_privacy_tapped {}
+2026-10-08 18:21:31.150504-0500 0x2bafa78  Default     0x0                  26503  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] settings_sign_out_tapped {}
+2026-10-08 18:21:31.697309-0500 0x2bafa78  Default     0x0                  26503  0    Runner: (Flutter) flutter: supabase.auth: INFO: Signing out user with scope: SignOutScope.local
+2026-10-08 18:21:31.701627-0500 0x2bafa78  Default     0x0                  26503  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] user_signed_out {timestamp: 2026-10-08T18:21:31.701496, was_onboarding_signout: false}
+2026-10-08 18:21:31.729768-0500 0x2bafa78  Default     0x0                  26503  0    Runner: (Flutter) flutter: [LAUNCH] startup snapshot refreshed (signed_out): user=false onboarded=false
+2026-10-08 18:21:41.705763-0500 0x2bafa78  Default     0x0                  26503  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] welcome_get_started_tapped {}
+2026-10-08 18:21:41.919581-0500 0x2bafa78  Default     0x0                  26503  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] screen_viewed {screen_name: Sports Selection Onboarding, step_index: 0}
+2026-10-08 18:21:41.985346-0500 0x2bafa78  Default     0x0                  26503  0    Runner: (Flutter) flutter: [LAUNCH] startup snapshot refreshed (signed_in): user=false onboarded=false
+2026-10-08 18:21:53.324459-0500 0x2bafa78  Default     0x0                  26503  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] sports_selected {sports: [running], running: true, cycling: false, swimming: false, triathlon: false, count: 1}
+2026-10-08 18:21:53.324730-0500 0x2bafa78  Default     0x0                  26503  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] onboarding_step_completed {step_name: sports_selection, step_index: 0}
+2026-10-08 18:21:53.349315-0500 0x2bafa78  Default     0x0                  26503  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] screen_viewed {screen_name: Goals Onboarding, step_index: 1}
+2026-10-08 18:21:57.169772-0500 0x2bafa78  Default     0x0                  26503  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] goals_selected {goals: [performance], count: 1}
+2026-10-08 18:21:57.170500-0500 0x2bafa78  Default     0x0                  26503  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] onboarding_step_completed {step_name: goals, step_index: 1}
+2026-10-08 18:21:57.199275-0500 0x2bafa78  Default     0x0                  26503  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] screen_viewed {screen_name: Pitfalls Onboarding, step_index: 2}
+2026-10-08 18:22:01.067185-0500 0x2bafa78  Default     0x0                  26503  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] pitfalls_selected {pitfalls: [energy_crash], count: 1}
+2026-10-08 18:22:01.067402-0500 0x2bafa78  Default     0x0                  26503  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] onboarding_step_completed {step_name: pitfalls, step_index: 2}
+2026-10-08 18:22:01.098837-0500 0x2bafa78  Default     0x0                  26503  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] screen_viewed {screen_name: Connect Training Onboarding, step_index: 3}
+2026-10-08 18:22:01.188899-0500 0x2bafa78  Default     0x0                  26503  0    Runner: (Flutter) flutter: 🔑 ConnectTrainingController: Using real user ID: f514bc05-1a9d-4c56-adce-e6060ec34ba0
+2026-10-08 18:22:01.188978-0500 0x2bafa78  Default     0x0                  26503  0    Runner: (Flutter) flutter:    (user profile exists: false, onboardingCompleted: null)
+2026-10-08 18:22:01.189029-0500 0x2bafa78  Default     0x0                  26503  0    Runner: (Flutter) flutter:    (auth user: f514bc05-1a9d-4c56-adce-e6060ec34ba0, resolved user: f514bc05-1a9d-4c56-adce-e6060ec34ba0)
+2026-10-08 18:22:07.797646-0500 0x2bafa78  Default     0x0                  26503  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] connect_training_declined {}
+2026-10-08 18:22:07.798057-0500 0x2bafa78  Default     0x0                  26503  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] onboarding_step_completed {step_name: connect_training, step_index: 3}
+2026-10-08 18:22:07.855873-0500 0x2bafa78  Default     0x0                  26503  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] screen_viewed {screen_name: Personal Info Onboarding, step_index: 4}
+2026-10-08 18:22:12.302020-0500 0x2bafa78  Default     0x0                  26503  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] onboarding_step_completed {step_name: personal_info, step_index: 4}
+2026-10-08 18:22:12.333973-0500 0x2bafa78  Default     0x0                  26503  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] screen_viewed {screen_name: Body Composition Onboarding, step_index: 5}
+2026-10-08 18:22:15.683374-0500 0x2bafa78  Default     0x0                  26503  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] onboarding_step_completed {step_name: body_composition, step_index: 5}
+2026-10-08 18:22:15.718440-0500 0x2bafa78  Default     0x0                  26503  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] screen_viewed {screen_name: Nutrition Settings Onboarding, step_index: 6}
+2026-10-08 18:22:20.072038-0500 0x2bafa78  Default     0x0                  26503  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] onboarding_step_completed {step_name: nutrition_settings, step_index: 6}
+2026-10-08 18:22:20.123842-0500 0x2bafa78  Default     0x0                  26503  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] screen_viewed {screen_name: Plan Reveal Onboarding, step_index: 7}
+2026-10-08 18:22:22.951591-0500 0x2bafa78  Default     0x0                  26503  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] plan_preview_viewed {is_generic: false, used_training_data: false}
+2026-10-08 18:22:24.317821-0500 0x2bafa78  Default     0x0                  26503  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] onboarding_step_completed {step_name: plan_reveal, step_index: 7}
+2026-10-08 18:22:24.348174-0500 0x2bafa78  Default     0x0                  26503  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] screen_viewed {screen_name: Daily Plan Preview Onboarding, step_index: 8}
+2026-10-08 18:22:24.348437-0500 0x2bafa78  Default     0x0                  26503  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] daily_preview_tab_viewed {tab: workout}
+2026-10-08 18:22:28.469750-0500 0x2bafa78  Default     0x0                  26503  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] onboarding_step_completed {step_name: daily_plan_preview, step_index: 8}
+2026-10-08 18:22:28.470223-0500 0x2bafa78  Default     0x0                  26503  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] onboarding_completed {step_count: 9, duration_sec: 46}
+2026-10-08 18:22:28.486459-0500 0x2bafa78  Default     0x0                  26503  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] screen_viewed {screen_name: Post-Onboarding Auth, mode: signup}
+2026-10-08 18:22:38.382211-0500 0x2bafa78  Default     0x0                  26503  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] screen_viewed {screen_name: Email Signup}
+2026-10-08 18:23:10.858332-0500 0x2bafa78  Default     0x0                  26503  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] auth_flow_started {provider: email, source: post_onboarding}
+2026-10-08 18:23:11.981237-0500 0x2bafa78  Default     0x0                  26503  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] email_verification_required {user_id: f514bc05-1a9d-4c56-adce-e6060ec34ba0, flow: link}
+2026-10-08 18:23:30.441497-0500 0x2bafa78  Default     0x0                  26503  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] screen_viewed {screen_name: Email Login}
+2026-10-08 18:24:22.057884-0500 0x2bafa78  Default     0x0                  26503  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] auth_flow_started {provider: email, source: post_onboarding_login}
+2026-10-08 18:24:22.842500-0500 0x2bafa78  Default     0x0                  26503  0    Runner: (Flutter) flutter: [LAUNCH] startup snapshot refreshed (signed_in): user=true onboarded=true
+2026-10-08 18:24:22.917286-0500 0x2bafa78  Default     0x0                  26503  0    Runner: (Flutter) flutter: [LAUNCH] startup snapshot refreshed (anonymous_upgrade_saved): user=true onboarded=true
+2026-10-08 18:24:22.917577-0500 0x2bafa78  Default     0x0                  26503  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] email_sign_in_success {user_id: e482a890-d753-4497-9d2e-74bf50be3931, migrated_data: false}
+2026-10-08 18:24:22.927616-0500 0x2bafa78  Default     0x0                  26503  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] auth_flow_completed {provider: email, source: post_onboarding_login}
+2026-10-08 18:25:03.665086-0500 0x2bbbc8a  Default     0x0                  33186  0    Runner: (Flutter) Plugin AppLinksIosPlugin uses deprecated application lifecycle events. Please contact plugin maintainers and request UIScene lifecycle support. This will be required in a future version of Flutter. See https://docs.flutter.dev/release/breaking-changes/uiscenedelegate#migration-guide-for-flutter-plugins
+2026-10-08 18:25:03.666686-0500 0x2bbbc8a  Default     0x0                  33186  0    Runner: (Flutter) Plugin FlutterWebAuth2Plugin uses deprecated application lifecycle events. Please contact plugin maintainers and request UIScene lifecycle support. This will be required in a future version of Flutter. See https://docs.flutter.dev/release/breaking-changes/uiscenedelegate#migration-guide-for-flutter-plugins
+2026-10-08 18:25:03.672909-0500 0x2bbbc8a  Default     0x0                  33186  0    Runner: (Flutter) Plugin FLTGoogleSignInPlugin uses deprecated application lifecycle events. Please contact plugin maintainers and request UIScene lifecycle support. This will be required in a future version of Flutter. See https://docs.flutter.dev/release/breaking-changes/uiscenedelegate#migration-guide-for-flutter-plugins
+2026-10-08 18:25:03.710901-0500 0x2bbbcc4  Default     0x0                  33186  0    Runner: (Flutter) flutter: The Dart VM service is listening on http://127.0.0.1:64111/JXLCmHZLcAM=/
+2026-10-08 18:25:05.024429-0500 0x2bbbc8a  Default     0x0                  33186  0    Runner: (Flutter) flutter: -------------------------------------------------------------------------------
+2026-10-08 18:25:05.063166-0500 0x2bbbc8a  Default     0x0                  33186  0    Runner: (Flutter) flutter: supabase.supabase_flutter: INFO: ***** Supabase init completed *****
+2026-10-08 18:25:05.323364-0500 0x2bbbc8a  Default     0x0                  33186  0    Runner: (Flutter) flutter: [LAUNCH] pending signup: none
+2026-10-08 18:25:06.031408-0500 0x2bbbc8a  Default     0x0                  33186  0    Runner: (Flutter) flutter: [LAUNCH] nudge sweep activities=0 estimated=0 longCandidates=0
+2026-10-08 18:25:06.032364-0500 0x2bbbc8a  Default     0x0                  33186  0    Runner: (Flutter) flutter: [LAUNCH] nudge evaluate candidates=0 fastFire=false
+2026-10-08 18:25:06.417787-0500 0x2bbbc8a  Default     0x0                  33186  0    Runner: (Flutter) flutter: [LAUNCH] plugin.initialize() starting (handler not yet attached)
+2026-10-08 18:25:06.421974-0500 0x2bbbc8a  Default     0x0                  33186  0    Runner: (Flutter) flutter: [LAUNCH] plugin.initialize() done (handler attached)
+2026-10-08 18:25:06.491228-0500 0x2bbbc8a  Default     0x0                  33186  0    Runner: (Flutter) flutter: [LAUNCH] launchDetails didNotificationLaunchApp=false payload=null
+2026-10-08 18:25:06.492385-0500 0x2bbbc8a  Default     0x0                  33186  0    Runner: (Flutter) flutter: [LAUNCH] onesignal started; permission ask + heal wait for an athlete id
+2026-10-08 18:25:06.512054-0500 0x2bbbc8a  Default     0x0                  33186  0    Runner: (Flutter) flutter: [LAUNCH] permission prompt wait 19ms granted=false
+2026-10-08 18:25:06.512374-0500 0x2bbbc8a  Default     0x0                  33186  0    Runner: (Flutter) flutter: [LAUNCH] notification permission answer: granted=false
+2026-10-08 18:25:06.826878-0500 0x2bbbc8a  Default     0x0                  33186  0    Runner: (Flutter) flutter: [LAUNCH] push heal: permission=false optedIn=false (hydration wait 300ms)
+2026-10-08 18:25:06.827133-0500 0x2bbbc8a  Default     0x0                  33186  0    Runner: (Flutter) flutter: [LAUNCH] push heal: no action
+2026-10-08 18:25:25.787414-0500 0x2bbbc8a  Default     0x0                  33186  0    Runner: (Flutter) flutter: [LAUNCH] welcome redirect: signed in -> /main
+2026-10-08 18:25:26.070830-0500 0x2bbbc8a  Default     0x5cc368b            33186  0    Runner: (Flutter) flutter: [LAUNCH] app resumed
+2026-10-08 18:25:26.082189-0500 0x2bbbc8a  Default     0x0                  33186  0    Runner: (Flutter) flutter: [LAUNCH] nudge sweep activities=0 estimated=0 longCandidates=0
+2026-10-08 18:25:26.082425-0500 0x2bbbc8a  Default     0x0                  33186  0    Runner: (Flutter) flutter: [LAUNCH] nudge evaluate candidates=0 fastFire=false
+2026-10-08 18:25:38.225755-0500 0x2bbbc8a  Default     0x0                  33186  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] screen_viewed {screen_name: Connected Apps Settings}
+2026-10-08 18:25:38.282020-0500 0x2bbbc8a  Default     0x0                  33186  0    Runner: (Flutter) flutter: 🔑 ConnectTrainingController: Using real user ID: e482a890-d753-4497-9d2e-74bf50be3931
+2026-10-08 18:25:38.282072-0500 0x2bbbc8a  Default     0x0                  33186  0    Runner: (Flutter) flutter:    (user profile exists: true, onboardingCompleted: true)
+2026-10-08 18:25:38.282134-0500 0x2bbbc8a  Default     0x0                  33186  0    Runner: (Flutter) flutter:    (auth user: e482a890-d753-4497-9d2e-74bf50be3931, resolved user: e482a890-d753-4497-9d2e-74bf50be3931)
+2026-10-08 18:25:38.282787-0500 0x2bbbc8a  Default     0x0                  33186  0    Runner: (Flutter) flutter: 🔑 ConnectTrainingController: Using real user ID: e482a890-d753-4497-9d2e-74bf50be3931
+2026-10-08 18:25:38.282828-0500 0x2bbbc8a  Default     0x0                  33186  0    Runner: (Flutter) flutter:    (user profile exists: true, onboardingCompleted: true)
+2026-10-08 18:25:38.282879-0500 0x2bbbc8a  Default     0x0                  33186  0    Runner: (Flutter) flutter:    (auth user: e482a890-d753-4497-9d2e-74bf50be3931, resolved user: e482a890-d753-4497-9d2e-74bf50be3931)
+2026-10-08 18:25:56.941413-0500 0x2bbbc8a  Default     0x0                  33186  0    Runner: (Flutter) flutter: [LAUNCH] back fallback: canPop=false — going home
+2026-10-08 18:26:17.693054-0500 0x2bbbc8a  Default     0x0                  33186  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] settings_sign_out_tapped {}
+2026-10-08 18:26:17.939670-0500 0x2bbbc8a  Default     0x0                  33186  0    Runner: (Flutter) flutter: supabase.auth: INFO: Signing out user with scope: SignOutScope.local
+2026-10-08 18:26:17.947826-0500 0x2bbbc8a  Default     0x0                  33186  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] user_signed_out {timestamp: 2026-10-08T18:26:17.947626, was_onboarding_signout: false}
+2026-10-08 18:26:18.044053-0500 0x2bbbc8a  Default     0x0                  33186  0    Runner: (Flutter) flutter: [LAUNCH] startup snapshot refreshed (signed_out): user=false onboarded=false
+2026-10-08 18:26:36.923241-0500 0x2bbbc8a  Default     0x0                  33186  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] welcome_login_tapped {}
+2026-10-08 18:26:36.940595-0500 0x2bbbc8a  Default     0x0                  33186  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] screen_viewed {screen_name: Post-Onboarding Auth, mode: login}
+2026-10-08 18:26:49.238695-0500 0x2bbbc8a  Default     0x0                  33186  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] welcome_login_tapped {}
+2026-10-08 18:26:49.254342-0500 0x2bbbc8a  Default     0x0                  33186  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] screen_viewed {screen_name: Post-Onboarding Auth, mode: login}
+2026-10-08 18:26:57.310156-0500 0x2bbbc8a  Default     0x0                  33186  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] screen_viewed {screen_name: Email Login}
+2026-10-08 18:27:17.964528-0500 0x2bbbc8a  Default     0x0                  33186  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] auth_flow_started {provider: email, source: post_onboarding_login}
+2026-10-08 18:27:19.563342-0500 0x2bbbc8a  Default     0x0                  33186  0    Runner: (Flutter) flutter: [LAUNCH] startup snapshot refreshed (sign_in_profile_saved): user=true onboarded=true
+2026-10-08 18:27:19.563595-0500 0x2bbbc8a  Default     0x0                  33186  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] email_sign_in_success {user_id: e482a890-d753-4497-9d2e-74bf50be3931, migrated_data: false}
+2026-10-08 18:27:22.475312-0500 0x2bbbc8a  Default     0x0                  33186  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] auth_flow_completed {provider: email, source: post_onboarding_login}
+2026-10-08 18:27:22.586282-0500 0x2bbbc8a  Default     0x0                  33186  0    Runner: (Flutter) flutter: [LAUNCH] startup snapshot refresh skipped (signed_in): superseded by a later refresh or rebuild
+2026-10-08 18:27:39.232537-0500 0x2bbbc8a  Default     0x0                  33186  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] settings_delete_account_tapped {}
+2026-10-08 18:27:40.955731-0500 0x2bbbc8a  Default     0x0                  33186  0    Runner: (Flutter) flutter: supabase.auth: INFO: Signing out user with scope: SignOutScope.local
+2026-10-08 18:27:40.956416-0500 0x2bbbc8a  Default     0x0                  33186  0    Runner: (Flutter) flutter: 📊 [ANALYTICS] user_signed_out {timestamp: 2026-10-08T18:27:40.956314, was_onboarding_signout: false}
+2026-10-08 18:27:40.985144-0500 0x2bbbc8a  Default     0x0                  33186  0    Runner: (Flutter) flutter: [LAUNCH] startup snapshot refreshed (signed_out): user=false onboarded=false

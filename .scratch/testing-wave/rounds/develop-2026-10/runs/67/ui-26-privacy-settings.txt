@@ -1,0 +1,8 @@
+Application 'Endurance Dev' None x=0 y=0 w=402 h=874
+Button 'Back' None x=4 y=66 w=48 h=48
+Heading 'Privacy' None x=155 y=73 w=90 h=34
+CheckBox "Share anonymous usage data\nShares which screens and features you use — via Mixpanel — so we can see what's working, along with basic profile details (age, gender, weight and gut-training level). It does not include your meal logs, and we run no advertising SDKs.\nTurning this off stops usage data immediately." '1' x=16 y=134 w=370 h=225
+StaticText 'To run the app\nYour profile, workouts and meal logs are stored in your account so the app can plan your fueling, and we collect crash reports to keep it working. These are needed to provide the service and are not covered by the toggle above. We never sell or share your data, and we run no advertising SDKs.' None x=16 y=375 w=370 h=196
+GenericElement 'Legal' None x=16 y=587 w=370 h=182
+StaticText 'Privacy Policy' None x=32 y=641 w=338 h=56
+StaticText 'Terms of Service' None x=32 y=697 w=338 h=56
