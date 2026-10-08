@@ -354,6 +354,10 @@ the above and follows this instead:
    async path you add, write down what happens if it runs twice at once or after a refresh" (#77).
    A test that starts a timer cancels it inside the test body or with `addTearDown` before the pump,
    never in a `tearDown` alone: flutter_test checks pending timers before `tearDown` runs (#110).
+   Before committing, `grep -rl` each changed class and method name under `test/` and run every file it
+   names, not only the ticket's list (#116). A ticket that adds a reporting helper or a by-contract silent
+   catch adds it to `source_guard.dart`'s `reportCalls` or a reasoned `allow_list.md` entry in the same
+   commit and runs `test/shared/source_guard/` itself (#117).
 2. No SSOT or decisions-page writes during a wave, not even open questions. A product question an
    agent raises goes in its ticket file under a `**Questions for Lee.**` heading, never only in a
    commit body (#111); the lead's close-out lists them and takes them to Lee, then to the review queue.

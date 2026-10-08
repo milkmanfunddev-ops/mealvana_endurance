@@ -28,14 +28,6 @@ Their dates come from the wave each entry names.
   tap; (b) nothing a run sends off the machine carries a personal address: a fetch helper uses a neutral
   User-Agent, and a food photo comes from the repo's fixtures (`test/fixtures/` or SCRATCH-generated), never the web.
   Done 2026-10-08 (before wave 4): runbook step 5 carries both rules (the `CRED type` focus check and the neutral User-Agent).
-- 2026-10-08 · develop-2026-10 · open · **#116 fix-wave agents skip tests of the classes they change (wave 4).** Ticket 42's agent
-  did not run `anonymous_account_upgrade_test.dart` (it exercises `verifyEmailOtp`, which 42 changed); the full suite found
-  four reds the agent could have found in a minute. Rule for the fix-wave prompt: before committing, `grep -rl <each
-  changed class or method name> test/` and run every file it names, not only the ticket's list.
-- 2026-10-08 · develop-2026-10 · open · **#117 the report source guard does not know new Report helpers (wave 4).** Ticket
-  41 added `Report.faultUnlessWeather` and the guard flagged every catch that used it (12 sites) in the full suite only.
-  A ticket that adds a reporting helper or a by-contract silent catch adds it to `source_guard.dart`'s `reportCalls` or a
-  reasoned `allow_list.md` entry in the same commit, and runs `test/shared/source_guard/` itself.
 - 2026-10-08 · develop-2026-10 · done · **#118 a notifier that writes a failed call into state sends an area-unknown event
   (wave 4 review).** Ticket 45's new controller stored the `MealAiException` outcome in state, so the Riverpod observer
   faulted "my bike ride" even though the service had reported it and the widget noted it. The fix-wave prompt now says:
@@ -54,10 +46,6 @@ Their dates come from the wave each entry names.
   (wave 3 triage).** Twelve rulings produced eleven fix tickets; the lead cut the Touches research into three Opus
   drafters working from the Findings and a format sample, and reviewed the files. Faster than lead-written tickets
   and the Touches lists are checked against code.
-- 2026-10-08 · develop-2026-10 · open · **#115 wave 3's three retest tickets each carried 13 checks and took
-  22–39 minutes of agent time with 15 Findings apiece.** The ten-check rule held up: nothing was skipped, but
-  the look-around Findings (5 per ticket) are now broader than the checks. Next retest tickets cap the
-  look-around at one Finding per screen.
 - 2026-10-07 · develop-2026-10 · done · **#108 a backport ticket runs as sequential agents by area, in one worktree.**
   Ticket 29 (34 mealplanning items plus 16 predecessors, Drift v23 then v24) went to one worktree
   with one Opus agent per area, one after the other, each reading the previous agent's notes. Parallel
@@ -82,6 +70,21 @@ Their dates come from the wave each entry names.
 
 ## Done
 
+- 2026-10-08 · develop-2026-10 · done · **#115 wave 3's three retest tickets each carried 13 checks and took
+  22–39 minutes of agent time with 15 Findings apiece.** The ten-check rule held up: nothing was skipped, but
+  the look-around Findings (5 per ticket) are now broader than the checks. Next retest tickets cap the
+  look-around at one Finding per screen.
+  Done 2026-10-08 (before wave 5): retest tickets 48, 49 and 50 each say "capped at ONE followup-test Finding per screen".
+- 2026-10-08 · develop-2026-10 · done · **#116 fix-wave agents skip tests of the classes they change (wave 4).** Ticket 42's agent
+  did not run `anonymous_account_upgrade_test.dart` (it exercises `verifyEmailOtp`, which 42 changed); the full suite found
+  four reds the agent could have found in a minute. Rule for the fix-wave prompt: before committing, `grep -rl <each
+  changed class or method name> test/` and run every file it names, not only the ticket's list.
+  Done 2026-10-08 (before wave 5): runbook fix-wave rule 1 carries the grep-the-tests rule.
+- 2026-10-08 · develop-2026-10 · done · **#117 the report source guard does not know new Report helpers (wave 4).** Ticket
+  41 added `Report.faultUnlessWeather` and the guard flagged every catch that used it (12 sites) in the full suite only.
+  A ticket that adds a reporting helper or a by-contract silent catch adds it to `source_guard.dart`'s `reportCalls` or a
+  reasoned `allow_list.md` entry in the same commit, and runs `test/shared/source_guard/` itself.
+  Done 2026-10-08 (before wave 5): runbook fix-wave rule 1 carries the source-guard rule.
 - 2026-09-25 · mealplanning-2026-09 · done · **#82 a new timeout made retried writes unsafe (wave 33).** Ticket 129 added a 20 s transport
   timeout that reports "needs a connection". The edge function keeps running after the app hangs
   up, so a slow `log_from_plan`, `pick_meals` or `save_meal` could land while the screen said it
