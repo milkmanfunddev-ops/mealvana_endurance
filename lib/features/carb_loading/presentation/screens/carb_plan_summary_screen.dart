@@ -41,9 +41,10 @@ class CarbPlanSummaryScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final planAsync = ref.watch(carbLoadingPlanProvider(eventId));
     final plan = planAsync.value;
-    final days = plan == null
+    final daysAsync = plan == null
         ? null
-        : ref.watch(carbLoadingDaysForPlanProvider(plan.id)).value;
+        : ref.watch(carbLoadingDaysForPlanProvider(plan.id));
+    final days = daysAsync?.value;
     final event = ref.watch(eventDetailProvider(eventId)).value?.event;
     final cream = AppColors.cream;
 
@@ -51,67 +52,91 @@ class CarbPlanSummaryScreen extends ConsumerWidget {
     final daysUntilRace = raceDate == null ? null : _daysUntil(raceDate);
     final raceDay = daysUntilRace != null && daysUntilRace <= 0;
 
+    final hasPlan = plan != null && days != null && days.isNotEmpty;
+    // Empty only once the reads have RESOLVED to nothing — a plan that was
+    // removed, or a stale door into a plan that never existed. While the
+    // first read is still in flight the body stays blank under the header,
+    // so the back control is always there and the page never strands.
+    final resolvedEmpty =
+        !hasPlan && !planAsync.isLoading && !(daysAsync?.isLoading ?? false);
+
     return Scaffold(
       backgroundColor: AppColors.blackberry,
       body: SafeArea(
-        child: plan == null || days == null || days.isEmpty
-            ? const SizedBox.shrink()
-            : Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+              child: Row(
                 children: [
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-                    child: Row(
-                      children: [
-                        _backButton(context),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Text(
-                            'Carb Loading Plan',
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              fontFamily: 'Compadre',
-                              fontSize: 18,
-                              color: cream,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+                  _backButton(context),
+                  const SizedBox(width: 10),
                   Expanded(
-                    child: ListView(
-                      padding: const EdgeInsets.fromLTRB(16, 6, 16, 24),
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.only(left: 2, bottom: 6),
-                          child: Text(
-                            '${_protocolName(plan.totalDays)} · '
-                                    '${_windowStr(days)}'
-                                .toUpperCase(),
-                            style: TextStyle(
-                              fontFamily: 'Apercu',
-                              fontSize: 10,
-                              fontWeight: FontWeight.w600,
-                              letterSpacing: 0.8,
-                              color: cream.withValues(alpha: 0.45),
-                            ),
-                          ),
-                        ),
-                        for (final d in [
-                          ...days,
-                        ]..sort((a, b) => a.planDate.compareTo(b.planDate)))
-                          _dayRow(ref, d, plan.totalDays),
-                        const SizedBox(height: 14),
-                        _repickRow(context, ref, raceDay, raceDate),
-                        const SizedBox(height: 8),
-                        _deleteRow(context, ref),
-                      ],
+                    child: Text(
+                      'Carb Loading Plan',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontFamily: 'Compadre',
+                        fontSize: 18,
+                        color: cream,
+                      ),
                     ),
                   ),
                 ],
               ),
+            ),
+            if (resolvedEmpty)
+              Padding(
+                key: const ValueKey('carb_summary.empty'),
+                padding: const EdgeInsets.fromLTRB(18, 18, 18, 0),
+                child: Text(
+                  'No carb loading plan for this event. Head back and set '
+                  'one up from the event.',
+                  style: TextStyle(
+                    fontFamily: 'Apercu',
+                    fontSize: 12.5,
+                    height: 1.45,
+                    color: cream.withValues(alpha: 0.65),
+                  ),
+                ),
+              )
+            // The literal guard (not [hasPlan]) so `days` promotes and the
+            // ListView children dereference safely.
+            else if (plan != null && days != null && days.isNotEmpty)
+              Expanded(
+                child: ListView(
+                  padding: const EdgeInsets.fromLTRB(16, 6, 16, 24),
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.only(left: 2, bottom: 6),
+                      child: Text(
+                        '${_protocolName(plan.totalDays)} · '
+                                '${_windowStr(days)}'
+                            .toUpperCase(),
+                        style: TextStyle(
+                          fontFamily: 'Apercu',
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: 0.8,
+                          color: cream.withValues(alpha: 0.45),
+                        ),
+                      ),
+                    ),
+                    for (final d in [
+                      ...days,
+                    ]..sort((a, b) => a.planDate.compareTo(b.planDate)))
+                      _dayRow(ref, d, plan.totalDays),
+                    const SizedBox(height: 14),
+                    _repickRow(context, ref, raceDay, raceDate),
+                    const SizedBox(height: 8),
+                    _deleteRow(context, ref),
+                  ],
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }
