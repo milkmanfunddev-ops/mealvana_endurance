@@ -1,6 +1,6 @@
 # 37: Sync-error text becomes a code on the row, mapped to content keys at display time
 
-**Status:** in-progress (wave 4, 2026-10-08)
+**Status:** fixed (wave 4, f9db3e64) awaiting retest
 **Labels:** fix, round:develop-2026-10, area:integrations
 **Branch:** `develop-next` (fix-wave worktree)
 **Blocked by:** 35+36's agent (shared `content_keys.dart` and `content_defaults.json`); run after it merges.
@@ -41,5 +41,9 @@ Deploy (dev, by the lead, from the merged tree): every function that imports `_s
 - Content keys `integrations.sync_error_network|_rate_limited|_http|_reauth|_unknown`. `_unknown` is new copy ("{provider} sync failed. Please try again."); it replaces the old "sync failed: <stripped exception text>".
 - Server: `markGarminRequiresReauth` writes `reauth_required` (`GARMIN_REAUTH_REQUIRED_CODE`). Functions importing `_shared/garmin/token.ts` (`grep -rl "garmin/token" supabase/functions`): **garmin-backfill**, **garmin-user-mapping**, **delete-user**. Only garmin-backfill calls `markGarminRequiresReauth`, so it is the one whose behaviour changes; garmin-push, garmin-ping and garmin-deregistration do not import the file.
 - Twice at once / after a refresh: no new async path. Two failing syncs at once both write a code through `updateSyncStatus`; the last write wins and both are codes, and a stored `reauth_required` survives a concurrent `network` (keepsReauth). The controller's `_syncingProviders` guard still drops a second import of the same provider. After a refresh (provider rebuild) `errorMessage`/`errorProvider` reset with the state; the row keeps its code and `needsReconnect` still comes from `last_sync_status`. A content refresh between the failure and the render only changes the text, never the code.
+
+**Questions for Lee.**
+1. The `unknown` text is new copy: "{provider} sync failed. Please try again." (it used to append the stripped exception text). Keep it, or should it say more?
+2. Runna still writes the raw `e.message` / `e.toString()` into `last_sync_error` (outside this ticket's writer list; it reads as `unknown` on screen, but the raw text, address included, still reaches the server row). Fold Runna into the codes in a follow-up ticket?
 
 Next: /testing-wave develop-2026-10 (fix wave 4)
