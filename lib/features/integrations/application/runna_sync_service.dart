@@ -255,7 +255,8 @@ class RunnaSyncService {
         area: _provider,
         message: 'Runna sync failed: network',
       );
-      return RunnaSyncResult.networkError(e.message);
+      // Ticket 52: the code, never the message (it can carry the feed URL).
+      return RunnaSyncResult.networkError(syncErrorCode(e));
     } on IntegrationApiException catch (e, st) {
       // The feed answered but not with a calendar (revoked URL, 4xx/5xx).
       await _r.degraded(
@@ -269,15 +270,16 @@ class RunnaSyncService {
         userId,
         _provider,
         status: 'error',
-        error: e.message,
+        // Ticket 52 (as 37 for the others): a wire code, never the raw text.
+        error: syncErrorCode(e),
       );
-      return RunnaSyncResult.error(e.message);
+      return RunnaSyncResult.error(syncErrorCode(e));
     } catch (e, st) {
       await _integrationsRepository.updateSyncStatus(
         userId,
         _provider,
         status: 'error',
-        error: e.toString(),
+        error: syncErrorCode(e), // ticket 52: a code, not the exception text
       );
       await _r.fault(
         e,
@@ -285,7 +287,7 @@ class RunnaSyncService {
         area: _provider,
         message: 'Runna sync failed',
       );
-      return RunnaSyncResult.error(e.toString());
+      return RunnaSyncResult.error(syncErrorCode(e));
     }
   }
 
