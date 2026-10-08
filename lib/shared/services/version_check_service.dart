@@ -168,7 +168,7 @@ class VersionCheckService {
       // count and, this being the startup chain, a LaunchTrail line (D9). A
       // parse or schema error in app_config is still a real fault. No
       // tracker is passed: this runs before consent is resolved, so the
-      // count is held until analytics starts (`ExpectedFailureCounts`).
+      // count is a Sentry counter, not analytics (ticket 54).
       final weather = await _r.faultUnlessWeather(
         e,
         stackTrace: stackTrace,

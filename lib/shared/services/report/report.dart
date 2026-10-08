@@ -11,6 +11,7 @@
 /// | `note`      | breadcrumb; + `warning` event in D9 areas | no                | yes             |
 /// | `info`      | structured log                           | no                | yes             |
 /// | `debug`     | structured log                           | no                | yes             |
+/// | `count`     | metric counter (+1, tags as attributes)  | no                | yes             |
 ///
 /// `fault` downgrades itself to Degraded when the error matches the
 /// expected-failure allow-list (`expected_failures.dart`) and drops test-only
@@ -20,8 +21,10 @@
 /// Some expected outcomes leave no event at all (ticket 41): network weather
 /// at a site that already falls back ([ExpectedOutcomes.faultUnlessWeather])
 /// and an athlete's own turn in the auth flows ([ExpectedOutcomes.
-/// noteExpected]) become breadcrumbs, and each sends one plain
-/// [expectedFailureEvent] to Mixpanel so they are still counted.
+/// noteExpected]) become breadcrumbs, and each is still counted: one plain
+/// [expectedFailureEvent] to Mixpanel when the site holds a tracker, or one
+/// Sentry metric counter ([Report.count]) when it does not (ticket 54: the
+/// startup sites run before consent is known and record in Sentry).
 library;
 
 import 'dart:async';
@@ -122,6 +125,11 @@ abstract class Report {
 
   /// Developer narrative. Sentry structured log, console in debug builds.
   void debug(String message, {String? area, Map<String, dynamic>? data});
+
+  /// Adds one to the Sentry metric counter [name], with [tags] as its
+  /// attributes. Countable on its own, unlike a breadcrumb, and never an
+  /// event or an `error_reported` (ticket 54: the startup expected failures).
+  void count(String name, {Map<String, String>? tags});
 
   /// A plain breadcrumb with no severity meaning.
   void breadcrumb(
@@ -496,6 +504,34 @@ class SentryReport implements Report {
     );
   }
 
+  /// Through the SDK's metrics API (`Sentry.metrics`, sentry 9.30.1), which
+  /// like `Sentry.logger` routes to the current hub. The SDK buffers the
+  /// counter and flushes it with the structured logs. A throw from the SDK is
+  /// written down like a failed capture and never reaches the caller.
+  @override
+  void count(String name, {Map<String, String>? tags}) {
+    _mirror(
+      level: SentryLevel.info,
+      message: 'count $name',
+      area: _normaliseArea(tags?['area']),
+      data: tags,
+    );
+    if (!_hub.isEnabled) return;
+    try {
+      Sentry.metrics.count(
+        name,
+        1,
+        attributes: <String, SentryAttribute>{
+          if (tags != null)
+            for (final entry in tags.entries)
+              entry.key: SentryAttribute.string(entry.value),
+        },
+      );
+    } catch (sdkError) {
+      _captureFailed(sdkError);
+    }
+  }
+
   @override
   Future<void> setUser(String id, {String? role, String? deviceId}) async {
     await _hub.configureScope((scope) async {
@@ -659,6 +695,9 @@ class NoopReport implements Report {
   }) {}
 
   @override
+  void count(String name, {Map<String, String>? tags}) {}
+
+  @override
   Future<void> setUser(String id, {String? role, String? deviceId}) async {}
 
   @override
@@ -705,81 +744,31 @@ const Set<ExpectedFailure> networkWeather = <ExpectedFailure>{
   ExpectedFailure.connectionReset,
 };
 
-/// Where [expectedFailureEvent] goes when a site has no tracker in hand.
-///
-/// The version check and the region lookup run before consent is resolved
-/// and before Mixpanel starts, and reading the tracker there would read
-/// consent before the region is known (`app_startup_provider.dart`, step 0a).
-/// So a count with no tracker is held here until the app attaches its
-/// consent-gated tracker after analytics starts
-/// (`AppStartupService._initializeAnalytics`), then sent; later ones go
-/// straight to it. With no consent the tracker is a no-op and nothing leaves.
-abstract final class ExpectedFailureCounts {
-  static AnalyticsTracker? Function()? _sink;
-  static final List<({String area, String reason})> _pending = [];
-
-  /// Most counts held before analytics starts; one launch never gets near.
-  static const int maxPending = 50;
-
-  /// Counts waiting for [attach].
-  static List<({String area, String reason})> get pending =>
-      List.unmodifiable(_pending);
-
-  /// Sends the held counts through [sink] and routes later ones to it.
-  static Future<void> attach(AnalyticsTracker? Function() sink) async {
-    _sink = sink;
-    final held = List.of(_pending);
-    _pending.clear();
-    for (final count in held) {
-      await trackExpectedFailure(
-        null,
-        area: count.area,
-        reason: count.reason,
-      );
-    }
-  }
-
-  static void _hold(String area, String reason, Report? report) {
-    if (_pending.length >= maxPending) {
-      (report ?? SentryReport.global).breadcrumb(
-        'expected_failure not counted: buffer full',
-        category: '$area.expected',
-        data: <String, dynamic>{'reason': reason},
-      );
-      return;
-    }
-    _pending.add((area: area, reason: reason));
-  }
-
-  @visibleForTesting
-  static void debugReset() {
-    _sink = null;
-    _pending.clear();
-  }
-}
-
-/// Sends [expectedFailureEvent] through [analytics], or through the app's
-/// attached tracker when [analytics] is null ([ExpectedFailureCounts]). A
-/// tracker that throws must not turn an expected outcome into a crash; the
-/// lost count is written down as a breadcrumb through [report] (D9).
+/// Counts one expected failure. With a tracker in hand (the in-session
+/// sites: auth outcomes, the lesson video) it is one plain
+/// [expectedFailureEvent] to analytics. With none (`analytics` null: the
+/// startup sites, which run before consent is known) it is one Sentry
+/// counter, `Report.count(expectedFailureEvent, {area, reason})`, through
+/// [report] or [SentryReport.global]; nothing is held for analytics to send
+/// later (develop-2026-10 ticket 54, Lee 2026-10-08: "we can send them to
+/// sentry but we needn't necessarily have any analytics"). A tracker that
+/// throws must not turn an expected outcome into a crash; the lost count is
+/// written down as a breadcrumb through [report] (D9).
 Future<void> trackExpectedFailure(
   AnalyticsTracker? analytics, {
   required String area,
   required String reason,
   Report? report,
 }) async {
-  AnalyticsTracker? tracker = analytics;
-  try {
-    tracker ??= ExpectedFailureCounts._sink?.call();
-  } catch (_) {
-    tracker = null;
-  }
-  if (tracker == null) {
-    ExpectedFailureCounts._hold(area, reason, report);
+  if (analytics == null) {
+    (report ?? SentryReport.global).count(
+      expectedFailureEvent,
+      tags: <String, String>{'area': area, 'reason': reason},
+    );
     return;
   }
   try {
-    await tracker.track(
+    await analytics.track(
       expectedFailureEvent,
       properties: <String, dynamic>{'area': area, 'reason': reason},
     );
@@ -797,11 +786,16 @@ Future<void> trackExpectedFailure(
 /// with no change to the interface.
 extension ExpectedOutcomes on Report {
   /// [fault], unless [error] is network weather ([networkWeather]): then a
-  /// breadcrumb in category `<area>.weather`, one [expectedFailureEvent]
-  /// (through [analytics], or held for the app's tracker when null; see
-  /// [ExpectedFailureCounts]), and no Sentry event. Returns the weather it saw, or
-  /// null when it faulted, so a startup site can also write its LaunchTrail
-  /// line.
+  /// breadcrumb in category `<area>.weather`, one count, and no Sentry event.
+  /// Returns the weather it saw, or null when it faulted, so a startup site
+  /// can also write its LaunchTrail line.
+  ///
+  /// The count, by rule (ticket 54; later callers such as ticket 55 rely on
+  /// it): with [analytics] in hand it is one plain [expectedFailureEvent] to
+  /// that tracker; with no tracker in hand (null) it is one Sentry metric
+  /// counter through [count], `expected_failure` tagged `area` and `reason`,
+  /// and there is NO analytics hold: nothing is queued for a tracker that
+  /// starts later. Never an `error_reported` either way.
   Future<ExpectedFailure?> faultUnlessWeather(
     Object error, {
     StackTrace? stackTrace,

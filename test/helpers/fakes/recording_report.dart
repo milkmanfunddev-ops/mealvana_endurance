@@ -12,7 +12,8 @@ class RecordedReport {
     this.data,
   });
 
-  /// `fault`, `degraded`, `note`, `info`, `debug` or `breadcrumb`.
+  /// `fault`, `degraded`, `note`, `info`, `debug`, `breadcrumb` or `count`
+  /// (then [message] is the counter's name and [tags] its tags).
   final String severity;
   final Object? error;
   final String? message;
@@ -37,6 +38,7 @@ class RecordingReport extends NoopReport {
   List<RecordedReport> get faults => _of('fault');
   List<RecordedReport> get degradeds => _of('degraded');
   List<RecordedReport> get notes => _of('note');
+  List<RecordedReport> get counts => _of('count');
 
   List<RecordedReport> _of(String severity) =>
       calls.where((c) => c.severity == severity).toList(growable: false);
@@ -92,14 +94,24 @@ class RecordingReport extends NoopReport {
     Map<String, dynamic>? data,
   }) async {
     calls.add(
-      RecordedReport(severity: 'note', message: message, area: area, data: data),
+      RecordedReport(
+        severity: 'note',
+        message: message,
+        area: area,
+        data: data,
+      ),
     );
   }
 
   @override
   void info(String message, {String? area, Map<String, dynamic>? data}) {
     calls.add(
-      RecordedReport(severity: 'info', message: message, area: area, data: data),
+      RecordedReport(
+        severity: 'info',
+        message: message,
+        area: area,
+        data: data,
+      ),
     );
   }
 
@@ -127,6 +139,18 @@ class RecordingReport extends NoopReport {
         message: message,
         area: category,
         data: data,
+      ),
+    );
+  }
+
+  @override
+  void count(String name, {Map<String, String>? tags}) {
+    calls.add(
+      RecordedReport(
+        severity: 'count',
+        message: name,
+        area: tags?['area'],
+        tags: tags,
       ),
     );
   }
