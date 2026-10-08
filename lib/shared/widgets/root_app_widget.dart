@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:wiredash/wiredash.dart';
 import '../../theme/kyle_design/app_theme.dart';
 import '../../theme/kyle_design/theme_provider.dart';
@@ -78,6 +79,70 @@ void showLaunchTrailDialogOnce(BuildContext? ctx, Report report) {
       ],
     ),
   );
+}
+
+/// The collection running now, if any. See [collectResumeTaps].
+Future<void>? _resumeCollection;
+
+/// Collects what iOS left for us while the app was backgrounded: a tapped
+/// notification (ticket 34, Finding 22-001) and the native tape lines.
+///
+/// A backgrounded tap produces no new launch, so it never reaches
+/// `getNotificationAppLaunchDetails`; AppDelegate writes its payload to
+/// `ios_un_response_payload` (or, legacy, `ios_legacy_resume_payload`) and
+/// [NotificationService.consumeLegacyResumeTap] routes it.
+///
+/// NO DOUBLE HANDLING WITH THE LAUNCH PATH: a tap that LAUNCHED the app is
+/// read by `NotificationService.initialize()` from launch details or from
+/// `ios_legacy_launch_payload`, a different key. A launch tap and a resume
+/// tap never share a key, so neither path can route the other's tap.
+///
+/// The prefs are RELOADED first. shared_preferences serves reads from a Dart
+/// cache filled at launch; AppDelegate writes UserDefaults natively while we
+/// are away, so without the reload the cache never shows the tap and both
+/// [LaunchTrail.pullNative] and the consume read nothing.
+///
+/// Runs one at a time: a second resume while one is collecting joins the
+/// running one instead of starting another. Two overlapping reloads could
+/// otherwise put a just-consumed key back into the cache (a reload's read
+/// can predate the other's remove reaching the store) and route the tap
+/// twice. A tap written after the running collection reloaded is collected
+/// on the next resume.
+@visibleForTesting
+Future<void> collectResumeTaps(Report report) {
+  final running = _resumeCollection;
+  if (running != null) {
+    const line = 'resume tap collection joined: one already running';
+    LaunchTrail.add(line);
+    report.breadcrumb(line, category: 'push');
+    return running;
+  }
+  final collection = _collectResumeTaps(report).whenComplete(() {
+    _resumeCollection = null;
+  });
+  _resumeCollection = collection;
+  return collection;
+}
+
+Future<void> _collectResumeTaps(Report report) async {
+  try {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.reload();
+  } catch (e, st) {
+    // Carry on with the cache: a tap already in it still routes.
+    LaunchTrail.add('resume prefs reload failed: $e');
+    await report.fault(
+      e,
+      stackTrace: st,
+      area: 'push',
+      message: 'prefs reload on resume failed; backgrounded tap may be missed',
+    );
+  }
+  // Tape what AppDelegate wrote while we were away (a foreground delivery
+  // or a backgrounded tap lands after `begin()` has run), before the
+  // consume tapes what it did with it.
+  LaunchTrail.pullNative();
+  await NotificationService.consumeLegacyResumeTap();
 }
 
 class RootAppWidget extends ConsumerStatefulWidget {
@@ -157,19 +222,29 @@ class _RootAppWidgetState extends ConsumerState<RootAppWidget>
     super.didChangeAppLifecycleState(state);
     if (state == AppLifecycleState.resumed) {
       LaunchTrail.add('app resumed');
-      // Pick up anything AppDelegate wrote while we were away — a foreground
-      // delivery or a backgrounded tap lands after `begin()` has already run,
-      // so a launch-only read can never show it.
-      LaunchTrail.pullNative();
-      if (ref.read(appConfigProvider).devModeEnabled) {
-        Future.delayed(const Duration(seconds: 3), _showTrailDialog);
-      }
+      unawaited(_onResumed(ref.read(reportProvider)));
+    }
+  }
+
+  /// The resume work, in order: collect a backgrounded tap first (so it
+  /// routes before anything else reacts to the resume), then the dev dialog
+  /// and the G27 nudge catch-up.
+  Future<void> _onResumed(Report report) async {
+    await collectResumeTaps(report);
+    if (!mounted) {
+      const line =
+          'resume: root unmounted during tap collection; '
+          'nudge catch-up skipped';
+      LaunchTrail.add(line);
+      report.breadcrumb(line, category: 'push');
+      return;
+    }
+    if (ref.read(appConfigProvider).devModeEnabled) {
+      Future.delayed(const Duration(seconds: 3), _showTrailDialog);
     }
     // G27: the on-open catch-up also runs on every foreground resume.
-    if (state == AppLifecycleState.resumed) {
-      ref.read(carbNudgeCoordinatorProvider.notifier).run();
-      ref.read(nightBeforeNudgeCoordinatorProvider).run();
-    }
+    ref.read(carbNudgeCoordinatorProvider.notifier).run();
+    ref.read(nightBeforeNudgeCoordinatorProvider).run();
   }
 
   @override
