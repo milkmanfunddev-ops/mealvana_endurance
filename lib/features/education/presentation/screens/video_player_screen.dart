@@ -21,7 +21,8 @@ class VideoPlayerScreen extends ConsumerStatefulWidget {
   final String title;
   final String videoUrl;
 
-  /// Education content id, used to attribute `education_video_completed`.
+  /// Education content id, used to attribute `education_video_closed` and
+  /// `education_video_completed`.
   /// Nullable because not every construction site has one to give.
   final String? contentId;
 
@@ -72,6 +73,12 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
     }
   }
 
+  /// The share of a lesson that counts as watched (ticket 41, 32-015).
+  static const double completedPercent = 90;
+
+  /// Every exit sends `education_video_closed`; `education_video_completed`
+  /// only when at least [completedPercent] was watched, so funnels built on
+  /// "completed" mean watched (lesson 1.3 left at 15 % used to log it).
   void _trackWatchCompleted() {
     final duration = _videoController?.value.duration;
     if (_analytics == null ||
@@ -94,23 +101,28 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
           100.0,
         );
 
+    final properties = <String, dynamic>{
+      'video_id': videoId,
+      'title': widget.title,
+      'percent_watched': percent.round(),
+      'watched_sec': _maxPosition.inSeconds,
+      'duration_sec': duration.inSeconds,
+    };
+    _track('education_video_closed', properties);
+    if (percent >= completedPercent) {
+      _track('education_video_completed', properties);
+    }
+  }
+
+  void _track(String event, Map<String, dynamic> properties) {
     try {
-      _analytics!.track(
-        'education_video_completed',
-        properties: {
-          'video_id': videoId,
-          'title': widget.title,
-          'percent_watched': percent.round(),
-          'watched_sec': _maxPosition.inSeconds,
-          'duration_sec': duration.inSeconds,
-        },
-      );
+      _analytics!.track(event, properties: properties);
     } catch (e, stackTrace) {
       _report.fault(
         e,
         stackTrace: stackTrace,
         area: 'education',
-        message: 'analytics: education_video_completed not tracked',
+        message: 'analytics: $event not tracked',
       );
     }
   }
@@ -157,12 +169,16 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
       );
       if (mounted) setState(() {});
     } catch (e, stackTrace) {
-      _report.fault(
+      // Offline is weather (ticket 41, 32-007): iOS says "Could not connect
+      // to the server". A breadcrumb and one count; the screen's "Failed to
+      // load video" with Retry already tells the athlete.
+      _report.faultUnlessWeather(
         e,
         stackTrace: stackTrace,
         area: 'education',
         message: 'Video player failed to initialise',
-        extra: {'videoUrl': widget.videoUrl},
+        data: {'videoUrl': widget.videoUrl},
+        analytics: _analytics,
       );
       if (mounted) {
         setState(() {
