@@ -9,6 +9,7 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:mealvana_endurance/features/activities/application/activity_deduplication_service.dart';
@@ -24,6 +25,7 @@ import 'package:mealvana_endurance/features/integrations/domain/integration_exce
 import 'package:mealvana_endurance/shared/database/app_database.dart';
 
 import '../../helpers/fakes/fake_postgrest.dart';
+import '../../helpers/fakes/recording_report.dart';
 
 const _userId = 'u-138';
 
@@ -70,9 +72,14 @@ void main() {
   late AppDatabase db;
   late FakePostgrest server;
   late IntegrationsRepository repository;
+  late RecordingReport report;
   final statusWrites = <(String, String)>[];
 
+  TestWidgetsFlutterBinding.ensureInitialized();
+
   setUp(() async {
+    // `syncFromRemote` stamps its last sync time in SharedPreferences.
+    SharedPreferences.setMockInitialValues({});
     db = AppDatabase.memory();
     addTearDown(db.close);
     server = FakePostgrest();
@@ -83,9 +90,11 @@ void main() {
     // develop only pushes rows the session owns (DEV-A2).
     await server.signIn(_userId);
     statusWrites.clear();
+    report = RecordingReport();
     repository = IntegrationsRepository(
       database: db,
       supabase: server.client,
+      report: report,
       onSyncStatusWritten: (provider, status) =>
           statusWrites.add((provider, status)),
     );
@@ -276,6 +285,166 @@ void main() {
         DateTime.parse(sent['token_expires_at'] as String).toLocal(),
         row.tokenExpiresAt,
       );
+    });
+  });
+
+  // Ticket 64 (Finding 50-009): a disconnected or missing row takes no status
+  // write. The row below is the dev server's V.O2 row for test@test.com as it
+  // stood on 2026-10-08: inactive, yet still holding a reauth state and an
+  // English sentence written by a disconnect before ticket 47.
+  group('64: a status write never lands on an inactive or missing row', () {
+    Map<String, dynamic> staleVo2ServerRow() => {
+      'id': 'srv-vdot',
+      'user_id': _userId,
+      'provider': 'vdot',
+      'access_token': '',
+      'refresh_token': null,
+      'token_expires_at': null,
+      'provider_athlete_id': _userId,
+      'provider_athlete_name': 'V.O2',
+      'is_active': false,
+      'last_sync_status': requiresReauthStatus,
+      'last_sync_error': 'Please reconnect your V.O2 account',
+      'created_at': '2026-07-03T10:00:00Z',
+      'updated_at': '2026-10-08T13:26:26Z',
+    };
+
+    List<RecordedReport> skipNotes() => report.notes
+        .where(
+          (n) =>
+              n.message ==
+              'Sync status not written: integration inactive or missing',
+        )
+        .toList();
+
+    Future<void> seedStale() async {
+      server.tables['integrations'] = [staleVo2ServerRow()];
+      final seeded = await repository.syncFromRemote(_userId);
+      expect(seeded.success, isTrue);
+    }
+
+    for (final (label, status, error) in [
+      ('a network error', 'error', 'network'),
+      ('a refused token', requiresReauthStatus, reauthRequiredCode),
+    ]) {
+      test('$label on the inactive row writes nothing and is noted', () async {
+        await seedStale();
+        final before = await repository.getIntegration(_userId, 'vdot');
+        final writesBefore = server.writes.length;
+
+        await repository.updateSyncStatus(
+          _userId,
+          'vdot',
+          status: status,
+          error: error,
+        );
+
+        final after = await repository.getIntegration(_userId, 'vdot');
+        expect(after!.isActive, isFalse);
+        expect(after.lastSyncStatus, before!.lastSyncStatus);
+        expect(after.lastSyncError, before.lastSyncError);
+        expect(after.updatedAt, before.updatedAt);
+        expect(after.lastSyncAt, before.lastSyncAt);
+        // Not dirtied, and nothing reached the server.
+        final upload = await repository.uploadDirtyRecords(_userId);
+        expect(upload.success, isTrue);
+        expect(upload.count, 0);
+        expect(server.writes.length, writesBefore);
+        // No Reconnect notice for a provider the athlete disconnected.
+        expect(statusWrites, isEmpty);
+        final notes = skipNotes();
+        expect(notes, hasLength(1));
+        expect(notes.single.area, 'integrations');
+        expect(notes.single.data, {
+          'provider': 'vdot',
+          'status': status,
+          'rowFound': true,
+        });
+      });
+    }
+
+    test('a missing row writes nothing and is noted', () async {
+      await repository.updateSyncStatus(
+        _userId,
+        'training_peaks',
+        status: 'error',
+        error: 'network',
+      );
+
+      expect(await repository.getIntegration(_userId, 'training_peaks'), isNull);
+      expect(server.writes, isEmpty);
+      expect(statusWrites, isEmpty);
+      expect(skipNotes().single.data, {
+        'provider': 'training_peaks',
+        'status': 'error',
+        'rowFound': false,
+      });
+    });
+
+    test('two writes at once on the inactive row both skip and both note',
+        () async {
+      await seedStale();
+      final writesBefore = server.writes.length;
+
+      await Future.wait([
+        repository.updateSyncStatus(
+          _userId,
+          'vdot',
+          status: 'error',
+          error: 'network',
+        ),
+        repository.updateSyncStatus(
+          _userId,
+          'vdot',
+          status: requiresReauthStatus,
+          error: reauthRequiredCode,
+        ),
+      ]);
+
+      expect(server.writes.length, writesBefore);
+      expect(statusWrites, isEmpty);
+      expect(skipNotes(), hasLength(2));
+    });
+
+    test('an active row still writes, fires the hook and pushes', () async {
+      await repository.upsertIntegration(_tp());
+      final writesBefore = server.writes.length;
+
+      await repository.updateSyncStatus(
+        _userId,
+        'training_peaks',
+        status: requiresReauthStatus,
+        error: reauthRequiredCode,
+      );
+
+      final row = await repository.getIntegration(_userId, 'training_peaks');
+      expect(row!.lastSyncStatus, requiresReauthStatus);
+      expect(statusWrites, [('training_peaks', requiresReauthStatus)]);
+      expect(server.writes.length, writesBefore + 1);
+      expect(lastIntegrationUpsert()['last_sync_status'], requiresReauthStatus);
+      expect(skipNotes(), isEmpty);
+    });
+
+    test('a write after disconnect lands nowhere', () async {
+      await repository.upsertIntegration(_tp());
+      await repository.deactivateIntegration(_userId, 'training_peaks');
+      final writesBefore = server.writes.length;
+
+      // A TrainingPeaks sync that finishes after the athlete tapped Disconnect.
+      await repository.updateSyncStatus(
+        _userId,
+        'training_peaks',
+        status: requiresReauthStatus,
+        error: reauthRequiredCode,
+      );
+
+      final row = await repository.getIntegration(_userId, 'training_peaks');
+      expect(row!.isActive, isFalse);
+      expect(row.lastSyncStatus, isNull);
+      expect(row.lastSyncError, isNull);
+      expect(server.writes.length, writesBefore);
+      expect(statusWrites, isEmpty);
+      expect(skipNotes(), hasLength(1));
     });
   });
 }

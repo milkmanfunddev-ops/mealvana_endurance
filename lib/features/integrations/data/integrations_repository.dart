@@ -411,6 +411,12 @@ class IntegrationsRepository with SyncableRepository {
   ///   The stored STATUS decides (legacy English rows carry it too); a
   ///   `reauth_required` code beside status `error` is not a reconnect, so
   ///   the card and this guard never disagree (wave 4 review).
+  /// - Ticket 64 (develop-2026-10): a disconnected (inactive) or missing row
+  ///   takes no status write. A sync or token refresh that finishes after
+  ///   Disconnect would otherwise put `error`/`requires_reauth` back on the
+  ///   row disconnect just cleared, and push it. The skip writes nothing,
+  ///   fires no [onSyncStatusWritten] (no Reconnect notice for a provider
+  ///   the athlete disconnected) and pushes nothing; it is noted (D9).
   Future<void> updateSyncStatus(
     String userId,
     String provider, {
@@ -418,8 +424,20 @@ class IntegrationsRepository with SyncableRepository {
     String? error,
   }) async {
     final existing = await getIntegration(userId, provider);
+    if (existing == null || !existing.isActive) {
+      await _r.note(
+        'Sync status not written: integration inactive or missing',
+        area: 'integrations',
+        data: {
+          'provider': provider,
+          'status': status,
+          'rowFound': existing != null,
+        },
+      );
+      return;
+    }
     final keepsReauth =
-        status == 'error' && existing?.lastSyncStatus == requiresReauthStatus;
+        status == 'error' && existing.lastSyncStatus == requiresReauthStatus;
     final storedStatus = keepsReauth ? requiresReauthStatus : status;
     await (_db.update(_db.integrationsTable)
           ..where((t) => t.userId.equals(userId) & t.provider.equals(provider)))
