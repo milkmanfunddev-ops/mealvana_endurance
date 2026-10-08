@@ -47,13 +47,13 @@
 
 **Overlaps:** 56 (blocker; it owns `app_router.dart` and `app_startup_provider.dart` in this wave). 55 and 57 share no file. Tickets 34 (done) and 22 own the resume collection this reads; their tests must stay green.
 
-- [ ] Unit (`notification_tap_guard_test.dart`, on `notificationTapRoutable`). Feed `AppStartupData` shaped as the launch path builds it after a signed-out launch (`user: null, hasCompletedOnboarding: false`). It is not routable with `hasSession: true`; that is 50-001's state before 56. The same data refreshed after a login (a `UserProfile` from the download mapping with `onboarding_completed true`, `isLoggedOut false`) with `hasSession: true` is routable. With `hasSession: false` it is not routable. `hasCompletedOnboarding: false` is not routable (reason `/welcome`). `forceUpgradeRequired` → `/force-upgrade`, `resyncRequired`, an open pending signup, a pending consent prompt, and loading/error startup are not routable. Each reason is the string the HELD line will carry.
-- [ ] Unit (`HeldNotificationTap` with a `RecordingReport`). Hold, then a not-routable check: still held, no route. Then routable: one REPLAY, one route call, held cleared. A second hold replaces the first with one DROPPED line and one `push` breadcrumb. Dispose with a held tap writes DROPPED. The empty-id and unmounted paths write DROPPED. Every line appears in `LaunchTrail` (read the tape the way `launch_trail_test.dart` does) and as a breadcrumb.
-- [ ] Seam through the real providers: a `ProviderContainer` with the real `AppStartup` (56's `refreshSession`) resolved signed out. Hold a tap, give the mocked auth a session and seed the onboarded profile, call `refreshSession(reason: 'signed_in')`. The listener releases the tap once, and the route call targets `destinationForIntent('reminder', id)`.
-- [ ] #116: `grep -rl` under `test/` for `_isRoutableNow`, `_flushDeferredTap`, `_handleNotificationNavigation`, `RootAppWidget`, `collectResumeTaps`, `setNavigationHandler`, `rootRedirect`, and run every file named.
-- [ ] #117: the new breadcrumbs are `report.` calls; no new helper. If the held-tap class adds a catch, it reports. Run `test/shared/source_guard/`.
-- [ ] #118: no notifier state is written by this ticket.
-- [ ] `flutter analyze` clean on touched files.
+- [x] Unit (`notification_tap_guard_test.dart`, on `notificationTapRoutable`). Feed `AppStartupData` shaped as the launch path builds it after a signed-out launch (`user: null, hasCompletedOnboarding: false`). It is not routable with `hasSession: true`; that is 50-001's state before 56. The same data refreshed after a login (a `UserProfile` from the download mapping with `onboarding_completed true`, `isLoggedOut false`) with `hasSession: true` is routable. With `hasSession: false` it is not routable. `hasCompletedOnboarding: false` is not routable (reason `/welcome`). `forceUpgradeRequired` → `/force-upgrade`, `resyncRequired`, an open pending signup, a pending consent prompt, and loading/error startup are not routable. Each reason is the string the HELD line will carry.
+- [x] Unit (`HeldNotificationTap` with a `RecordingReport`). Hold, then a not-routable check: still held, no route. Then routable: one REPLAY, one route call, held cleared. A second hold replaces the first with one DROPPED line and one `push` breadcrumb. Dispose with a held tap writes DROPPED. The empty-id and unmounted paths write DROPPED. Every line appears in `LaunchTrail` (read the tape the way `launch_trail_test.dart` does) and as a breadcrumb.
+- [x] Seam through the real providers: a `ProviderContainer` with the real `AppStartup` (56's `refreshSession`) resolved signed out. Hold a tap, give the mocked auth a session and seed the onboarded profile, call `refreshSession(reason: 'signed_in')`. The listener releases the tap once, and the route call targets `destinationForIntent('reminder', id)`.
+- [x] #116: `grep -rl` under `test/` for `_isRoutableNow`, `_flushDeferredTap`, `_handleNotificationNavigation`, `RootAppWidget`, `collectResumeTaps`, `setNavigationHandler`, `rootRedirect`, and run every file named.
+- [x] #117: the new breadcrumbs are `report.` calls; no new helper. If the held-tap class adds a catch, it reports. Run `test/shared/source_guard/`.
+- [x] #118: no notifier state is written by this ticket.
+- [x] `flutter analyze` clean on touched files.
 - [ ] Retest on a simulator in test wave 7, retest ticket 69 (the held tap). Clear the app, launch signed out, log in in-session, allow notifications, background. `xcrun simctl push <udid> com.milkman.mealvanaendurance.dev` with `"payload":"reminder:<activityId>"` for a planned activity of that account, then tap the banner. The tape shows `consumed` → `dispatch … handlerSet=true` → `routing id=…` → `deepLinkTo /plan…`, the activity detail opens, and Back goes to the Timeline. Then, signed out, deliver and tap a reminder (`HELD … (no session)`), log in, and see `REPLAY id=…` then the detail (50-016 step 1, retest ticket 69 item 2).
 - [ ] Real push on Lee's phone in ticket 51: the same backgrounded tap after a fresh login routes (a release-signed build, since the simulator cannot stand in for a real APNs tap, `launch_trail.dart:6-13`).
 
@@ -62,3 +62,41 @@
 
 
 Next: /testing-wave develop-2026-10 (fix wave 6)
+
+## Fix notes (wave 6, pass B, 2026-10-08)
+
+**Read in full before writing** (the `notification-testing` skill and `ops/docs/messaging-relay-and-testing.md` are not on this machine, IMPROVEMENTS #101/#123): `lib/shared/services/notification_service.dart`, `lib/shared/services/launch_trail.dart`, `lib/shared/widgets/root_app_widget.dart`, `ios/Runner/AppDelegate.swift`, plus `lib/features/app_startup/application/app_startup_provider.dart` (`refreshSession`, `refreshStartupSnapshot`, the sequence rule) and `AppRouter.rootRedirect` / `welcomeRedirect` in `lib/shared/core/app_router.dart`. None of those was changed.
+
+**What changed** (`lib/shared/widgets/root_app_widget.dart` only, per the rulings):
+- `notificationTapHoldReason(startup, hasSession:, pendingSignupOpen:, needsConsentPrompt:)` (pure, `@visibleForTesting`) returns null when a tap can route, else the reason: `no session`, `startup loading`, `startup failed`, or `rootRedirect`'s answer when it is not `/main` (`/welcome`, `/force-upgrade`, `/privacy-consent`, `/auth/post-onboarding?resume=verify`). `notificationTapRoutable` is its boolean twin. The two closures have the same shape `rootRedirect` takes, so the guard reads lazily, the way the router does.
+- `notificationTapGate(read)` makes the router's reads: `appStartupProvider`, the live `supabaseClient.auth.currentSession`, `pendingSignupStoreProvider.isOpen`, `analyticsConsentProvider.needsPrompt`. It also returns the session's user id.
+- `HeldNotificationTap` (injected `Report`): `hold`, `dropReplacedBy`, `takeIfRoutable(gate)`, `dropOnDispose`, `dropIncoming`. Every line goes to `LaunchTrail` and, with the same text, to `report.breadcrumb(..., category: 'push', data: {'id', 'type'})`. No catch was added.
+- The widget captures `reportProvider` in `initState` (so `dispose` can write without reading a provider). It replaced `_deferredTap` / `_isRoutableNow` / `_flushDeferredTap` with the class. The empty-id and unmounted early returns now write `DROPPED`. A tap that routes at once drops any tap still held (`replaced by`). Listeners: `appStartupProvider` (kept) and `analyticsConsentProvider` (new), both calling `_releaseHeldTap`.
+
+**Held reasons: what replays and what drops.** A held tap remembers the session user id it was held under. On every re-check, a different session user id (null to id = `signed in`, id to null = `signed out`, id to another id = `account changed`) DROPS it: `DROPPED id=… type=… (session changed: …)`. Same session user: it REPLAYS once the reason clears.
+- Replayed (same session): `startup loading` (cold-start tap with a restored session, released when startup resolves), `startup failed` (if startup is rebuilt and resolves), `/privacy-consent` (released by the consent listener on a decision), `/welcome` with a session (e.g. a guest who finishes onboarding: `onboarding_saved` refresh), `/auth/post-onboarding?resume=verify` (the store is not observable, so it releases on the next snapshot or consent change after the signup closes, if the uid did not change). Each has a unit test (`REPLAY: held for "…"`).
+- Dropped: `no session` (the only way out is a sign-in, which is a session change: 50-001's case), and any reason when the session user changes. `/force-upgrade` never clears in-process, so that tap stays held until a session change, a newer tap or dispose drops it. Unit tests: `DROP: held with no session, then a sign-in`, `DROP: … then a sign-out`, `DROP: … another account signs in`.
+- Also dropped: a held tap replaced by a newer one (held or routed), the root disposed while holding, an empty id, root unmounted.
+
+**Async paths: twice at once, after a refresh.**
+- Two snapshot writes in a row (56's `signed_in`, then `onboarding_saved`): the first re-check drops (session changed) or replays and clears the slot, and the second finds nothing held (`isHeld` short-circuit). Seam test: the cold-start replay, then an `onboarding_saved` refresh, routes once.
+- Replay racing a new tap: `takeIfRoutable` clears the slot before the widget routes, so a tap dispatched during the replay is evaluated on its own and is not replayed twice. A tap arriving while one is held replaces it, and the replaced one is written down.
+- A `refreshSession` that skips (startup has no data yet, superseded, the session user changed mid-refresh) writes no snapshot, so no listener fires. The held tap is then re-checked on the next snapshot or consent change, or replaced by the next tap. It is never replayed into a different session, because the drop compares the live session user at that moment, not the snapshot.
+- `_goPrefilled`'s await is unchanged: the guard was true when it started, and it routes after the lookup.
+- A sign-out with no snapshot write is not seen until the next change. Listening to the auth stream directly would need `lib/shared/services/auth/**` (forbidden this pass) or a second auth subscription in the widget; not done.
+
+**Out of scope, noted.** `LaunchTrail.isNotificationEvidence` does not count `DROPPED ` lines (launch_trail.dart was not mine to edit). A tape whose only evidence is a dropped empty-id tap would not open the dev dialog; a dropped held tap always has its `HELD` line, which does count.
+
+**Tests run** (no full suite):
+- `test/shared/widgets/notification_tap_guard_test.dart` (new): 25 passed. Guard: 8. `HeldNotificationTap`: 14, five of them the replay reasons. Seam through the real `AppStartup` + `refreshSession`: 3. Those cover a tap held signed out being dropped on the login and the next tap routing at once to `destinationForIntent('reminder', id)`; a cold-start tap replayed once when startup resolves; a tap held on consent being dropped on sign-out.
+- #116 `grep -rl` for `_isRoutableNow`, `_flushDeferredTap`, `_handleNotificationNavigation`, `_deferredTap`, `RootAppWidget`, `collectResumeTaps`, `setNavigationHandler`, `rootRedirect`, `root_app_widget` under `test/` named: pending_signup_resume_seam, startup_snapshot_refresh, notification_resume_tap, launch_trail, launch_trail_dialog_once (33 passed together); home_shell_gestures + g27_carb_nudge (31 passed); widget_test_harness (helper).
+- #117 `test/shared/source_guard/`: 20 passed.
+- `flutter analyze lib/shared/widgets/root_app_widget.dart test/shared/widgets/notification_tap_guard_test.dart`: no issues.
+- #118: no notifier state is written; the widget only reads providers.
+- No codegen (no annotated file touched).
+
+**Not met here:** the simulator retest (test wave 7, retest ticket 69) and the real push on Lee's phone (ticket 51). Under the ruling, 69 item 2 should now expect `HELD … (no session)` then `DROPPED … (session changed: signed in)` after the login, not `REPLAY`.
+
+**Questions for Lee.**
+1. A tap held for a reason that clears without a sign-in or sign-out is replayed in the same session. Examples: an anonymous guest who is not onboarded (`/welcome`) and then finishes onboarding, or a pending signup upgraded in place (uid kept). Is that right, or should only `startup loading` and `/privacy-consent` replay and every other held tap be dropped?
+
