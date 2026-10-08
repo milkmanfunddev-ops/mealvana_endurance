@@ -254,6 +254,14 @@ develop-next's `duration_source` step above mealplanning's 24 (idempotent `addCo
   display-name rows → snake_case catalog names (1,365 rows, 44 accounts; rows matching no food left alone). Ticket 65:
   `events.event_date` re-derived from `start_time` (6 rows), the duplicate sweep (4 groups) and the unique index on
   `(user_id, event_date, event_name)`. Ticket 64: 0 prod rows today, re-count at the release.
+  Ticket 62: `plan_generation_log.duration_minutes` integer → numeric (migration `20261008166200`, additive). All of
+  these landed on dev 2026-10-08 at the wave-6 close (58: 34 deleted + 461 renamed; 63: 43 unhidden; 64: 3 cleared;
+  65: 9 re-derived, 6 duplicates removed, index created; 62: numeric). Scripts: `scripts/events_rederive_event_date.sql`,
+  `scripts/events_duplicate_sweep.sql` (listing first; on prod the "IRONMAN Florida" pair's removed row is linked to a
+  different activity, `398bdce9-…`: look at that activity before the prod sweep, ticket 65 Q4). Open risk (ticket 65 Q3):
+  with the unique index up, a second same-name same-day event an athlete creates fails its upload with 23505 and, since
+  `uploadDirtyRecords` sends all dirty events in one request, blocks that athlete's later event uploads until the
+  duplicate is removed; needs the form-side guard or per-row upload before prod.
 - **The e2e suite signs in anonymously (ticket 62, 2026-10-08).** `test/e2e/dev_cloud_e2e_test.dart` makes an anonymous
   dev user per run (and leaves it behind); it breaks when the anonymous path is removed and needs a real test login then.
 
