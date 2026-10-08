@@ -1,6 +1,6 @@
 {
-  "sha": "ce1a1527",
-  "built_at": "2026-10-07T01:33:21+00:00",
+  "sha": "a89ace2a",
+  "built_at": "2026-10-08T07:47:36+00:00",
   "simulator": "6A1CE0B5-9624-477F-9804-8489DE08AB01 (iPhone 17 Pro, dev simulator)",
-  "note": "scripts/run_dev.sh from a detached worktree at HEAD; the wave simulators copy this one"
+  "note": "scripts/run_dev.sh from a detached worktree at HEAD (wave 3 rebuild after fix wave 2); the wave simulators copy this one"
 }

@@ -1,6 +1,6 @@
 # 30: Retest: auth and account
 
-**Status:** ready (round develop-2026-10, retest)
+**Status:** in-progress (wave 3, 2026-10-08)
 **Labels:** retest, round:develop-2026-10, area:account
 **Branch:** `develop-next` (worktree per ticket, branched from the round's base after the fix wave lands)
 **Source:** TRIAGE.md rulings of 2026-10-07: followups 01-007 (rewritten), 01-010, 01-014, 01-015, 01-016,
