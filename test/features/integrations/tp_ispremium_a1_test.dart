@@ -9,14 +9,20 @@
 ///  * write-back eligibility keys on TP's ACTUAL responses alone: a 403 on
 ///    a push blocks WITHOUT consulting the profile; a successful push
 ///    clears the block.
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
 import 'package:mealvana_endurance/features/integrations/application/change_detection_service.dart';
 import 'package:mealvana_endurance/features/integrations/application/tp_writeback_service.dart';
 import 'package:mealvana_endurance/features/integrations/application/training_peaks_oauth_service.dart';
 import 'package:mealvana_endurance/features/integrations/application/training_peaks_sync_service.dart';
 import 'package:mealvana_endurance/features/integrations/application/training_peaks_transformer.dart';
 import 'package:mealvana_endurance/features/activities/data/activities_repository.dart';
+import 'package:mealvana_endurance/features/integrations/data/http_retry_client.dart';
 import 'package:mealvana_endurance/features/integrations/data/integrations_repository.dart';
 import 'package:mealvana_endurance/features/integrations/data/training_peaks_api_client.dart';
 import 'package:mealvana_endurance/features/integrations/domain/integration.dart';
@@ -25,6 +31,8 @@ import 'package:mealvana_endurance/shared/database/app_database.dart';
 import 'package:mealvana_endurance/shared/services/preferences_service.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+import '../../helpers/fakes/recording_report.dart';
 
 class MockTpApiClient extends Mock implements TrainingPeaksApiClient {}
 
@@ -104,6 +112,182 @@ void main() {
       verify(() => api.getAthleteMetrics(any(),
           startDate: any(named: 'startDate'),
           endDate: any(named: 'endDate'))).called(1);
+    });
+  });
+
+  group('ticket 47 (32-006): the metrics read is a known scope refusal', () {
+    test('a 401 on /v2/metrics on a live token is a note, not a degraded; '
+        'the sync succeeds and nothing touches reconnect state', () async {
+      final requests = <String>[];
+      final zonesBody = File(
+        'docs/integration/api-exploration/training-peaks/examples/'
+        'athlete-zones.json',
+      ).readAsStringSync();
+      // The real client over TP's answers: no `metrics:read` in the grant,
+      // so TP refuses the range read with 401 (payload-usage-map §1.7).
+      final api = TrainingPeaksApiClient(
+        clientId: 'mealvana',
+        clientSecret: 'secret',
+        appVersion: '1.29.0',
+        retryConfig: const RetryConfig(
+          maxRetries: 0,
+          initialDelayMs: 0,
+          maxDelayMs: 0,
+        ),
+        httpClient: MockClient((req) async {
+          final path = req.url.path;
+          requests.add('${req.method} $path');
+          if (path.startsWith('/v2/metrics/')) {
+            return http.Response(
+              jsonEncode({
+                'error': 'invalid_token',
+                'error_description': 'The access token expired',
+              }),
+              401,
+            );
+          }
+          if (path.startsWith('/v2/workouts/')) {
+            return http.Response('[]', 200);
+          }
+          if (path == '/v1/athlete/profile/zones') {
+            return http.Response(zonesBody, 200);
+          }
+          return http.Response('unexpected ${req.method} $path', 599);
+        }),
+      );
+      final integrationsRepo = MockIntegrationsRepository();
+      final activitiesRepo = MockActivitiesRepository();
+      final report = RecordingReport();
+
+      // Run 32's live row: the fresh token from connect, 59 min left.
+      when(
+        () => integrationsRepo.getIntegration('u1', 'training_peaks'),
+      ).thenAnswer(
+        (_) async => IntegrationModel(
+          id: 'i1',
+          userId: 'u1',
+          provider: 'training_peaks',
+          accessToken: 'fresh-token',
+          refreshToken: 'fresh-refresh',
+          tokenExpiresAt: DateTime.now().add(const Duration(minutes: 59)),
+          providerAthleteId: 'ath-1',
+          isActive: true,
+          lastSyncStatus: 'pending',
+          updatedAt: DateTime.now(),
+        ),
+      );
+      when(
+        () => integrationsRepo.updateAthleteZones(
+          any(),
+          any(),
+          zonesJson: any(named: 'zonesJson'),
+        ),
+      ).thenAnswer((_) async {});
+      when(
+        () => activitiesRepo.getActivitiesByUserAndProvider(any(), any()),
+      ).thenAnswer((_) async => const []);
+      when(
+        () => activitiesRepo.cleanupDuplicateProviderActivities(
+          userId: any(named: 'userId'),
+          provider: any(named: 'provider'),
+        ),
+      ).thenAnswer((_) async => 0);
+      when(
+        () => integrationsRepo.updateSyncStatus(
+          any(),
+          any(),
+          status: any(named: 'status'),
+          error: any(named: 'error'),
+        ),
+      ).thenAnswer((_) async {});
+
+      final service = TrainingPeaksSyncService(
+        apiClient: api,
+        integrationsRepository: integrationsRepo,
+        activitiesRepository: activitiesRepo,
+        transformer: const TrainingPeaksTransformer(),
+        changeDetectionService: ChangeDetectionService(),
+        report: report,
+      );
+
+      final result = await service.syncWorkouts('u1');
+
+      expect(result.success, isTrue);
+      // A1: still attempted on every stale sync.
+      expect(requests.where((r) => r.contains('/v2/metrics/')), hasLength(1));
+      verify(
+        () => integrationsRepo.updateSyncStatus(
+          'u1',
+          'training_peaks',
+          status: 'success',
+          error: any(named: 'error'),
+        ),
+      ).called(1);
+      verifyNever(
+        () => integrationsRepo.updateSyncStatus(
+          any(),
+          any(),
+          status: requiresReauthStatus,
+          error: any(named: 'error'),
+        ),
+      );
+      verifyNever(
+        () => integrationsRepo.updateAthleteMetrics(
+          any(),
+          any(),
+          metricsJson: any(named: 'metricsJson'),
+          weightKg: any(named: 'weightKg'),
+        ),
+      );
+      expect(report.faults, isEmpty);
+      expect(report.degradeds, isEmpty);
+      final note = report.notes.singleWhere(
+        (n) =>
+            n.message ==
+            'TrainingPeaks metrics refused (metrics:read not granted); '
+                'sync continues',
+      );
+      expect(note.data, containsPair('status', 401));
+      expect(requests.where((r) => r.contains('/oauth/')), isEmpty);
+    });
+
+    test('any other metrics failure still reaches the degraded catch',
+        () async {
+      final api = MockTpApiClient();
+      final integrationsRepo = MockIntegrationsRepository();
+      final activitiesRepo = MockActivitiesRepository();
+      final report = RecordingReport();
+      when(() => integrationsRepo.getIntegration('u1', 'training_peaks'))
+          .thenAnswer((_) async => _integration());
+      when(() => api.getAthleteZones(any()))
+          .thenThrow(StateError('zones offline — non-blocking'));
+      when(() => api.getAthleteMetrics(any(),
+              startDate: any(named: 'startDate'),
+              endDate: any(named: 'endDate')))
+          .thenThrow(const ServerException('TP 500', statusCode: 500));
+      when(() => api.getUpcomingWorkouts(any(),
+              days: any(named: 'days'),
+              includeDescription: any(named: 'includeDescription')))
+          .thenAnswer((_) async => const []);
+      when(() => activitiesRepo.getActivitiesByUserAndProvider(any(), any()))
+          .thenAnswer((_) async => const []);
+      when(() => integrationsRepo.updateSyncStatus(any(), any(),
+              status: any(named: 'status'), error: any(named: 'error')))
+          .thenAnswer((_) async {});
+
+      await TrainingPeaksSyncService(
+        apiClient: api,
+        integrationsRepository: integrationsRepo,
+        activitiesRepository: activitiesRepo,
+        transformer: const TrainingPeaksTransformer(),
+        changeDetectionService: MockChangeDetectionService(),
+        report: report,
+      ).syncWorkouts('u1');
+
+      expect(
+        report.degradeds.map((d) => d.message),
+        contains('TrainingPeaks metrics fetch failed; sync continues'),
+      );
     });
   });
 

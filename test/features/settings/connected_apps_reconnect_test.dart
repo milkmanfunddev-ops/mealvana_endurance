@@ -13,6 +13,7 @@
 // code.
 
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -20,6 +21,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:mealvana_endurance/features/activities/application/activity_deduplication_service.dart';
@@ -264,6 +266,108 @@ void main() {
       expect(find.textContaining('Sync failed:'), findsNothing);
 
       // Let the snackbar's 4 s timer run out inside the test body.
+      await tester.pump(const Duration(seconds: 5));
+      await tester.pumpAndSettle();
+    },
+  );
+
+  testWidgets(
+    'ticket 47 (32-005): a disconnected row that still stores '
+    'requires_reauth shows Connect, not Reconnect',
+    (tester) async {
+      await tester.runAsync(() async {
+        // Run 32's stale rows: inactive, tokens cleared, status kept.
+        for (final provider in ['training_peaks', 'vdot']) {
+          await repository.upsertIntegration(
+            _row(provider, expired: true).copyWith(
+              isActive: false,
+              accessToken: '',
+              lastSyncStatus: requiresReauthStatus,
+              lastSyncError: reauthRequiredCode,
+            ),
+          );
+        }
+      });
+
+      await pumpSettings(tester);
+
+      for (final card in [
+        'connected_apps.trainingpeaks_connect_button',
+        'connected_apps.vdot_connect_button',
+      ]) {
+        expect(inCard(card, find.text('Connect')), findsOneWidget);
+        expect(inCard(card, find.text(reconnect)), findsNothing);
+        expect(inCard(card, find.text(note)), findsNothing);
+        expect(inCard(card, find.text('Sync Now')), findsNothing);
+      }
+    },
+  );
+
+  testWidgets(
+    'ticket 47 (32-006): a successful Sync Now stamps the card\'s '
+    '"Last synced" without leaving the screen',
+    (tester) async {
+      final zonesBody = File(
+        'docs/integration/api-exploration/training-peaks/examples/'
+        'athlete-zones.json',
+      ).readAsStringSync();
+      // A live token whose grant lacks metrics:read (run 32's fresh row).
+      final tpApi = TrainingPeaksApiClient(
+        clientId: 'cid',
+        clientSecret: 'secret',
+        appVersion: 'test',
+        httpClient: MockClient((request) async {
+          final path = request.url.path;
+          if (path.startsWith('/v2/metrics/')) {
+            return http.Response('', 401);
+          }
+          if (path == '/v1/athlete/profile/zones') {
+            return http.Response(zonesBody, 200);
+          }
+          if (path.startsWith('/v2/workouts/') ||
+              path.startsWith('/v2/events/')) {
+            return http.Response('[]', 200);
+          }
+          fail('unexpected request: ${request.url}');
+        }),
+      );
+      // The sync coordinator stamps its staleness clock through
+      // SharedPreferences.getInstance(), outside the provider override.
+      SharedPreferences.setMockInitialValues({});
+      await tester.runAsync(() async {
+        await repository.upsertIntegration(
+          _row('training_peaks', expired: false).copyWith(
+            lastSyncAt: DateTime(2026, 9, 28, 12),
+          ),
+        );
+      });
+
+      await pumpSettings(tester, tpApi: tpApi);
+
+      const tp = 'connected_apps.trainingpeaks_connect_button';
+      expect(
+        inCard(tp, find.textContaining('Last synced: Sep 28')),
+        findsOneWidget,
+      );
+      await tester.tap(inCard(tp, find.text('Sync Now')));
+      // The sync runs real Drift and HTTP-double futures.
+      await tester.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 500)),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 400));
+
+      final row = await tester.runAsync(
+        () => repository.getIntegration(_profileId, 'training_peaks'),
+      );
+      expect(row!.lastSyncStatus, 'success');
+      expect(
+        inCard(tp, find.text('Last synced: Just now')),
+        findsOneWidget,
+      );
+      expect(inCard(tp, find.textContaining('Sep 28')), findsNothing);
+
+      // Let any snackbar timer run out inside the test body.
       await tester.pump(const Duration(seconds: 5));
       await tester.pumpAndSettle();
     },

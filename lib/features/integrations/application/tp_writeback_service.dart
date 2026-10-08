@@ -636,7 +636,26 @@ class TpWritebackService {
       final entries = await (_db.select(
         _db.tpWritebackTable,
       )..where((t) => t.userId.equals(userId))).get();
-      final accessToken = await _oauthService.getValidAccessToken(userId);
+      // Ticket 47 (32-005): a connection TrainingPeaks already refused (or
+      // one that is gone) has a dead refresh token. Asking for a valid
+      // access token would refresh it, get a 400 and report a false
+      // `degraded` right before the disconnect. Skip the strip — noted (D9)
+      // — and still purge both ledgers below.
+      final integration = await _oauthService.getIntegration(userId);
+      final stripPossible =
+          integration != null &&
+          integration.isActive &&
+          !integration.needsReconnect;
+      final accessToken = stripPossible
+          ? await _oauthService.getValidAccessToken(userId)
+          : null;
+      if (!stripPossible) {
+        await _r.note(
+          'TP write-back: disconnect strip skipped; connection needs reconnect',
+          area: _area,
+          data: {'entries': entries.length},
+        );
+      }
       if (accessToken != null) {
         for (final entry in entries) {
           try {

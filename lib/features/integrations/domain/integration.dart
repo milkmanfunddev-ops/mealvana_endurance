@@ -90,7 +90,9 @@ class IntegrationModel {
 
   /// The provider refused the token refresh for good: the connection stays
   /// listed but must be signed in to again (see [requiresReauthStatus]).
-  bool get needsReconnect => lastSyncStatus == requiresReauthStatus;
+  /// An inactive (disconnected) row never needs a reconnect: ticket 47
+  /// (32-005) heals rows stored before disconnect cleared the status.
+  bool get needsReconnect => isActive && lastSyncStatus == requiresReauthStatus;
 
   /// Check if the access token has expired
   bool get isTokenExpired {

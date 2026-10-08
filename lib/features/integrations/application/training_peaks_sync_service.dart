@@ -165,7 +165,8 @@ class TrainingPeaksSyncService {
     }
 
     // 3b. Fetch body metrics if stale (non-blocking; A1: attempt-and-observe,
-    // never gated on the IsPremium snapshot — a 401/403 lands here harmlessly)
+    // never gated on the IsPremium snapshot — a 401/403 is noted inside,
+    // ticket 47; anything else lands here)
     try {
       await _fetchMetricsIfStale(integration);
     } catch (e, st) {
@@ -819,8 +820,8 @@ class TrainingPeaksSyncService {
   /// flag is a connect-time snapshot proven false-negative on
   /// premium-featured trials, so with the old gate this fetch had never run
   /// for any athlete. The fetch simply attempts; a 401/403 (range reads are
-  /// premium/scope-gated at TP's end) lands in the caller's non-blocking
-  /// catch, which is the graceful handling. The cache carries its own
+  /// premium/scope-gated at TP's end) is noted here and returns (ticket 47);
+  /// any other failure lands in the caller's non-blocking catch. The cache carries its own
   /// `fetchedAt` marker inside `athlete_metrics_json` because
   /// `integration.updatedAt` is shared with the zones write and would read
   /// as always-fresh right after a zones fetch. The newest metric carrying
@@ -849,11 +850,29 @@ class TrainingPeaksSyncService {
     }
 
     final now = DateTime.now();
-    final metrics = await _apiClient.getAthleteMetrics(
-      integration.accessToken,
-      startDate: now.subtract(const Duration(days: _metricsWindowDays)),
-      endDate: now,
-    );
+    final List<Map<String, dynamic>> metrics;
+    try {
+      metrics = await _apiClient.getAthleteMetrics(
+        integration.accessToken,
+        startDate: now.subtract(const Duration(days: _metricsWindowDays)),
+        endDate: now,
+      );
+    } on IntegrationApiException catch (e) {
+      // Ticket 47 (32-006): `/v2/metrics` needs `metrics:read`, which
+      // `defaultScopes` does not request (payload-usage-map §1.7, RULED
+      // 2026-09-20: live 401 scope refusal on fresh tokens). The 401 maps
+      // to TokenExpiredException although the token is fine, so a 401/403
+      // here is the known refusal: a note, no `degraded`, no reconnect
+      // state, no cache write. Still attempted on every stale sync (A1).
+      // Any other failure reaches the caller's `degraded` catch.
+      if (e is! TokenExpiredException && e is! ForbiddenException) rethrow;
+      await _r.note(
+        'TrainingPeaks metrics refused (metrics:read not granted); sync continues',
+        area: _area,
+        data: {'status': e.statusCode},
+      );
+      return;
+    }
 
     // Newest metric that carries a weight refreshes the profile mirror.
     double? weightKg;
