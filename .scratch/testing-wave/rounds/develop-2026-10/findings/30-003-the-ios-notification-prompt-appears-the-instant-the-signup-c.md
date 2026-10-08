@@ -1,11 +1,11 @@
 # 30-003 · The iOS notification prompt appears the instant the signup code is accepted, with nothing in the app saying why first
 
 - kind: idea
-- status: open
+- status: triaged
 - ticket: 30
 - run: w3-20261008T1255Z
 - screen: Verify your email
-- decision: 
+- decision: review queue for Xuan (NOTIF-PROMPT-001: an explanation before the iOS prompt, and when it comes)
 
 **Steps.**
 Idea: show one line or a short screen before the iOS "Would Like to Send You Notifications" prompt saying what Mealvana

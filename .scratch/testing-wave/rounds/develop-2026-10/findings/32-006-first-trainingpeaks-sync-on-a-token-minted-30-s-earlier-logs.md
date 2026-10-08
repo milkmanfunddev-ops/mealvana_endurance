@@ -1,11 +1,11 @@
 # 32-006 · First TrainingPeaks sync on a token minted 30 s earlier logs TokenExpiredException for athlete metrics, and the card keeps 'Last synced: Sep 28'
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 32
 - run: w3-20261008T1256Z
 - screen: Connected Apps
-- decision: 
+- decision: fix ticket 47 (Connected Apps disconnect/reconnect)
 
 **Steps.**
 1. Reconnect TrainingPeaks (sandbox OAuth, `lee.tri`), Allow, Keep Sharing.

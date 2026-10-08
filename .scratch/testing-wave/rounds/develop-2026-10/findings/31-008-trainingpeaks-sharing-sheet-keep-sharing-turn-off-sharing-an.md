@@ -1,11 +1,11 @@
 # 31-008 · TrainingPeaks sharing sheet: Keep Sharing, Turn Off Sharing and the scrim still untested (sheet stays hidden while TrainingPeaks needs a reconnect)
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 31
 - run: w3-20261008T1256Z
 - screen: Timeline (TrainingPeaks sharing sheet)
-- decision: 
+- decision: retest ticket 51 (Lee's phone / healthy TrainingPeaks account), wave 5
 
 **Steps.**
 1. On an account whose TrainingPeaks connection is active and healthy (not requires_reauth), with `flutter.tp_writeback_notice_shown` absent, launch: the sheet should show once.

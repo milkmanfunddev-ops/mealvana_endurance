@@ -1,11 +1,11 @@
 # 31-006 · Item removal and meal removal have no confirm and no undo: check recovery from an accidental swipe or tap
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 31
 - run: w3-20261008T1256Z
 - screen: Review & Log / Timeline
-- decision: 
+- decision: retest ticket 49 (meal logging), wave 5
 
 **Steps.**
 1. On Review & Log, swipe an item left to right: it is removed at once (seen 13:05Z).

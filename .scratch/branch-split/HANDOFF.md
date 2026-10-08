@@ -234,3 +234,11 @@ develop-next's `duration_source` step above mealplanning's 24 (idempotent `addCo
   at v24, so the step is skipped and the column is missing there. Fresh installs and real users are unaffected.
   Before any internal device (Lee's and Xuan's dev phones, the dev simulator) takes a post-merge build, wipe
   the app on it. No column guard, no v25.
+- **Anonymous athletes leave server rows (Lee, wontfix, Finding 30-006).** "Continue without an account" makes an
+  anonymous auth user with `users`, `daily_macro_targets` and `onboarding_surveys` rows and Settings offers it no
+  Delete Account. The anonymous path is being removed; whoever removes it sweeps those rows on dev and prod
+  (`select id from auth.users where is_anonymous` and the cascade through `public.users`).
+- **Xuan's merges after the develop rewrite (Lee, 2026-10-08).** develop is force-pushed from `develop-next`
+  (release/1.29.0 + the included commits). Xuan's bugfix branches must be based on `release/1.29.0` or the new
+  `develop`; a branch off the old develop (`develop-pre-split`, `fb4a97e9`) would merge the 53 excluded
+  meal-planning commits back in.

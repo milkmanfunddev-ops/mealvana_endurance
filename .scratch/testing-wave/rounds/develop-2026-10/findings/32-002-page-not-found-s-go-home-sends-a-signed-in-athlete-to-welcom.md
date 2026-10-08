@@ -1,11 +1,11 @@
 # 32-002 · Page Not Found's Go Home sends a signed-in athlete to Welcome, not the Timeline (retest of 08-022)
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 32
 - run: w3-20261008T1256Z
 - screen: Page Not Found
-- decision: 
+- decision: fix ticket 46 (Go Home, AI Credits close, credits copy)
 
 **Steps.**
 1. Signed in as test@test.com, open any archived or unknown path, e.g.

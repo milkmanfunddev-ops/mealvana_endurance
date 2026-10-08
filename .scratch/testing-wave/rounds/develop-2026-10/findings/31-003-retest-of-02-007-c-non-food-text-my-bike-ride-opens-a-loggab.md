@@ -1,11 +1,11 @@
 # 31-003 · Retest of 02-007 (c): non-food text "my bike ride" opens a loggable Review with a 0 kcal "Unknown/No Food Described" item and costs a token
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 31
 - run: w3-20261008T1256Z
 - screen: Log a Meal (Describe tab) / Review & Log
-- decision: 
+- decision: fix ticket 45 (Review - decision:  Log: empty name, non-food, Back keeps the analysis, swap rounding)
 
 **Steps.**
 1. Describe tab, type "my bike ride", Analyze (spend 3, 13:11:57Z).

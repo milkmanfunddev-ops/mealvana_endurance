@@ -1,11 +1,11 @@
 # 31-005 · Swap picker shows 142 kcal for Apple (medium) × 1.5, the Review row it creates shows 143 kcal
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 31
 - run: w3-20261008T1256Z
 - screen: Review & Log (food swap picker)
-- decision: 
+- decision: fix ticket 45 (Review - decision:  Log: empty name, non-food, Back keeps the analysis, swap rounding)
 
 **Steps.**
 1. On Review & Log, swipe the toast row right to left to swap it.

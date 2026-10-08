@@ -1,11 +1,11 @@
 # 30-002 · A RenderFlex overflowed by 971 pixels during onboarding (fatal FlutterError in dev Sentry, MEALVANA-ENDURANCE-DEV-B1)
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 30
 - run: w3-20261008T1255Z
 - screen: Tell us about yourself
-- decision: 
+- decision: fix ticket 43 (onboarding overflow + VoiceOver semantics)
 
 **Steps.**
 1. Fresh install, app launched 12:56:42Z (netcut launch). Welcome → Build My Plan (offline for the tap, network back at 12:57:10Z).

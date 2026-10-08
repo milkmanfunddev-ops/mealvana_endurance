@@ -1,11 +1,11 @@
 # 30-016 · Onboarding daily-plan hydration preview looks computed at 22 C / 50 % where the hydration spec's ruled fallback is 20 C / 60 %
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 30
 - run: w3-20261008T1255Z
 - screen: Onboarding, Your daily plan (preview)
-- decision: 
+- decision: review queue (PREVIEW-HYDRATION-001: which conditions the preview's hydration line uses)
 
 **Steps.**
 1. Onboarding to "Your daily plan" with account A's answers (runs/30/notes.md, 30b-2). 2. Read the fluid and sodium per hour. 3. Compute the engine's output at 20 °C / 60 % and at 22 °C / 50 %.

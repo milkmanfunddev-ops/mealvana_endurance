@@ -1,11 +1,11 @@
 # 32-010 · Follow-up: event 'Test' shows June 20 in the app but its server row says event_date 2026-07-17 (start_time 2026-06-20)
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 32
 - run: w3-20261008T1256Z
 - screen: Events, Event Details
-- decision: 
+- decision: retest ticket 50 (startup, tabs, learn, connected apps), wave 5
 
 **Steps.**
 1. test@test.com, Events: past event "Test" shows JUN 20 2026 / "Saturday, June 20, 2026, Event completed".

@@ -1,11 +1,11 @@
 # 31-001 · Raw content keys shown as text: Timeline Reconnect notice and the meal card's Save as favorite button
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 31
 - run: w3-20261008T1256Z
 - screen: Timeline
-- decision: 
+- decision: fix ticket 40 (content service initialises at startup; the lead landed it 2026-10-08 before the develop push), retest 50
 
 **Steps.**
 1. Sign in as test@test.com on a cleared app (12:57:55Z); TrainingPeaks and V.O2 refresh tokens are dead, so both rows go to requires_reauth (12:58:06Z).

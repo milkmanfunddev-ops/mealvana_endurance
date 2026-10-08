@@ -1,11 +1,11 @@
 # 31-002 · Retest of 02-006 (b): Review & Log with an empty meal name keeps Log this meal enabled and the tap does nothing, silently
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 31
 - run: w3-20261008T1256Z
 - screen: Review & Log
-- decision: 
+- decision: fix ticket 45 (Review - decision:  Log: empty name, non-food, Back keeps the analysis, swap rounding)
 
 **Steps.**
 1. Describe "two scrambled eggs, a slice of whole wheat toast with butter, a banana", Analyze (spend 1).

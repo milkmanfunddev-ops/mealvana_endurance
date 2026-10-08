@@ -1,11 +1,11 @@
 # 30-010 · Build My Plan is not a button to VoiceOver, and the consent screen's Share usage data switch has no label
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 30
 - run: w3-20261008T1255Z
 - screen: Welcome
-- decision: 
+- decision: fix ticket 43 (onboarding overflow + VoiceOver semantics)
 
 **Steps.**
 1. Welcome, signed out: `idb ui describe-all`.

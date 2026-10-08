@@ -1,11 +1,11 @@
 # 32-014 · Idea: Recipes tab offers salmon, chicken and turkey recipes to a vegetarian account with no marker; no SSOT rule covers the log sheet's recipe list
 
 - kind: idea
-- status: open
+- status: triaged
 - ticket: 32
 - run: w3-20261008T1256Z
 - screen: Log a Meal, Recipes
-- decision: 
+- decision: review queue for Xuan (RECIPES-DIET-001: filter or mark recipes against the athlete's diet)
 
 **Steps.**
 1. Decide whether the Log a Meal sheet's Recipes tab filters or marks recipes against the athlete's Dietary

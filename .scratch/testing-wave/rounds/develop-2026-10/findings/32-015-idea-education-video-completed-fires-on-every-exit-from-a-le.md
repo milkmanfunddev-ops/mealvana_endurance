@@ -1,11 +1,11 @@
 # 32-015 · Idea: education_video_completed fires on every exit from a lesson, even at 15% watched
 
 - kind: idea
-- status: open
+- status: triaged
 - ticket: 32
 - run: w3-20261008T1256Z
 - screen: Learn, lesson player
-- decision: 
+- decision: folded into fix ticket 41 (video completed only past a threshold)
 
 **Steps.**
 1. Rename or gate the event: `video_player_screen.dart:99` sends `education_video_completed` when the player

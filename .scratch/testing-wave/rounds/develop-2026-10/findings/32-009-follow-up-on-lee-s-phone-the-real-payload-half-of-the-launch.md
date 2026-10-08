@@ -1,11 +1,11 @@
 # 32-009 · Follow-up on Lee's phone: the real-payload half of the launch-trail guard (a delivered push tapped from killed and from background)
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 32
 - run: w3-20261008T1256Z
 - screen: none (startup chain, launch-trail dialog)
-- decision: 
+- decision: retest ticket 51 (Lee's phone / healthy TrainingPeaks account), wave 5
 
 **Steps.**
 1. On a device with notification permission granted, dev build: schedule or send a real notification

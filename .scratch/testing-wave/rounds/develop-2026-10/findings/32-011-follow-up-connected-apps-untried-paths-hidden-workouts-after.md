@@ -1,11 +1,11 @@
 # 32-011 · Follow-up: Connected Apps untried paths (hidden workouts after reconnect, Delete synced data, V.O2 and Runna Connect, sharing-sheet Turn Off)
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 32
 - run: w3-20261008T1256Z
 - screen: Connected Apps
-- decision: 
+- decision: retest ticket 50 (startup, tabs, learn, connected apps), wave 5
 
 **Steps.**
 1. The Disconnect dialog says hidden workouts "come back if you reconnect". This run hid 43 TrainingPeaks

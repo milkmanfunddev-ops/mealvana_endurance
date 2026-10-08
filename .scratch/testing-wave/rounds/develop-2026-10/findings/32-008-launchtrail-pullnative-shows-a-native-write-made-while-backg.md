@@ -1,11 +1,11 @@
 # 32-008 · LaunchTrail.pullNative() shows a native write made while backgrounded one resume late in 2 of 3 tries (retest of 22-002)
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 32
 - run: w3-20261008T1256Z
 - screen: none (startup chain, LaunchTrail)
-- decision: 
+- decision: folded into fix ticket 34 (prefs reload before pullNative)
 
 **Steps.**
 1. Dev build, signed out on Welcome. Background the app (HOME).

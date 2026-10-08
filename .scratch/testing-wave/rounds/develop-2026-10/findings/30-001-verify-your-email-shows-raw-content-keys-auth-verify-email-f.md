@@ -1,11 +1,11 @@
 # 30-001 · Verify your email shows raw content keys (auth.verify_email.*) for the countdown, Resend, hint, Log in, errors and the resent snackbar
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 30
 - run: w3-20261008T1255Z
 - screen: Verify your email
-- decision: 
+- decision: fix ticket 40 (content service initialises at startup; the lead landed it 2026-10-08 before the develop push), retest 50
 
 **Steps.**
 1. Fresh install (app data cleared), build a89ace2a. Welcome → Build My Plan → onboarding → Save My Plan → Sign up with email.

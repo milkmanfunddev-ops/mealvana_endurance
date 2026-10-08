@@ -1,11 +1,11 @@
 # 30-015 · Delete Account: untried paths (Cancel on the dialog, delete-user answering 500, Sign Out dialog text, region cache after delete)
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 30
 - run: w3-20261008T1255Z
 - screen: Settings
-- decision: 
+- decision: retest ticket 48 (auth, consent, delete), wave 5
 
 **Steps.**
 1. Delete Account → Cancel (`settings.confirm_cancel` today): nothing deleted (SQL), still signed in.

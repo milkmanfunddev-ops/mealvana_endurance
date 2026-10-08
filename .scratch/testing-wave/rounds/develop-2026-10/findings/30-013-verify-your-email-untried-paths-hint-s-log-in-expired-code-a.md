@@ -1,11 +1,11 @@
 # 30-013 · Verify your email: untried paths (hint's Log in, expired code at 60 min, paste a code, Verify tapped after the sixth-digit auto-submit)
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 30
 - run: w3-20261008T1255Z
 - screen: Verify your email
-- decision: 
+- decision: retest ticket 48 (auth, consent, delete), wave 5
 
 **Steps.**
 1. Plain signup: tap the hint's Log in (`auth.verify_email.log_in`); check that Log In opens with the address filled and the

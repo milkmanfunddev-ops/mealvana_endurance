@@ -1,11 +1,11 @@
 # 32-013 · Follow-up: Events, Learn and Log a Meal untried paths
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 32
 - run: w3-20261008T1256Z
 - screen: Events, Learn, Log a Meal
-- decision: 
+- decision: retest ticket 50 (startup, tabs, learn, connected apps), wave 5
 
 **Steps.**
 1. Events: Event Details' More options menu (upcoming and past); New Event with a half-filled form then Back

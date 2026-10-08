@@ -1,11 +1,11 @@
 # 32-003 · AI Credits opened by deep link has no Back or close, and an edge swipe does nothing
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 32
 - run: w3-20261008T1256Z
 - screen: AI Credits (/buy-credits)
-- decision: 
+- decision: fix ticket 46 (Go Home, AI Credits close, credits copy)
 
 **Steps.**
 1. Signed in, `xcrun simctl openurl UDID "com.milkman.mealvanaendurance:///buy-credits"`.

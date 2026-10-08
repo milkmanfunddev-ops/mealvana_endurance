@@ -1,11 +1,11 @@
 # 31-013 · analyze-meal-photo ran and charged a token but left no request line in function_edge_logs
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 31
 - run: w3-20261008T1256Z
 - screen: none
-- decision: 
+- decision: investigation item in fix ticket 41 (why analyze-meal-photo leaves no edge-log row)
 
 **Steps.**
 1. Describe tab with a Gallery photo plus text, Analyze at 13:10:47.4Z (spend 2).

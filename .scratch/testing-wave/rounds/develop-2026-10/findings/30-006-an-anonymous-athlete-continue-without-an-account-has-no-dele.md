@@ -1,11 +1,11 @@
 # 30-006 · An anonymous athlete (Continue without an account) has no Delete Account; the anonymous auth user and its rows stay on the server
 
 - kind: bug
-- status: open
+- status: wontfix
 - ticket: 30
 - run: w3-20261008T1255Z
 - screen: Settings
-- decision: 
+- decision: Lee: the anonymous path is being removed; its server rows are swept by that removal (noted in .scratch/branch-split/HANDOFF.md)
 
 **Steps.**
 1. Signed out. Welcome → Build My Plan (mints anonymous user a8e2c6a5-b533-4567-9843-c25129e3ac83 at 13:18:41Z) → onboarding →

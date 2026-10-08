@@ -1,11 +1,11 @@
 # 31-004 · Retest of 02-006 (a): Back on Review & Log drops the paid analysis and the typed text; getting back to Review costs another token
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 31
 - run: w3-20261008T1256Z
 - screen: Review & Log
-- decision: 
+- decision: fix ticket 45 (Review - decision:  Log: empty name, non-food, Back keeps the analysis, swap rounding)
 
 **Steps.**
 1. Describe "my bike ride", Analyze (one token).

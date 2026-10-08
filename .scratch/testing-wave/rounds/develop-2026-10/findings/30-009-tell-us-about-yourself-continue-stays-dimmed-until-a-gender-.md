@@ -1,11 +1,11 @@
 # 30-009 · Tell us about yourself: Continue stays dimmed until a gender is picked, with nothing saying gender is needed while the card says optional
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 30
 - run: w3-20261008T1255Z
 - screen: Tell us about yourself
-- decision: 
+- decision: review queue for Xuan (ONB-GENDER-001: is gender required, and how is that said)
 
 **Steps.**
 1. Onboarding (account B, 13:08Z). Leave first name, last name and email empty ("PERSONAL INFORMATION · optional"),

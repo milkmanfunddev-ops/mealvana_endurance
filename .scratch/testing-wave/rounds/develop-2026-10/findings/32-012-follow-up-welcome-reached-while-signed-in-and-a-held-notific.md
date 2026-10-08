@@ -1,11 +1,11 @@
 # 32-012 · Follow-up: Welcome reached while signed in, and a held notification tap after sign-in
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 32
 - run: w3-20261008T1256Z
 - screen: Welcome
-- decision: 
+- decision: retest ticket 50 (startup, tabs, learn, connected apps), wave 5
 
 **Steps.**
 1. Signed in, reach Welcome through Page Not Found → Go Home (32-002). Tap Build My Plan, and I already have

@@ -1,11 +1,11 @@
 # 30-012 · Ticket 30's 'simctl spawn defaults delete com.milkman.mealvanaendurance.dev <key>' does nothing on a simulator: use the container plist path
 
 - kind: idea
-- status: open
+- status: closed
 - ticket: 30
 - run: w3-20261008T1255Z
 - screen: none
-- decision: 
+- decision: IMPROVEMENTS entry (#113): simctl defaults delete does nothing on a simulator; use the container plist
 
 **Steps.**
 Process idea. `xcrun simctl spawn UDID defaults delete com.milkman.mealvanaendurance.dev flutter.privacy_region_source`

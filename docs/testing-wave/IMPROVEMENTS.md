@@ -19,6 +19,26 @@ Their dates come from the wave each entry names.
 
 ## Open
 
+- 2026-10-08 · develop-2026-10 · open · **#112 a run exposed a password and an email address (wave 3).** Ticket 32's
+  TrainingPeaks web sign-in sheet zoomed on focus; the agent's tap for the password field landed in the username
+  field and `CRED type` typed the password there in plain text; one screenshot caught it (deleted, never committed;
+  Lee rotates the login). Ticket 31 fetched a stock photo from Wikimedia with Lee's address in the User-Agent.
+  Rules for the runbook: (a) before `CRED type`, read the focused field back from a fresh screenshot and confirm it
+  is the password field (secure entry: dots, not text); a web sheet that zoomed gets re-screenshotted after every
+  tap; (b) nothing a run sends off the machine carries a personal address: a fetch helper uses a neutral
+  User-Agent, and a food photo comes from the repo's fixtures (`test/fixtures/` or SCRATCH-generated), never the web.
+- 2026-10-08 · develop-2026-10 · done · **#113 `simctl spawn defaults delete <bundle id> <key>` does nothing on a
+  simulator (30-012).** The app's prefs live in the container plist; ticket 30 read and edited them with
+  `plistlib` on `Library/Preferences/com.milkman.mealvanaendurance.dev.plist`, app terminated. Ticket texts say so
+  from now on (runbook step 5).
+- 2026-10-08 · develop-2026-10 · done · **#114 fix tickets are drafted by research agents, approved by the lead
+  (wave 3 triage).** Twelve rulings produced eleven fix tickets; the lead cut the Touches research into three Opus
+  drafters working from the Findings and a format sample, and reviewed the files. Faster than lead-written tickets
+  and the Touches lists are checked against code.
+- 2026-10-08 · develop-2026-10 · open · **#115 wave 3's three retest tickets each carried 13 checks and took
+  22–39 minutes of agent time with 15 Findings apiece.** The ten-check rule held up: nothing was skipped, but
+  the look-around Findings (5 per ticket) are now broader than the checks. Next retest tickets cap the
+  look-around at one Finding per screen.
 - 2026-10-07 · develop-2026-10 · open · **#108 a backport ticket runs as sequential agents by area, in one worktree.**
   Ticket 29 (34 mealplanning items plus 16 predecessors, Drift v23 then v24) went to one worktree
   with one Opus agent per area, one after the other, each reading the previous agent's notes. Parallel

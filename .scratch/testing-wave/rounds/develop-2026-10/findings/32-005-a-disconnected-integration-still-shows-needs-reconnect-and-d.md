@@ -1,11 +1,11 @@
 # 32-005 · A disconnected integration still shows 'needs reconnect', and disconnecting TrainingPeaks first retries the dead refresh token
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 32
 - run: w3-20261008T1256Z
 - screen: Connected Apps
-- decision: 
+- decision: fix ticket 47 (Connected Apps disconnect/reconnect)
 
 **Steps.**
 1. test@test.com, with TrainingPeaks and V.O2 rows at `last_sync_status = requires_reauth`.

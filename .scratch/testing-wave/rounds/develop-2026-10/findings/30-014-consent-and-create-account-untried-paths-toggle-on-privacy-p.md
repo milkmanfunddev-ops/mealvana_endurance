@@ -1,11 +1,11 @@
 # 30-014 · Consent and Create account: untried paths (toggle ON, Privacy Policy/Terms links, Back from Your privacy, Log in from anonymous Settings migrating data)
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 30
 - run: w3-20261008T1255Z
 - screen: Your privacy
-- decision: 
+- decision: retest ticket 48 (auth, consent, delete), wave 5
 
 **Steps.**
 1. GB geo cache (as 7(ii)): on Your privacy turn Share usage data ON, Continue: prefs `analytics_consent_status=granted`,

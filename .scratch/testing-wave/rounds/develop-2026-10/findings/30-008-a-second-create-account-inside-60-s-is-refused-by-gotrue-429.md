@@ -1,11 +1,11 @@
 # 30-008 · A second Create Account inside 60 s is refused by GoTrue (429) and reported as a failed signup instead of a wait
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 30
 - run: w3-20261008T1255Z
 - screen: Sign Up with Email
-- decision: 
+- decision: fix ticket 42 (pending signup survives a relaunch; 429 is a wait)
 
 **Steps.**
 1. Upgrade path (anonymous 1ffc8851…). Create Account at 13:12:10Z; Verify your email → Use a different email.

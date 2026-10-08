@@ -114,6 +114,15 @@ so.
 - Before submitting a long value (an address, a code), read it back with `idb ui describe-all
   --udid UDID`: a field shows only the tail of a long value.
 - Passwords go in with `CRED type`, never by hand and never into a Finding, commit or report.
+  Before `CRED type`, take a fresh screenshot and confirm the focused field is the password field
+  (secure entry shows dots); a web sign-in sheet that zoomed on focus moves its fields, so
+  re-screenshot after every tap in it (#112, wave 3: a password was typed into a username field).
+- Nothing a run sends off this machine carries a personal address (#112): a helper that fetches
+  anything uses a neutral User-Agent, and a food photo comes from the repo's fixtures or is generated
+  in SCRATCH, never downloaded.
+- Simulator prefs: `simctl spawn UDID defaults delete <bundle id> <key>` does nothing (#113). Read
+  and edit `Library/Preferences/com.milkman.mealvanaendurance.dev.plist` in the app's data container
+  with `plistlib`, app terminated; print key names and only the values the ticket names.
   Never tap the eye (show password) icon on a password field: the element list and screenshots
   then carry the password (#89). Read a password field back only as a count of dots, and check the
   count against the password's length before submitting. `CRED type` waits a second after the

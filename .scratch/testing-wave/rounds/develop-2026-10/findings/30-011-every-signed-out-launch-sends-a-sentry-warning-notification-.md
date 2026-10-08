@@ -1,11 +1,11 @@
 # 30-011 · Every signed-out launch sends a Sentry warning 'Notification permission answer not stored: no local profile'
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 30
 - run: w3-20261008T1255Z
 - screen: none
-- decision: 
+- decision: fix ticket 41 (expected outcomes are breadcrumbs)
 
 **Steps.**
 1. On a simulator whose notification permission was already answered (Don't Allow at A's signup, 13:02:37Z), launch the

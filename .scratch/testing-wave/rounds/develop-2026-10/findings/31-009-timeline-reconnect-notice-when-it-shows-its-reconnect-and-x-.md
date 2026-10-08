@@ -1,11 +1,11 @@
 # 31-009 · Timeline Reconnect notice: when it shows, its Reconnect and X, and why it was gone after a relaunch with two integrations still needing a reconnect
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 31
 - run: w3-20261008T1256Z
 - screen: Timeline
-- decision: 
+- decision: retest ticket 49 (meal logging), wave 5
 
 **Steps.**
 1. Sign in on an account with a dead TrainingPeaks / V.O2 token: the notice showed right after sign-in (12:58:06Z).

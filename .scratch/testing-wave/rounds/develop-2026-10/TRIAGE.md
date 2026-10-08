@@ -128,3 +128,49 @@ One line per Finding decision, made with Lee in the terminal: id, decision, who 
 - 22-002 · closed · run in ticket 32; re-filed as 32-008 (one resume late) · lead, 2026-10-08
 - 08-022 · closed · signed-out half passes in ticket 32; Go Home re-filed as 32-002 · lead, 2026-10-08
 - 08-016 · closed · run in ticket 32; unfiltered with no rule, idea 32-014 · lead, 2026-10-08
+- 30-001 · triaged · fix ticket 40 (content service initialises at startup; the lead landed it 2026-10-08 before the develop push), retest 50 · Lee, 2026-10-08
+- 31-001 · triaged · fix ticket 40 (content service initialises at startup; the lead landed it 2026-10-08 before the develop push), retest 50 · Lee, 2026-10-08
+- 32-001 · triaged · fix ticket 40 (content service initialises at startup; the lead landed it 2026-10-08 before the develop push), retest 50 · Lee, 2026-10-08
+- 30-005 · triaged · fix ticket 41 (expected outcomes are breadcrumbs) · Lee, 2026-10-08
+- 30-011 · triaged · fix ticket 41 (expected outcomes are breadcrumbs) · Lee, 2026-10-08
+- 32-007 · triaged · fix ticket 41 (expected outcomes are breadcrumbs) · Lee, 2026-10-08
+- 31-012 · triaged · folded into fix ticket 41 (analytics on meal removal) · Lee, 2026-10-08
+- 32-015 · triaged · folded into fix ticket 41 (video completed only past a threshold) · Lee, 2026-10-08
+- 31-013 · triaged · investigation item in fix ticket 41 (why analyze-meal-photo leaves no edge-log row) · Lee, 2026-10-08
+- 30-007 · triaged · fix ticket 42 (pending signup survives a relaunch; 429 is a wait) · Lee, 2026-10-08
+- 30-008 · triaged · fix ticket 42 (pending signup survives a relaunch; 429 is a wait) · Lee, 2026-10-08
+- 30-006 · wontfix · Lee: the anonymous path is being removed; its server rows are swept by that removal (noted in .scratch/branch-split/HANDOFF.md) · Lee, 2026-10-08
+- 30-002 · triaged · fix ticket 43 (onboarding overflow + VoiceOver semantics) · Lee, 2026-10-08
+- 30-010 · triaged · fix ticket 43 (onboarding overflow + VoiceOver semantics) · Lee, 2026-10-08
+- 30-009 · triaged · review queue for Xuan (ONB-GENDER-001: is gender required, and how is that said) · Lee, 2026-10-08
+- 30-004 · triaged · fix ticket 44 (session protein bump in the daily-plan preview) · Lee, 2026-10-08
+- 30-016 · triaged · review queue (PREVIEW-HYDRATION-001: which conditions the preview's hydration line uses) · Lee, 2026-10-08
+- 31-002 · triaged · fix ticket 45 (Review & Log: empty name, non-food, Back keeps the analysis, swap rounding) · Lee, 2026-10-08
+- 31-003 · triaged · fix ticket 45 (Review & Log: empty name, non-food, Back keeps the analysis, swap rounding) · Lee, 2026-10-08
+- 31-004 · triaged · fix ticket 45 (Review & Log: empty name, non-food, Back keeps the analysis, swap rounding) · Lee, 2026-10-08
+- 31-005 · triaged · fix ticket 45 (Review & Log: empty name, non-food, Back keeps the analysis, swap rounding) · Lee, 2026-10-08
+- 31-007 · triaged · folded into fix ticket 45 (short-input copy as a content key) · Lee, 2026-10-08
+- 32-002 · triaged · fix ticket 46 (Go Home, AI Credits close, credits copy) · Lee, 2026-10-08
+- 32-003 · triaged · fix ticket 46 (Go Home, AI Credits close, credits copy) · Lee, 2026-10-08
+- 32-004 · triaged · fix ticket 46 (Go Home, AI Credits close, credits copy) · Lee, 2026-10-08
+- 32-005 · triaged · fix ticket 47 (Connected Apps disconnect/reconnect) · Lee, 2026-10-08
+- 32-006 · triaged · fix ticket 47 (Connected Apps disconnect/reconnect) · Lee, 2026-10-08
+- 32-008 · triaged · folded into fix ticket 34 (prefs reload before pullNative) · Lee, 2026-10-08
+- 30-013 · triaged · retest ticket 48 (auth, consent, delete), wave 5 · Lee, 2026-10-08
+- 30-014 · triaged · retest ticket 48 (auth, consent, delete), wave 5 · Lee, 2026-10-08
+- 30-015 · triaged · retest ticket 48 (auth, consent, delete), wave 5 · Lee, 2026-10-08
+- 31-006 · triaged · retest ticket 49 (meal logging), wave 5 · Lee, 2026-10-08
+- 31-009 · triaged · retest ticket 49 (meal logging), wave 5 · Lee, 2026-10-08
+- 31-010 · triaged · retest ticket 49 (meal logging), wave 5 · Lee, 2026-10-08
+- 31-011 · triaged · retest ticket 49 (meal logging), wave 5 · Lee, 2026-10-08
+- 32-010 · triaged · retest ticket 50 (startup, tabs, learn, connected apps), wave 5 · Lee, 2026-10-08
+- 32-011 · triaged · retest ticket 50 (startup, tabs, learn, connected apps), wave 5 · Lee, 2026-10-08
+- 32-012 · triaged · retest ticket 50 (startup, tabs, learn, connected apps), wave 5 · Lee, 2026-10-08
+- 32-013 · triaged · retest ticket 50 (startup, tabs, learn, connected apps), wave 5 · Lee, 2026-10-08
+- 32-009 · triaged · retest ticket 51 (Lee's phone / healthy TrainingPeaks account), wave 5 · Lee, 2026-10-08
+- 31-008 · triaged · retest ticket 51 (Lee's phone / healthy TrainingPeaks account), wave 5 · Lee, 2026-10-08
+- 30-003 · triaged · review queue for Xuan (NOTIF-PROMPT-001: an explanation before the iOS prompt, and when it comes) · Lee, 2026-10-08
+- 32-014 · triaged · review queue for Xuan (RECIPES-DIET-001: filter or mark recipes against the athlete's diet) · Lee, 2026-10-08
+- 30-012 · closed · IMPROVEMENTS entry (#113): simctl defaults delete does nothing on a simulator; use the container plist · Lee, 2026-10-08
+- wave 3 lead notes · ticket 32 exposed the TrainingPeaks test login password in one screenshot (deleted, never committed) and ticket 31 sent Lee's address in a User-Agent header; both in IMPROVEMENTS #112 · lead, 2026-10-08
+- 29-001 · triaged · fixed by 29; retest in ticket 50, wave 5 · lead, 2026-10-08

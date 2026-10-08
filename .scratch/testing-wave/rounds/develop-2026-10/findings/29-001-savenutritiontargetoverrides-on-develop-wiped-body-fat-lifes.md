@@ -1,11 +1,11 @@
 # 29-001 · saveNutritionTargetOverrides on develop wiped body fat, lifestyle, training phase, sweat test and Garmin timestamps on every override save
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 29
 - run: w2-20261007T1340Z
 - screen: Settings > Nutrition targets (override save)
-- decision: 
+- decision: fixed by ticket 29 (e663c3bb); retest ticket 50 (Settings > Nutrition targets override keeps the profile fields), wave 5
 
 **Steps.**
 1. On develop before ticket 29: set body fat, lifestyle, training phase, a sweat test and connect Garmin.

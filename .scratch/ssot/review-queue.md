@@ -30,6 +30,20 @@ approved card or a ruling in the round's TRIAGE.md, and leaves this file. Rewrit
    during-run band show? Recommend: the band stays the engine's and the screen stops flagging
    their own rate as low.
 
+7. **Gender on Tell us about yourself (ONB-GENDER-001, develop-2026-10, Finding 30-009).** Continue stays
+   dimmed until a gender is picked and nothing says so. Required, and how should the page say it?
+   Recommend: optional, with a "Prefer not to say" choice.
+8. **The iOS notification prompt (NOTIF-PROMPT-001, develop-2026-10, Finding 30-003).** It appears the
+   instant the signup code is accepted, with no in-app explanation first. Add a pre-prompt line, and
+   when should it come? Recommend: a one-line explanation on the first Timeline, then the prompt.
+9. **Recipes and the athlete's diet (RECIPES-DIET-001, develop-2026-10, Finding 32-014).** The Log a meal
+   Recipes tab offers salmon, chicken and turkey recipes to a vegetarian account with no marker. Filter,
+   mark, or leave? Recommend: mark with a small diet chip and sort matching recipes first.
+10. **The daily-plan preview's hydration conditions (PREVIEW-HYDRATION-001, develop-2026-10, Finding
+   30-016).** The onboarding preview's fluid and sodium line looks computed at 22 °C / 50 %; the ruled
+   fallback for a failed weather fetch is 20 °C / 60 %, but the preview never fetches. Which conditions
+   should the preview use? Recommend: the ruled fallback, so the preview and the first real day agree.
+
 ## For Lee (decisions)
 
 1. **Vana judging personas (VANA-PERSONA-001).** Run round 001 on judging-1 as is, persona
@@ -38,6 +52,13 @@ approved card or a ruling in the round's TRIAGE.md, and leaves this file. Rewrit
 2. **Codemagic Patrol lists (CI-001).** Delete the hand-kept Patrol target lists from the two
    disabled Codemagic workflows and let the contract test read the M1 workflow only. Recommend yes.
 3. **RevenueCat Test Store (mp-656).** Swap it to the four `me_pro_*` products? Recommend yes.
+
+4. **Resumed signup and the Keychain (ticket 42, before wave 4).** Resuming a signup after a relaunch means
+   keeping the anonymous-upgrade path's deferred password in the Keychain until the code is used or abandoned.
+   Recommend yes (the other option resumes only plain signups, which the app never takes from Build My Plan).
+5. **A describe call that finds no food (ticket 45, before wave 4).** The token is charged after the model
+   answers, so "my bike ride" costs one; the photo function already refuses non-food before charging.
+   Recommend: make describe free for non-food too (one line in describe-meal).
 
 ## Tasks, not decisions
 

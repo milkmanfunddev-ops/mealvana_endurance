@@ -1,7 +1,7 @@
 # 30-004 · Onboarding Your daily plan leaves out the session protein bump on the Workout day (1.4 g/kg where the 150-min run needs 1.6)
 
 - kind: ssot-conflict
-- status: open
+- status: triaged
 - ticket: 30
 - run: w3-20261008T1255Z
 - screen: Your daily plan
