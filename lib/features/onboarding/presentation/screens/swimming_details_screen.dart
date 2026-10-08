@@ -284,13 +284,20 @@ class _SwimmingDetailsScreenState extends ConsumerState<SwimmingDetailsScreen> {
                             ),
                           ),
                           const SizedBox(width: 12),
-                          const Text(
-                            'Swimming Details',
-                            style: TextStyle(
-                              fontFamily: 'Sansita',
-                              fontSize: 20,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.orange,
+                          // Expanded so the title takes the remaining width
+                          // and never pushes the Row past 390 pt (it
+                          // overflowed before: the Text was unconstrained).
+                          const Expanded(
+                            child: Text(
+                              'Swimming Details',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontFamily: 'Sansita',
+                                fontSize: 20,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.orange,
+                              ),
                             ),
                           ),
                         ],
