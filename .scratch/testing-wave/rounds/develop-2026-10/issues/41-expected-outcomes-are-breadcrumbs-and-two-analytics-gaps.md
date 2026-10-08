@@ -90,3 +90,5 @@ No edge-function or schema change. Nothing to deploy. The RUNBOOK line in item 1
 - [ ] Retest on device: wave 5 retest ticket 48 (Google cancel, Apple close, an existing address, a wrong password, offline Log In, a signed-out relaunch, each checked in dev Sentry for no event) and wave 5 retest ticket 50 (offline cold start, an offline lesson, the region timeout, `education_video_closed`). The meal-removal event belongs in wave 5 retest ticket 49 (meal logging). 49's Blocked-by list does not name 41 yet; the lead adds it.
 
 Next: /testing-wave develop-2026-10 (fix wave 4)
+
+**Rulings at the wave-4 close (Lee, 2026-10-08).** The held startup counts: "we can send them to sentry but we needn't necessarily have any analytics" (Lee). Follow-up ticket 54 records the startup-site expected failures in Sentry and drops the analytics hold for them.

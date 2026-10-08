@@ -8,7 +8,7 @@ One line per wave: number, base sha, tickets, start time, who led it.
 - wave 2 · base `a69b226b` · ticket 29 alone (sequential Opus agents by area in one worktree), then 21–28 · 2026-10-07T13:40Z · lead: Claude (Fable), fix wave
 - wave 2b · base (29 merged) · tickets 21+22 (one agent), 24, 26+27 (one agent), 28; then 23 after 26+27 merges · 2026-10-07 · lead: Claude (Fable), fix wave
 - wave 3 · base `a89ace2a` (app built from it) · tickets 30, 31, 32 · 2026-10-08T12:55Z–13:35Z · lead: Claude (Fable), test wave (rebuild); merged `e28df18a`; 43 Findings + 1 lead-filed; 30 old Findings closed
-- wave 4 · base `aab323b7` · fix wave: 34, 35+36 (one agent), 38, 39, 41, 43, 44 at once; then 37; then 45, 46, 47; then 42 · 2026-10-08T15:58Z · lead: Claude (Fable), fix wave (40 done earlier by the lead)
+- wave 4 · base `aab323b7` · fix wave: 34, 35+36 (one agent), 38, 39, 41, 43, 44 at once; then 37; then 45, 46, 47; then 42 · 2026-10-08T15:58Z · lead: Claude (Fable), fix wave (40 done earlier by the lead) · LANDED on develop-next `98b15919` (43 commits; suite 5333 pass after two harness/guard fixes; review fixes `98b15919`; dev deploy describe-meal, analyze-meal-photo, garmin-backfill, garmin-user-mapping, delete-user). 43 part A (971 px overflow) NOT reproduced: DEV-B1 stays open for retest 48.
 
 ## Rulings
 
@@ -178,3 +178,9 @@ One line per Finding decision, made with Lee in the terminal: id, decision, who 
 - 42 (ruling, review queue 4) · keep the anonymous-upgrade path's deferred password in the Keychain until the code is used or the signup is abandoned; a relaunch resumes the same signup · Lee, 2026-10-08
 - 45 (ruling, review queue 5) · a describe call that finds no food is free: describe-meal skips or refunds the charge, as the photo function already does · Lee, 2026-10-08
 - 41 (ruling, review queue 6) · expected failures become breadcrumbs AND a plain analytics event `expected_failure` with a reason, so the offline and login-failure counts survive · Lee, 2026-10-08
+- 36 (ruling, agent question 1) · the Settings Account email line mirrors the Profile field for a hidden-address Apple account: the typed contact email, else blank; the relay string never shows · Lee, 2026-10-08
+- 36 (ruling, agent question 2) · anonymous accounts get the editable Contact email field too · Lee, 2026-10-08
+- 37 (ruling, agent question 1) · the `unknown` sync-error copy stays "{provider} sync failed. Please try again."; no exception text reaches the screen · Lee, 2026-10-08
+- 37 (ruling, agent question 2) · Runna moves onto the sync-error codes: follow-up fix ticket 52 · Lee, 2026-10-08
+- 41 (ruling, agent question) · Lee: "we can send them to sentry but we needn't necessarily have any analytics": the startup-site expected failures are recorded in Sentry, not held for analytics; follow-up ticket 54 · Lee, 2026-10-08
+- 39 (agent note) · `UserProfile.toJson` still sends `sweat_test_date` naive: follow-up fix ticket 53 · Lee, 2026-10-08

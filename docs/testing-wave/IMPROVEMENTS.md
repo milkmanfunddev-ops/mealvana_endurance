@@ -28,6 +28,24 @@ Their dates come from the wave each entry names.
   tap; (b) nothing a run sends off the machine carries a personal address: a fetch helper uses a neutral
   User-Agent, and a food photo comes from the repo's fixtures (`test/fixtures/` or SCRATCH-generated), never the web.
   Done 2026-10-08 (before wave 4): runbook step 5 carries both rules (the `CRED type` focus check and the neutral User-Agent).
+- 2026-10-08 · develop-2026-10 · open · **#116 fix-wave agents skip tests of the classes they change (wave 4).** Ticket 42's agent
+  did not run `anonymous_account_upgrade_test.dart` (it exercises `verifyEmailOtp`, which 42 changed); the full suite found
+  four reds the agent could have found in a minute. Rule for the fix-wave prompt: before committing, `grep -rl <each
+  changed class or method name> test/` and run every file it names, not only the ticket's list.
+- 2026-10-08 · develop-2026-10 · open · **#117 the report source guard does not know new Report helpers (wave 4).** Ticket
+  41 added `Report.faultUnlessWeather` and the guard flagged every catch that used it (12 sites) in the full suite only.
+  A ticket that adds a reporting helper or a by-contract silent catch adds it to `source_guard.dart`'s `reportCalls` or a
+  reasoned `allow_list.md` entry in the same commit, and runs `test/shared/source_guard/` itself.
+- 2026-10-08 · develop-2026-10 · done · **#118 a notifier that writes a failed call into state sends an area-unknown event
+  (wave 4 review).** Ticket 45's new controller stored the `MealAiException` outcome in state, so the Riverpod observer
+  faulted "my bike ride" even though the service had reported it and the widget noted it. The fix-wave prompt now says:
+  a controller that holds an expected failure (an athlete's choice, network weather) reports or notes it first and keeps
+  it out of state, or marks the error type as an outcome the observer skips (ticket 41's `AuthFlowOutcome`). Done
+  2026-10-08: `98b15919` and this entry; the review caught it before landing.
+- 2026-10-08 · develop-2026-10 · done · **#119 a fix wave of thirteen tickets ran in four batches by shared files in one
+  session (wave 4).** Seven agents at once, then 37, then 45/46/47, then 42, each cut from the merge tree the moment its
+  blockers landed; merge-as-they-finish kept the lead busy and the wall clock at about 2.5 h for 10k lines. The three
+  review agents (one Standards, two Spec halves) found one real defect and four cleanups the suite could not. Keep it.
 - 2026-10-08 · develop-2026-10 · done · **#113 `simctl spawn defaults delete <bundle id> <key>` does nothing on a
   simulator (30-012).** The app's prefs live in the container plist; ticket 30 read and edited them with
   `plistlib` on `Library/Preferences/com.milkman.mealvanaendurance.dev.plist`, app terminated. Ticket texts say so

@@ -47,3 +47,5 @@ Deploy (dev, by the lead, from the merged tree): every function that imports `_s
 2. Runna still writes the raw `e.message` / `e.toString()` into `last_sync_error` (outside this ticket's writer list; it reads as `unknown` on screen, but the raw text, address included, still reaches the server row). Fold Runna into the codes in a follow-up ticket?
 
 Next: /testing-wave develop-2026-10 (fix wave 4)
+
+**Rulings at the wave-4 close (Lee, 2026-10-08).** Question 1: the `unknown` copy stays as written. Question 2: Runna moves onto the codes in follow-up ticket 52.

@@ -50,3 +50,5 @@ No edge-function or schema change. Nothing to deploy.
 2. Anonymous accounts have no auth address, so by the ticket's rule they get the editable "Contact email" field too. Intended?
 
 Next: /testing-wave develop-2026-10 (fix wave 4)
+
+**Rulings at the wave-4 close (Lee, 2026-10-08).** Question 1: keep it, the Account line shows the contact email or blank for a hidden-address Apple account. Question 2: yes, anonymous accounts get the editable Contact email field.
