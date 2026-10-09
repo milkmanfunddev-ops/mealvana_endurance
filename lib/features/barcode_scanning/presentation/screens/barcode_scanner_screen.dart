@@ -358,7 +358,7 @@ class _BarcodeScannerScreenState extends ConsumerState<BarcodeScannerScreen>
       _showSuccessResult(result.food!, result.barcode);
     } else if (result.isNotFound) {
       _trackLookupFailed('not_found', result.barcode);
-      _showNotFoundResult(result.barcode, result.message!);
+      _showNotFoundResult(result.barcode);
     } else if (result.isInvalidFormat) {
       _trackLookupFailed('invalid_format', result.barcode);
       // The service's message is about scanning; a typed number that the
@@ -514,7 +514,9 @@ class _BarcodeScannerScreenState extends ConsumerState<BarcodeScannerScreen>
     }
   }
 
-  void _showNotFoundResult(String barcode, String message) {
+  /// The title and body are content (ticket 79, 68-007); the service's
+  /// not-found message is debug only.
+  void _showNotFoundResult(String barcode) {
     showDialog(
       context: context,
       builder: (context) => Dialog(
@@ -535,7 +537,7 @@ class _BarcodeScannerScreenState extends ConsumerState<BarcodeScannerScreen>
               ),
               const SizedBox(height: AppSpacing.lg),
               Text(
-                'Product Not Found',
+                _text(ContentKeys.barcodeScannerNotFoundTitle),
                 style: AppTextStyles.sectionTitle.copyWith(
                   color: Theme.of(context).colorScheme.onSurface,
                 ),
@@ -550,7 +552,7 @@ class _BarcodeScannerScreenState extends ConsumerState<BarcodeScannerScreen>
               ),
               const SizedBox(height: AppSpacing.sm),
               Text(
-                message,
+                _text(ContentKeys.barcodeScannerNotFoundBody),
                 style: AppTextStyles.bodyMedium.copyWith(
                   color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
@@ -702,9 +704,17 @@ class _BarcodeScannerScreenState extends ConsumerState<BarcodeScannerScreen>
                   Expanded(
                     child: KyleSecondaryButton(
                       text: 'Try Again',
+                      // Looks the same code up again: a typed code is not
+                      // typed twice (ticket 79 Q1, Lee 2026-10-09; the read
+                      // is safe to repeat). No code in hand: scan again.
                       onPressed: () {
                         Navigator.of(context).pop();
-                        _resetScanning();
+                        final code = _lastScannedBarcode;
+                        if (code == null) {
+                          _resetScanning();
+                        } else {
+                          _lookupBarcode(code);
+                        }
                       },
                     ),
                   ),

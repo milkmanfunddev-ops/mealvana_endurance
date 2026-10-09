@@ -38,19 +38,33 @@ import { z } from 'npm:zod@3';
 import { isNotFood, MealAnalysisSchema } from '../_shared/meal_analysis/schema.ts';
 import { creditCost } from '../_shared/ai/credits.ts';
 import { DESCRIBE_MEAL_MODEL } from '../_shared/ai/model.ts';
+import { errorResponse } from '../_shared/responses.ts';
 
 // ---------------------------------------------------------------------------
 // A. description validation rules (mirrors index.ts handler logic)
 // ---------------------------------------------------------------------------
 
+type ValidationFailure = {
+  ok: false;
+  error: string;
+  status: number;
+  extra?: Record<string, unknown>;
+};
+
 /** Mirrors the validation logic in describe-meal/index.ts */
-function validateDescription(description: unknown): { ok: true; value: string } | { ok: false; error: string } {
+function validateDescription(description: unknown): { ok: true; value: string } | ValidationFailure {
   if (typeof description !== 'string' || description.trim().length === 0) {
-    return { ok: false, error: 'description is required and must be a non-empty string' };
+    return { ok: false, status: 400, error: 'description is required and must be a non-empty string' };
   }
   const MAX_DESCRIPTION_LENGTH = 2000;
   if (description.length > MAX_DESCRIPTION_LENGTH) {
-    return { ok: false, error: `description is too long (max ${MAX_DESCRIPTION_LENGTH} characters)` };
+    // index.ts answers errorResponse(msg, 400, undefined, extra) — ticket 79.
+    return {
+      ok: false,
+      status: 400,
+      error: `description is too long (max ${MAX_DESCRIPTION_LENGTH} characters)`,
+      extra: { too_long: true, max_length: MAX_DESCRIPTION_LENGTH },
+    };
   }
   return { ok: true, value: description.trim() };
 }
@@ -109,6 +123,37 @@ describe('A. description validation', () => {
     assert(result.ok);
     if (result.ok) {
       assertEquals(result.value, 'pasta with meatballs');
+    }
+  });
+
+  it('too-long result carries too_long: true and max_length: 2000 (ticket 79)', () => {
+    const result = validateDescription('a'.repeat(2001));
+    assert(!result.ok);
+    if (!result.ok) {
+      assertEquals(result.status, 400);
+      assertEquals(result.extra, { too_long: true, max_length: 2000 });
+    }
+  });
+
+  it('too-long answer body, as errorResponse builds it, carries the flag (ticket 79)', async () => {
+    const result = validateDescription('a'.repeat(2001));
+    assert(!result.ok);
+    if (!result.ok) {
+      const res = errorResponse(result.error, result.status, undefined, result.extra);
+      assertEquals(res.status, 400);
+      const body = await res.json();
+      assertEquals(body.success, false);
+      assertEquals(body.error, 'description is too long (max 2000 characters)');
+      assertEquals(body.too_long, true);
+      assertEquals(body.max_length, 2000);
+    }
+  });
+
+  it('other 400s carry no too_long flag', () => {
+    const result = validateDescription('   ');
+    assert(!result.ok);
+    if (!result.ok) {
+      assertEquals(result.extra, undefined);
     }
   });
 
