@@ -5,12 +5,15 @@
  * The status maps below are the ones the prod function logs recorded on
  * 2026-09-27 and 2026-10-02, per summary type, in request order.
  *
- * Run: deno test --allow-all --allow-sys supabase/functions/garmin-backfill/
+ * Run: deno test --allow-all supabase/functions/garmin-backfill/
  */
 
 import { assertEquals } from 'https://deno.land/std@0.168.0/testing/asserts.ts';
 
-import { classifyBackfillFailure } from './outcome.ts';
+import {
+  classifyBackfillFailure,
+  describeBackfillRejection,
+} from './outcome.ts';
 
 Deno.test('a queued type means success: no failure answer', () => {
   assertEquals(
@@ -63,4 +66,26 @@ Deno.test('every fetch threw (nothing recorded) is an outage', () => {
   const failure = classifyBackfillFailure({});
   assertEquals(failure?.status, 502);
   assertEquals(failure?.code, 'garmin_unavailable');
+});
+
+// Ticket 76 (Finding 69-012): Garmin's refusal text is used to spot a dead
+// token, and only status + error code leave describeBackfillRejection.
+
+Deno.test('a 401 Token is not active is a dead token, with no text in the summary', () => {
+  const rejection = describeBackfillRejection(
+    401,
+    '{"errorMessage":"Token is not active"}',
+  );
+  assertEquals(rejection.tokenInactive, true);
+  assertEquals(rejection.summary, { status: 401, error_code: null });
+});
+
+Deno.test('a Garmin throttle is not a dead token, and its text is dropped', () => {
+  const rejection = describeBackfillRejection(
+    429,
+    'Too many request: Limit 100 per 1 minute',
+  );
+  assertEquals(rejection.tokenInactive, false);
+  assertEquals(rejection.summary, { status: 429, error_code: null });
+  assertEquals(JSON.stringify(rejection).includes('Limit 100'), false);
 });

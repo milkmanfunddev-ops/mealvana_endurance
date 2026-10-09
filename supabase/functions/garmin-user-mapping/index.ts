@@ -5,12 +5,11 @@ import { errorResponse, successResponse } from '../_shared/responses.ts';
 import { initSentry, withSentry } from '../_shared/sentry.ts';
 import { deregisterGarminForUser } from '../_shared/garmin/token.ts';
 import { deleteGarminMapping } from './delete.ts';
+import { verifyGarminUserId } from './verify.ts';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? '';
 const SUPABASE_SERVICE_ROLE_KEY =
   Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
-const GARMIN_USER_ID_URL =
-  'https://apis.garmin.com/wellness-api/rest/user/id';
 
 type MappingRequest = {
   action?: 'upsert' | 'delete';
@@ -41,35 +40,6 @@ async function requireUser(req: Request) {
   }
 
   return { user, response: null };
-}
-
-async function verifyGarminUserId(
-  accessToken: string,
-  expectedGarminUserId: string,
-): Promise<Response | null> {
-  const response = await fetch(GARMIN_USER_ID_URL, {
-    headers: { Authorization: `Bearer ${accessToken}` },
-  });
-
-  if (!response.ok) {
-    const body = await response.text();
-    console.error(
-      `[garmin-user-mapping] Garmin user verification failed: ${response.status}`,
-      body,
-    );
-    return errorResponse('Unable to verify Garmin account', 401);
-  }
-
-  const payload = await response.json();
-  if (payload.userId !== expectedGarminUserId) {
-    console.error('[garmin-user-mapping] Garmin user ID mismatch', {
-      expectedGarminUserId,
-      actualGarminUserId: payload.userId,
-    });
-    return errorResponse('Garmin account verification mismatch', 403);
-  }
-
-  return null;
 }
 
 // Initialise Sentry once per cold-start. No-op when SENTRY_DSN is not set.
@@ -122,11 +92,13 @@ serve(withSentry('garmin-user-mapping', async (req: Request) => {
       return errorResponse('garmin_user_id and access_token are required', 400);
     }
 
-    const verificationError = await verifyGarminUserId(
+    const verification = await verifyGarminUserId(
       body.access_token,
       body.garmin_user_id,
     );
-    if (verificationError) return verificationError;
+    if (!verification.ok) {
+      return errorResponse(verification.message, verification.status);
+    }
 
     // Q-INT8 (RULED 2026-09-10): `integrations` is the sole token
     // custodian. The mapping row carries ONLY the identity link

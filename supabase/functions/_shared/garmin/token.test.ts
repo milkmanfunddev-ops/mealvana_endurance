@@ -30,8 +30,8 @@ interface UpdateCapture {
 /** A supabase double covering `.from().select().eq().eq().maybeSingle()` and `.from().update().eq().eq()`. */
 function fakeSupabase(opts: {
   integrationRow?: Record<string, unknown> | null;
-  readError?: { code?: string; message: string } | null;
-  updateError?: { message: string } | null;
+  readError?: { code?: string; message: string; details?: string; hint?: string } | null;
+  updateError?: { code?: string; message: string; details?: string; hint?: string } | null;
 } = {}) {
   const updates: UpdateCapture[] = [];
   const supabase = {
@@ -339,5 +339,109 @@ describe("markGarminRequiresReauth", () => {
     const { supabase } = fakeSupabase({ updateError: { message: "boom" } });
     const lines = await captureConsole(() => markGarminRequiresReauth(supabase, "u1"));
     assertEquals(lines.some((l) => l.includes("boom")), true);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Ticket 76 (Finding 69-012): status and error code only, never a body
+// ---------------------------------------------------------------------------
+
+const leakedB64 = btoa(
+  JSON.stringify({ refreshTokenValue: "rt-live-5f2c", garminGuid: "g-guid-1" }),
+);
+const invalidGrantBody = JSON.stringify({
+  error: "invalid_grant",
+  error_description: `Invalid refresh token: ${leakedB64}`,
+});
+const failingRowError = {
+  code: "23502",
+  message: 'null value in column "token_expires_at" violates not-null constraint',
+  details: "Failing row contains (u1, garmin, fresh, rt-live-5f2c, null)",
+  hint: "rt-live-5f2c",
+};
+
+/** No line holds the token, any 12-character slice of its base64, or Garmin's description. */
+function assertNoLeak(lines: string[]) {
+  for (const line of lines) {
+    assertEquals(line.includes("rt-live-5f2c"), false, line);
+    assertEquals(line.includes("Invalid refresh token"), false, line);
+    assertEquals(line.includes("error_description"), false, line);
+    assertEquals(line.includes("Failing row"), false, line);
+    for (let i = 0; i + 12 <= leakedB64.length; i++) {
+      assertEquals(line.includes(leakedB64.slice(i, i + 12)), false, line);
+    }
+  }
+}
+
+describe("redaction (ticket 76)", () => {
+  it("logs a refused refresh as status and error code only, and keeps the stale token", async () => {
+    const { supabase } = fakeSupabase();
+    const { fn } = fakeFetch(() => new Response(invalidGrantBody, { status: 400 }));
+    let token = "";
+    const lines = await captureConsole(async () => {
+      token = await ensureFreshGarminToken(
+        supabase,
+        { access_token: "stale", refresh_token: "r1", token_expires_at: hourAgo() },
+        "u1",
+        { fetch: fn, ...creds, logPrefix: "[garmin-backfill]" },
+      );
+    });
+    assertEquals(token, "stale");
+    const refreshLine = lines.find((l) => l.includes("Token refresh failed"));
+    assertEquals(refreshLine, '[garmin-backfill] Token refresh failed {"status":400,"error_code":"invalid_grant"}');
+    assertNoLeak(lines);
+  });
+
+  it("logs a failed persist of the refreshed token as code and message only", async () => {
+    const { supabase } = fakeSupabase({ updateError: failingRowError });
+    const { fn } = fakeFetch(() =>
+      new Response(
+        JSON.stringify({ access_token: "fresh", refresh_token: "r2", expires_in: 3600 }),
+        { status: 200 },
+      )
+    );
+    const lines = await captureConsole(async () => {
+      await ensureFreshGarminToken(
+        supabase,
+        { access_token: "stale", refresh_token: "r1", token_expires_at: hourAgo() },
+        "u1",
+        { fetch: fn, ...creds },
+      );
+    });
+    assertEquals(lines.some((l) => l.includes("Failed to persist") && l.includes("23502")), true);
+    assertNoLeak(lines);
+  });
+
+  it("logs a thrown refresh as the error's name and message", async () => {
+    const { supabase } = fakeSupabase();
+    const fn = (() => Promise.reject(new TypeError("network down"))) as typeof fetch;
+    const lines = await captureConsole(async () => {
+      await ensureFreshGarminToken(
+        supabase,
+        { access_token: "stale", refresh_token: "r1", token_expires_at: hourAgo() },
+        "u1",
+        { fetch: fn, ...creds },
+      );
+    });
+    assertEquals(lines.some((l) => l.includes("Token refresh error") && l.includes("TypeError: network down")), true);
+  });
+
+  it("logs a failed requires_reauth write as code and message only", async () => {
+    const { supabase } = fakeSupabase({ updateError: failingRowError });
+    const lines = await captureConsole(() => markGarminRequiresReauth(supabase, "u1"));
+    assertEquals(lines.some((l) => l.includes("requires_reauth") && l.includes("23502")), true);
+    assertNoLeak(lines);
+  });
+
+  it("logs a failed deregistration read as code and message only", async () => {
+    const { supabase } = fakeSupabase({ readError: failingRowError });
+    const { fn } = fakeFetch(() => new Response(null, { status: 204 }));
+    let outcome = "";
+    const lines = await captureConsole(async () => {
+      outcome = await deregisterGarminForUser(supabase, "u1", { fetch: fn, ...creds });
+    });
+    assertEquals(outcome, "failed");
+    assertEquals(lines.some((l) => l.includes("integrations read failed") && l.includes("23502")), true);
+    assertNoLeak(lines);
   });
 });

@@ -10,7 +10,9 @@
  *  5. user_id spoofing guard: body.user_id !== authenticated user → 403.
  *  6. verifyGarminUserId: mismatch between provided garmin_user_id and the
  *     userId returned from the Garmin /user/id endpoint → 403.
- *  7. verifyGarminUserId: Garmin API failure → 401.
+ *  7. verifyGarminUserId: Garmin API failure → 401, and the log carries
+ *     Garmin's status and error code only, never its body or the token
+ *     (ticket 76, Finding 69-012). verifyGarminUserId is the real verify.ts.
  *  8. token_expires_at defaults to now + 1 hour when not provided.
  *  9. Method guard: non-POST → 405.
  *
@@ -24,33 +26,11 @@ import {
 } from 'https://deno.land/std@0.168.0/testing/asserts.ts';
 import { describe, it } from 'https://deno.land/std@0.168.0/testing/bdd.ts';
 
+import { verifyGarminUserId } from './verify.ts';
+
 // ============================================================================
 // Pure logic extracted from production
 // ============================================================================
-
-// Mirrors production verifyGarminUserId
-async function verifyGarminUserId(
-  accessToken: string,
-  expectedGarminUserId: string,
-  // deno-lint-ignore no-explicit-any
-  fetchFn: (url: string, init?: RequestInit) => Promise<any>,
-): Promise<{ ok: true } | { ok: false; status: number; message: string }> {
-  const response = await fetchFn(
-    'https://apis.garmin.com/wellness-api/rest/user/id',
-    { headers: { Authorization: `Bearer ${accessToken}` } },
-  );
-
-  if (!response.ok) {
-    return { ok: false, status: 401, message: 'Unable to verify Garmin account' };
-  }
-
-  const payload = await response.json();
-  if (payload.userId !== expectedGarminUserId) {
-    return { ok: false, status: 403, message: 'Garmin account verification mismatch' };
-  }
-
-  return { ok: true };
-}
 
 type UpsertPayload = {
   user_id: string;
@@ -103,9 +83,8 @@ function validateUpsertFields(
 function buildGarminUserIdFetchStub(opts: {
   ok: boolean;
   garminUserId?: string;
-// deno-lint-ignore no-explicit-any
-}): (url: string, init?: RequestInit) => Promise<any> {
-  return (_url: string, _init?: RequestInit) =>
+}): typeof fetch {
+  return ((_url: string, _init?: RequestInit) =>
     Promise.resolve({
       ok: opts.ok,
       status: opts.ok ? 200 : 401,
@@ -114,7 +93,7 @@ function buildGarminUserIdFetchStub(opts: {
           opts.ok ? { userId: opts.garminUserId ?? 'garmin-abc' } : {},
         ),
       text: () => Promise.resolve('error'),
-    });
+    })) as unknown as typeof fetch;
 }
 
 function buildSupabaseUpsertStub(opts: {
@@ -361,9 +340,45 @@ describe('garmin-user-mapping', () => {
       }
     });
 
+    it('logs a refusal as status and error code only, never the body or the token (ticket 76)', async () => {
+      // Garmin's 401 can echo the Bearer token back in its body.
+      const leakedToken = 'gat-live-9d1e';
+      const fetchStub = (() =>
+        Promise.resolve(
+          new Response(
+            JSON.stringify({
+              errorMessage: `Unauthorized: Bearer ${leakedToken}`,
+            }),
+            { status: 401 },
+          ),
+        )) as typeof fetch;
+      const lines: string[] = [];
+      const original = console.error;
+      console.error = (...args: unknown[]) =>
+        lines.push(
+          args.map((a) => (typeof a === 'string' ? a : JSON.stringify(a))).join(' '),
+        );
+      let result;
+      try {
+        result = await verifyGarminUserId(leakedToken, TEST_GARMIN_USER_ID, fetchStub);
+      } finally {
+        console.error = original;
+      }
+      assertEquals(result, {
+        ok: false,
+        status: 401,
+        message: 'Unable to verify Garmin account',
+      });
+      assertEquals(lines, [
+        '[garmin-user-mapping] Garmin user verification failed {"status":401,"error_code":null}',
+      ]);
+      assertEquals(lines.some((l) => l.includes(leakedToken)), false);
+      assertEquals(lines.some((l) => l.includes('Unauthorized')), false);
+    });
+
     it('sends Bearer token in Authorization header', async () => {
       let capturedHeaders: Record<string, string> = {};
-      const fetchStub = (
+      const fetchStub = ((
         _url: string,
         init?: RequestInit,
       ) => {
@@ -373,7 +388,7 @@ describe('garmin-user-mapping', () => {
           json: () => Promise.resolve({ userId: TEST_GARMIN_USER_ID }),
           text: () => Promise.resolve(''),
         });
-      };
+      }) as unknown as typeof fetch;
 
       await verifyGarminUserId(
         TEST_ACCESS_TOKEN,
@@ -389,14 +404,14 @@ describe('garmin-user-mapping', () => {
 
     it('calls the correct Garmin user-id endpoint', async () => {
       let capturedUrl = '';
-      const fetchStub = (url: string) => {
+      const fetchStub = ((url: string) => {
         capturedUrl = url;
         return Promise.resolve({
           ok: true,
           json: () => Promise.resolve({ userId: TEST_GARMIN_USER_ID }),
           text: () => Promise.resolve(''),
         });
-      };
+      }) as unknown as typeof fetch;
 
       await verifyGarminUserId(
         TEST_ACCESS_TOKEN,
