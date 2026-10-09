@@ -15,6 +15,7 @@ import '../domain/integration.dart';
 import '../domain/integration_exceptions.dart';
 import '../domain/sync_change_result.dart';
 import 'change_detection_service.dart';
+import 'sync_failure_recorder.dart';
 import 'training_peaks_transformer.dart';
 
 /// Service for syncing workouts and events from TrainingPeaks
@@ -143,8 +144,8 @@ class TrainingPeaksSyncService {
       );
       return TrainingPeaksSyncResult.tokenExpired();
     } on TrainingPeaksApiException catch (e) {
-      await _recordRefreshFailed(userId, e);
-      return TrainingPeaksSyncResult.error(syncErrorCode(e)); // ticket 37
+      final code = await _recordRefreshFailed(userId, e);
+      return TrainingPeaksSyncResult.error(code);
     }
     final freshToken = !identical(integration, stored);
 
@@ -349,12 +350,11 @@ class TrainingPeaksSyncService {
       );
       return TrainingPeaksSyncResult.tokenExpired();
     } catch (e, st) {
-      // Update sync status with error
-      await _integrationsRepository.updateSyncStatus(
+      // Ticket 73: the shared step decides the status and code.
+      final code = await _integrationsRepository.recordSyncFailure(
         userId,
         'training_peaks',
-        status: 'error',
-        error: syncErrorCode(e), // ticket 37: a code, not English
+        e,
       );
 
       await _r.fault(
@@ -364,7 +364,7 @@ class TrainingPeaksSyncService {
         message: 'TrainingPeaks workout sync failed',
       );
 
-      return TrainingPeaksSyncResult.error(syncErrorCode(e)); // ticket 37
+      return TrainingPeaksSyncResult.error(code);
     }
   }
 
@@ -405,8 +405,8 @@ class TrainingPeaksSyncService {
       );
       return TrainingPeaksSyncResult.tokenExpired();
     } on TrainingPeaksApiException catch (e) {
-      await _recordRefreshFailed(userId, e);
-      return TrainingPeaksSyncResult.error(syncErrorCode(e)); // ticket 37
+      final code = await _recordRefreshFailed(userId, e);
+      return TrainingPeaksSyncResult.error(code);
     }
     final freshToken = !identical(integration, stored);
 
@@ -558,11 +558,10 @@ class TrainingPeaksSyncService {
       );
       return TrainingPeaksSyncResult.tokenExpired();
     } catch (e, st) {
-      await _integrationsRepository.updateSyncStatus(
+      final code = await _integrationsRepository.recordSyncFailure(
         userId,
         'training_peaks',
-        status: 'error',
-        error: syncErrorCode(e), // ticket 37: a code, not English
+        e,
       );
       await _r.fault(
         e,
@@ -570,7 +569,7 @@ class TrainingPeaksSyncService {
         area: _area,
         message: 'TrainingPeaks date-range sync failed',
       );
-      return TrainingPeaksSyncResult.error(syncErrorCode(e)); // ticket 37
+      return TrainingPeaksSyncResult.error(code);
     }
   }
 
@@ -1028,23 +1027,17 @@ class TrainingPeaksSyncService {
 
   /// A refresh that failed without TP refusing it (outage, rate limit, no
   /// network): an ordinary error the next sync may clear.
-  Future<void> _recordRefreshFailed(
+  Future<String> _recordRefreshFailed(
     String userId,
     TrainingPeaksApiException e,
-  ) => _integrationsRepository.updateSyncStatus(
+  ) => _integrationsRepository.recordSyncFailure(
     userId,
     'training_peaks',
-    status: 'error',
-    error: syncErrorCode(e), // ticket 37: a code, not English
+    e, // ticket 73: the shared step decides the status and code
   );
 
   Future<void> _markNeedsReconnect(String userId) =>
-      _integrationsRepository.updateSyncStatus(
-        userId,
-        'training_peaks',
-        status: requiresReauthStatus,
-        error: reauthRequiredCode, // ticket 37
-      );
+      _integrationsRepository.recordReauthRequired(userId, 'training_peaks');
 
   /// Dedupe remote workouts so sync remains idempotent even when provider APIs
   /// return repeated records in a single payload.

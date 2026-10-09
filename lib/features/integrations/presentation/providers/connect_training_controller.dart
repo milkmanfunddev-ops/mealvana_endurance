@@ -30,6 +30,7 @@ import '../../application/training_peaks_transformer.dart';
 import '../../application/garmin_oauth_service.dart';
 import '../../application/integration_sync_coordinator.dart';
 import '../../application/runna_sync_service.dart';
+import '../../application/sync_failure_recorder.dart';
 import '../../application/training_peaks_oauth_service.dart';
 import '../../application/training_peaks_sync_service.dart';
 import '../../application/vdot_oauth_service.dart';
@@ -1350,15 +1351,10 @@ class ConnectTrainingController extends _$ConnectTrainingController {
       );
       return;
     }
+    // Ticket 73: through the shared step every provider's failure takes.
     await ref
         .read(integrationsRepositoryProvider)
-        .updateSyncStatus(
-          userId,
-          'garmin',
-          status: requiresReauthStatus,
-          // Ticket 37: the row holds the code; the text is content.
-          error: reauthRequiredCode,
-        );
+        .recordReauthRequired(userId, 'garmin');
     if (!ref.mounted) return;
     final current = state.value;
     if (current != null) {
@@ -1488,7 +1484,7 @@ class ConnectTrainingController extends _$ConnectTrainingController {
           _trackIntegrationSyncFailed(
             'vdot',
             'token_expired',
-            errorMessage: 'Requires re-authentication',
+            errorCode: reauthRequiredCode,
           );
           return result;
         }
@@ -1505,7 +1501,7 @@ class ConnectTrainingController extends _$ConnectTrainingController {
           _trackIntegrationSyncFailed(
             'vdot',
             'network_error',
-            errorMessage: result.error,
+            errorCode: SyncErrorCode.network.wire,
           );
           return result;
         }
@@ -1521,7 +1517,7 @@ class ConnectTrainingController extends _$ConnectTrainingController {
         _trackIntegrationSyncFailed(
           'vdot',
           result.errorType.name,
-          errorMessage: result.error,
+          errorCode: syncFailureCode(error: result.error),
         );
         return result;
       }
@@ -1632,7 +1628,8 @@ class ConnectTrainingController extends _$ConnectTrainingController {
       _trackIntegrationSyncFailed(
         'vdot',
         'exception',
-        errorMessage: e.toString(),
+        // Ticket 73: the code, never the exception text.
+        errorCode: syncErrorCode(e),
       );
       return VdotSyncResult.error(syncErrorCode(e)); // ticket 37
     } finally {
@@ -1830,7 +1827,7 @@ class ConnectTrainingController extends _$ConnectTrainingController {
           _trackIntegrationSyncFailed(
             'runna',
             'network_error',
-            errorMessage: result.error,
+            errorCode: SyncErrorCode.network.wire,
           );
           return result;
         }
@@ -1846,7 +1843,7 @@ class ConnectTrainingController extends _$ConnectTrainingController {
         _trackIntegrationSyncFailed(
           'runna',
           result.errorType.name,
-          errorMessage: result.error,
+          errorCode: syncFailureCode(error: result.error),
         );
         return result;
       }
@@ -1935,7 +1932,8 @@ class ConnectTrainingController extends _$ConnectTrainingController {
       _trackIntegrationSyncFailed(
         'runna',
         'exception',
-        errorMessage: e.toString(),
+        // Ticket 73: the code, never the exception text.
+        errorCode: syncErrorCode(e),
       );
       return RunnaSyncResult.error(syncErrorCode(e)); // ticket 37
     } finally {
@@ -2015,7 +2013,7 @@ class ConnectTrainingController extends _$ConnectTrainingController {
           _trackIntegrationSyncFailed(
             providerId,
             'token_expired',
-            errorMessage: 'Requires re-authentication',
+            errorCode: reauthRequiredCode,
           );
           return result;
         }
@@ -2034,7 +2032,7 @@ class ConnectTrainingController extends _$ConnectTrainingController {
           _trackIntegrationSyncFailed(
             providerId,
             'network_error',
-            errorMessage: getError(result),
+            errorCode: SyncErrorCode.network.wire,
           );
           return result;
         }
@@ -2052,7 +2050,7 @@ class ConnectTrainingController extends _$ConnectTrainingController {
         _trackIntegrationSyncFailed(
           providerId,
           getErrorType(result),
-          errorMessage: getError(result),
+          errorCode: syncFailureCode(error: getError(result)),
         );
         return result;
       }
@@ -2194,7 +2192,8 @@ class ConnectTrainingController extends _$ConnectTrainingController {
       _trackIntegrationSyncFailed(
         providerId,
         'exception',
-        errorMessage: e.toString(),
+        // Ticket 73: the code, never the exception text.
+        errorCode: syncErrorCode(e),
       );
       return createError(syncErrorCode(e)); // ticket 37
     } finally {
@@ -2513,10 +2512,12 @@ class ConnectTrainingController extends _$ConnectTrainingController {
     );
   }
 
+  /// Ticket 73: the event carries the same wire code the row stores
+  /// (`network`, `http_<status>`, ...), never English or exception text.
   void _trackIntegrationSyncFailed(
     String provider,
     String errorType, {
-    String? errorMessage,
+    required String errorCode,
   }) {
     _trackSafely(
       'integration_sync_failed',
@@ -2524,7 +2525,7 @@ class ConnectTrainingController extends _$ConnectTrainingController {
         provider: provider,
         deviceId: _analyticsDeviceId,
         errorType: errorType,
-        errorMessage: errorMessage,
+        errorMessage: errorCode,
       ),
     );
   }

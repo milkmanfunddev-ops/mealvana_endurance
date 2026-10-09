@@ -507,8 +507,9 @@ void main() {
   });
 
   group('errors', () {
-    test('network errors return a retryable result without stamping an error '
-        'status', () async {
+    // Ticket 73: offline is recorded as `network`, as on every provider.
+    test('network errors return a retryable result and stamp the network '
+        'code', () async {
       when(
         () => mockClient.fetchIcs(_feedUrl),
       ).thenThrow(const NetworkException('offline', provider: _provider));
@@ -517,14 +518,15 @@ void main() {
 
       expect(result.success, isFalse);
       expect(result.isNetworkError, isTrue);
-      verifyNever(
+      expect(result.error, 'network');
+      verify(
         () => mockIntegrationsRepo.updateSyncStatus(
-          any(),
-          any(),
-          status: any(named: 'status'),
-          error: any(named: 'error'),
+          _userId,
+          _provider,
+          status: 'error',
+          error: 'network',
         ),
-      );
+      ).called(1);
     });
 
     test('feed/API errors stamp an error sync status', () async {

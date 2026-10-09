@@ -19,6 +19,10 @@ enum SyncErrorCode {
   /// Wire form `http_<status>`, e.g. `http_502`.
   httpStatus('http_'),
   reauthRequired('reauth_required'),
+
+  /// A Runna link that answers but is not an iCalendar feed, or is not a
+  /// link at all (ticket 73). Thrown as [NotACalendarException].
+  notACalendar('not_a_calendar'),
   unknown('unknown');
 
   const SyncErrorCode(this.wire);
@@ -92,6 +96,7 @@ String syncErrorCode(Object error) {
     return SyncErrorCode.network.wire;
   }
   if (error is RateLimitException) return SyncErrorCode.rateLimited.wire;
+  if (error is NotACalendarException) return SyncErrorCode.notACalendar.wire;
   if (error is TokenRefreshException && error.requiresReauth) {
     return reauthRequiredCode;
   }
@@ -185,6 +190,15 @@ class IntegrationApiException implements Exception {
     if (body != null && kDebugMode) buffer.write('\nBody: $body');
     return buffer.toString();
   }
+}
+
+/// A calendar link that is not a calendar (ticket 73): the URL does not
+/// parse as an http(s) link, or it answered 200 with a body that is not an
+/// iCalendar feed. Stored as `not_a_calendar`, never as [message].
+/// `toString` is the parent's on purpose: Runna's connect error line shows
+/// it today, and ticket 73 leaves that text unchanged.
+class NotACalendarException extends IntegrationApiException {
+  const NotACalendarException(super.message, {super.provider});
 }
 
 /// Exception thrown when access token has expired (401)

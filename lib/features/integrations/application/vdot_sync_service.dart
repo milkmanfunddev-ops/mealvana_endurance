@@ -8,6 +8,7 @@ import '../data/vdot_api_client.dart';
 import '../domain/integration.dart';
 import '../domain/integration_exceptions.dart';
 import 'change_detection_service.dart';
+import 'sync_failure_recorder.dart';
 import 'vdot_transformer.dart';
 
 /// Syncs planned/completed workouts from V.O2 (VDOT) into the local
@@ -188,16 +189,15 @@ class VdotSyncService {
         message: 'V.O2 token refresh failed',
         extra: {'requiresReauth': e.requiresReauth},
       );
-      if (e.requiresReauth) {
-        await _integrationsRepository.updateSyncStatus(
-          userId,
-          _provider,
-          status: 'requires_reauth',
-          error: reauthRequiredCode, // ticket 37
-        );
-        return VdotSyncResult.requiresReauth();
-      }
-      return VdotSyncResult.error(syncErrorCode(e)); // ticket 37
+      // Ticket 73: a refused token stores requires_reauth; a refresh that
+      // failed for another reason stores its code (it wrote nothing before).
+      final code = await _integrationsRepository.recordSyncFailure(
+        userId,
+        _provider,
+        e,
+      );
+      if (code == reauthRequiredCode) return VdotSyncResult.requiresReauth();
+      return VdotSyncResult.error(code);
     } on NetworkException catch (e, st) {
       await _r.degraded(
         e,
@@ -205,13 +205,18 @@ class VdotSyncService {
         area: _provider,
         message: 'V.O2 sync failed: network',
       );
-      return VdotSyncResult.networkError(e.message);
-    } catch (e, st) {
-      await _integrationsRepository.updateSyncStatus(
+      // Ticket 73: offline is recorded like every other provider (`network`).
+      final code = await _integrationsRepository.recordSyncFailure(
         userId,
         _provider,
-        status: 'error',
-        error: syncErrorCode(e), // ticket 37: a code, not English
+        e,
+      );
+      return VdotSyncResult.networkError(code);
+    } catch (e, st) {
+      final code = await _integrationsRepository.recordSyncFailure(
+        userId,
+        _provider,
+        e,
       );
       await _r.fault(
         e,
@@ -219,7 +224,7 @@ class VdotSyncService {
         area: _provider,
         message: 'V.O2 sync failed',
       );
-      return VdotSyncResult.error(syncErrorCode(e)); // ticket 37
+      return VdotSyncResult.error(code);
     }
   }
 

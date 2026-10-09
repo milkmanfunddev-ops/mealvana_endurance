@@ -15,6 +15,7 @@ import '../domain/integration.dart';
 import '../domain/sync_change_result.dart';
 import 'change_detection_service.dart';
 import 'final_surge_transformer.dart';
+import 'sync_failure_recorder.dart';
 
 /// Service for syncing workouts from Final Surge
 ///
@@ -472,7 +473,6 @@ class FinalSurgeSyncService {
         raceCandidates: raceCandidatesWithIds,
       );
     } on TokenRefreshException catch (e, st) {
-      // Token refresh failed - user must re-authenticate
       await _r.degraded(
         e,
         stackTrace: st,
@@ -480,32 +480,34 @@ class FinalSurgeSyncService {
         message: 'Final Surge token refresh failed',
         extra: {'requiresReauth': e.requiresReauth},
       );
-      if (e.requiresReauth) {
-        await _integrationsRepository.updateSyncStatus(
-          userId,
-          'final_surge',
-          status: 'requires_reauth',
-          error: reauthRequiredCode, // ticket 37
-        );
-        return SyncResult.requiresReauth();
-      }
-      return SyncResult.error(syncErrorCode(e)); // ticket 37
+      // Ticket 73: a refused token stores requires_reauth; a refresh that
+      // failed for another reason stores its code (it wrote nothing before).
+      final code = await _integrationsRepository.recordSyncFailure(
+        userId,
+        'final_surge',
+        e,
+      );
+      if (code == reauthRequiredCode) return SyncResult.requiresReauth();
+      return SyncResult.error(code);
     } on NetworkException catch (e, st) {
-      // Network issues - don't update status, user can retry
       await _r.degraded(
         e,
         stackTrace: st,
         area: _area,
         message: 'Final Surge sync failed: network',
       );
-      return SyncResult.networkError(e.message);
-    } catch (e, st) {
-      // Update sync status with error
-      await _integrationsRepository.updateSyncStatus(
+      // Ticket 73: offline is recorded like every other provider (`network`).
+      final code = await _integrationsRepository.recordSyncFailure(
         userId,
         'final_surge',
-        status: 'error',
-        error: syncErrorCode(e), // ticket 37: a code, not English
+        e,
+      );
+      return SyncResult.networkError(code);
+    } catch (e, st) {
+      final code = await _integrationsRepository.recordSyncFailure(
+        userId,
+        'final_surge',
+        e,
       );
 
       await _r.fault(
@@ -515,7 +517,7 @@ class FinalSurgeSyncService {
         message: 'Final Surge sync failed',
       );
 
-      return SyncResult.error(syncErrorCode(e)); // ticket 37
+      return SyncResult.error(code);
     }
   }
 
@@ -814,16 +816,15 @@ class FinalSurgeSyncService {
         message: 'Final Surge token refresh failed (date-range sync)',
         extra: {'requiresReauth': e.requiresReauth},
       );
-      if (e.requiresReauth) {
-        await _integrationsRepository.updateSyncStatus(
-          userId,
-          'final_surge',
-          status: 'requires_reauth',
-          error: reauthRequiredCode, // ticket 37
-        );
-        return SyncResult.requiresReauth();
-      }
-      return SyncResult.error(syncErrorCode(e)); // ticket 37
+      // Ticket 73: a refused token stores requires_reauth; a refresh that
+      // failed for another reason stores its code (it wrote nothing before).
+      final code = await _integrationsRepository.recordSyncFailure(
+        userId,
+        'final_surge',
+        e,
+      );
+      if (code == reauthRequiredCode) return SyncResult.requiresReauth();
+      return SyncResult.error(code);
     } on NetworkException catch (e, st) {
       await _r.degraded(
         e,
@@ -831,13 +832,18 @@ class FinalSurgeSyncService {
         area: _area,
         message: 'Final Surge date-range sync failed: network',
       );
-      return SyncResult.networkError(e.message);
-    } catch (e, st) {
-      await _integrationsRepository.updateSyncStatus(
+      // Ticket 73: offline is recorded like every other provider (`network`).
+      final code = await _integrationsRepository.recordSyncFailure(
         userId,
         'final_surge',
-        status: 'error',
-        error: syncErrorCode(e), // ticket 37: a code, not English
+        e,
+      );
+      return SyncResult.networkError(code);
+    } catch (e, st) {
+      final code = await _integrationsRepository.recordSyncFailure(
+        userId,
+        'final_surge',
+        e,
       );
 
       await _r.fault(
@@ -847,7 +853,7 @@ class FinalSurgeSyncService {
         message: 'Final Surge date-range sync failed',
       );
 
-      return SyncResult.error(syncErrorCode(e)); // ticket 37
+      return SyncResult.error(code);
     }
   }
 

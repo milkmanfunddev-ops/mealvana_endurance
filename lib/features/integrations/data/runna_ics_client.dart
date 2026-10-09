@@ -37,8 +37,9 @@ class RunnaIcsClient {
   /// Fetch the raw ICS text for [feedUrl].
   ///
   /// Throws:
-  /// - [IntegrationApiException] for an invalid URL, a non-200 response, or a
-  ///   body that isn't an iCalendar feed.
+  /// - [NotACalendarException] for an invalid URL or a body that isn't an
+  ///   iCalendar feed (ticket 73: stored as `not_a_calendar`).
+  /// - [IntegrationApiException] for a non-200 response.
   /// - [NetworkException] for timeouts and connection failures (retryable).
   Future<String> fetchIcs(String feedUrl) async {
     final normalized = normalizeFeedUrl(feedUrl);
@@ -46,7 +47,7 @@ class RunnaIcsClient {
     if (uri == null ||
         uri.host.isEmpty ||
         !(uri.isScheme('https') || uri.isScheme('http'))) {
-      throw const IntegrationApiException(
+      throw const NotACalendarException(
         'That doesn\'t look like a valid calendar link',
         provider: _provider,
       );
@@ -87,7 +88,7 @@ class RunnaIcsClient {
     // and distance/duration/pace are silently dropped. Decode bytes as UTF-8.
     final body = utf8.decode(response.bodyBytes, allowMalformed: true);
     if (!body.toUpperCase().contains('BEGIN:VCALENDAR')) {
-      throw const IntegrationApiException(
+      throw const NotACalendarException(
         'That link didn\'t return a calendar feed. '
         '${RunnaDefaults.feedUrlInstructions}',
         provider: _provider,
