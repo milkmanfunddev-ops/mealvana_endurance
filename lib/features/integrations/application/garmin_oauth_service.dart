@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:math';
 import 'package:crypto/crypto.dart';
+import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:flutter_web_auth_2/flutter_web_auth_2.dart';
 import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -8,6 +9,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../shared/services/report/report.dart';
 import '../data/integrations_repository.dart';
 import '../domain/integration.dart';
+import '../domain/provider_error_summary.dart';
 
 /// Service for Garmin Connect OAuth 2.0 PKCE authentication flow
 ///
@@ -249,6 +251,16 @@ class GarminOAuthService {
     return _repository.getIntegration(userId, 'garmin');
   }
 
+  /// The exception a refused code exchange throws: status and error code
+  /// only, never the body (ticket 84, Finding 69-012: Garmin's
+  /// `error_description` carried the refresh token).
+  @visibleForTesting
+  static GarminOAuthException tokenExchangeFailure(http.Response response) {
+    final s = providerErrorSummary(response.statusCode, response.body);
+    final code = s.errorCode != null ? ' ${s.errorCode}' : '';
+    return GarminOAuthException('Token exchange failed: ${s.status}$code');
+  }
+
   /// Exchange authorization code for access and refresh tokens
   Future<_GarminTokenResponse> _exchangeCodeForToken(
     String code,
@@ -268,9 +280,7 @@ class GarminOAuthService {
     );
 
     if (response.statusCode != 200) {
-      throw GarminOAuthException(
-        'Token exchange failed: ${response.statusCode} ${response.body}',
-      );
+      throw tokenExchangeFailure(response);
     }
 
     final json = jsonDecode(response.body) as Map<String, dynamic>;
