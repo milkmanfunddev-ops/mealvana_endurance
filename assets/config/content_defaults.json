@@ -312,6 +312,7 @@
       "generic": "Something went wrong. Please try again."
     },
     "login": {
+      "password_hint": "Enter your password",
       "error_wrong_credentials": "That email or password isn't right.",
       "error_no_connection": "No connection. Check your network and try again.",
       "error_failed": "Login failed. Please try again."
@@ -351,6 +352,8 @@
     "keep_editing": "Keep editing"
   },
   "barcode_scanner": {
+    "not_found_title": "Product Not Found",
+    "not_found_body": "This barcode isn't in our food databases yet. Create the food manually, or try another barcode.",
     "no_camera": "This device doesn't have a camera we can use for scanning. Type the barcode with Enter below, or search for the food by name.",
     "permission_denied": "Camera access is off. Turn it on for Mealvana in Settings, type the barcode with Enter below, or search for the food by name.",
     "camera_failed": "The camera didn't start. Go back and open the scanner again, or type the barcode with Enter below.",
@@ -365,6 +368,7 @@
     "flash": "Flash"
   },
   "food_search": {
+    "empty_query": "Type a food or recipe to search.",
     "scan_barcode": "Scan barcode",
     "search": "Search"
   },
@@ -380,6 +384,8 @@
       "keep_editing": "Keep editing"
     },
     "describe": {
+      "too_long": "That's more than {n} characters. Keep it to what you ate and how much.",
+      "camera_access_off": "Camera access is off. Turn it on for Mealvana in Settings.",
       "not_food": "That doesn't sound like food or drink. Describe what you ate or drank.",
       "review_again": "Review again",
       "too_short": "Add a bit more: at least {n} characters, like what you ate and how much."
@@ -406,6 +412,10 @@
     "retry": "Retry"
   },
   "ai_credits": {
+    "pack_title_one": "{n} Credit",
+    "pack_title_other": "{n} Credits",
+    "balance_one": "{n} credit",
+    "balance_other": "{n} credits",
     "out_title": "Out of AI credits",
     "out_body": "You've used all your AI credits. Get more to keep using AI features.",
     "out_not_now": "Not now",
@@ -413,7 +423,12 @@
     "how_title": "How credits work",
     "how_body": "AI credits pay for meal descriptions, meal photo analysis and Formula Kit coach insights. Each request uses credits, and credits never expire."
   },
+  "event_form": {
+    "duplicate_name_day": "You already have an event with this name on that day.",
+    "location_no_match": "No matching places. Check the spelling, or keep what you typed."
+  },
   "integrations": {
+    "sync_error_not_a_calendar": "This link isn't a Runna calendar. Copy a fresh link from Runna and connect again.",
     "sync_error_network": "Could not reach {provider}. Check your connection and try again.",
     "sync_error_rate_limited": "{provider} is busy. Try again later.",
     "sync_error_http": "{provider} sync failed (status {status}).",

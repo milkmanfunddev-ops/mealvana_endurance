@@ -7,6 +7,9 @@ class ContentKeys {
       'auth.login.error_wrong_credentials';
   static const String loginErrorNoConnection = 'auth.login.error_no_connection';
   static const String loginErrorFailed = 'auth.login.error_failed';
+  // Log In's own password hint (develop-2026-10 ticket 82, 67-004): no
+  // length rule on a login, unlike Create Account's hint.
+  static const String loginPasswordHint = 'auth.login.password_hint';
   // Verify your email (121-001, 121-002, 124-002): the Resend countdown, an
   // old code after a Resend, and the hint that the address may be an account.
   static const String verifyEmailResendIn = 'auth.verify_email.resend_in';
@@ -45,6 +48,8 @@ class ContentKeys {
   // The food search bar's icon buttons, named for a screen reader (28-006).
   static const String foodSearchScanBarcode = 'food_search.scan_barcode';
   static const String foodSearchSearch = 'food_search.search';
+  // Search tapped with nothing typed (develop-2026-10 ticket 82, 68-010).
+  static const String foodSearchEmptyQuery = 'food_search.empty_query';
   // A logged food with no serving description: "1 serving" / "1.5 servings"
   // (112-002). The word is written into the logged row's portion.
   static const String mealLogServingSingular = 'meal_log.serving_singular';
@@ -66,6 +71,13 @@ class ContentKeys {
   static const String mealLogDescribeReviewAgain =
       'meal_log.describe.review_again';
   static const String mealLogDescribeTooShort = 'meal_log.describe.too_short';
+  // Describe over the server's cap (develop-2026-10 ticket 79, 68-002);
+  // `{n}` is the maximum character count.
+  static const String mealLogDescribeTooLong = 'meal_log.describe.too_long';
+  // Camera access off on Log Meal's photo pick (develop-2026-10 ticket 81,
+  // 68-003): an expected outcome, the gallery untouched.
+  static const String mealLogDescribeCameraAccessOff =
+      'meal_log.describe.camera_access_off';
 
   // Main Screen
   static const String mainScreenTitle = 'main_screen.title';
@@ -307,6 +319,12 @@ class ContentKeys {
   static const String barcodeScannerTypedInvalid =
       'barcode_scanner.typed_invalid';
   static const String barcodeScannerFlash = 'barcode_scanner.flash';
+  // Product not found (develop-2026-10 ticket 79, 68-007): the dialog's
+  // title and body come from content, not the service's debug message.
+  static const String barcodeScannerNotFoundTitle =
+      'barcode_scanner.not_found_title';
+  static const String barcodeScannerNotFoundBody =
+      'barcode_scanner.not_found_body';
 
   // Logged and saved meal actions (testing-wave 136: 112-005, 112-008)
   static const String mealLogActionsSavedMealRemoved =
@@ -340,6 +358,12 @@ class ContentKeys {
   // AI Credits screen "How credits work" (develop-2026-10 ticket 46: 32-004)
   static const String aiCreditsHowTitle = 'ai_credits.how_title';
   static const String aiCreditsHowBody = 'ai_credits.how_body';
+  // Singular / plural credit labels (develop-2026-10 ticket 82, 69-013):
+  // `{n}` is the count; the one/other pair stands in for a plural helper.
+  static const String aiCreditsPackTitleOne = 'ai_credits.pack_title_one';
+  static const String aiCreditsPackTitleOther = 'ai_credits.pack_title_other';
+  static const String aiCreditsBalanceOne = 'ai_credits.balance_one';
+  static const String aiCreditsBalanceOther = 'ai_credits.balance_other';
 
   // Sync errors (testing-wave develop-2026-10 ticket 37): the row stores a
   // code (`SyncErrorCode`), these keys hold the text. `{provider}` is the
@@ -354,6 +378,17 @@ class ContentKeys {
       'integrations.sync_error_reauth';
   static const String integrationsSyncErrorUnknown =
       'integrations.sync_error_unknown';
+  // A Runna link that is not an ICS calendar (develop-2026-10 ticket 73,
+  // 52 Q2): `SyncErrorCode.notACalendar`.
+  static const String integrationsSyncErrorNotACalendar =
+      'integrations.sync_error_not_a_calendar';
+
+  // Event form (develop-2026-10 tickets 72 and 81): a same-name same-day
+  // duplicate is refused; a location search with no match says so.
+  static const String eventFormDuplicateNameDay =
+      'event_form.duplicate_name_day';
+  static const String eventFormLocationNoMatch =
+      'event_form.location_no_match';
 
   /// Interpolates `{name}` placeholders in a content value:
   /// `format('Give me {n} seconds', {'n': 30})`. (From mealplanning 7b206f04;
