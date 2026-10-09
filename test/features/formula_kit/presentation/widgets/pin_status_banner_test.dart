@@ -327,4 +327,119 @@ void main() {
       expect(taps, 1);
     });
   });
+
+  group('PinStatusBanner — ephemeral default is never drawn as honored', () {
+    // Prod 1.29.0 (Xuan): the server's automatic default-formula pick
+    // (`usedPin: true` + `ephemeral: true`, pinSetSize 0) rode through the
+    // rows builder because it also carried skipped personal formulas (kept on
+    // purpose since the 2026-07-18 audit so the card can explain the miss),
+    // and the row renderer keyed "honored" on `usedPin` alone — so the card
+    // showed a green check and the default's template name as if the athlete
+    // had pinned it. An ephemeral decision is NEVER an honored pin.
+    const ephemeralDefaultWithSkips = PinDecision(
+      usedPin: true,
+      ephemeral: true,
+      pinnedTemplateId: 'tpl-default',
+      pinnedTemplateName: 'Carb Drink Mix + Banana + Water',
+      fallthroughReason: null,
+      pinSetSize: 0,
+      skippedPersonalFormulas: [
+        SkippedPersonalFormula(
+          id: 'pf-1',
+          name: '(enervit gel + Water) + Sports Drink',
+          reason: SkippedFormulaReason.durationOutOfScope,
+          formulaDurations: ['90-150 min'],
+          workoutBracket: '< 90 min',
+        ),
+        SkippedPersonalFormula(
+          id: 'pf-2',
+          name: 'Stroopwafel + Sports Drink + Water',
+          reason: SkippedFormulaReason.durationOutOfScope,
+          formulaDurations: ['90-150 min'],
+          workoutBracket: '< 90 min',
+        ),
+      ],
+    );
+
+    final rows = [
+      const PinStatusBannerRow(
+        label: 'During',
+        decision: ephemeralDefaultWithSkips,
+      ),
+      PinStatusBannerRow(
+        label: 'Meal',
+        decision: _honored(name: 'Bagel + Cream Cheese'),
+      ),
+    ];
+
+    testWidgets('only the real pin gets the green check', (tester) async {
+      await tester.pumpWidget(_host(rows));
+      await _expand(tester);
+
+      // Exactly one honored row: Meal.
+      expect(find.byIcon(Icons.check_circle_outline), findsOneWidget);
+      expect(find.text('Bagel + Cream Cheese'), findsOneWidget);
+    });
+
+    testWidgets('the ephemeral row reads as "Default used", not as a pinned '
+        'template name', (tester) async {
+      await tester.pumpWidget(_host(rows));
+      await _expand(tester);
+
+      expect(find.text('Carb Drink Mix + Banana + Water'), findsNothing);
+      expect(
+        find.text("Default used · your formula doesn't cover this workout"),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('the skipped formula names are still shown on the row', (
+      tester,
+    ) async {
+      await tester.pumpWidget(_host(rows));
+      await _expand(tester);
+
+      expect(
+        find.textContaining('(enervit gel + Water) + Sports Drink'),
+        findsOneWidget,
+      );
+      expect(
+        find.textContaining('Stroopwafel + Sports Drink + Water'),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('the header still says the formulas were skipped', (
+      tester,
+    ) async {
+      await tester.pumpWidget(_host(rows));
+
+      expect(find.text("Your formula didn't apply here"), findsOneWidget);
+      expect(
+        find.text('2 of your formulas were skipped — tap ? for why'),
+        findsOneWidget,
+      );
+      expect(find.text('Using your pinned formulas'), findsNothing);
+    });
+
+    testWidgets('a brick leg names its sport from the row label', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        _host(const [
+          PinStatusBannerRow(
+            label: 'During Bike',
+            decision: ephemeralDefaultWithSkips,
+          ),
+        ]),
+      );
+      await _expand(tester);
+
+      expect(
+        find.text("Default used · your formula doesn't cover this ride"),
+        findsOneWidget,
+      );
+      expect(find.byIcon(Icons.check_circle_outline), findsNothing);
+    });
+  });
 }

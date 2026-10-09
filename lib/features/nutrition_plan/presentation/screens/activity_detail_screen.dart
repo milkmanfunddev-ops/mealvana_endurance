@@ -1500,7 +1500,8 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen>
           'activity_id': activityId,
           'mode': bannerData.isOnboarding ? 'onboarding' : 'status',
           'rows': rows.length,
-          'honored_count': rows.where((r) => r.decision.usedPin).length,
+          // `honored`, not `usedPin`: an ephemeral default is never a pin.
+          'honored_count': rows.where((r) => r.honored).length,
         });
       });
     }
