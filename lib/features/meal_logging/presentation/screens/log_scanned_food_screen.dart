@@ -62,10 +62,19 @@ class _LogScannedFoodScreenState extends State<LogScannedFoodScreen> {
       : _servings.toStringAsFixed(1);
 
   /// A short "per serving" descriptor, e.g. "1 gel" or "30 g", when available.
+  ///
+  /// A scanned food counts in the generic unit "servings" (amount 1), and
+  /// its [Food.servingSize] says what one serving is ("15 g", "100 g").
+  /// Printing amount + unit there read "Per serving: 1 servings" and hid the
+  /// amount the values describe (testing-wave 68-011).
   String? get _servingDescriptor {
     final amount = _food.servingAmount;
     final unit = _food.servingUnit;
-    if (amount != null && unit != null && unit.isNotEmpty) {
+    final genericUnit = const {
+      'serving',
+      'servings',
+    }.contains(unit?.trim().toLowerCase());
+    if (amount != null && unit != null && unit.isNotEmpty && !genericUnit) {
       final amountLabel = amount == amount.truncateToDouble()
           ? amount.toInt().toString()
           : amount.toStringAsFixed(1);
