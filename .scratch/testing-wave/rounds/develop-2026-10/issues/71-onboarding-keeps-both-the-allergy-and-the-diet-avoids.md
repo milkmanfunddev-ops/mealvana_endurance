@@ -59,4 +59,7 @@ Both are right for the same reason: a write may only drop rows nobody chose to d
 
 **Not changed, noted for the lead.** `removeFoodPreferencesBySource` deletes local rows only. The server keeps the removed restriction's avoids, and a later pull (merge) brings them back. It was like that before this ticket, and it needs a server delete, which is a separate ticket.
 
+**Questions for Lee.**
+1. Adding an allergy or a diet in Settings turns a food the athlete had liked into an avoid (level 0, tagged with that allergy). Removing the allergy later deletes the row, so the food goes back to its default rather than to the like. This ticket keeps that behaviour, which is how it worked before; the replace bug just hid it. Should removing a restriction restore the athlete's earlier level instead? That would need the old level stored on the row.
+
 Next: /testing-wave develop-2026-10

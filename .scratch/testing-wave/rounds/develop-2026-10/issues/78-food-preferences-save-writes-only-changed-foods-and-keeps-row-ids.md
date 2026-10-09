@@ -1,6 +1,6 @@
 # 78: Food preferences: Save writes only the foods that changed, and existing rows keep their id and created_at
 
-**Status:** in-progress (wave 8, 2026-10-09)
+**Status:** landed-pending-merge (wave 8, 2026-10-09, e49671079)
 **Labels:** fix, round:develop-2026-10, area:settings, area:sync
 **Branch:** `develop-next` (fix-wave worktree)
 **Source:** Finding 68-001; TRIAGE.md rulings of 2026-10-09.
@@ -58,17 +58,17 @@ No codegen expected: `build()` and the provider keep their signatures, and `food
 
 ## Tests
 
-- [ ] **Seam, through the real notifier** (`food_preferences_save_uploads_seam_test.dart`, `ProviderContainer`, real `FoodPreferencesController`, real `FoodPreferencesRepository` over in-memory Drift, `FakePostgrest`, real `SyncCoordinator`; `docs/test/README.md` §Seam tests). Seed the server producer-shaped: run 68's nine rows from `db-food-preferences-before.txt`, with server ids, `created_at`/`updated_at` `2026-10-08 17:23:53+00`, snake_case keys, and `Bagel (plain)`/`Bananas` included. Load with a primary list that holds the five keyed foods plus `carb_drink_mix`, `energy_chews_mini_pack`, `granola_bar` and `high_carb_drink_mix` (no rows), and an additional list holding `fig_bar`. Move `sports_drink` 4 → 3 and save. The recorded `food_preferences` upsert carries **one** row: `food_name: 'sports_drink'`, `preference_level: 3`, `preference: 'like'`, `updated_at` ending `Z`, and **no `id` key and no `created_at` key**. `on_conflict` is `user_id,food_name`. No row is sent for `fig_bar` or the four new foods. `save` returns 1.
-- [ ] Same file: save with nothing moved records no upsert, records the "nothing changed" breadcrumb, and returns 0. Move a food that has no row (`granola_bar` 2 → 3): the upsert carries that one row, again without `id`/`created_at`.
-- [ ] Same file: a legacy display-name row ("Energy Chews" at 3, no `energy_chews` row) is folded at load. Save with no slider moved sends `energy_chews` at 3 (the fold is a change) and deletes the local "Energy Chews" row.
-- [ ] **DAO** (`food_preferences_dao_merge_keeps_ids_test.dart`, new, in-memory Drift): seed a row with id `X` and `createdAt` T₀. A merge save at a new level keeps id `X` and `createdAt` T₀, changes the level and moves `updatedAt`. A merge save of a new food inserts one row. A replace save behaves as today (deletes, then inserts).
-- [ ] **Repository** (`food_preferences_repository_test.dart`): a pull (`syncFromRemote` with server rows) keeps the local ids of rows that already existed. Two saves of different foods while the first immediate upload is in flight: the rerun sends both foods and the names clear only after it. A refused upload keeps the names and the flag, and the next `uploadDirtyRecords` sends only those foods. The flag set with no names list sends every local row, without `id`/`created_at`. The ticket-39 UTC cases and ticket 58's cases stay green.
-- [ ] `flutter analyze` clean on touched files.
-- [ ] #116, #76: `grep -rl` under `test/` for `FoodPreferencesController`, `foodPreferencesControllerProvider`, `saveFoodPreferences`, `FoodPreferencesDao`, `foodPreferencesDao`, `uploadDirtyRecords`, `syncFromRemote`, `foodPreferencesUploadPendingKey`, `getAllFoodPreferenceEntries`, `FakePostgrest` and `FoodPreferencesScreen`, and run every file named (today that includes `user_repository_food_preferences_test.dart`, `sign_out_clears_device_test.dart`, `data_sync_service_test.dart`, `pull_keeps_dirty_rows_test.dart`).
-- [ ] #117: the new breadcrumb is `_report.`, already covered by `reportCalls`. Run `test/shared/source_guard/` anyway, since the repository's catches move.
-- [ ] #118: a no-op save and a failed upload are not error states. Only the missing user stays an `AsyncError` (`:180-187`).
-- [ ] Async paths, written down in Fix notes: `save` twice at once (the repository serialises the writes, `_serializedWrite` `:491-509`; the names are a union; the rerun sends the latest rows); a save during an in-flight upload (its names are added, the generation moves, so nothing clears until the rerun); `load` after a refresh (the baseline resets in `build` and a stale load is dropped by the generation check, `:80`); Settings closed mid-upload (the upload belongs to the repository).
-- [ ] Timeouts/retries: none added. The load's existing 10 s bound (`:38`, `:109-111`) still covers one write, the pending upload inside `ensureSynced`: an upsert of the pending foods on `user_id,food_name`, without `id`/`created_at`. Safe to repeat.
+- [x] **Seam, through the real notifier** (`food_preferences_save_uploads_seam_test.dart`, `ProviderContainer`, real `FoodPreferencesController`, real `FoodPreferencesRepository` over in-memory Drift, `FakePostgrest`, real `SyncCoordinator`; `docs/test/README.md` §Seam tests). Seed the server producer-shaped: run 68's nine rows from `db-food-preferences-before.txt`, with server ids, `created_at`/`updated_at` `2026-10-08 17:23:53+00`, snake_case keys, and `Bagel (plain)`/`Bananas` included. Load with a primary list that holds the five keyed foods plus `carb_drink_mix`, `energy_chews_mini_pack`, `granola_bar` and `high_carb_drink_mix` (no rows), and an additional list holding `fig_bar`. Move `sports_drink` 4 → 3 and save. The recorded `food_preferences` upsert carries **one** row: `food_name: 'sports_drink'`, `preference_level: 3`, `preference: 'like'`, `updated_at` ending `Z`, and **no `id` key and no `created_at` key**. `on_conflict` is `user_id,food_name`. No row is sent for `fig_bar` or the four new foods. `save` returns 1.
+- [x] Same file: save with nothing moved records no upsert, records the "nothing changed" breadcrumb, and returns 0. Move a food that has no row (`granola_bar` 2 → 3): the upsert carries that one row, again without `id`/`created_at`.
+- [x] Same file: a legacy display-name row ("Energy Chews" at 3, no `energy_chews` row) is folded at load. Save with no slider moved sends `energy_chews` at 3 (the fold is a change) and deletes the local "Energy Chews" row.
+- [x] **DAO** (`food_preferences_dao_merge_keeps_ids_test.dart`, new, in-memory Drift): seed a row with id `X` and `createdAt` T₀. A merge save at a new level keeps id `X` and `createdAt` T₀, changes the level and moves `updatedAt`. A merge save of a new food inserts one row. A replace save behaves as today (deletes, then inserts).
+- [x] **Repository** (`food_preferences_repository_test.dart`): a pull (`syncFromRemote` with server rows) keeps the local ids of rows that already existed. Two saves of different foods while the first immediate upload is in flight: the rerun sends both foods and the names clear only after it. A refused upload keeps the names and the flag, and the next `uploadDirtyRecords` sends only those foods. The flag set with no names list sends every local row, without `id`/`created_at`. The ticket-39 UTC cases and ticket 58's cases stay green.
+- [x] `flutter analyze` clean on touched files.
+- [x] #116, #76: `grep -rl` under `test/` for `FoodPreferencesController`, `foodPreferencesControllerProvider`, `saveFoodPreferences`, `FoodPreferencesDao`, `foodPreferencesDao`, `uploadDirtyRecords`, `syncFromRemote`, `foodPreferencesUploadPendingKey`, `getAllFoodPreferenceEntries`, `FakePostgrest` and `FoodPreferencesScreen`, and run every file named (today that includes `user_repository_food_preferences_test.dart`, `sign_out_clears_device_test.dart`, `data_sync_service_test.dart`, `pull_keeps_dirty_rows_test.dart`).
+- [x] #117: the new breadcrumb is `_report.`, already covered by `reportCalls`. Run `test/shared/source_guard/` anyway, since the repository's catches move.
+- [x] #118: a no-op save and a failed upload are not error states. Only the missing user stays an `AsyncError` (`:180-187`).
+- [x] Async paths, written down in Fix notes: `save` twice at once (the repository serialises the writes, `_serializedWrite` `:491-509`; the names are a union; the rerun sends the latest rows); a save during an in-flight upload (its names are added, the generation moves, so nothing clears until the rerun); `load` after a refresh (the baseline resets in `build` and a stale load is dropped by the generation check, `:80`); Settings closed mid-upload (the upload belongs to the repository).
+- [x] Timeouts/retries: none added. The load's existing 10 s bound (`:38`, `:109-111`) still covers one write, the pending upload inside `ensureSynced`: an upsert of the pending foods on `user_id,food_name`, without `id`/`created_at`. Safe to repeat.
 
 ## Deploy
 
@@ -107,6 +107,51 @@ On a simulator, in the retest ticket after fix wave 8, as test@test.com, startin
   - Open again and Save without moving anything: nothing on the server changes.
   - Move Granola Bar (no row) to Like: exactly one new row appears and the other rows are untouched.
   - `food_preferences_saved` shows `changed_foods` 1, 0 and 1.
+
+## Fix notes
+
+**What changed** (on top of ticket 71, `9a400599f`).
+- `FoodPreferencesController`: `_baseline` (the levels the last load resolved) and `_foldedKeys` (keys whose level came from a legacy display-name row), both reset in `build`. `load` sets the baseline only when its result is kept (the generation check). `save(levelsByKey)` keeps the entries whose level differs from the baseline (a key missing from it counts as changed) plus every folded key, and returns how many (`Future<int>`). An empty diff makes no repository call, writes the `Food preferences save: nothing changed` breadcrumb (category `settings`) and returns 0. After a save, state is the baseline with the new levels applied, and the baseline moves to it. The legacy rows are deleted only on a save that writes.
+- `food_preferences_screen.dart`: `food_preferences_saved` gains `changed_foods` and keeps `total_foods`.
+- `FoodPreferencesDao.saveFoodPreferences`: a merge is `insert … onConflict: DoUpdate(preference, preference_level, preference_source, updated_at; target user_id, food_name)`, so an existing row keeps `id` and `created_at`. A replace is unchanged: delete all, then insert. The legacy jsonb metadata write is unchanged.
+- `FoodPreferencesRepository`:
+  - A user-edit save adds the saved keys to `food_preferences_upload_pending_names_<userId>` (new `foodPreferencesUploadPendingNamesKey`, a sorted `StringList`) and sets the flag, both before the write. That covers a merge with `upload: true` (Settings, ticket 71's avoids) and a replace.
+  - Back-compat: if the flag is set and the names key is absent when a save comes in, every local row is added first, so the save does not narrow what goes up.
+  - `_uploadAllPreferencesForUser` is now `_uploadPendingPreferencesForUser`. It sends only the pending foods' rows with `user_id, food_name, preference, preference_level, preference_source, updated_at` (UTC), and no `id` or `created_at`. With the flag set and no names list, it sends every local row once, still without them.
+  - Clearing: the dirty walk clears the flag and names only if the save generation has not moved since it read the rows. The immediate upload now checks the same generation as well as the rerun flag (see #77 below). A failed upload keeps both.
+  - Beyond the ticket text, `syncFromRemote` now passes the server's `preference_source` per row (the per-food `sources` map from ticket 71). Under the in-place merge, a pull would otherwise stamp `manual` over an allergy or diet avoid, and `removeFoodPreferencesBySource` could no longer find it.
+- No codegen: the provider and `build()` keep their signatures. No Drift schema change; the names live in SharedPreferences.
+
+**Which path replaces, which diffs, and why both are right** (ticket 71 has the same table):
+- Settings → Food Likes & Dislikes **diffs**: it writes only the foods whose level moved, merged in place.
+- Settings → Allergies / Dietary Preference (ticket 71) **merge** only the new avoids. Ticket 71 found that `saveAllOnboardingData` writes no avoids since the 2026-08 redesign. The replace calls it was cut for were really in this Settings path, so 71 is a merge, not the one-call replace its text preferred.
+- `AuthService.saveFoodPreferences` with its default `mergeMode: false` **replaces**. Its only caller left is `FoodPreferenceResolver`, which writes defaults when the account has no rows.
+- Every user-edit save marks exactly the keys it saved as pending, and the upload sends only those, without `id`/`created_at`. A replace therefore cannot rewrite server ids either.
+
+The rule behind both: a write may drop or default only rows nobody chose. A screen acting on an account that already has rows writes only what the athlete changed. A replace fits only when the set written is already the whole set (no rows before). 71's seam assertion, that both avoid sets reach the server, holds under this ticket: each avoid save's own keys are pending.
+
+**#77, async paths.**
+- `save` twice at once: `_serializedWrite` runs the local writes in call order. The pending names are a union. Each save diffs against the baseline as it stood when it started, so the second can rewrite a food the first already wrote (same level, harmless). The in-flight upload owes one rerun, and the rerun sends the union with the latest local levels.
+- A save during an in-flight upload: its names are added and the generation moves before its local write, so neither the immediate upload nor the dirty walk clears anything, and the rerun or the next walk resends. The immediate upload's new generation check also closes a gap: before it, an upload that finished between a save's name-add and that save's rerun request cleared the flag. With names that would have lost the save's foods, so the generation check is the fix.
+- `load` after a refresh: `build` resets `_baseline`/`_foldedKeys`/`_legacyNames`, and a stale load's result is dropped by the generation check before it sets the baseline.
+- Settings closed mid-upload: the upload belongs to the repository, and the names stay until it lands.
+- Timeouts/retries: none added. The load's 10 s bound still covers one write, the pending upload inside `ensureSynced`, now limited to the pending foods. That upsert on `user_id,food_name` without `id`/`created_at` is safe to repeat.
+
+**#118.** A no-op save and a failed upload are not error states. Only the missing user stays an `AsyncError`. The no-op case is asserted in the seam; the failed-upload case is in ticket 58's existing seam test, still green.
+
+**#117.** The new breadcrumb goes through `report.` (covered by `reportCalls`). No new silent catch.
+
+**Tests run** (pass counts):
+- `test/features/settings/food_preferences_save_uploads_seam_test.dart`: 8/8. Ticket 58's 5 still pass, and the first now also asserts the unmoved `sports_drink` is not sent. Three new run-68 cases: Sports Drink 4→3 sends one row with no `id`/`created_at`, local id and created_at kept, 9 local rows; a no-op save writes nothing and leaves the breadcrumb, then granola_bar 2→3 sends one row; the legacy "Energy Chews" fold is sent with nothing moved.
+- `test/shared/database/daos/food_preferences_dao_merge_keeps_ids_test.dart` (new): 3/3. The keeps-id case fails against ticket 71's `insertOrReplace` DAO.
+- `test/new_sync/food_preferences_repository_test.dart`: 18/18. Ticket 39's two UTC cases now assert `updated_at` in UTC and no `created_at`/`id`. Five new cases: a pull keeps the local id and the server's source; two saves of different foods while the first upload is in flight (rerun sends both, names clear after); a refused upload keeps names and flag, and the next walk sends only that food; flag with no names list sends every row without `id`/`created_at`; a save on an upgraded-mid-pending phone keeps the old rows pending.
+- #116/#76: every `_test.dart` under `test/` naming `FoodPreferencesController`, `foodPreferencesControllerProvider`, `saveFoodPreferences`, `FoodPreferencesDao`, `foodPreferencesDao`, `uploadDirtyRecords`, `syncFromRemote`, `foodPreferencesUploadPendingKey`, `foodPreferencesUploadPendingNamesKey`, `getAllFoodPreferenceEntries`, `FakePostgrest` or `FoodPreferencesScreen`, plus ticket 71's 28 files. That is 84 files: 790 pass, 0 fail. It includes `user_repository_food_preferences_test.dart`, `sign_out_clears_device_test.dart`, `data_sync_service_test.dart` and `pull_keeps_dirty_rows_test.dart`; the last needed no fixture change.
+- `test/shared/source_guard/`: 20/20.
+- `flutter analyze` on the seven touched files: no new issue. The one existing `dead_null_aware_expression` warning in `food_preferences_dao.dart` (`getUserFoodPreferenceLevels`, untouched) remains.
+
+**Dev rows for the lead's close** (test@test.com, `vlmtsdzpnjnavdgytcmi`; delete by user and food key, as the Deploy SQL does). Current ids from `runs/68/db-food-preferences-end.txt`, for checking step 1's read: `carb_drink_mix` 3d2febd7-af88-4aea-850d-1e2c517a9f3c, `energy_chews_mini_pack` a219e7cb-81fb-4e2b-8866-f3d9a8116457, `fig_bar` 518193ab-0bd0-4419-aee1-c29b2c3a2277, `granola_bar` 5e19de3b-52fe-4b7d-a356-4e34a6a0cff9, `high_carb_drink_mix` eb42cb4b-9214-4464-9eaf-c3078c7b3d09. A save on any wave-7 build since then may have changed them again.
+
+**Left as is, for the lead.** `UserRepository.fetchAndCacheRemoteFoodPreferences` (plan reconcile, a replace) and `FoodPreferenceSyncHandler` (sign-in hydrate, a merge) still drop the server's `preference_source` and save rows as `manual`. They are not in this ticket's Touches. The sync handler now keeps local ids through the DAO change, but both still re-tag avoids as `manual`, which breaks undo-by-source after a plan generation or sign-in.
 
 ## Questions for Lee
 
