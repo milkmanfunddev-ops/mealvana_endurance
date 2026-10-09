@@ -1,6 +1,6 @@
 # 79: Describe's too-long 400 and the barcode 404 get their own words and count as expected; the lookup wait is bounded
 
-**Status:** in-progress (wave 8, 2026-10-09)
+**Status:** landed-pending-merge (wave 8, 2026-10-09, 55d51a29d)
 **Labels:** fix, round:develop-2026-10, area:meal-logging, area:barcode
 **Branch:** `develop-next` (fix-wave worktree)
 **Source:** Findings 68-002, 68-007, 68-018; TRIAGE.md rulings of 2026-10-09.
@@ -100,23 +100,23 @@ No codegen: `mealAiService` and `productDetailService` keep their provider signa
 
 ## Tests
 
-- [ ] **Seam, through the real service and the real screen** (`describe_too_long_test.dart`, on `describe_not_food_test.dart`'s harness: real `LogMealScreen` → Describe, mocked `FunctionsClient`, `RecordingReport`, `RecordingAnalyticsTracker`). Producer-shaped server answer: `FunctionException(status: 400, details: {'success': false, 'error': 'description is too long (max 2000 characters)', 'too_long': true, 'max_length': 2000})`, as `errorResponse` builds it.
+- [x] **Seam, through the real service and the real screen** (`describe_too_long_test.dart`, on `describe_not_food_test.dart`'s harness: real `LogMealScreen` → Describe, mocked `FunctionsClient`, `RecordingReport`, `RecordingAnalyticsTracker`). Producer-shaped server answer: `FunctionException(status: 400, details: {'success': false, 'error': 'description is too long (max 2000 characters)', 'too_long': true, 'max_length': 2000})`, as `errorResponse` builds it.
   - Type 2,001 characters and tap Analyze. The field shows the `too_long` line with `n` 2000, wrapped, and `invoke` was never called.
   - Type 2,000 characters plus surrounding spaces. The call is made (the trimmed text is exactly at the limit).
   - With the server stubbed to the flagged 400 (a client that skips the cap, driven through `MealAiService.describeMeal` directly): the result is `MealAiFailureKind.tooLong`, one `expected_failure {area: meal_logging, reason: description_too_long}` reaches the tracker, and the report has no `degraded`/`fault`. On the screen, no snackbar and the field shows the line.
   - A 400 **without** the flag stays `serverError` with one `degraded`.
-- [ ] **Unit** (`lookup_product_not_found_and_retry_test.dart`, mocked `FunctionsClient`; the 404 body is copied from `lookup-product/index.ts:248-252`):
+- [x] **Unit** (`lookup_product_not_found_and_retry_test.dart`, mocked `FunctionsClient`; the 404 body is copied from `lookup-product/index.ts:248-252`):
   - The 404 throws `ProductNotFoundException`, sends one `expected_failure {area: barcode_scanning, reason: barcode_not_found}` and no fault. `SupabaseBarcodeService.lookupBarcode` returns `BarcodeResultNotFound` and reports nothing more.
   - The first `invoke` never completes (fake async) and the second answers 200: two calls, a product, one retry breadcrumb, no report. The timer is cancelled inside the test body (#110).
   - Two `SocketException`s: exactly two calls, `ProductLookupUnavailableException`, a `barcode_scanning.weather` breadcrumb and a count, no fault. `lookupBarcode` returns `BarcodeResultError` with no second `degraded`.
   - A 500 `FunctionException`: one call (no retry) and today's fault.
-- [ ] **Widget** (`barcode_scanner_not_found_dialog_test.dart`, on `barcode_scanner_manual_entry_test.dart`'s harness with `testContentService`): Enter → `98765432109871` with the scanner service returning `BarcodeScanResult.notFound`. The dialog shows the `not_found_title` and `not_found_body` content values, Try Another / Cancel / Create Manually, and `barcode_lookup_failed {reason: not_found}`.
-- [ ] Deno: `deno test --allow-all supabase/functions/describe-meal/index.test.ts` (RUNBOOK fix-wave step 5: `--allow-all`, never `--allow-sys`).
-- [ ] `flutter analyze` clean on touched files.
-- [ ] #116, #76: `grep -rl` under `test/` for `MealAiService`, `mealAiServiceProvider`, `MealAiFailureKind`, `describeMeal`, `LogMealScreen`, `describeMinChars`, `ProductDetailService`, `productDetailServiceProvider`, `ProductDetailException`, `SupabaseBarcodeService`, `BarcodeScannerScreen`, `ContentKeys` and `content_defaults`, and run every file named (today that includes `meal_ai_service_credits_test.dart`, `meal_logging_business_logic_test.dart` around `:1631-1870`, `describe_not_food_test.dart`, `describe_error_lines_wrap_test.dart`, `describe_back_keeps_analysis_test.dart`, `food_search_barcode_query_test.dart` (it mocks `ProductDetailService`), `barcode_scanner_service_analytics_test.dart`, the content-defaults guard tests).
-- [ ] #117: run `test/shared/source_guard/` (item 7).
-- [ ] #118: no expected outcome is written into notifier state. `DescribeAnalysisController` already keeps failures out of state (`describe_analysis_controller.dart:100-108`).
-- [ ] Async paths, written down in Fix notes: Analyze tapped twice on a too-long text (the validator stops both; no call); the scanner closed while the retry runs (the loading dialog pop and `_showLookupResult` are guarded by `mounted`, `barcode_scanner_screen.dart:333-336`, `:349-352`; the late answer is dropped); a timed-out first request that lands on the server after the retry already answered (two server runs, one result shown; see Fix 4's write list).
+- [x] **Widget** (`barcode_scanner_not_found_dialog_test.dart`, on `barcode_scanner_manual_entry_test.dart`'s harness with `testContentService`): Enter → `98765432109871` with the scanner service returning `BarcodeScanResult.notFound`. The dialog shows the `not_found_title` and `not_found_body` content values, Try Another / Cancel / Create Manually, and `barcode_lookup_failed {reason: not_found}`.
+- [x] Deno: `deno test --allow-all supabase/functions/describe-meal/index.test.ts` (RUNBOOK fix-wave step 5: `--allow-all`, never `--allow-sys`).
+- [x] `flutter analyze` clean on touched files.
+- [x] #116, #76: `grep -rl` under `test/` for `MealAiService`, `mealAiServiceProvider`, `MealAiFailureKind`, `describeMeal`, `LogMealScreen`, `describeMinChars`, `ProductDetailService`, `productDetailServiceProvider`, `ProductDetailException`, `SupabaseBarcodeService`, `BarcodeScannerScreen`, `ContentKeys` and `content_defaults`, and run every file named (today that includes `meal_ai_service_credits_test.dart`, `meal_logging_business_logic_test.dart` around `:1631-1870`, `describe_not_food_test.dart`, `describe_error_lines_wrap_test.dart`, `describe_back_keeps_analysis_test.dart`, `food_search_barcode_query_test.dart` (it mocks `ProductDetailService`), `barcode_scanner_service_analytics_test.dart`, the content-defaults guard tests).
+- [x] #117: run `test/shared/source_guard/` (item 7).
+- [x] #118: no expected outcome is written into notifier state. `DescribeAnalysisController` already keeps failures out of state (`describe_analysis_controller.dart:100-108`).
+- [x] Async paths, written down in Fix notes: Analyze tapped twice on a too-long text (the validator stops both; no call); the scanner closed while the retry runs (the loading dialog pop and `_showLookupResult` are guarded by `mounted`, `barcode_scanner_screen.dart:333-336`, `:349-352`; the late answer is dropped); a timed-out first request that lands on the server after the retry already answered (two server runs, one result shown; see Fix 4's write list).
 
 ## Deploy
 
@@ -138,3 +138,43 @@ Next: /testing-wave develop-2026-10 (fix wave 8)
 
 **Rulings (Lee, 2026-10-09, wave 7 close).**
 - Q1: Try Again on the lookup dialog re-runs the same lookup (the read is safe to repeat).
+
+## Fix notes
+
+Wave 8, 2026-10-09, code commit `55d51a29d` on `testing-wave/develop-2026-10/79` (base `cf250c7e3`; ticket 75's `_sanitizePhoto` untouched). Content keys used as landed on the base; `content_keys.dart` and `content_defaults.json` not edited.
+
+**Per item.**
+1. `describe-meal/index.ts`: the too-long check answers `errorResponse(msg, 400, undefined, { too_long: true, max_length: MAX_DESCRIPTION_LENGTH })`; status and `error` text unchanged. `index.test.ts`: the mirrored validator returns the extra fields; three new cases (the flag and `max_length` on the too-long result; the body as `errorResponse` really builds it, read back with `res.json()`; other 400s carry no flag).
+2. `meal_ai_service.dart`: `MealAiFailureKind.tooLong`; `@visibleForTesting static isTooLongAnswer` (400 + `too_long == true`); in `_mapFunctionException`, beside the not-food branch and before the 402/degraded branch, `noteExpected('$functionName: description too long', area: meal_logging, reason: description_too_long, data: {status: 400, max_length})` and a `MealAiException(kind: tooLong, userMessage: '')`. A 400 without the flag stays `serverError` + one `degraded`.
+3. `log_meal_screen.dart` (kept tight for 81): `const describeMaxChars = 2000` beside `describeMinChars`; the validator returns `meal_log.describe.too_long` with `{n}` = 2000 when `v.trim().length > describeMaxChars`; the `MealAiException` catch gains one `else if (e.kind == MealAiFailureKind.tooLong)` that sets the same field line (no snackbar). The field state stays named `_notFoodError` (comment updated) to keep the diff small; one small helper `_describeTooLongLine()`. No `maxLength` on the field. `meal_ai_failed` reads `error_type: tooLong`.
+4. `product_detail_service.dart`: `_invokeLookup` runs `invoke(...).timeout(lookupTimeout)` (10 s); on `TimeoutException`, `SocketException` or `http.ClientException` it leaves the `lookup-product attempt 1 failed; retrying once` breadcrumb (category `barcode_scanning`, `{error: <runtimeType>}`) and tries once more. `FunctionException` is never retried.
+5. `ProductNotFoundException` and `ProductLookupUnavailableException` extend `ProductDetailException`. `ProductDetailService` takes an optional `AnalyticsTracker` (provider passes `appExternalDepsProvider.analytics`; signature unchanged, no codegen). `on FunctionException`: 404 with `success: false` -> `noteExpected('lookup-product: not found', area: barcode_scanning, reason: barcode_not_found, data: {status: 404})` and `ProductNotFoundException`; any other status faults as before (now with `extra: {status}`). Both attempts failing on transport -> `faultUnlessWeather(..., message: 'lookup-product unreachable after one retry')` and `ProductLookupUnavailableException`.
+6. `supabase_barcode_service.dart`: `on ProductNotFoundException` -> `BarcodeResult.notFound(message: '')`, `on ProductLookupUnavailableException` -> `BarcodeResult.error(message: e.message)`, neither reporting; the generic `on ProductDetailException` keeps its `degraded`. `barcode_scanner_screen.dart`: `_showNotFoundResult(barcode)` takes title and body from `barcode_scanner.not_found_title` / `not_found_body` and no longer shows the service message. **79 Q1 ruling:** `_showError`'s Try Again now pops the dialog and re-runs `_lookupBarcode(_lastScannedBarcode)`; with no code in hand it falls back to `_resetScanning()`. "Error" and the other button words in `_showError` stay as they were.
+7. The guard did **not** flag the `on FunctionException` catch: it throws (an escape) and `_report.` is already in `reportCalls`, so `source_guard.dart` is unchanged. It **did** flag the two new silent catches in `SupabaseBarcodeService` (`on ProductNotFoundException`, `on ProductLookupUnavailableException`). Both are silent on purpose (the service reported before throwing), so each got a `reasoned` entry in `test/shared/source_guard/allow_list.md`, following the `AccountDeletionNeedsConnectionException` precedent (#117).
+
+**#82 write list (confirmed against the code).** lookup-product writes no user data and debits nothing: `grep -n "ledger\|debit\|credits" supabase/functions/lookup-product/index.ts` finds nothing. A repeat of a request that reached the server repeats:
+- `cacheNutritionProduct` (`_shared/food_sources/cache.ts`): an upsert on `barcode`, a full unique constraint. Safe to repeat.
+- The cache-hit counter (`hit_count + 1`): not idempotent. A timed-out first try that did land adds one extra hit to a popularity counter. Harmless; accepted.
+- No idempotency key needed. The client retries only on transport failures (no HTTP answer), never on a `FunctionException`.
+
+**#77 concurrency notes.**
+- Analyze tapped twice on a too-long text: the validator refuses both taps before any call (`meal_ai_validation_failed` twice, `invoke` never called). A server `tooLong` answer arrives once per call; the existing `_isAnalyzing` overlay blocks a second tap while one call is in flight.
+- Scanner closed while the retry runs: the service keeps going (up to ~20 s) and returns to a disposed screen; `_lookupBarcode` checks `mounted` before popping the loading dialog and before `_showLookupResult`, so the late answer is dropped. The service's report (note, weather breadcrumb or fault) still lands, as it should.
+- A timed-out first request that lands on the server after the retry answered: two server runs, one result shown (the retry's). The first attempt's future is abandoned by `.timeout`; its eventual answer is ignored. Server side, see the write list (one extra `hit_count`).
+- Two scans back to back: unchanged. The scanner stops itself on the first detection (`_isScanning = false`, same-code guard) and the loading dialog is modal, so a second lookup cannot start until the first result's dialog is dismissed.
+- Try Again tapped twice: the first tap pops the error dialog; the route ignores pointers during its exit animation, so the second tap does not reach a button. One lookup re-runs.
+
+**Tests run (agents rule: own files + named files only).**
+- `deno test --allow-all supabase/functions/describe-meal/`: 9 passed (38 steps), 0 failed.
+- `test/features/meal_logging/describe_too_long_test.dart` (new): 6 passed.
+- `test/features/barcode_scanning/lookup_product_not_found_and_retry_test.dart` (new): 7 passed. The hung-first-attempt case runs under `testWidgets` fake time; the 10 s timer fires inside the test body and the second attempt's timer is cancelled by its answer, so nothing is left pending (#110).
+- `test/features/barcode_scanning/presentation/barcode_scanner_not_found_dialog_test.dart` (new): 2 passed (not-found dialog in content words; Try Again re-runs the same lookup).
+- `test/shared/source_guard/`: 20 passed (after the two allow-list entries).
+- #116/#76: every `_test.dart` that `grep -rlE` names for `MealAiService|mealAiServiceProvider|MealAiFailureKind|describeMeal|LogMealScreen|describeMinChars|describeMaxChars|ProductDetailService|productDetailServiceProvider|ProductDetailException|SupabaseBarcodeService|BarcodeScannerScreen|ContentKeys|content_defaults|ProductNotFoundException|barcodeScannerRoute` (36 files, including all of `test/features/barcode_scanning/`, `meal_logging_business_logic_test.dart`, `describe_not_food_test.dart`, `describe_error_lines_wrap_test.dart`, `describe_back_keeps_analysis_test.dart`, `meal_ai_service_credits_test.dart`, `food_search_barcode_query_test.dart`, `barcode_scanner_service_analytics_test.dart`, `barcode_scanner_manual_entry_test.dart`, `content_defaults_resolve_without_caller_test.dart`), plus `test/shared/source_guard/`, in one run: 295 passed, 1 skipped, 0 failed.
+- `flutter analyze` on the 5 touched lib files and 3 new tests: no errors or warnings. 4 old `withOpacity` infos in `barcode_scanner_screen.dart` (lines 971-1177), outside this diff.
+- No codegen; no generated file changed.
+
+**For the lead: deploy** `describe-meal` to dev at the close (`./scripts/deploy_dev.sh describe-meal`). Until then a too-long 400 has no flag and stays `serverError` + `degraded`; the client cap means the app no longer sends such text anyway. lookup-product is unchanged. No SQL.
+
+**Questions for Lee.**
+1. The too-long line formats `{n}` as a plain number, so it reads "That's more than 2000 characters." The retest text above expects "2,000". Keep the plain number, or format with a thousands separator? Recommended: keep the plain number (no locale formatting exists in `ContentKeys.format`; 2000 reads fine). The retest should look for "2000".
