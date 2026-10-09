@@ -6,7 +6,7 @@ import '../../../shared/services/report/report.dart';
 import '../data/integrations_repository.dart';
 import '../data/training_peaks_api_client.dart';
 import '../domain/integration.dart';
-import '../domain/integration_exceptions.dart';
+import 'sync_failure_recorder.dart';
 
 /// Service for TrainingPeaks OAuth authentication flow
 ///
@@ -317,14 +317,10 @@ class TrainingPeaksOAuthService {
     String userId,
     TrainingPeaksApiException e,
   ) {
-    final forGood = isRefreshRefusedForGood(e.statusCode);
-    return _repository.updateSyncStatus(
-      userId,
-      'training_peaks',
-      status: forGood ? requiresReauthStatus : 'error',
-      // Ticket 37: the row holds a code, mapped to content at display time.
-      error: forGood ? reauthRequiredCode : syncErrorCode(e),
-    );
+    // Ticket 73: the shared step decides the status and code.
+    return isRefreshRefusedForGood(e.statusCode)
+        ? _repository.recordReauthRequired(userId, 'training_peaks')
+        : _repository.recordSyncFailure(userId, 'training_peaks', e);
   }
 
   /// Get a valid access token, refreshing if needed

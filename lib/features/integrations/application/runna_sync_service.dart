@@ -8,6 +8,7 @@ import '../domain/integration_exceptions.dart';
 import 'change_detection_service.dart';
 import 'runna_ics_parser.dart';
 import 'runna_transformer.dart';
+import 'sync_failure_recorder.dart';
 import 'synced_workout_analytics.dart';
 
 /// Syncs planned workouts from a Runna calendar-subscription (.ics) feed
@@ -248,17 +249,23 @@ class RunnaSyncService {
         activities: changes.newActivities,
       );
     } on NetworkException catch (e, st) {
-      // Transient — don't stamp an error status, the user can just retry.
       await _r.degraded(
         e,
         stackTrace: st,
         area: _provider,
         message: 'Runna sync failed: network',
       );
+      // Ticket 73: offline is recorded like every other provider (`network`).
       // Ticket 52: the code, never the message (it can carry the feed URL).
-      return RunnaSyncResult.networkError(syncErrorCode(e));
+      final code = await _integrationsRepository.recordSyncFailure(
+        userId,
+        _provider,
+        e,
+      );
+      return RunnaSyncResult.networkError(code);
     } on IntegrationApiException catch (e, st) {
-      // The feed answered but not with a calendar (revoked URL, 4xx/5xx).
+      // The feed answered but not with a calendar (revoked URL, 4xx/5xx, a
+      // page that is not ICS: `not_a_calendar`, ticket 73).
       await _r.degraded(
         e,
         stackTrace: st,
@@ -266,20 +273,17 @@ class RunnaSyncService {
         message: 'Runna feed rejected; integration marked error',
         extra: {'statusCode': e.statusCode},
       );
-      await _integrationsRepository.updateSyncStatus(
+      final code = await _integrationsRepository.recordSyncFailure(
         userId,
         _provider,
-        status: 'error',
-        // Ticket 52 (as 37 for the others): a wire code, never the raw text.
-        error: syncErrorCode(e),
+        e,
       );
-      return RunnaSyncResult.error(syncErrorCode(e));
+      return RunnaSyncResult.error(code);
     } catch (e, st) {
-      await _integrationsRepository.updateSyncStatus(
+      final code = await _integrationsRepository.recordSyncFailure(
         userId,
         _provider,
-        status: 'error',
-        error: syncErrorCode(e), // ticket 52: a code, not the exception text
+        e,
       );
       await _r.fault(
         e,
@@ -287,7 +291,7 @@ class RunnaSyncService {
         area: _provider,
         message: 'Runna sync failed',
       );
-      return RunnaSyncResult.error(syncErrorCode(e));
+      return RunnaSyncResult.error(code);
     }
   }
 

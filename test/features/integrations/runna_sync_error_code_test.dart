@@ -3,6 +3,9 @@
 // the other providers onto `SyncErrorCode`; Runna still stored `e.message` /
 // `e.toString()`, and that text can carry the calendar URL (the feed's token).
 //
+// Ticket 73: a link that is not a calendar stores `not_a_calendar`, and
+// offline stores `network` on the row like every other provider.
+//
 // Seam: the feed's HTTP answer → the REAL RunnaIcsClient → RunnaSyncService
 // → the REAL IntegrationsRepository on in-memory Drift → the REAL postgrest
 // builder against an in-memory PostgREST (FakePostgrest), which records every
@@ -35,7 +38,8 @@ IntegrationModel _runna() => IntegrationModel(
   userId: _userId,
   provider: 'runna',
   accessToken: _feedUrl,
-  providerAthleteId: 'runna-${RunnaSyncService.stableFeedFingerprint(_feedUrl)}',
+  providerAthleteId:
+      'runna-${RunnaSyncService.stableFeedFingerprint(_feedUrl)}',
   isActive: true,
   lastSyncStatus: 'success',
   createdAt: DateTime(2026, 9, 1, 8),
@@ -55,10 +59,7 @@ void main() {
       {'id': _userId},
     ];
     await server.signIn(_userId);
-    repository = IntegrationsRepository(
-      database: db,
-      supabase: server.client,
-    );
+    repository = IntegrationsRepository(database: db, supabase: server.client);
     await repository.upsertIntegration(_runna());
   });
 
@@ -106,21 +107,23 @@ void main() {
     );
   });
 
-  test('a feed that is not a calendar stores unknown, never its message',
-      () async {
+  // Ticket 73 (52 Q2): its own code, not `unknown`.
+  test('a feed that is not a calendar stores not_a_calendar, never its '
+      'message', () async {
     final result = await syncService(
       MockClient((_) async => http.Response('<html>login</html>', 200)),
     ).syncWorkouts(_userId);
 
     expect(result.success, isFalse);
-    expectCode(result.error, 'unknown');
+    expectCode(result.error, 'not_a_calendar');
     final row = await repository.getIntegration(_userId, 'runna');
-    expectCode(row!.lastSyncError, 'unknown');
-    expectCode(sentErrors().last, 'unknown');
+    expect(row!.lastSyncStatus, 'error');
+    expectCode(row.lastSyncError, 'not_a_calendar');
+    expectCode(sentErrors().last, 'not_a_calendar');
   });
 
-  test('offline: the result carries network and the row is left alone',
-      () async {
+  // Ticket 73: offline writes `network` on the row, as on every provider.
+  test('offline: the result and the row carry network', () async {
     // package:http wraps the socket failure in a ClientException whose
     // message names the URI; the client turns it into a NetworkException.
     final result = await syncService(
@@ -135,13 +138,10 @@ void main() {
     expect(result.success, isFalse);
     expect(result.isNetworkError, isTrue);
     expectCode(result.error, 'network');
-    // Transient, as for every other provider: no error stamped on the row.
     final row = await repository.getIntegration(_userId, 'runna');
-    expect(row!.lastSyncStatus, 'success');
-    expect(row.lastSyncError, isNull);
-    for (final sent in sentErrors()) {
-      expect(sent, isNull);
-    }
+    expect(row!.lastSyncStatus, 'error');
+    expectCode(row.lastSyncError, 'network');
+    expectCode(sentErrors().last, 'network');
   });
 
   test('a socket failure that escapes the client stores network', () async {

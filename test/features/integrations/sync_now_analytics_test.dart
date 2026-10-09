@@ -14,6 +14,8 @@
 // fakes answering an empty success, as the server-backed services do on a
 // sync with nothing new. Analytics is a RecordingAnalyticsTracker; the device
 // id comes from a fake DeviceInfoService, as `app_opened` reads it.
+import 'dart:io';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/testing.dart';
@@ -54,16 +56,24 @@ class _FakeDeviceInfo implements DeviceInfoService {
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
+/// Ticket 73: when set, every fake sync throws it (a failure past the
+/// service's own catches, which the controller's catch handles).
+Object? _syncThrows;
+
+Never _throwIt() => throw _syncThrows!;
+
 class _EmptyTpSync implements TrainingPeaksSyncService {
   @override
   Future<TrainingPeaksFullSyncResult> syncAll(
     String userId, {
     int workoutDays = 45,
     int eventDays = 90,
-  }) async => const TrainingPeaksFullSyncResult(
-    workoutResult: TrainingPeaksSyncResult(success: true),
-    eventResult: TrainingPeaksEventSyncResult(success: true),
-  );
+  }) async => _syncThrows != null
+      ? _throwIt()
+      : const TrainingPeaksFullSyncResult(
+          workoutResult: TrainingPeaksSyncResult(success: true),
+          eventResult: TrainingPeaksEventSyncResult(success: true),
+        );
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
@@ -76,7 +86,8 @@ class _EmptyFsSync implements FinalSurgeSyncService {
     int numDays = 14,
     int numWorkouts = 21,
     int lookbackDays = 7,
-  }) async => const SyncResult(success: true);
+  }) async =>
+      _syncThrows != null ? _throwIt() : const SyncResult(success: true);
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
@@ -88,7 +99,8 @@ class _EmptyVdotSync implements VdotSyncService {
     String userId, {
     int lookbackDays = 14,
     int lookaheadDays = 45,
-  }) async => const VdotSyncResult(success: true);
+  }) async =>
+      _syncThrows != null ? _throwIt() : const VdotSyncResult(success: true);
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
@@ -97,7 +109,7 @@ class _EmptyVdotSync implements VdotSyncService {
 class _EmptyRunnaSync implements RunnaSyncService {
   @override
   Future<RunnaSyncResult> syncWorkouts(String userId) async =>
-      const RunnaSyncResult(success: true);
+      _syncThrows != null ? _throwIt() : const RunnaSyncResult(success: true);
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
@@ -148,6 +160,7 @@ void main() {
   late ProviderContainer container;
 
   setUp(() async {
+    _syncThrows = null;
     SharedPreferences.setMockInitialValues({});
     final db = AppDatabase.memory();
     addTearDown(db.close);
@@ -259,6 +272,32 @@ void main() {
         expect(e.properties!['device_id'], _deviceId, reason: e.name);
         expect(e.properties!['device_id'], isNot(_userId), reason: e.name);
       }
+    });
+  }
+
+  // Ticket 73 (52 item 2): the controller's own catch sent `e.toString()`,
+  // which carries addresses and ports; the event now carries the row's code.
+  for (final MapEntry(key: provider, value: sync) in syncs.entries) {
+    test('$provider Sync Now that throws: sync_failed carries the code, '
+        'never the exception text', () async {
+      _syncThrows = SocketException(
+        'Connection failed',
+        osError: const OSError('Network is unreachable', 51),
+        address: InternetAddress('203.0.113.7'),
+        port: 443,
+      );
+      final notifier = container.read(
+        connectTrainingControllerProvider.notifier,
+      );
+
+      await sync(notifier);
+
+      final failed = integrationEvents().singleWhere(
+        (e) => e.name == 'integration_sync_failed',
+      );
+      expect(failed.properties!['provider'], provider);
+      expect(failed.properties!['error_type'], 'exception');
+      expect(failed.properties!['error_message'], 'network');
     });
   }
 

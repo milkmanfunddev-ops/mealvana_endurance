@@ -55,6 +55,11 @@ void main() {
         const TokenRefreshException('refused', requiresReauth: true),
         'reauth_required',
       ),
+      // Ticket 73: a Runna link that is not a calendar has its own code.
+      'NotACalendarException': (
+        const NotACalendarException('not ICS', provider: 'runna'),
+        'not_a_calendar',
+      ),
       'an API exception wrapping a transport failure': (
         const IntegrationApiException(
           'SocketException: Connection refused (address = 10.0.0.1)',
@@ -104,6 +109,10 @@ void main() {
       expect(
         SyncError.parse('unknown'),
         const SyncError(SyncErrorCode.unknown),
+      );
+      expect(
+        SyncError.parse('not_a_calendar'),
+        const SyncError(SyncErrorCode.notACalendar),
       );
       expect(
         SyncError.parse('http_503'),
@@ -160,6 +169,7 @@ void main() {
         'rate_limited': 'integrations.sync_error_rate_limited',
         'reauth_required': 'integrations.sync_error_reauth',
         'unknown': 'integrations.sync_error_unknown',
+        'not_a_calendar': 'integrations.sync_error_not_a_calendar',
       };
       for (final entry in byCode.entries) {
         final template = defaults[entry.value];
@@ -168,6 +178,33 @@ void main() {
           syncErrorText(content, entry.key, 'TrainingPeaks'),
           template!.replaceAll('{provider}', 'TrainingPeaks'),
         );
+      }
+    });
+
+    // Ticket 73: the key resolves with its default text.
+    test('not_a_calendar reads the Runna link line', () {
+      expect(
+        syncErrorText(content, 'not_a_calendar', 'Runna'),
+        "This link isn't a Runna calendar. Copy a fresh link from Runna and "
+        'connect again.',
+      );
+    });
+
+    // The switch in syncErrorText is exhaustive; this pins that no code
+    // falls through to another code's text.
+    test('every SyncErrorCode has its own text', () {
+      final texts = {
+        for (final c in SyncErrorCode.values)
+          c: syncErrorText(
+            content,
+            c == SyncErrorCode.httpStatus ? 'http_500' : c.wire,
+            'Runna',
+          ),
+      };
+      expect(texts.values.toSet(), hasLength(SyncErrorCode.values.length));
+      for (final t in texts.values) {
+        expect(t, isNot(contains('{provider}')));
+        expect(t.trim(), isNotEmpty);
       }
     });
 

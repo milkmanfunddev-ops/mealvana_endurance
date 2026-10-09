@@ -31,6 +31,7 @@ String syncErrorText(
     SyncErrorCode.rateLimited => ContentKeys.integrationsSyncErrorRateLimited,
     SyncErrorCode.httpStatus => ContentKeys.integrationsSyncErrorHttp,
     SyncErrorCode.reauthRequired => ContentKeys.integrationsSyncErrorReauth,
+    SyncErrorCode.notACalendar => ContentKeys.integrationsSyncErrorNotACalendar,
     SyncErrorCode.unknown => ContentKeys.integrationsSyncErrorUnknown,
   };
   return ContentKeys.format(content.getValue(key), {
