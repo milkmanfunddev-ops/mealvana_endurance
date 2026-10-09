@@ -1,6 +1,6 @@
 # 90: Retest: Connected Apps, dead tokens and the imported event after wave 8 (ticket C, part 2)
 
-**Status:** ready (round develop-2026-10, test wave 9, after the wave-8 rebuild)
+**Status:** ready (round develop-2026-10, test wave 10, after wave 9: the three-simulator cap)
 **Labels:** retest, round:develop-2026-10, area:integrations, area:events, area:privacy, area:sync
 **Branch:** `develop-next` (worktree per ticket, branched from the round's base after fix wave 8 lands)
 **Source:** TRIAGE.md rulings of 2026-10-09 (wave 7 triage) and the wave-8 fix tickets' retest lines: followup 69-011, 69-005 step 3; fix retests for tickets 73, 76 (69-012), 77 (68-008, 69-010), 80 (69-004 and Q3, provider_event_id), 82 item 4 (69-009), 84; ticket 52 only if a Runna calendar URL is in `CRED list` (none on 2026-10-09).

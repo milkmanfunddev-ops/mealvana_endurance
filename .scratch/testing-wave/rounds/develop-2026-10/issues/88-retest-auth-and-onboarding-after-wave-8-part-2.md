@@ -1,6 +1,6 @@
 # 88: Retest: auth and onboarding after wave 8, part 2 (test@test.com: write-back notice and Food Likes & Dislikes)
 
-**Status:** ready (round develop-2026-10, test wave 9, after the wave-8 rebuild)
+**Status:** ready (round develop-2026-10, test wave 10, after wave 9: the three-simulator cap)
 **Labels:** retest, round:develop-2026-10, area:account, area:settings, area:sync, area:integrations
 **Branch:** `develop-next` (worktree per ticket, branched from the round's base after fix wave 8 lands)
 **Source:** TRIAGE.md rulings of 2026-10-09 (wave 7 triage) and the wave-8 fix tickets' retest lines: followup 69-014 (retest ticket A, overflow from ticket 85); fix retest for ticket 78 (68-001)
