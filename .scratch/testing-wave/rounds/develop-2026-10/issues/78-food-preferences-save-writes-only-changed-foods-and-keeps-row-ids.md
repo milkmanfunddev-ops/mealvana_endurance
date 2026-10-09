@@ -1,6 +1,6 @@
 # 78: Food preferences: Save writes only the foods that changed, and existing rows keep their id and created_at
 
-**Status:** landed-pending-merge (wave 8, 2026-10-09, e49671079)
+**Status:** landed (wave 8, 2026-10-09, develop-next `4b146f27`); open until its retest passes in test wave 9 (retest tickets 85-87)
 **Labels:** fix, round:develop-2026-10, area:settings, area:sync
 **Branch:** `develop-next` (fix-wave worktree)
 **Source:** Finding 68-001; TRIAGE.md rulings of 2026-10-09.
@@ -158,3 +158,5 @@ The rule behind both: a write may drop or default only rows nobody chose. A scre
 None. (The ruling covers the scope: test@test.com only. Ticket 58 never reached prod, so prod holds no rows written by this bug.)
 
 Next: /testing-wave develop-2026-10 (fix wave 8)
+
+**Lead, at the close (2026-10-09).** Dev SQL run: step 1 found exactly the five rows (fig_bar dislike 0, four willing_to_try 2, all created 23:48:44Z); step 2 deleted 5; step 3 reads 9 rows for test@test.com, no fig_bar.

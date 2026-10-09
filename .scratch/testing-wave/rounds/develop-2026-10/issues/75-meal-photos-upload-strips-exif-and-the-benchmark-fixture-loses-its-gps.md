@@ -1,6 +1,6 @@
 # 75: Meal photos are uploaded without EXIF; the benchmark fixtures lose their GPS
 
-**Status:** landed-pending-merge (wave 8, 2026-10-09, 97f9cabf0)
+**Status:** landed (wave 8, 2026-10-09, develop-next `4b146f27`); open until its retest passes in test wave 9 (retest tickets 85-87)
 **Labels:** fix, round:develop-2026-10, area:meal-logging, area:privacy
 **Branch:** `develop-next` (fix-wave worktree)
 **Source:** Findings 68-004, 68-005; TRIAGE.md rulings of 2026-10-09
@@ -138,3 +138,4 @@ The seam test file also checks every benchmark JPEG for an `Exif` APP1 segment (
 
 No codegen (no annotated file changed). No deploy.
 
+**Lead, at the close (2026-10-09).** Review fix `4b146f27`: the unreadable-photo line moved out of the service into a content key (`meal_log.describe.photo_unreadable`, `MealAiFailureKind.photoUnreadable`); the screen shows it.

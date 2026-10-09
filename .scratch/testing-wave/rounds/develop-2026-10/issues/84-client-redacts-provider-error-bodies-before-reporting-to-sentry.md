@@ -1,6 +1,6 @@
 # 84: The app reports a provider's status and error code, never its error body
 
-**Status:** landed-pending-merge (wave 8, 2026-10-09, abb2b9ca7)
+**Status:** landed (wave 8, 2026-10-09, develop-next `4b146f27`); open until its retest passes in test wave 9 (retest tickets 85-87)
 **Labels:** fix, round:develop-2026-10, area:integrations, area:privacy
 **Branch:** `develop-next` (fix-wave worktree)
 **Source:** Finding 69-012 (the device-side twin of ticket 76); TRIAGE.md rulings of 2026-10-09 (Lee: "a separate client fix ticket, fix wave 8, after 73")

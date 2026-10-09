@@ -1,6 +1,6 @@
 # 76: Garmin functions log a provider's status and error code, never its error body
 
-**Status:** landed-pending-merge (wave 8, 2026-10-09, 9bc706bfc)
+**Status:** landed (wave 8, 2026-10-09, develop-next `4b146f27`); open until its retest passes in test wave 9 (retest tickets 85-87)
 **Labels:** fix, round:develop-2026-10, area:integrations, area:server, area:privacy
 **Branch:** `develop-next` (fix-wave worktree)
 **Source:** Finding 69-012; TRIAGE.md rulings of 2026-10-09
@@ -121,3 +121,5 @@ The Retest line above now names Deno's inspect format, since `console.error` of 
 - `deno lint` on the ten touched files: one finding, `buildSupabaseDeleteStub` unused in `garmin-user-mapping/index.test.ts:128`, which is already there at base `0e6aa1cf7`; left alone.
 
 **Left for the lead.** Dev deploy (above) and the 69-012 log check in the next test wave's Connected Apps retest. Not touched, outside the ticket's table: garmin-backfill's integrations-read failure and garmin-user-mapping's upsert failure still pass the whole PostgREST error to `errorResponse` as Sentry `cause` (a select error carries no row; the mapping row holds no tokens since Q-INT8).
+
+**Lead, at the close (2026-10-09).** Deployed to dev from the merged tree: garmin-backfill, garmin-user-mapping, delete-user. Review fix `4b146f27`: `dbErrorSummary` withholds a `SyntaxError` message (a JSON parse error quotes the refused text, which for the token endpoint is the body). The 69-012 log check waits for the next dead-token refresh on dev (retest ticket C).

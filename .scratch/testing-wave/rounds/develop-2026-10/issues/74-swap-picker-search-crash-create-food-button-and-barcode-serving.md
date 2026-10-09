@@ -1,6 +1,6 @@
 # 74: Swap picker search crash, Create Food button that never enables, barcode values per 100 g shown as one serving
 
-**Status:** landed-pending-merge (wave 8, 2026-10-09, ffbf0606b)
+**Status:** landed (wave 8, 2026-10-09, develop-next `4b146f27`); open until its retest passes in test wave 9 (retest tickets 85-87)
 **Labels:** fix, round:develop-2026-10, area:meal-logging, area:nutrition-plan
 **Branch:** `develop-next` (fix-wave worktree)
 **Source:** Findings 68-006, 68-009, 68-011; TRIAGE.md rulings of 2026-10-09 ("one ticket, fix all three")
@@ -116,3 +116,5 @@ Code commit `ffbf0606b` on `testing-wave/develop-2026-10/74` (base `0e6aa1cf7`).
 ## Questions for Lee
 
 **Questions for Lee.** None.
+
+**Lead, at the close (2026-10-09).** Item 6 read on dev (read-only): the Nutella row `03017620422003` (source open_food_facts) has `serving_size` null, `serving_grams` null, `serving_quantity` null, `nutrition_data_per` 100g, 539 kcal / 57.5 C / 6.3 P / 30.9 F per 100 g. With this fix Log Food shows those values for "100 g", not "1 serving" and not 81 kcal for 15 g; the retest judges on that.

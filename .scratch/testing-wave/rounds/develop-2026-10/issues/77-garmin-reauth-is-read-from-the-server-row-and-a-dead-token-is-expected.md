@@ -1,6 +1,6 @@
 # 77: Reconnect is read from the server's integrations row on every device; a dead Garmin token is an expected failure
 
-**Status:** landed-pending-merge (wave 8, 2026-10-09, 451b1052c)
+**Status:** landed (wave 8, 2026-10-09, develop-next `4b146f27`); open until its retest passes in test wave 9 (retest tickets 85-87)
 **Labels:** fix, round:develop-2026-10, area:integrations, area:sync
 **Branch:** `develop-next` (fix-wave worktree)
 **Source:** Findings 68-008, 69-010; TRIAGE.md rulings of 2026-10-09
@@ -150,3 +150,5 @@ Landed in `451b1052c` on `testing-wave/develop-2026-10/77`, on top of ticket 73 
 
 **Questions for Lee.**
 - Ticket 73 left this: the Runna connect error line still shows raw exception text. `connect_training_controller.dart`, the `connectRunna` catch, sets `errorMessage: e.toString()`. It is outside this ticket's scope (Garmin reauth and the reconnect notice), so it is unchanged. Should it get its own fix ticket that maps it to a content string, as ticket 37 did for sync errors?
+
+**Lead, at the close (2026-10-09).** Review fix `4b146f27`: a failed integrations watch is recorded once as `degraded` (area integrations) instead of silently reading as "nothing needs a reconnect" (D9).

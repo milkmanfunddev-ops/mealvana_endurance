@@ -1,6 +1,6 @@
 # 81: A place search with no match and a camera with access off are expected outcomes; process uptime counts from main()
 
-**Status:** landed-pending-merge (wave 8, 2026-10-09, 307f802d6)
+**Status:** landed (wave 8, 2026-10-09, develop-next `4b146f27`); open until its retest passes in test wave 9 (retest tickets 85-87)
 **Labels:** fix, round:develop-2026-10, area:events, area:meal-logging, area:startup
 **Branch:** `develop-next` (fix-wave worktree)
 **Source:** Findings 69-003, 68-003, 67-005; TRIAGE.md rulings of 2026-10-09
@@ -142,3 +142,4 @@ Content keys were already on the base; `content_keys.dart` and `content_defaults
 
 The simulator retest is left for the next test wave.
 
+**Lead, at the close (2026-10-09).** The uptime unit test's red-first claim was corrected in the checklist (it did not go red on the old code); the fix is pinned by the mark. No test runs through `bootstrap()`; retest ticket A reads `process_uptime_ms` ≥ `startup.total` from the console.

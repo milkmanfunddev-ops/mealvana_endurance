@@ -1,6 +1,6 @@
 # 79: Describe's too-long 400 and the barcode 404 get their own words and count as expected; the lookup wait is bounded
 
-**Status:** landed-pending-merge (wave 8, 2026-10-09, 55d51a29d)
+**Status:** landed (wave 8, 2026-10-09, develop-next `4b146f27`); open until its retest passes in test wave 9 (retest tickets 85-87)
 **Labels:** fix, round:develop-2026-10, area:meal-logging, area:barcode
 **Branch:** `develop-next` (fix-wave worktree)
 **Source:** Findings 68-002, 68-007, 68-018; TRIAGE.md rulings of 2026-10-09.
@@ -178,3 +178,5 @@ Wave 8, 2026-10-09, code commit `55d51a29d` on `testing-wave/develop-2026-10/79`
 
 **Questions for Lee.**
 1. The too-long line formats `{n}` as a plain number, so it reads "That's more than 2000 characters." The retest text above expects "2,000". Keep the plain number, or format with a thousands separator? Recommended: keep the plain number (no locale formatting exists in `ContentKeys.format`; 2000 reads fine). The retest should look for "2000".
+
+**Lead, at the close (2026-10-09).** Deployed to dev from the merged tree: describe-meal. Q1 taken to Lee at this close (plain "2000" recommended).

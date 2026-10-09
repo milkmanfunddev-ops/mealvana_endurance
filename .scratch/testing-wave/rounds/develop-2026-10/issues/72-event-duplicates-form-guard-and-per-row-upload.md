@@ -1,6 +1,6 @@
 # 72: Event duplicates: the form refuses a same-name same-day event, and the events upload sends rows one at a time
 
-**Status:** landed-pending-merge (wave 8, 2026-10-09, `3f6b18fa9`)
+**Status:** landed (wave 8, 2026-10-09, develop-next `4b146f27`); open until its retest passes in test wave 9 (retest tickets 85-87)
 **Labels:** fix, round:develop-2026-10, area:events, area:sync
 **Branch:** `develop-next` (fix-wave worktree)
 **Blocked by:** nothing in code; cut at the wave-6 close from ticket 65's Q3. Prod's `events_user_date_name_unique` index waits for this ticket to ship.

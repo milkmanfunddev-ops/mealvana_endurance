@@ -1,6 +1,6 @@
 # 71: Onboarding keeps both the allergy and the diet avoids
 
-**Status:** landed-pending-merge (wave 8, 2026-10-09, 9a400599f)
+**Status:** landed (wave 8, 2026-10-09, develop-next `4b146f27`); open until its retest passes in test wave 9 (retest tickets 85-87)
 **Labels:** fix, round:develop-2026-10, area:onboarding, area:food-preferences
 **Branch:** `develop-next` (fix-wave worktree)
 **Blocked by:** nothing in code; cut at the wave-6 close from Finding 58-001.
@@ -63,3 +63,5 @@ Both are right for the same reason: a write may only drop rows nobody chose to d
 1. Adding an allergy or a diet in Settings turns a food the athlete had liked into an avoid (level 0, tagged with that allergy). Removing the allergy later deletes the row, so the food goes back to its default rather than to the like. This ticket keeps that behaviour, which is how it worked before; the replace bug just hid it. Should removing a restriction restore the athlete's earlier level instead? That would need the old level stored on the row.
 
 Next: /testing-wave develop-2026-10
+
+**Lead, at the close (2026-10-09).** Q1 and the two out-of-Touches gaps the agent listed (server keeps a removed restriction's avoids; the plan reconcile and sign-in sync save every row as `manual`) taken to Lee at this close.

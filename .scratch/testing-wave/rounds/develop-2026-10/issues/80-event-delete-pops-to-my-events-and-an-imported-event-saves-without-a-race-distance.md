@@ -1,6 +1,6 @@
 # 80: Event delete leaves Event Details and cancels its carb-load reminders; an imported event saves without a race distance
 
-**Status:** landed-pending-merge (wave 8, 2026-10-09, bd4809c86)
+**Status:** landed (wave 8, 2026-10-09, develop-next `4b146f27`); open until its retest passes in test wave 9 (retest tickets 85-87)
 **Labels:** fix, round:develop-2026-10, area:events, area:notifications
 **Branch:** `develop-next` (fix-wave worktree)
 **Source:** Findings 69-002, 69-004 (and 69-005 steps 2–4, answered from code below); TRIAGE.md rulings of 2026-10-09.
@@ -224,3 +224,4 @@ On a simulator, in the retest ticket after fix wave 8, as test@test.com:
 1. The delete confirmation still says "This will also delete any associated nutrition plans and carb loading plans." After Q2 the linked activity (and so its nutrition plan) is kept. Should the copy drop "nutrition plans"? It is a hardcoded string; the agent did not change it.
 2. Q3 needs the migration applied on dev before the next dev build reaches a device, or imported TrainingPeaks events fail to upload (PGRST204) until it is. Apply it with this wave's other dev SQL?
 
+**Lead, at the close (2026-10-09).** Migration `20261009120000_events_provider_event_id.sql` applied on dev (column `provider_event_id` text present; partial index created). `app_config.current_schema_version` left as it was. Review fix `4b146f27`: `EventSyncHandler.upsertEvent` (the full sync and the coach's athlete-events pull) now carries `origin` and `provider_event_id`, which `insertOrReplace` had been nulling; the repository's pull mapping no longer pretends an absent key keeps the local value. The coach-on-athlete 23505 (a remote-ack write) now shows the same duplicate line as the local refusal.

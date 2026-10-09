@@ -1,6 +1,6 @@
 # 73: Sync-status writes are standardised across the five providers
 
-**Status:** landed-pending-merge (wave 8, 2026-10-09, db30bd058)
+**Status:** landed (wave 8, 2026-10-09, develop-next `4b146f27`); open until its retest passes in test wave 9 (retest tickets 85-87)
 **Labels:** fix, round:develop-2026-10, area:integrations
 **Branch:** `develop-next` (fix-wave worktree)
 **Blocked by:** nothing in code; cut at the wave-6 close from ticket 52's Q1+Q2.

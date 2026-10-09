@@ -1,6 +1,6 @@
 # 83: Onboarding's choice tiles are buttons that report selected, and the app-bar back arrow is named "Back" once
 
-**Status:** landed-pending-merge (wave 8, 2026-10-08, 4e3f7201a)
+**Status:** landed (wave 8, 2026-10-09, develop-next `4b146f27`); open until its retest passes in test wave 9 (retest tickets 85-87)
 **Labels:** fix, round:develop-2026-10, area:onboarding, area:accessibility
 **Branch:** `develop-next` (fix-wave worktree)
 **Source:** Finding 67-001 (the retest of 48-006); TRIAGE.md rulings of 2026-10-09
