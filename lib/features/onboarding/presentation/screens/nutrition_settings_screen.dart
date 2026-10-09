@@ -309,43 +309,55 @@ class _SegmentChip extends StatelessWidget {
     // cream-22% border, cream 12.5/700 ls .625 label + fontMono 12
     // cream-50% multiplier; selected fills cream (plum label, plum-60%
     // multiplier).
-    return GestureDetector(
-      key: spec.key,
-      onTap: spec.onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 4),
-        decoration: BoxDecoration(
-          color: spec.isSelected ? OnbTokens.cream : OnbTokens.creamA(0.03),
-          border: Border.all(
-            color: spec.isSelected ? OnbTokens.cream : OnbTokens.creamA(0.22),
-          ),
-          borderRadius: BorderRadius.circular(OnbTokens.rChip),
-        ),
-        child: Column(
-          children: [
-            Text(
-              spec.label.toUpperCase(),
-              style: TextStyle(
-                fontFamily: OnbTokens.fontBody,
-                fontSize: 12.5,
-                fontWeight: FontWeight.w700,
-                letterSpacing: 0.625,
-                color: spec.isSelected ? OnbTokens.bg : OnbTokens.cream,
-              ),
-            ),
-            const SizedBox(height: 2),
-            Text(
-              spec.multiplier,
-              style: TextStyle(
-                fontFamily: OnbTokens.fontMono,
-                fontSize: 12,
+    // One button node with a selected state, named "Moderate, 1.0×" (the
+    // two drawn lines, comma-paused). Finding 67-001: it read as StaticText.
+    return Semantics(
+      container: true,
+      button: true,
+      selected: spec.isSelected,
+      label: '${spec.label}, ${spec.multiplier}',
+      child: GestureDetector(
+        key: spec.key,
+        onTap: spec.onTap,
+        child: ExcludeSemantics(
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 4),
+            decoration: BoxDecoration(
+              color: spec.isSelected ? OnbTokens.cream : OnbTokens.creamA(0.03),
+              border: Border.all(
                 color: spec.isSelected
-                    ? const Color(0x99381633)
-                    : OnbTokens.creamA(0.5),
+                    ? OnbTokens.cream
+                    : OnbTokens.creamA(0.22),
               ),
+              borderRadius: BorderRadius.circular(OnbTokens.rChip),
             ),
-          ],
+            child: Column(
+              children: [
+                Text(
+                  spec.label.toUpperCase(),
+                  style: TextStyle(
+                    fontFamily: OnbTokens.fontBody,
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.625,
+                    color: spec.isSelected ? OnbTokens.bg : OnbTokens.cream,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  spec.multiplier,
+                  style: TextStyle(
+                    fontFamily: OnbTokens.fontMono,
+                    fontSize: 12,
+                    color: spec.isSelected
+                        ? const Color(0x99381633)
+                        : OnbTokens.creamA(0.5),
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );
