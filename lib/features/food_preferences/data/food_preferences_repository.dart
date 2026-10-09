@@ -55,6 +55,7 @@ class FoodPreferencesRepository with SyncableRepository {
       // Parse food preferences from Supabase response
       final preferences = <String, FoodPreference>{};
       final sliderLevels = <String, int>{};
+      final sources = <String, String>{};
 
       for (final row in response) {
         final foodName = row['food_name'] as String?;
@@ -74,12 +75,16 @@ class FoodPreferencesRepository with SyncableRepository {
         if (level is num) {
           sliderLevels[foodName] = level.toInt().clamp(0, 4);
         }
+        // Keep the server's source, so an allergy or diet avoid stays
+        // removable by its source after a pull (tickets 71, 78).
+        final source = row['preference_source'];
+        if (source is String && source.isNotEmpty) sources[foodName] = source;
       }
 
-      // The table has no needs_upload flag: every upload re-sends all rows.
-      // While the last upload failed, the local values are newer than the
-      // server's, so the pull only adds foods this phone does not have
-      // (ticket 103: the pull now runs after a failed upload).
+      // The table has no needs_upload flag: the pending flag and names are
+      // the dirty state. While an upload is pending the local values are
+      // newer than the server's, so the pull only adds foods this phone does
+      // not have (ticket 103: the pull now runs after a failed upload).
       if (await _isUploadPending(userId)) {
         final local = await database.foodPreferencesDao.getUserFoodPreferences(
           userId,
@@ -90,10 +95,13 @@ class FoodPreferencesRepository with SyncableRepository {
 
       // Save to local Drift database using mergeMode to preserve local preferences
       // that might not be on the server yet
+      // Merge in place: a row this phone already has keeps its local id and
+      // created_at (ticket 78).
       await saveFoodPreferences(
         userId,
         preferences,
         sliderLevels: sliderLevels.isEmpty ? null : sliderLevels,
+        sources: sources,
         mergeMode: true, // Merge with existing local data
       );
 
@@ -138,11 +146,11 @@ class FoodPreferencesRepository with SyncableRepository {
       return UploadResult.nothingToUpload();
     }
     // A user edit saved while this upload runs may not be in the rows sent,
-    // and its own immediate upload may fail: clear the flag only if no save
-    // happened since the rows were read.
+    // and its own immediate upload may fail: clear the flag and names only
+    // if no save happened since the rows were read.
     final generation = _saveGenerations[userId] ?? 0;
     try {
-      final count = await _uploadAllPreferencesForUser(userId);
+      final count = await _uploadPendingPreferencesForUser(userId);
 
       _report.breadcrumb(
         'Uploaded food preferences to Supabase',
@@ -151,7 +159,7 @@ class FoodPreferencesRepository with SyncableRepository {
       );
 
       if ((_saveGenerations[userId] ?? 0) == generation) {
-        await _setUploadPending(userId, false);
+        await _clearUploadPending(userId);
       } else {
         _report.breadcrumb(
           'Food preferences upload flag kept: a save landed mid-upload',
@@ -163,7 +171,7 @@ class FoodPreferencesRepository with SyncableRepository {
           ? UploadResult.nothingToUpload()
           : UploadResult.successful(count);
     } catch (e, stackTrace) {
-      await _setUploadPending(userId, true);
+      await _keepUploadPending(userId);
       await _report.degraded(
         e,
         stackTrace: stackTrace,
@@ -189,10 +197,13 @@ class FoodPreferencesRepository with SyncableRepository {
   /// - 'dietary:{name}': Auto-set due to dietary preference (e.g., 'dietary:vegan')
   /// [upload] - a user edit saved with [mergeMode] (Settings) that must still
   /// reach the server. A replace ([mergeMode] false) always uploads.
+  /// [sources] overrides [source] per food (ticket 71).
   ///
-  /// A user-edit save marks the pending (dirty) flag before its upload starts
-  /// and the upload clears it, so a save whose upload never lands is retried
-  /// by the next dirty walk and protected from the plan path's reconcile.
+  /// A user-edit save marks the pending (dirty) flag and adds the foods it
+  /// saved to the pending names before its upload starts; the upload sends
+  /// only those foods and clears both (ticket 78). A save whose upload never
+  /// lands is retried by the next dirty walk and protected from the plan
+  /// path's reconcile.
   /// The upload runs after this returns: offline-first, the save succeeds on
   /// the local write.
   Future<void> saveFoodPreferences(
@@ -201,6 +212,7 @@ class FoodPreferencesRepository with SyncableRepository {
     Map<String, int>? sliderLevels,
     bool mergeMode = false,
     String source = 'manual',
+    Map<String, String>? sources,
     bool upload = false,
   }) async {
     try {
@@ -214,7 +226,7 @@ class FoodPreferencesRepository with SyncableRepository {
         // flag.
         if (isUserEdit) {
           _saveGenerations[userId] = (_saveGenerations[userId] ?? 0) + 1;
-          await _setUploadPending(userId, true);
+          await _markUploadPending(userId, preferences.keys);
         }
 
         await database.foodPreferencesDao.saveFoodPreferences(
@@ -223,6 +235,7 @@ class FoodPreferencesRepository with SyncableRepository {
           sliderLevels: sliderLevels,
           mergeMode: mergeMode,
           source: source,
+          sources: sources,
         );
 
         // For local user edits, attempt immediate remote write.
@@ -459,13 +472,46 @@ class FoodPreferencesRepository with SyncableRepository {
     return prefs.getBool(foodPreferencesUploadPendingKey(userId)) ?? false;
   }
 
-  Future<void> _setUploadPending(String userId, bool pending) async {
+  /// Sets the flag and adds [foodNames] to the pending names. A phone that
+  /// had the flag set before the names existed (upgraded mid-pending) first
+  /// lists every local row, so this save does not narrow what goes up.
+  Future<void> _markUploadPending(
+    String userId,
+    Iterable<String> foodNames,
+  ) async {
     final prefs = await SharedPreferences.getInstance();
-    if (pending) {
-      await prefs.setBool(foodPreferencesUploadPendingKey(userId), true);
-    } else {
-      await prefs.remove(foodPreferencesUploadPendingKey(userId));
+    final flagKey = foodPreferencesUploadPendingKey(userId);
+    final namesKey = foodPreferencesUploadPendingNamesKey(userId);
+    final names = <String>{...?prefs.getStringList(namesKey)};
+    if ((prefs.getBool(flagKey) ?? false) && !prefs.containsKey(namesKey)) {
+      final rows = await database.foodPreferencesDao
+          .getAllFoodPreferenceEntries(userId);
+      names.addAll(rows.map((r) => r.foodName));
     }
+    names.addAll(foodNames);
+    await prefs.setStringList(namesKey, names.toList()..sort());
+    await prefs.setBool(flagKey, true);
+  }
+
+  /// The foods waiting to go up, or null when the flag predates the names
+  /// list (then every local row goes up once).
+  Future<Set<String>?> _pendingNames(String userId) async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs
+        .getStringList(foodPreferencesUploadPendingNamesKey(userId))
+        ?.toSet();
+  }
+
+  /// A failed upload: keep the names, make sure the flag is set.
+  Future<void> _keepUploadPending(String userId) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(foodPreferencesUploadPendingKey(userId), true);
+  }
+
+  Future<void> _clearUploadPending(String userId) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(foodPreferencesUploadPendingKey(userId));
+    await prefs.remove(foodPreferencesUploadPendingNamesKey(userId));
   }
 
   // One immediate upload in flight per user, across repository instances
@@ -529,15 +575,19 @@ class FoodPreferencesRepository with SyncableRepository {
   }
 
   Future<void> _runImmediateUpload(String userId) async {
+    final generation = _saveGenerations[userId] ?? 0;
     try {
-      await _uploadAllPreferencesForUser(userId);
-      // A save that landed during this upload owes another pass; its flag
-      // stays set until that pass sends its rows.
-      if (!_uploadRerunOwed.contains(userId)) {
-        await _setUploadPending(userId, false);
+      await _uploadPendingPreferencesForUser(userId);
+      // A save that landed during this upload (its names were added after
+      // the read) owes another pass: the flag and names stay until that pass
+      // sends its rows. The generation catches a save whose rerun request
+      // has not arrived yet.
+      if (!_uploadRerunOwed.contains(userId) &&
+          (_saveGenerations[userId] ?? 0) == generation) {
+        await _clearUploadPending(userId);
       }
     } catch (e, stackTrace) {
-      await _setUploadPending(userId, true);
+      await _keepUploadPending(userId);
       _report.breadcrumb(
         'Immediate upload failed; record stays dirty for retry',
         category: 'sync',
@@ -553,26 +603,35 @@ class FoodPreferencesRepository with SyncableRepository {
     }
   }
 
-  /// Sends every local row for [userId]; returns how many. Throws on a
-  /// rejected write.
-  Future<int> _uploadAllPreferencesForUser(String userId) async {
+  /// Sends the pending foods' local rows for [userId]; returns how many.
+  /// Throws on a rejected write.
+  ///
+  /// No `id` and no `created_at` (ticket 78): the upsert on
+  /// (user_id, food_name) updates only the columns sent, so an existing
+  /// server row keeps both and a new one takes the server defaults. Local
+  /// ids may then differ from server ids; nothing compares them.
+  Future<int> _uploadPendingPreferencesForUser(String userId) async {
+    final names = await _pendingNames(userId);
     final allPreferences = await database.foodPreferencesDao
         .getAllFoodPreferenceEntries(userId);
+    final pending = names == null
+        ? allPreferences
+        : allPreferences
+              .where((p) => names.contains(p.foodName))
+              .toList(growable: false);
 
-    if (allPreferences.isEmpty) {
+    if (pending.isEmpty) {
       return 0;
     }
 
-    final preferencesToUpload = allPreferences
+    final preferencesToUpload = pending
         .map(
           (pref) => {
-            'id': pref.id,
             'user_id': pref.userId,
             'food_name': pref.foodName,
             'preference': pref.preference,
             'preference_level': pref.preferenceLevel,
             'preference_source': pref.preferenceSource,
-            'created_at': pref.createdAt.toUtc().toIso8601String(),
             'updated_at': pref.updatedAt.toUtc().toIso8601String(),
           },
         )
@@ -583,7 +642,7 @@ class FoodPreferencesRepository with SyncableRepository {
     await supabase
         .from('food_preferences')
         .upsert(preferencesToUpload, onConflict: 'user_id,food_name');
-    return allPreferences.length;
+    return pending.length;
   }
 }
 
@@ -592,6 +651,11 @@ class FoodPreferencesRepository with SyncableRepository {
 /// reconcile, which must not replace local rows the server has not taken.
 String foodPreferencesUploadPendingKey(String userId) =>
     'food_preferences_upload_pending_$userId';
+
+/// SharedPreferences key of the food names a user-edit save left for upload
+/// (ticket 78). Set beside [foodPreferencesUploadPendingKey], cleared with it.
+String foodPreferencesUploadPendingNamesKey(String userId) =>
+    'food_preferences_upload_pending_names_$userId';
 
 /// Repository provider following Andrea's pattern
 @riverpod

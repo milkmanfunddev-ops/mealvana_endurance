@@ -211,14 +211,13 @@ void main() {
       final sent = firstRow(
         server.writes.singleWhere((w) => w.table == 'food_preferences').body,
       );
-      for (final (key, instant) in [
-        ('created_at', createdAtUtc),
-        ('updated_at', updatedAtUtc),
-      ]) {
-        final value = sent[key] as String;
-        expect(value, endsWith('Z'), reason: '$key carries its offset');
-        expect(DateTime.parse(value).isAtSameMomentAs(instant), isTrue);
-      }
+      final value = sent['updated_at'] as String;
+      expect(value, endsWith('Z'), reason: 'updated_at carries its offset');
+      expect(DateTime.parse(value).isAtSameMomentAs(updatedAtUtc), isTrue);
+      // Ticket 78: the server keeps its own id and created_at.
+      expect(sent.containsKey('created_at'), isFalse);
+      expect(sent.containsKey('id'), isFalse);
+      expect(createdAtUtc.isUtc, isTrue);
     });
 
     test('a local edit\'s immediate upload sends UTC', () async {
@@ -239,13 +238,12 @@ void main() {
       final sent = firstRow(
         server.writes.singleWhere((w) => w.table == 'food_preferences').body,
       );
-      for (final key in ['created_at', 'updated_at']) {
-        final value = sent[key] as String;
-        expect(value, endsWith('Z'), reason: '$key carries its offset');
-        final at = DateTime.parse(value);
-        expect(at.isBefore(before), isFalse, reason: key);
-        expect(at.isAfter(DateTime.now()), isFalse, reason: key);
-      }
+      final value = sent['updated_at'] as String;
+      expect(value, endsWith('Z'), reason: 'updated_at carries its offset');
+      final at = DateTime.parse(value);
+      expect(at.isBefore(before), isFalse);
+      expect(at.isAfter(DateTime.now()), isFalse);
+      expect(sent.containsKey('created_at'), isFalse, reason: 'ticket 78');
     });
   });
 
@@ -424,5 +422,266 @@ void main() {
         );
       },
     );
+  });
+
+  // develop-2026-10 ticket 78 (Finding 68-001): a merge keeps local ids, and
+  // the upload sends only the pending foods, without id or created_at.
+  group('pending foods only (ticket 78)', () {
+    Iterable<Map<String, dynamic>> rows(FakePostgrest server) => server.writes
+        .where((w) => w.table == 'food_preferences')
+        .expand((w) => (w.body as List).cast<Map>())
+        .map((m) => m.cast<String, dynamic>());
+
+    Future<void> seedLocal(String id, String food, int level) => database
+        .into(database.foodPreferencesTable)
+        .insert(
+          FoodPreferencesTableCompanion.insert(
+            id: id,
+            userId: testUserId,
+            foodName: food,
+            preference: level <= 1
+                ? 'dislike'
+                : level >= 3
+                ? 'like'
+                : 'willing_to_try',
+            preferenceLevel: Value(level),
+            createdAt: Value(DateTime.utc(2026, 10, 8, 17, 23, 53)),
+            updatedAt: Value(DateTime.utc(2026, 10, 8, 17, 23, 53)),
+          ),
+        );
+
+    Future<FoodPreferenceEntry> local(String food) async =>
+        (await database.foodPreferencesDao.getAllFoodPreferenceEntries(
+          testUserId,
+        )).singleWhere((r) => r.foodName == food);
+
+    test('a pull keeps the local id of a row that already existed, and the '
+        'server\'s source', () async {
+      await seedLocal(
+        '11111111-2222-4333-8444-555555555555',
+        'sports_drink',
+        4,
+      );
+      final server = FakePostgrest();
+      server.tables['food_preferences'] = [
+        {
+          'id': 'f410fe6a-37c5-4efd-ac84-7cd145db900f',
+          'user_id': testUserId,
+          'food_name': 'sports_drink',
+          'preference': 'like',
+          'preference_level': 3,
+          'preference_source': 'manual',
+          'created_at': '2026-10-08 17:23:53+00',
+          'updated_at': '2026-10-08 23:16:23+00',
+        },
+        {
+          'id': '9a715ab3-7699-4d39-a816-a6293132ea74',
+          'user_id': testUserId,
+          'food_name': 'energy_bar',
+          'preference': 'dislike',
+          'preference_level': 0,
+          'preference_source': 'allergy:gluten',
+          'created_at': '2026-10-08 17:23:53+00',
+          'updated_at': '2026-10-08 17:23:53+00',
+        },
+      ];
+      final repository = FoodPreferencesRepository(
+        supabase: server.client,
+        database: database,
+        report: report,
+      );
+
+      final result = await repository.syncFromRemote(testUserId);
+      expect(result.success, isTrue);
+
+      final drink = await local('sports_drink');
+      expect(drink.id, '11111111-2222-4333-8444-555555555555');
+      expect(
+        drink.createdAt.isAtSameMomentAs(DateTime.utc(2026, 10, 8, 17, 23, 53)),
+        isTrue,
+      );
+      expect(drink.preferenceLevel, 3);
+      expect((await local('energy_bar')).preferenceSource, 'allergy:gluten');
+      expect(rows(server), isEmpty, reason: 'a pull uploads nothing');
+    });
+
+    test('two saves of different foods while the first upload is in flight: '
+        'the rerun sends both, and the names clear only after it', () async {
+      final firstArrived = Completer<void>();
+      final releaseFirst = Completer<void>();
+      final bodies = <List<Map<String, dynamic>>>[];
+      final client = SupabaseClient(
+        'http://fake-postgrest.test',
+        'anon-key',
+        httpClient: MockClient((request) async {
+          final headers = {'content-type': 'application/json'};
+          if (request.method != 'GET') {
+            bodies.add(
+              (jsonDecode(request.body) as List)
+                  .cast<Map>()
+                  .map((m) => m.cast<String, dynamic>())
+                  .toList(),
+            );
+            if (bodies.length == 1) {
+              firstArrived.complete();
+              await releaseFirst.future;
+            }
+          }
+          return http.Response('[]', 201, request: request, headers: headers);
+        }),
+        authOptions: const AuthClientOptions(autoRefreshToken: false),
+      );
+      final repository = FoodPreferencesRepository(
+        supabase: client,
+        database: database,
+        report: report,
+      );
+
+      await repository.saveFoodPreferences(
+        testUserId,
+        {'sports_drink': FoodPreference.like},
+        sliderLevels: {'sports_drink': 3},
+        mergeMode: true,
+        upload: true,
+      );
+      await firstArrived.future;
+      await repository.saveFoodPreferences(
+        testUserId,
+        {'granola_bar': FoodPreference.like},
+        sliderLevels: {'granola_bar': 3},
+        mergeMode: true,
+        upload: true,
+      );
+
+      final prefs = await SharedPreferences.getInstance();
+      expect(
+        prefs.getStringList(foodPreferencesUploadPendingNamesKey(testUserId)),
+        unorderedEquals(['sports_drink', 'granola_bar']),
+      );
+
+      releaseFirst.complete();
+      await FoodPreferencesRepository.inFlightUploadFor(testUserId);
+
+      expect(bodies, hasLength(2));
+      expect(bodies.first.map((r) => r['food_name']), ['sports_drink']);
+      expect(
+        bodies.last.map((r) => r['food_name']),
+        unorderedEquals(['sports_drink', 'granola_bar']),
+      );
+      expect(
+        prefs.getBool(foodPreferencesUploadPendingKey(testUserId)),
+        isNull,
+      );
+      expect(
+        prefs.getStringList(foodPreferencesUploadPendingNamesKey(testUserId)),
+        isNull,
+      );
+    });
+
+    test('a refused upload keeps the names and the flag; the next dirty walk '
+        'sends only those foods', () async {
+      await seedLocal('22222222-2222-4333-8444-555555555555', 'banana', 2);
+      final server = FakePostgrest()..rejectWrites.add('food_preferences');
+      final repository = FoodPreferencesRepository(
+        supabase: server.client,
+        database: database,
+        report: report,
+      );
+
+      await repository.saveFoodPreferences(
+        testUserId,
+        {'sports_drink': FoodPreference.like},
+        sliderLevels: {'sports_drink': 3},
+        mergeMode: true,
+        upload: true,
+      );
+      await FoodPreferencesRepository.inFlightUploadFor(testUserId);
+
+      final prefs = await SharedPreferences.getInstance();
+      expect(
+        prefs.getBool(foodPreferencesUploadPendingKey(testUserId)),
+        isTrue,
+      );
+      expect(
+        prefs.getStringList(foodPreferencesUploadPendingNamesKey(testUserId)),
+        ['sports_drink'],
+      );
+
+      server.rejectWrites.clear();
+      server.writes.clear();
+      final result = await repository.uploadDirtyRecords(testUserId);
+      expect(result.success, isTrue);
+      expect(result.count, 1);
+      final sent = rows(server).toList();
+      expect(sent.map((r) => r['food_name']), ['sports_drink']);
+      expect(sent.single.containsKey('id'), isFalse);
+      expect(sent.single.containsKey('created_at'), isFalse);
+      expect(
+        prefs.getBool(foodPreferencesUploadPendingKey(testUserId)),
+        isNull,
+      );
+      expect(
+        prefs.getStringList(foodPreferencesUploadPendingNamesKey(testUserId)),
+        isNull,
+      );
+    });
+
+    test('the flag set with no names list (upgraded mid-pending) sends every '
+        'local row once, without id or created_at', () async {
+      await seedLocal('22222222-2222-4333-8444-555555555555', 'banana', 2);
+      await seedLocal('33333333-2222-4333-8444-555555555555', 'gel', 4);
+      SharedPreferences.setMockInitialValues({
+        foodPreferencesUploadPendingKey(testUserId): true,
+      });
+      final server = FakePostgrest();
+      final repository = FoodPreferencesRepository(
+        supabase: server.client,
+        database: database,
+        report: report,
+      );
+
+      final result = await repository.uploadDirtyRecords(testUserId);
+      expect(result.count, 2);
+      final sent = rows(server).toList();
+      expect(
+        sent.map((r) => r['food_name']),
+        unorderedEquals(['banana', 'gel']),
+      );
+      for (final row in sent) {
+        expect(row.keys, isNot(contains('id')));
+        expect(row.keys, isNot(contains('created_at')));
+        expect(row['user_id'], testUserId);
+        expect(row['preference_source'], 'manual');
+      }
+    });
+
+    test('a save on a phone upgraded mid-pending keeps every old row '
+        'pending', () async {
+      await seedLocal('22222222-2222-4333-8444-555555555555', 'banana', 2);
+      SharedPreferences.setMockInitialValues({
+        foodPreferencesUploadPendingKey(testUserId): true,
+      });
+      final server = FakePostgrest()..rejectWrites.add('food_preferences');
+      final repository = FoodPreferencesRepository(
+        supabase: server.client,
+        database: database,
+        report: report,
+      );
+
+      await repository.saveFoodPreferences(
+        testUserId,
+        {'gel': FoodPreference.like},
+        sliderLevels: {'gel': 3},
+        mergeMode: true,
+        upload: true,
+      );
+      await FoodPreferencesRepository.inFlightUploadFor(testUserId);
+
+      final prefs = await SharedPreferences.getInstance();
+      expect(
+        prefs.getStringList(foodPreferencesUploadPendingNamesKey(testUserId)),
+        unorderedEquals(['banana', 'gel']),
+      );
+    });
   });
 }
