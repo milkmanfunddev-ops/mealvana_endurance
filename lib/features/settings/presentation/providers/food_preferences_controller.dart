@@ -42,12 +42,22 @@ class FoodPreferencesController extends _$FoodPreferencesController {
   int _loadGeneration = 0;
   Set<String> _legacyNames = const {};
 
+  // The levels the last load resolved (or the last save left): a save
+  // writes only what differs from them (ticket 78).
+  Map<String, int> _baseline = const {};
+
+  // Keys whose level came from a legacy display-name row: their level must
+  // be written under the key, or it is lost when that row is deleted.
+  Set<String> _foldedKeys = const {};
+
   Report get _report => ref.read(reportProvider);
 
   @override
   FutureOr<Map<String, int>> build() {
     _loadGeneration++;
     _legacyNames = const {};
+    _baseline = const {};
+    _foldedKeys = const {};
     return const {};
   }
 
@@ -78,6 +88,7 @@ class FoodPreferencesController extends _$FoodPreferencesController {
           _load(primary: primary, additional: additional, userFoods: userFoods),
     );
     if (!ref.mounted || generation != _loadGeneration) return;
+    _baseline = result.value ?? const {};
     state = result;
   }
 
@@ -126,6 +137,7 @@ class FoodPreferencesController extends _$FoodPreferencesController {
         foodPreferenceKey(f),
     };
     final legacyNames = <String>{};
+    final foldedKeys = <String>{};
 
     int? levelFor(String name) {
       final pref = preferences[name];
@@ -144,7 +156,13 @@ class FoodPreferencesController extends _$FoodPreferencesController {
           !allKeys.contains(legacyName) &&
           preferences.containsKey(legacyName);
       if (isLegacy) legacyNames.add(legacyName);
-      return own ?? (isLegacy ? levelFor(legacyName) : null) ?? fallback;
+      if (own != null) return own;
+      final folded = isLegacy ? levelFor(legacyName) : null;
+      if (folded != null) {
+        foldedKeys.add(key);
+        return folded;
+      }
+      return fallback;
     }
 
     final result = <String, int>{};
@@ -161,20 +179,32 @@ class FoodPreferencesController extends _$FoodPreferencesController {
       result[foodPreferenceKey(food)] = resolve(food, defaultPrimaryFoodLevel);
     }
 
+    // Set here and read by save(); load() discards a stale result, and a
+    // later load overwrites these before any save can see them.
     _legacyNames = legacyNames;
+    _foldedKeys = foldedKeys;
     return result;
   }
 
-  /// Save [levelsByKey] locally (merging: rows for foods not on this screen,
-  /// such as onboarding's avoids, stay) and upload them. A failed upload is
-  /// not a failed save: the rows stay dirty and the next sync retries. Only a
-  /// missing user is an error state.
+  /// Save the foods in [levelsByKey] whose level differs from the loaded
+  /// one, plus any key folded from a legacy display-name row, merged locally
+  /// (other rows, such as the allergy and diet avoids, stay) and uploaded.
+  /// An untouched food is never written, so a food with no row never gets
+  /// its default level (ticket 78). Returns how many foods were written; 0
+  /// writes nothing and leaves a breadcrumb.
   ///
-  /// Twice at once: the repository serialises the uploads and reruns the
-  /// in-flight one, so the last save's rows are the last sent. The upload
-  /// belongs to the repository, so closing Settings mid-upload loses nothing.
-  Future<void> save(Map<String, int> levelsByKey) async {
+  /// A failed upload is not a failed save: the rows stay pending and the
+  /// next sync retries. Only a missing user is an error state.
+  ///
+  /// Twice at once: the repository serialises the writes in call order and
+  /// the pending names are a union, so the later save's levels are the last
+  /// sent; both diff against the baseline as it stood when each started, so
+  /// the second may rewrite a food the first already wrote (same level,
+  /// harmless). The upload belongs to the repository, so closing Settings
+  /// mid-upload loses nothing.
+  Future<int> save(Map<String, int> levelsByKey) async {
     final report = _report;
+    var changedCount = 0;
     final result = await AsyncValue.guard(() async {
       final userId = await _resolveUserId();
       if (userId == null) {
@@ -185,11 +215,27 @@ class FoodPreferencesController extends _$FoodPreferencesController {
         );
         throw StateError('No signed-in user to save food preferences for');
       }
+      final baseline = _baseline;
       final levels = {
         for (final e in levelsByKey.entries) e.key: e.value.clamp(0, 4),
       };
+      final changed = {
+        for (final e in levels.entries)
+          if (baseline[e.key] != e.value || _foldedKeys.contains(e.key))
+            e.key: e.value,
+      };
+      final next = Map<String, int>.unmodifiable({...baseline, ...levels});
+      if (changed.isEmpty) {
+        report.breadcrumb(
+          'Food preferences save: nothing changed',
+          category: _area,
+          data: {'count': levelsByKey.length},
+        );
+        _baseline = next;
+        return next;
+      }
       final preferences = {
-        for (final e in levels.entries) e.key: foodPreferenceForLevel(e.value),
+        for (final e in changed.entries) e.key: foodPreferenceForLevel(e.value),
       };
       // Disposed mid-resolve: save() drops the result, so stop before ref.
       if (!ref.mounted) {
@@ -201,14 +247,18 @@ class FoodPreferencesController extends _$FoodPreferencesController {
       await repo.saveFoodPreferences(
         userId,
         preferences,
-        sliderLevels: levels,
+        sliderLevels: changed,
         mergeMode: true,
         upload: true,
       );
       _legacyNames = const {};
-      return Map<String, int>.unmodifiable(levels);
+      _foldedKeys = const {};
+      _baseline = next;
+      changedCount = changed.length;
+      return next;
     });
-    if (!ref.mounted) return;
+    if (!ref.mounted) return changedCount;
     state = result;
+    return changedCount;
   }
 }

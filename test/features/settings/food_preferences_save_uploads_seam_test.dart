@@ -1,6 +1,8 @@
 // develop-2026-10 ticket 58 (Finding 49-010): a Settings food-preferences
 // save reaches `food_preferences`, keyed by `template_foods.name`, with a UTC
 // `updated_at`, and the screen's load reads the server's rows.
+// Ticket 78 (Finding 68-001): the save writes only the foods whose level
+// moved, and sends no `id` or `created_at`.
 //
 // Seam test (docs/test/README.md): the real [FoodPreferencesController]
 // through a ProviderContainer, the real [FoodPreferencesRepository] on
@@ -85,6 +87,81 @@ FoodItem _catalog(String id, String name, String display) =>
 
 final _sportsDrink = _catalog('tf-1', 'sports_drink', 'Sports Drink');
 final _energyChews = _catalog('tf-2', 'energy_chews', 'Energy Chews');
+
+/// Run 68's nine server rows for test@test.com, verbatim from
+/// `runs/68/db-food-preferences-before.txt`, before the save.
+List<Map<String, dynamic>> _run68Rows() {
+  Map<String, dynamic> row(String id, String food, String pref, int level) => {
+    'id': id,
+    'user_id': _user,
+    'food_name': food,
+    'preference': pref,
+    'preference_level': level,
+    'preference_source': 'manual',
+    'created_at': '2026-10-08 17:23:53+00',
+    'updated_at': '2026-10-08 17:23:53+00',
+  };
+  return [
+    row(
+      '6e80c835-bc29-4e78-967e-dec2bd387854',
+      'Bagel (plain)',
+      'willing_to_try',
+      2,
+    ),
+    row('27c65ee7-9db7-4868-981b-653730e1b0d2', 'Bananas', 'willing_to_try', 2),
+    row(
+      '4b88d39b-2a51-45c2-8d85-c5194243a8b5',
+      'energy_bar',
+      'willing_to_try',
+      2,
+    ),
+    row(
+      '4d56ba15-ffc2-45f1-a373-3ece68e73274',
+      'energy_chews',
+      'willing_to_try',
+      2,
+    ),
+    row(
+      '9a715ab3-7699-4d39-a816-a6293132ea74',
+      'energy_gel',
+      'willing_to_try',
+      2,
+    ),
+    row(
+      '0fe52a55-3f8e-4090-aee1-de38146fb2e5',
+      'oatmeal_cooked',
+      'willing_to_try',
+      2,
+    ),
+    row(
+      '37c26b71-6ee8-4244-87b5-a9f26dcff2e1',
+      'protein_bar',
+      'willing_to_try',
+      2,
+    ),
+    row('f410fe6a-37c5-4efd-ac84-7cd145db900f', 'sports_drink', 'like', 4),
+    row('f6eca557-9f93-4740-b4e7-ba4ff7a131eb', 'toast', 'willing_to_try', 2),
+  ];
+}
+
+/// Run 68's primary list: the five keyed foods with rows, four without.
+final _run68Primary = [
+  for (final (i, name, display) in [
+    (1, 'sports_drink', 'Sports Drink'),
+    (2, 'energy_bar', 'Energy Bar'),
+    (3, 'energy_chews', 'Energy Chews'),
+    (4, 'energy_gel', 'Energy Gel'),
+    (5, 'protein_bar', 'Protein Bar'),
+    (6, 'carb_drink_mix', 'Carb Drink Mix'),
+    (7, 'energy_chews_mini_pack', 'Energy Chews Mini Pack'),
+    (8, 'granola_bar', 'Granola Bar'),
+    (9, 'high_carb_drink_mix', 'High-Carb Drink Mix'),
+  ])
+    _catalog('tf-r68-$i', name, display),
+];
+
+/// Under the collapsed "Show more": an additional food, default 0.
+final _figBar = _catalog('tf-r68-10', 'fig_bar', 'Fig Bar');
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -192,6 +269,11 @@ void main() {
       rows.where((r) => r['food_name'] == 'Energy Chews'),
       isEmpty,
       reason: 'no display-name row goes up',
+    );
+    expect(
+      rows.where((r) => r['food_name'] == 'sports_drink'),
+      isEmpty,
+      reason: 'sports_drink did not move (ticket 78)',
     );
     expect(await pending(), isFalse);
 
@@ -322,5 +404,126 @@ void main() {
     await first;
     // The rebuilt controller holds build()'s empty map, not the stale load.
     expect(container.read(foodPreferencesControllerProvider).value, isEmpty);
+  });
+
+  group('run 68: only the foods that moved go up (ticket 78)', () {
+    setUp(() => server.tables['food_preferences'] = _run68Rows());
+
+    Future<void> loadRun68() => controller().load(
+      primary: _run68Primary,
+      additional: [_figBar],
+      userFoods: const [],
+    );
+
+    /// What the screen hands save(): every loaded food, as `_sliderLevels`.
+    Map<String, int> screenLevels() => Map<String, int>.from(
+      container.read(foodPreferencesControllerProvider).value!,
+    );
+
+    Future<int> saveAndSettle(Map<String, int> levels) async {
+      final n = await controller().save(levels);
+      await pumpEventQueue();
+      await FoodPreferencesRepository.inFlightUploadFor(_user);
+      return n;
+    }
+
+    test('Sports Drink 4 → 3 sends one row, without id or created_at; '
+        'fig_bar and the four foods with no row are not sent', () async {
+      await loadRun68();
+      final levels = screenLevels();
+      expect(levels['fig_bar'], 0, reason: 'additional default');
+      expect(levels['granola_bar'], 2, reason: 'primary default');
+      final before = (await db.foodPreferencesDao.getAllFoodPreferenceEntries(
+        _user,
+      )).singleWhere((r) => r.foodName == 'sports_drink');
+
+      levels['sports_drink'] = 3;
+      expect(await saveAndSettle(levels), 1);
+
+      final writes = server.writes
+          .where((w) => w.table == 'food_preferences')
+          .toList();
+      expect(writes, hasLength(1));
+      final sent = upserts();
+      expect(sent, hasLength(1));
+      final row = sent.single;
+      expect(row['food_name'], 'sports_drink');
+      expect(row['preference_level'], 3);
+      expect(row['preference'], 'like');
+      expect(row['updated_at'] as String, endsWith('Z'));
+      expect(row.containsKey('id'), isFalse);
+      expect(row.containsKey('created_at'), isFalse);
+      expect(
+        server.writeUris.last.queryParameters['on_conflict'],
+        'user_id,food_name',
+      );
+
+      final after = await db.foodPreferencesDao.getAllFoodPreferenceEntries(
+        _user,
+      );
+      expect(after, hasLength(9), reason: 'no default rows written locally');
+      final drink = after.singleWhere((r) => r.foodName == 'sports_drink');
+      expect(drink.id, before.id, reason: 'updated in place');
+      expect(drink.createdAt, before.createdAt);
+      expect(drink.preferenceLevel, 3);
+      expect(after.map((r) => r.foodName), isNot(contains('fig_bar')));
+      expect(await pending(), isFalse);
+    });
+
+    test('a save with nothing moved writes nothing and says so; moving a '
+        'food with no row sends that one row', () async {
+      await loadRun68();
+
+      expect(await saveAndSettle(screenLevels()), 0);
+      expect(upserts(), isEmpty);
+      expect(
+        report.calls
+            .where((c) => c.severity == 'breadcrumb')
+            .map((c) => c.message),
+        contains('Food preferences save: nothing changed'),
+      );
+      expect(
+        container.read(foodPreferencesControllerProvider).hasError,
+        isFalse,
+      );
+
+      final levels = screenLevels()..['granola_bar'] = 3;
+      expect(await saveAndSettle(levels), 1);
+      final sent = upserts();
+      expect(sent.map((r) => r['food_name']), ['granola_bar']);
+      expect(sent.single['preference_level'], 3);
+      expect(sent.single.containsKey('id'), isFalse);
+      expect(sent.single.containsKey('created_at'), isFalse);
+    });
+
+    test(
+      'a legacy display-name row folds onto its key: a save with nothing '
+      'moved sends the key at the legacy level and drops the old row',
+      () async {
+        server.tables['food_preferences'] = [
+          for (final r in _run68Rows())
+            if (r['food_name'] != 'energy_chews') r,
+          {
+            ..._run68Rows().first,
+            'id': '5d1c0a7e-0000-4000-8000-00000000c4e5',
+            'food_name': 'Energy Chews',
+            'preference': 'like',
+            'preference_level': 3,
+          },
+        ];
+        await loadRun68();
+        expect(screenLevels()['energy_chews'], 3);
+
+        expect(await saveAndSettle(screenLevels()), 1);
+        final sent = upserts();
+        expect(sent.map((r) => r['food_name']), ['energy_chews']);
+        expect(sent.single['preference_level'], 3);
+        final local = await db.foodPreferencesDao.getUserFoodPreferenceLevels(
+          _user,
+        );
+        expect(local['energy_chews'], 3);
+        expect(local.containsKey('Energy Chews'), isFalse);
+      },
+    );
   });
 }

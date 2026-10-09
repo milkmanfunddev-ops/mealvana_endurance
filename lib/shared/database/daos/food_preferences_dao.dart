@@ -27,7 +27,7 @@ class FoodPreferencesDao extends DatabaseAccessor<AppDatabase>
   /// [mergeMode] controls how existing preferences are handled:
   /// - `false` (default): Replace all preferences (used when user explicitly saves)
   /// - `true`: Merge with existing preferences, only updating provided items
-  ///   (used when syncing from server to avoid data loss)
+  ///   in place (an existing row keeps its id and created_at)
   /// [source] identifies the origin of the preference:
   /// - 'manual': User explicitly set this preference (default)
   /// - 'allergy:{name}': Auto-set due to an allergy (e.g., 'allergy:gluten')
@@ -58,24 +58,49 @@ class FoodPreferencesDao extends DatabaseAccessor<AppDatabase>
         batch.deleteWhere(foodPreferencesTable, (f) => f.userId.equals(userId));
       }
 
-      // Insert/update preferences using upsert
+      // A merge updates an existing (user_id, food_name) row in place, so its
+      // id and created_at stay (ticket 78: insertOrReplace deleted and
+      // re-inserted it with a new id). A replace deleted every row above, so
+      // each entry is a plain insert.
+      final now = DateTime.now();
       for (final entry in preferences.entries) {
         final sliderLevel =
             sliderLevels?[entry.key] ?? _defaultSliderLevel(entry.value);
-        batch.insert(
-          foodPreferencesTable,
-          FoodPreferencesTableCompanion.insert(
-            id: _generateUuid(),
-            userId: userId,
-            foodName: entry.key,
-            preference: entry.value.value,
-            preferenceLevel: Value(sliderLevel),
-            preferenceSource: Value(sources?[entry.key] ?? source),
-            createdAt: Value(DateTime.now()),
-            updatedAt: Value(DateTime.now()),
-          ),
-          mode: InsertMode.insertOrReplace,
+        final rowSource = sources?[entry.key] ?? source;
+        final row = FoodPreferencesTableCompanion.insert(
+          id: _generateUuid(),
+          userId: userId,
+          foodName: entry.key,
+          preference: entry.value.value,
+          preferenceLevel: Value(sliderLevel),
+          preferenceSource: Value(rowSource),
+          createdAt: Value(now),
+          updatedAt: Value(now),
         );
+        if (mergeMode) {
+          batch.insert(
+            foodPreferencesTable,
+            row,
+            onConflict: DoUpdate(
+              (_) => FoodPreferencesTableCompanion(
+                preference: Value(entry.value.value),
+                preferenceLevel: Value(sliderLevel),
+                preferenceSource: Value(rowSource),
+                updatedAt: Value(now),
+              ),
+              target: [
+                foodPreferencesTable.userId,
+                foodPreferencesTable.foodName,
+              ],
+            ),
+          );
+        } else {
+          batch.insert(
+            foodPreferencesTable,
+            row,
+            mode: InsertMode.insertOrReplace,
+          );
+        }
       }
     });
 

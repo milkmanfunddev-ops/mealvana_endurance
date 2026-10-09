@@ -330,7 +330,7 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
     try {
       final levels = Map<String, int>.from(_sliderLevels);
       final controller = ref.read(foodPreferencesControllerProvider.notifier);
-      await controller.save(levels);
+      final changedFoods = await controller.save(levels);
       if (!mounted) return;
       final saved = ref.read(foodPreferencesControllerProvider);
       if (saved.hasError) {
@@ -342,6 +342,8 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
         'food_preferences_saved',
         properties: {
           'total_foods': levels.length,
+          // How many foods the save wrote; 0 is a save with nothing moved.
+          'changed_foods': changedFoods,
           'preferences': levels.map(
             (key, level) =>
                 MapEntry(key, foodPreferenceForLevel(level).toString()),
