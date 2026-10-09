@@ -85,3 +85,6 @@ Next test wave, Connected Apps retest ticket (server side, read at the close):
 ## Questions for Lee
 
 1. The device side has the same class of leak to Sentry. `IntegrationApiException.reportExtra` (`lib/features/integrations/domain/integration_exceptions.dart:161-176`) sends up to 1000 characters of a provider's body as `responseBody`, including TrainingPeaks' and Final Surge's token-refresh and token-exchange refusals (`training_peaks_api_client.dart:139-145`, `final_surge_api_client.dart:88-112`). `GarminOAuthException` puts Garmin's token-exchange body in its message (`garmin_oauth_service.dart:270-273`). Fix them the same way (status + error code only) in a small client ticket in this wave? Recommended: yes, as its own ticket. `integration_exceptions.dart` is in 73's Touches, so it runs after 73, not inside 76.
+
+**Rulings (Lee, 2026-10-09, wave 7 close).**
+- Q1: the client leak is a separate ticket 84 (cut 2026-10-09), fix wave 8 after 73.

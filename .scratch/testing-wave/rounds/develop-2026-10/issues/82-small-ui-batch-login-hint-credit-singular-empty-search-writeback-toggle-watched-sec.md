@@ -104,3 +104,6 @@ Next test wave, on a simulator (rebuild):
 ## Questions for Lee
 
 1. `percent_watched` on `education_video_closed`/`_completed` changes from the furthest point reached to the share actually played, so it agrees with `watched_sec` and with what "completed" now means. Any Mixpanel board that charts `percent_watched` will show lower numbers from this build on. The furthest point stays as `furthest_sec`. Recommended: accept. A board that wanted "how far did they get" can switch to `furthest_sec`.
+
+**Rulings (Lee, 2026-10-09, wave 7 close).**
+- Q1: accepted: percent_watched becomes the played share, furthest_sec keeps the old meaning, education_video_completed needs 90 % played.

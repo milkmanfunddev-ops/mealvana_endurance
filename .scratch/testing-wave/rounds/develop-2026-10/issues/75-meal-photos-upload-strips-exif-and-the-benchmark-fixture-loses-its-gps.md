@@ -90,3 +90,6 @@ Next test wave, meal-logging retest ticket, on a simulator:
 ## Questions for Lee
 
 1. The ten HEIC files in `benchmarks/ai-model-benchmark-2026-07/originals/` carry the same GPS, and the earlier versions of all ten JPEGs stay in git history. The README says the originals are "Provenance; do not edit". Options: (a) leave the originals and the history as they are (the repo is private; waves upload only `images/` copies); (b) delete `originals/` from the tree, keeping `images/` as the source; (c) rewrite history to purge them (a force push of every branch that carries them). Recommended: (b) in this ticket, not (c).
+
+**Rulings (Lee, 2026-10-09, wave 7 close).**
+- Q1: keep `originals/` as it is; rewrite only the ten JPEGs; no history rewrite.

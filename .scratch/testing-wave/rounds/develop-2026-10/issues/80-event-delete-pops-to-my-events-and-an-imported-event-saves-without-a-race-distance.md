@@ -175,3 +175,8 @@ On a simulator, in the retest ticket after fix wave 8, as test@test.com:
 3. Editing an imported event's name or date flips it to `manual`, and the next TrainingPeaks sync no longer matches it on (name, date). From code the sync then imports the provider's version as a second event (`provider_event_import_service.dart:52-87`). Accept that for now, or match imports on a provider id in a later ticket? Recommended: a later ticket. The events table has no provider-id column today, so it needs a migration.
 
 Next: /testing-wave develop-2026-10 (fix wave 8)
+
+**Rulings (Lee, 2026-10-09, wave 7 close).**
+- Q1: after a delete the app goes back to where it came from (pop), My Events as the fallback.
+- Q2: the linked activity stays on the server; the delete removes only the event row remotely.
+- Q3: FOLD INTO 80: store the TrainingPeaks event id on import and match the sync on it, so a renamed or re-dated imported event is not imported again. Add the item to Fix, its files to Touches, and a seam test (producer-shaped import payload with the provider id).

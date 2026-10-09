@@ -105,3 +105,6 @@ Next test wave, on a simulator (a rebuild is needed):
 ## Questions for Lee
 
 1. Should the camera bar carry an "Open Settings" action (iOS opens the app's own Settings page)? The barcode scanner's line has none today. Recommended: not now. The line says where to go, and an action would need the same change on the barcode scanner to stay consistent.
+
+**Rulings (Lee, 2026-10-09, wave 7 close).**
+- Q1: no Open Settings action now; the copy says to turn it on in Settings and matches the scanner's line.

@@ -135,3 +135,6 @@ On a simulator, in the retest ticket after fix wave 8, as test@test.com:
 1. The "Error / Unable to connect" dialog's Try Again (`barcode_scanner_screen.dart:704-708`) goes back to the scanner instead of looking the code up again (68-007 notes it). After a typed code that means typing it again. Should Try Again re-run the lookup of the same code? Recommended: yes. One line in `_showError`'s action (re-call `_lookupBarcode(_lastScannedBarcode)`), added to this ticket if ruled before the wave.
 
 Next: /testing-wave develop-2026-10 (fix wave 8)
+
+**Rulings (Lee, 2026-10-09, wave 7 close).**
+- Q1: Try Again on the lookup dialog re-runs the same lookup (the read is safe to repeat).
