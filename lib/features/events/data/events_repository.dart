@@ -194,31 +194,29 @@ class EventsRepository with SyncableRepository {
         data: {'count': dirtyRecords.length},
       );
 
-      // Upload to Supabase
-      final eventsToUpload = dirtyRecords.map((record) {
-        return _toSupabaseJson(_mapToEventDomain(record), record.userId);
-      }).toList();
+      // One upsert per row (ticket 72): the server's unique index
+      // `events_user_date_name_unique` refuses a same-name same-day row with
+      // 23505, and in one batched request that row blocked every later event.
+      final outcome = await _uploadDirtyRowsOneByOne(dirtyRecords);
 
-      await _supabase.from('events').upsert(eventsToUpload, onConflict: 'id');
+      if (outcome.failedCount == 0) {
+        _report.info(
+          'Successfully uploaded dirty events',
+          area: 'events',
+          data: {'count': outcome.landedCount},
+        );
+        return UploadResult.successful(outcome.landedCount);
+      }
 
-      // Clear dirty flags
-      await _database.batch((batch) {
-        for (final record in dirtyRecords) {
-          batch.update(
-            _database.eventsTable,
-            const EventsTableCompanion(needsUpload: Value(false)),
-            where: (t) => t.id.equals(record.id),
-          );
-        }
-      });
-
-      _report.info(
-        'Successfully uploaded dirty events',
-        area: 'events',
-        data: {'count': dirtyRecords.length},
+      // Some rows stayed dirty. Not a success, so the coordinator keeps the
+      // retry owed; the rows that landed are clean already.
+      return UploadResult(
+        success: false,
+        count: outcome.landedCount,
+        error:
+            '${outcome.failedCount} of ${dirtyRecords.length} events failed '
+            'to upload (${outcome.failureCodes.join(', ')})',
       );
-
-      return UploadResult.successful(dirtyRecords.length);
     } catch (e, stackTrace) {
       _report.fault(
         e,
@@ -229,6 +227,76 @@ class EventsRepository with SyncableRepository {
       );
       return UploadResult.failed(e.toString());
     }
+  }
+
+  /// Upserts each dirty row on its own and clears its dirty flag when it
+  /// lands. A row the server refuses (a PostgrestException: 23505 duplicate,
+  /// 23503 FK, 22P02 enum, RLS) stays dirty, is written down with its id and
+  /// code (D9), and the walk goes on to the next row. Any other error
+  /// (network, timeout) is not about the row, so the walk stops there and the
+  /// caller's catch reports it; the unsent rows stay dirty.
+  ///
+  /// Repeating it is safe: every write is `upsert(onConflict: 'id')`, so a
+  /// resend of a row that already landed rewrites the same row.
+  Future<({int landedCount, int failedCount, List<String> failureCodes})>
+  _uploadDirtyRowsOneByOne(List<Event> dirtyRecords) async {
+    var landedCount = 0;
+    final failureCodes = <String>[];
+
+    for (final record in dirtyRecords) {
+      final json = _toSupabaseJson(_mapToEventDomain(record), record.userId);
+      try {
+        await _supabase.from('events').upsert(json, onConflict: 'id');
+      } on PostgrestException catch (e, stackTrace) {
+        final code = e.code ?? 'unknown';
+        failureCodes.add(code);
+        if (_isMissingUserRowFk(e)) {
+          // Expected before onboarding creates the users row (see
+          // createEvent); the row uploads on a later walk.
+          _report.info(
+            'Deferred event upload: users row not created yet; '
+            'record stays dirty for retry',
+            area: 'events',
+            data: {'operation': 'upload_dirty', 'eventId': record.id},
+          );
+        } else {
+          _report.degraded(
+            e,
+            stackTrace: stackTrace,
+            area: 'events',
+            tags: {'method': 'UPSERT', 'code': code},
+            extra: {'eventId': record.id, 'code': code},
+            message:
+                'Dirty event refused by the server; it stays dirty and '
+                'retries on the next upload walk',
+          );
+        }
+        continue;
+      }
+      await _clearDirtyFlagIfUnchanged(record);
+      landedCount++;
+    }
+
+    return (
+      landedCount: landedCount,
+      failedCount: failureCodes.length,
+      failureCodes: failureCodes,
+    );
+  }
+
+  /// Clears the dirty flag only when the row was not edited again while its
+  /// upload was in flight: an edit bumps `localUpdatedAt`, and that newer
+  /// version must stay dirty for the next walk.
+  Future<void> _clearDirtyFlagIfUnchanged(Event uploaded) async {
+    final sentVersion = uploaded.localUpdatedAt;
+    await (_database.update(_database.eventsTable)..where(
+          (t) =>
+              t.id.equals(uploaded.id) &
+              (sentVersion == null
+                  ? t.localUpdatedAt.isNull()
+                  : t.localUpdatedAt.equals(sentVersion)),
+        ))
+        .write(const EventsTableCompanion(needsUpload: Value(false)));
   }
 
   // ========================================================================
@@ -574,6 +642,42 @@ class EventsRepository with SyncableRepository {
       );
       return null; // Return null on error to allow sync to continue
     }
+  }
+
+  /// The owner's other local event with the same trimmed name on the same
+  /// calendar day, or null (develop-2026-10 ticket 72). The form guard's key:
+  /// the server's `events_user_date_name_unique (user_id, event_date,
+  /// event_name)` refuses that row with 23505. Names compare exactly after
+  /// trimming both sides (the index is case-sensitive). [excludeEventId] is
+  /// the event being edited, so saving it unchanged is not a collision.
+  ///
+  /// Unlike [findExistingEvent] this never swallows: a failed read must not
+  /// let a duplicate through, so the error reaches the caller.
+  Future<domain.Event?> findSameNameSameDayEvent({
+    required String userId,
+    required String eventName,
+    required DateTime eventDate,
+    String? excludeEventId,
+  }) async {
+    final name = eventName.trim();
+    if (name.isEmpty) return null;
+    final dateOnly = DateTime(eventDate.year, eventDate.month, eventDate.day);
+    final nextDay = DateTime(dateOnly.year, dateOnly.month, dateOnly.day + 1);
+
+    final rows =
+        await (_database.select(_database.eventsTable)..where(
+              (tbl) =>
+                  tbl.userId.lower().equals(userId.toLowerCase()) &
+                  tbl.eventDate.isBiggerOrEqualValue(dateOnly) &
+                  tbl.eventDate.isSmallerThanValue(nextDay),
+            ))
+            .get();
+
+    for (final row in rows) {
+      if (row.id == excludeEventId) continue;
+      if ((row.eventName ?? '').trim() == name) return _mapToEventDomain(row);
+    }
+    return null;
   }
 
   /// Save event to Drift database (offline-first pattern)
