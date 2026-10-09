@@ -1717,6 +1717,11 @@ class _TypeChip extends StatelessWidget {
 /// The shortest description Analyze sends without a photo (31-007).
 const describeMinChars = 5;
 
+/// The longest description Analyze sends without a photo. Mirrors
+/// describe-meal's `MAX_DESCRIPTION_LENGTH`; both count UTF-16 code units, so
+/// the trimmed text's `length` matches the server's check (ticket 79, 68-002).
+const describeMaxChars = 2000;
+
 class _AiTab extends ConsumerStatefulWidget {
   const _AiTab({
     required this.logDate,
@@ -1737,8 +1742,9 @@ class _AiTabState extends ConsumerState<_AiTab> {
   final _ctrl = TextEditingController();
   bool _isAnalyzing = false;
 
-  /// The function's verdict that the text is not food or drink, shown under
-  /// the kept text until the text or the photo changes (31-003).
+  /// The function's verdict that the text is not food or drink, or too long
+  /// (ticket 79), shown under the kept text until the text or the photo
+  /// changes (31-003).
   String? _notFoodError;
 
   /// Review is on screen; a second tap does not push another (31-004).
@@ -1940,6 +1946,10 @@ class _AiTabState extends ConsumerState<_AiTab> {
               .read(contentServiceProvider)
               .getValue(ContentKeys.mealLogDescribeNotFood);
         });
+      } else if (e.kind == MealAiFailureKind.tooLong) {
+        // describe-meal's 400 too_long: the same line the validator shows,
+        // for a server whose limit is below ours (ticket 79). No snackbar.
+        setState(() => _notFoodError = _describeTooLongLine());
       } else {
         MealvanaSnackbar.showError(context, e.userMessage);
       }
@@ -2022,6 +2032,13 @@ class _AiTabState extends ConsumerState<_AiTab> {
       _notFoodError = null;
     });
   }
+
+  String _describeTooLongLine() => ContentKeys.format(
+    ref
+        .read(contentServiceProvider)
+        .getValue(ContentKeys.mealLogDescribeTooLong),
+    {'n': describeMaxChars},
+  );
 
   void _removePhoto() {
     setState(() {
@@ -2147,16 +2164,21 @@ class _AiTabState extends ConsumerState<_AiTab> {
                 errorMaxLines: 3,
               ),
               forceErrorText: _notFoodError,
-              // The minimum is named in the line, from content (31-007).
-              validator: (v) =>
-                  (v == null || v.trim().length < describeMinChars)
-                  ? ContentKeys.format(
-                      ref
-                          .read(contentServiceProvider)
-                          .getValue(ContentKeys.mealLogDescribeTooShort),
-                      {'n': describeMinChars},
-                    )
-                  : null,
+              // The minimum (31-007) and the maximum (ticket 79) are named in
+              // the line, from content.
+              validator: (v) {
+                final length = v?.trim().length ?? 0;
+                if (length < describeMinChars) {
+                  return ContentKeys.format(
+                    ref
+                        .read(contentServiceProvider)
+                        .getValue(ContentKeys.mealLogDescribeTooShort),
+                    {'n': describeMinChars},
+                  );
+                }
+                if (length > describeMaxChars) return _describeTooLongLine();
+                return null;
+              },
             ),
           ),
           const SizedBox(height: AppSpacing.md),

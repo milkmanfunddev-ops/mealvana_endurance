@@ -30,6 +30,11 @@ enum MealAiFailureKind {
   /// not a food photo.
   notFood,
 
+  /// describe-meal refused the description as longer than its limit (400
+  /// with `too_long: true`, ticket 79). The screen shows its own content line
+  /// for this kind; [MealAiException.userMessage] is empty.
+  tooLong,
+
   /// The edge function or AI Gateway returned an unexpected error.
   serverError,
 }
@@ -389,6 +394,26 @@ class MealAiService {
       return _notFood(functionName);
     }
 
+    // A too-long description is the athlete's turn too (ticket 79, 68-002):
+    // keyed on describe-meal's flag, so any other 400 still reports.
+    if (isTooLongAnswer(e)) {
+      final details = e.details as Map;
+      await _r.noteExpected(
+        '$functionName: description too long',
+        area: _area,
+        reason: 'description_too_long',
+        analytics: _analytics,
+        data: {'status': 400, 'max_length': details['max_length']},
+      );
+      return MealAiException(
+        kind: MealAiFailureKind.tooLong,
+        userMessage: '',
+        debugMessage:
+            'FunctionException 400 (too_long, max ${details['max_length']}) '
+            'from $functionName',
+      );
+    }
+
     // 402 is a business outcome (out of credits), not a failure.
     if (e.status != 402) {
       _r.degraded(
@@ -424,6 +449,14 @@ class MealAiService {
   static bool isNotFoodAnswer(FunctionException e) {
     final details = e.details;
     return e.status == 422 && details is Map && details['not_food'] == true;
+  }
+
+  /// Whether [e] is describe-meal's too-long answer: 400 with
+  /// `too_long: true` in the body (ticket 79).
+  @visibleForTesting
+  static bool isTooLongAnswer(FunctionException e) {
+    final details = e.details;
+    return e.status == 400 && details is Map && details['too_long'] == true;
   }
 
   static MealAiException _notFood(String functionName) => MealAiException(

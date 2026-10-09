@@ -14,7 +14,8 @@
  *   MealAnalysis JSON (see _shared/meal_analysis/schema.ts)
  *
  * Error responses:
- *   400 — missing/invalid body or description too long
+ *   400 — missing/invalid body, or description too long
+ *         ({ too_long: true, max_length: 2000 })
  *   401 — missing or invalid JWT
  *   422 — the description is not food or drink ({ not_food: true }); free
  *   500 — missing AI_GATEWAY_API_KEY secret or unexpected server error
@@ -128,8 +129,13 @@ serve(withSentry("describe-meal", async (req: Request) => {
     }
 
     if (description.length > MAX_DESCRIPTION_LENGTH) {
-      return validationError(
+      // Flagged so the app can tell "too long" from any other 400 and show
+      // its own line as an expected outcome (testing-wave ticket 79).
+      return errorResponse(
         `description is too long (max ${MAX_DESCRIPTION_LENGTH} characters)`,
+        400,
+        undefined,
+        { too_long: true, max_length: MAX_DESCRIPTION_LENGTH },
       );
     }
 

@@ -35,9 +35,16 @@ class SupabaseBarcodeService {
           message: 'Product not found in nutrition databases',
         );
       }
+    } on ProductNotFoundException {
+      // Counted as expected by ProductDetailService (ticket 79); the screen
+      // shows its own not-found words, so the message is debug only.
+      return BarcodeResult.notFound(barcode: barcode, message: '');
+    } on ProductLookupUnavailableException catch (e) {
+      // Already reported (weather or fault) by ProductDetailService.
+      return BarcodeResult.error(barcode: barcode, message: e.message);
     } on ProductDetailException catch (e, stackTrace) {
-      // ProductDetailService throws without reporting; this is the one
-      // report for every lookup failure (not found, bad response, timeout).
+      // ProductDetailService throws these without reporting (a 200 with no
+      // product); this is their one report.
       _report.degraded(
         e,
         stackTrace: stackTrace,
