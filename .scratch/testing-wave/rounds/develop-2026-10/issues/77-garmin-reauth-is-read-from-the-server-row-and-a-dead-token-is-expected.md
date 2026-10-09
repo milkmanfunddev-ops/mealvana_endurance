@@ -1,6 +1,6 @@
 # 77: Reconnect is read from the server's integrations row on every device; a dead Garmin token is an expected failure
 
-**Status:** in-progress (wave 8, 2026-10-09)
+**Status:** landed-pending-merge (wave 8, 2026-10-09, 451b1052c)
 **Labels:** fix, round:develop-2026-10, area:integrations, area:sync
 **Branch:** `develop-next` (fix-wave worktree)
 **Source:** Findings 68-008, 69-010; TRIAGE.md rulings of 2026-10-09
@@ -74,28 +74,28 @@ test/features/settings/connected_apps_garmin_reauth_test.dart
 
 ## Tests
 
-- [ ] **Seam, device B** (`reauth_from_server_row_seam_test.dart`, on the harness of `disconnect_clears_reconnect_seam_test.dart`: the real `IntegrationsRepository` on in-memory Drift and the real postgrest builder against `FakePostgrest`, `test/helpers/fakes/fake_postgrest.dart`). Local Drift holds the Garmin row `is_active true, last_sync_status success`, and the integrations last-sync stamp is 6 minutes old (inside the hour, as run 68). The server row as PostgREST sends it: `last_sync_status: 'requires_reauth'`, `last_sync_error: 'reauth_required'`, `is_active: true`, `updated_at: '2026-10-08T23:38:08.123+00:00'`. Build a fresh `ProviderContainer` (a launch):
+- [x] **Seam, device B** (`reauth_from_server_row_seam_test.dart`, on the harness of `disconnect_clears_reconnect_seam_test.dart`: the real `IntegrationsRepository` on in-memory Drift and the real postgrest builder against `FakePostgrest`, `test/helpers/fakes/fake_postgrest.dart`). Local Drift holds the Garmin row `is_active true, last_sync_status success`, and the integrations last-sync stamp is 6 minutes old (inside the hour, as run 68). The server row as PostgREST sends it: `last_sync_status: 'requires_reauth'`, `last_sync_error: 'reauth_required'`, `is_active: true`, `updated_at: '2026-10-08T23:38:08.123+00:00'`. Build a fresh `ProviderContainer` (a launch):
   - `reconnectNoticeControllerProvider` reads `garmin` once the pull lands;
   - `connectTrainingControllerProvider`'s `garminNeedsReauth` is true;
   - the fake `functions` client saw no `garmin-backfill` call;
   - the Report fake has the skip breadcrumb once, and `LaunchTrail.text` holds the line;
   - opening the controller a second time adds no second breadcrumb.
   Red before the fix.
-- [ ] Same file: the server row turns `success` (a reconnect on device A), then a second launch: the notice is null and the card's flag false. Dismiss, then a new container: the notice is back. The row turns `success` while the controller is alive: item 6's listener clears `garminNeedsReauth` with no rebuild.
-- [ ] `reconnect_notice_test.dart`, rewritten for the derived controller. Drop "shown once" and "remembered across a refresh". Keep "renders nothing until a connection needs signing in again" and "names the app, offers Reconnect"; Reconnect now hides it for the launch only. Add: two providers needing reconnect show one at a time, the second after the first is dismissed; an ordinary `error` shows nothing; an inactive `requires_reauth` row shows nothing.
-- [ ] `garmin_backfill_failure_report_test.dart:123-136`: a 409 `garmin_reauth_required` now records no `degraded` and no `fault`, one `note` in area `garmin` carrying `expected_failure: token_expired`, and one `expected_failure` analytics event `{area: garmin, reason: token_expired}`; the local row is `requires_reauth`. The unexpected-500 case (`:138-…`) still faults.
-- [ ] `sync_status_write_seam_test.dart:409-…`: "fires the hook" becomes "writes and pushes" (the hook is gone); the inactive-row cases are unchanged.
-- [ ] `connected_apps_garmin_reauth_test.dart`: add the card switching from Sync Now to Reconnect when the Drift row changes under an open screen.
-- [ ] #116: `grep -rl` under `test/` for `onSyncStatusWritten`, `ReconnectNoticeController`, `reconnectNoticeControllerProvider`, `ReconnectNotice`, `IntegrationsRepository(`, `watchIntegrationsForUser`, `integrationsNeedingReconnect`, `integrationRowsLaunchPull`, `triggerGarminBackfill`, `_markGarminNeedsReauth`, `garminNeedsReauth`, `connectTrainingControllerProvider`, `ConnectTrainingController`, `forceSyncRepository`; run every file named. Known today, beyond the four above: `connected_apps_reconnect_test.dart`, `test/smoke_tests/settings_smoke_test.dart`, `connect_identity_seam_test.dart`, `integration_sync_coordinator_test.dart`, `disconnect_clears_reconnect_seam_test.dart`, `reconnect_unhides_seam_test.dart`, `connect_training_upload_guard_test.dart`, `test/features/onboarding/connect_training_failure_test.dart`, `onboarding_overflow_test.dart`, `onboarding_integration_profile_provider_test.dart`. Fakes of `SyncCoordinator` or `IntegrationsRepository` that list exact calls need the launch pull (#76).
-- [ ] `test/shared/source_guard/`: no new reporting helper. `noteExpected` and `breadcrumb` are existing Report calls; the skip is recorded, not silent (#117).
-- [ ] Async paths, written in the fix notes:
+- [x] Same file: the server row turns `success` (a reconnect on device A), then a second launch: the notice is null and the card's flag false. Dismiss, then a new container: the notice is back. The row turns `success` while the controller is alive: item 6's listener clears `garminNeedsReauth` with no rebuild.
+- [x] `reconnect_notice_test.dart`, rewritten for the derived controller. Drop "shown once" and "remembered across a refresh". Keep "renders nothing until a connection needs signing in again" and "names the app, offers Reconnect"; Reconnect now hides it for the launch only. Add: two providers needing reconnect show one at a time, the second after the first is dismissed; an ordinary `error` shows nothing; an inactive `requires_reauth` row shows nothing.
+- [x] `garmin_backfill_failure_report_test.dart:123-136`: a 409 `garmin_reauth_required` now records no `degraded` and no `fault`, one `note` in area `garmin` carrying `expected_failure: token_expired`, and one `expected_failure` analytics event `{area: garmin, reason: token_expired}`; the local row is `requires_reauth`. The unexpected-500 case (`:138-…`) still faults.
+- [x] `sync_status_write_seam_test.dart:409-…`: "fires the hook" becomes "writes and pushes" (the hook is gone); the inactive-row cases are unchanged.
+- [x] `connected_apps_garmin_reauth_test.dart`: add the card switching from Sync Now to Reconnect when the Drift row changes under an open screen.
+- [x] #116: `grep -rl` under `test/` for `onSyncStatusWritten`, `ReconnectNoticeController`, `reconnectNoticeControllerProvider`, `ReconnectNotice`, `IntegrationsRepository(`, `watchIntegrationsForUser`, `integrationsNeedingReconnect`, `integrationRowsLaunchPull`, `triggerGarminBackfill`, `_markGarminNeedsReauth`, `garminNeedsReauth`, `connectTrainingControllerProvider`, `ConnectTrainingController`, `forceSyncRepository`; run every file named. Known today, beyond the four above: `connected_apps_reconnect_test.dart`, `test/smoke_tests/settings_smoke_test.dart`, `connect_identity_seam_test.dart`, `integration_sync_coordinator_test.dart`, `disconnect_clears_reconnect_seam_test.dart`, `reconnect_unhides_seam_test.dart`, `connect_training_upload_guard_test.dart`, `test/features/onboarding/connect_training_failure_test.dart`, `onboarding_overflow_test.dart`, `onboarding_integration_profile_provider_test.dart`. Fakes of `SyncCoordinator` or `IntegrationsRepository` that list exact calls need the launch pull (#76).
+- [x] `test/shared/source_guard/`: no new reporting helper. `noteExpected` and `breadcrumb` are existing Report calls; the skip is recorded, not silent (#117).
+- [x] Async paths, written in the fix notes:
   - (i) the launch pull and a sync writing `requires_reauth` at once: both end in Drift, the watch emits twice, the derived state is the same;
   - (ii) the pull lands while Connected Apps is mid-OAuth: item 6 patches only the four flags, the connect's own success write follows and the next emission clears Garmin's flag;
   - (iii) sign-out and sign-in as another user: `userIdProvider` changes, the notice rebuilds on the new id, `_dismissed` resets, the pull runs once for the new id;
   - (iv) offline launch: the pull is skipped with `info`, the notice reads whatever Drift holds, and the next launch pulls again;
   - (v) two Connected Apps opens in a row: the static flag records the skip once.
   No retry or timeout added (#82 does not apply).
-- [ ] `flutter analyze` clean on the touched files.
+- [x] `flutter analyze` clean on the touched files.
 
 ## Deploy
 
@@ -107,4 +107,46 @@ Next test wave, Connected Apps / meal-logging retest tickets, two simulators on 
 - **68-008:** the server row is Garmin `is_active true, requires_reauth / reauth_required`, and simulator B's Drift row reads `success` (sign B in while the row is `success`, then the lead sets it on dev). Relaunch B within the hour: the Timeline shows "Garmin needs you to sign in again to keep syncing." with Reconnect and X, and Connected Apps' Garmin card shows Reconnect. X, relaunch: the notice is back. The lead sets the row to `success`, B relaunches: no notice, the card shows Sync Now.
 - **69-010:** the row says `requires_reauth`. Open Connected Apps twice. The dev edge logs show no garmin-backfill request from the app, the console shows no `error_reported` for area garmin, and Settings' Launch trail holds `garmin auto backfill skipped: requires_reauth` once. Then the lead sets the row to `success` with the token still dead and clears the 6 h cooldown (sign out and in, or a fresh install). Open Connected Apps: garmin-backfill answers 409, and the console shows `expected_failure {area: garmin, reason: token_expired}`, no `error_reported`, and no new dev Sentry event for it.
 
-## Questions for Lee
+## Fix notes
+
+Landed in `451b1052c` on `testing-wave/develop-2026-10/77`, on top of ticket 73 (`6a0307732`).
+
+**Per item:**
+1. `IntegrationsRepository.watchIntegrationsForUser(userId)`: a Drift `.watch()` of the user's rows, mapped with `_toModel`.
+2. `integrationsNeedingReconnectProvider(userId)` (keepAlive stream) in `reconnect_notice_controller.dart`: the set of providers whose row `needsReconnect`, with `.distinct(setEquals)` so the same set never re-emits.
+3. `integrationRowsLaunchPullProvider(userId)` (keepAlive future): `forceSyncRepository('integrations', ...)`. The coordinator records its own skips and failures. Anything that escapes it (no connectivity plugin, no repository) is caught and recorded as `degraded` in area `integrations`.
+4. `ReconnectNoticeController.build()` reads the user id, starts the pull, and returns the first of `garmin, training_peaks, final_surge, vdot, runna` that needs a reconnect and has not been dismissed. `dismiss()` adds the shown provider to an in-memory set. That set clears when the user id changes. The hook, the prefs key and the old class comment are gone.
+5. `onSyncStatusWritten` is removed from the repository (parameter, field, call, doc line) and from `integrationsRepository`'s wiring. Ticket 64's inactive-row guard is unchanged.
+6. `ConnectTrainingController.build` registers `ref.listen(integrationsNeedingReconnectProvider(_currentUserId!))` for a non-temp id, after a `ref.mounted` check. Each data event patches only the four `*NeedsReauth` flags, and only when it is mounted and has a value.
+7. The automatic backfill condition gains `!garminNeedsReconnect`. When Garmin is active and needs a reconnect, a static flag records the skip once per launch: a `garmin.expected` breadcrumb with `{reason: token_expired}` plus the LaunchTrail line `garmin auto backfill skipped: requires_reauth`. The cooldown stamp is untouched. `debugResetGarminAutoBackfillSkip()` is `@visibleForTesting`.
+8. `_onGarminTokenExpired()` serves both the non-throwing 409/401 branch and the `FunctionException` catch. It calls `noteExpected(area: garmin, reason: token_expired, analytics)`, then `_markGarminNeedsReauth()`. If the controller is unmounted, analytics is null, so the count still lands as a Sentry counter. The 502/429 and unexpected branches are unchanged.
+
+**D9:** the new skip (item 7) writes a breadcrumb and a LaunchTrail line. The launch pull's skips are recorded by the coordinator: offline is `info`, already in progress is `debug`, a failure is `fault`. An escaped error is `degraded`. The notice does nothing while `userIdProvider` has no value. That is not a skip: the watch rebuilds the notice once the id resolves, and with no user id there is no user to pull for.
+
+**Concurrency (#77):**
+- (i) The launch pull and this device's sync write `requires_reauth` at once. Both writes end in Drift and the watch may emit twice. `distinct(setEquals)` collapses equal sets, and the derived notice and flags come out the same either way. Two launch pulls cannot overlap: the provider is keepAlive per user, and `forceSyncRepository` skips a repository already syncing (`_syncingNow`). The sync already running pulls the same rows.
+- (ii) The pull lands mid-OAuth. Item 6 patches only the four flags. The connect's own success write follows, and the next emission clears Garmin's flag. `isConnecting` and the other fields are untouched.
+- (iii) Sign out, then sign in as another user. `userIdProvider` changes, the notice rebuilds on the new id and `_dismissed` resets. The pull and watch providers are families keyed by user id, so the pull runs once for the new id. The old id's keepAlive providers stay idle until the process ends.
+- (iv) Offline launch. The coordinator skips the pull with `info`. The notice reads whatever Drift holds. The keepAlive pull does not retry this launch, and the next launch pulls again.
+- (v) Two Connected Apps opens in a row. The static flag records the skip once per process. The controller's listener is torn down with each auto-dispose instance.
+- Two devices: each device pulls on its own launch, and each reads only its own Drift, which the pull refreshed.
+- Reconnect while the notice is up: the reconnect's success write moves the row, the watch emits a set without the provider, and the notice clears. The dismissed set is irrelevant, because the provider no longer needs a reconnect.
+- No retry or timeout was added (#82 does not apply).
+
+**Test-harness finding:** a live Drift watch inside a `testWidgets` fake zone deadlocks any Drift write made from `tester.runAsync`. The write waits on a watch query queued in the fake zone. The watch's close also leaves a zero-length timer. `connected_apps_garmin_reauth_test` now makes its writes in the test zone, and `connected_apps_reconnect_test` overrides the watch with an empty stream (its cards read the controller's own flags; the watch is covered by the two files above). Production runs in one zone and is not affected.
+
+**Tests run (each file alone):**
+- reauth_from_server_row_seam_test.dart (new): 4/4 pass. Red before the fix: with the launch pull removed, all 4 fail with "the launch pull never brought requires_reauth".
+- reconnect_notice_test.dart: 8/8
+- garmin_backfill_failure_report_test.dart: 4/4
+- sync_status_write_seam_test.dart: 12/12
+- connected_apps_garmin_reauth_test.dart: 4/4
+- connected_apps_reconnect_test.dart: 6/6 (watch override added)
+- #116 grep, the other files, all pass: connect_cancel_is_quiet_seam 2, connect_identity_seam 3, connect_training_upload_guard 4, disconnect_clears_reconnect_seam 1, disconnect_soft_hide_state_machine 8, final_surge_completion_sync_seam 6, final_surge_sync_service 15, integration_sync_coordinator 11, integrations_rls_seam 3, reconnect_clears_sync_state 6, reconnect_unhides_seam 9, runna_sync_error_code 4, runna_sync_service 12, sync_failure_recorder_seam 20, sync_now_analytics 9, tp_ispremium_a1 7, tp_refresh_requires_reconnect_seam 19, tp_writeback_400 11, onboarding/connect_training_failure 3, onboarding_integration_profile_provider 2, onboarding_overflow 8, tp_writeback_toggle_after_sheet 2, new_sync/pull_keeps_dirty_rows 14, smoke_tests/settings_smoke 13, macro_dashboard_brick 15, macro_dashboard_screen 12 (both mount the Timeline notice).
+- No fake of `SyncCoordinator` or `IntegrationsRepository` lists exact calls that the launch pull would break: `integration_sync_coordinator_test`'s fake passes.
+- test/shared/source_guard/: 20/20. No new helper. The launch pull's catch reports through `report.degraded`.
+- `flutter analyze` on the 10 touched files: one info, `avoid_print` at `connect_training_controller.dart:2133`, which was already in the base.
+- Codegen: `reconnect_notice_controller.g.dart` regenerated. `connect_training_controller.g.dart` and `integrations_providers.g.dart` changed by hash only and are in the commit. `events_controller.g.dart` (hash only, a reserved folder) was reverted.
+
+**Questions for Lee.**
+- Ticket 73 left this: the Runna connect error line still shows raw exception text. `connect_training_controller.dart`, the `connectRunna` catch, sets `errorMessage: e.toString()`. It is outside this ticket's scope (Garmin reauth and the reconnect notice), so it is unchanged. Should it get its own fix ticket that maps it to a content string, as ticket 37 did for sync errors?
