@@ -1,7 +1,7 @@
 # 68-011 · Barcode lookup shows Nutella's per-100 g values as '1 serving' (539 kcal), so logging one serving counts 539 kcal
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 68
 - run: w7-20261008T2309Z
 - screen: Log a Meal > Scan barcode > Enter > Log Food
@@ -26,4 +26,4 @@ Log Food shows 'Nutella, Ferrero, Yum yum Nutella', 'Per serving: 1 servings', '
 > 
 
 **Triage.**
-
+- triaged · fix ticket 74 (swap picker search crash, Create Food button state, barcode per-100 g shown as a serving), fix wave 8 · Lee, 2026-10-09

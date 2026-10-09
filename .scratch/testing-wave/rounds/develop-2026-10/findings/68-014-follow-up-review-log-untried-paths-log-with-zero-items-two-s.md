@@ -1,7 +1,7 @@
 # 68-014 · Follow-up Review & Log: untried paths (Log with zero items, two swipes inside 3 s, diary_closed items_logged 0 after a log)
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 68
 - run: w7-20261008T2309Z
 - screen: Log a Meal > Describe > Review & Log
@@ -26,4 +26,4 @@ Not run (look-around).
 > 
 
 **Triage.**
-
+- triaged · retest ticket B (meal logging), cut after fix wave 8 for test wave 9 · Lee, 2026-10-09

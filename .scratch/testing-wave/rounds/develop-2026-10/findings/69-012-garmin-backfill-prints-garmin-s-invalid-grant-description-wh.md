@@ -1,7 +1,7 @@
 # 69-012 · garmin-backfill prints Garmin's invalid_grant description, which carries the refresh token value, into the dev function logs
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 69
 - run: w7-20261008T2311Z
 - screen: none (garmin-backfill edge function)
@@ -30,4 +30,4 @@ refresh failure. The value is cut from this run's extract. The same call then hi
 > 
 
 **Triage.**
-
+- triaged · fix ticket 76 (garmin-backfill and siblings redact provider error bodies before logging), fix wave 8 · Lee, 2026-10-09

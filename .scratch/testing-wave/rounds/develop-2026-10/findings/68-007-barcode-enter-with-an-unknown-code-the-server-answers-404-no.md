@@ -1,7 +1,7 @@
 # 68-007 · Barcode Enter with an unknown code: the server answers 404 not found, the app says 'Unable to connect to product lookup service' and reports a fault
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 68
 - run: w7-20261008T2309Z
 - screen: Log a Meal > Scan barcode > Enter > Look it up
@@ -29,4 +29,4 @@ Dialog 'Error / Unable to connect to product lookup service' with Try Again / Ca
 > 
 
 **Triage.**
-
+- triaged · fix ticket 79 (describe-meal 400 and lookup-product 404 get their own copy as expected outcomes; the lookup wait is bounded with one retry), fix wave 8 · Lee, 2026-10-09

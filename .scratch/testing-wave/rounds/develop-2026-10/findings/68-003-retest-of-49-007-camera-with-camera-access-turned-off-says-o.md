@@ -1,7 +1,7 @@
 # 68-003 · Retest of 49-007: Camera with camera access turned off says only 'Could not access the camera or gallery.' and reports a degraded PlatformException
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 68
 - run: w7-20261008T2309Z
 - screen: Log a Meal > Describe > Camera
@@ -28,4 +28,4 @@ A snackbar 'Could not access the camera or gallery.' It does not say access is o
 > 
 
 **Triage.**
-
+- triaged · fix ticket 81 (geocode no-match and camera-denied are expected outcomes with copy that says what to do; process_uptime_ms from the real process start), fix wave 8 · Lee, 2026-10-09

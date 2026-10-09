@@ -1,7 +1,7 @@
 # 68-001 · Food Preferences Save writes every on-screen food: unseen Fig Bar lands on the server as dislike 0, and every row's id and created_at are rewritten
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 68
 - run: w7-20261008T2309Z
 - screen: Settings > Diet, Allergies & Formulas > Food Likes & Dislikes (Food Preferences)
@@ -30,4 +30,4 @@ The server went from 9 rows to 14. Five rows were inserted that the athlete neve
 > 
 
 **Triage.**
-
+- triaged · fix ticket 78 (Food Preferences Save writes only changed foods, keeps row ids; five stray dev rows deleted at the close), fix wave 8 · Lee, 2026-10-09

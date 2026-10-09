@@ -1,7 +1,7 @@
 # 68-004 · Retest of 49-007: a gallery meal photo's GPS location is uploaded to meal-photos unchanged; the app keeps EXIF GPS, Make, Model and DateTime
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 68
 - run: w7-20261008T2309Z
 - screen: Log a Meal > Describe > Gallery > Analyze
@@ -32,4 +32,4 @@ The object meal-photos/607f9dd5-…/b1ccbabe-f422-494b-a20d-99de4a2772b2.jpg (32
 > 
 
 **Triage.**
-
+- triaged · fix ticket 75 (strip EXIF before the meal-photos upload; the benchmark fixture loses its GPS), fix wave 8 · Lee, 2026-10-09

@@ -1,7 +1,7 @@
 # 69-001 · Follow-up: onboarding daily plan, lean-mass protein (no body-fat field in onboarding), Imperial 62 kg, a masters birth year
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 69
 - run: w7-20261008T2311Z
 - screen: Your daily plan (onboarding)
@@ -33,4 +33,4 @@ Carb load 1.4 g/kg · 87 g (PASS 50-002).
 > 
 
 **Triage.**
-
+- triaged · retest ticket C (onboarding plan, Events, Learn, Connected Apps; with fix tickets 70 and 52 if a Runna URL lands in CRED), cut after fix wave 8 for test wave 9 · Lee, 2026-10-09

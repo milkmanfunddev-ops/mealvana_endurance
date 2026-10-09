@@ -1,7 +1,7 @@
 # 68-015 · Follow-up Edit Meal: a meal cannot be moved past midnight, future times are allowed, and Remove deletes with no confirm
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 68
 - run: w7-20261008T2309Z
 - screen: Timeline card > Edit food (Edit Meal)
@@ -29,4 +29,4 @@ Recorded as above; not a verdict.
 > 
 
 **Triage.**
-
+- triaged · retest ticket B (meal logging), cut after fix wave 8 for test wave 9 · Lee, 2026-10-09

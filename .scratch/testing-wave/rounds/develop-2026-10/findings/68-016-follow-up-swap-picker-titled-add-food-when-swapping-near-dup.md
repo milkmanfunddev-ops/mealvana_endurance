@@ -1,7 +1,7 @@
 # 68-016 · Follow-up swap picker: titled 'Add Food' when swapping, near-duplicate Bagel rows, quantity steps of 0.5
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 68
 - run: w7-20261008T2309Z
 - screen: Edit Meal > swipe right-to-left > swap picker
@@ -25,4 +25,4 @@ Not run (look-around).
 > 
 
 **Triage.**
-
+- triaged · retest ticket B (meal logging), cut after fix wave 8 for test wave 9 · Lee, 2026-10-09

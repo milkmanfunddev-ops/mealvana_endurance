@@ -1,7 +1,7 @@
 # 67-006 · Other runs' errors in this run's window: describe-meal 422 and 400, and 'onesignal init skipped: no app id' warnings
 
 - kind: bug
-- status: open
+- status: closed
 - ticket: 67
 - run: w7-20261008T2308Z
 - screen: none
@@ -30,4 +30,4 @@ Not caused by run 67 (it made no AI calls and its user ids are e482a890 and f514
 > 
 
 **Triage.**
-
+- closed · matched by the lead: the describe-meal 422/400 are ticket 68 checks 5 and 6 (68-002 carries the 400); the onesignal warnings are the relaunches after the 23:13Z simulator shutdown and recovered 0.5 s later (D9 record) · Lee, 2026-10-09

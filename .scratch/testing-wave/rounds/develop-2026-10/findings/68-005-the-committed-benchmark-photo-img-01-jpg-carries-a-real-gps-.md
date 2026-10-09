@@ -1,7 +1,7 @@
 # 68-005 · The committed benchmark photo img-01.jpg carries a real GPS location in its EXIF; strip it before a wave uploads it again
 
 - kind: idea
-- status: open
+- status: triaged
 - ticket: 68
 - run: w7-20261008T2309Z
 - screen: none (repo fixture benchmarks/ai-model-benchmark-2026-07/images/img-01.jpg)
@@ -25,4 +25,4 @@ The committed file holds a full GPS IFD from an iPhone 14 Plus (a real latitude/
 > 
 
 **Triage.**
-
+- triaged · fix ticket 75 (strip EXIF before the meal-photos upload; the benchmark fixture loses its GPS), fix wave 8 · Lee, 2026-10-09

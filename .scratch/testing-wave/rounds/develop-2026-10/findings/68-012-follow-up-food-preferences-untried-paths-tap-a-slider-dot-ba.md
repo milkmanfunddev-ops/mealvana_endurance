@@ -1,7 +1,7 @@
 # 68-012 · Follow-up Food Preferences: untried paths (tap a slider dot, Back with unsaved moves, Save with 'Show more' open, the Like label at level 3)
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 68
 - run: w7-20261008T2309Z
 - screen: Settings > Diet, Allergies & Formulas > Food Likes & Dislikes
@@ -26,4 +26,4 @@ Not run (look-around).
 > 
 
 **Triage.**
-
+- triaged · retest ticket B (meal logging), cut after fix wave 8 for test wave 9 · Lee, 2026-10-09

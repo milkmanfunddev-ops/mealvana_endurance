@@ -1,7 +1,7 @@
 # 69-002 · Deleting an event from Event Details shows Event deleted successfully but leaves the deleted event's detail on screen
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 69
 - run: w7-20261008T2311Z
 - screen: Event Details
@@ -31,4 +31,4 @@ event. No console line at all for the delete.
 > 
 
 **Triage.**
-
+- triaged · fix ticket 80 (event delete pops to My Events; an imported event saves without a race distance), fix wave 8 · Lee, 2026-10-09

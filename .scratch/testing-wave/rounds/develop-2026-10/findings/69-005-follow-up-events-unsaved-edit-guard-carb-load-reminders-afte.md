@@ -1,7 +1,7 @@
 # 69-005 · Follow-up: Events, unsaved-edit guard, carb-load reminders after delete, imported-event edit then TrainingPeaks sync, swipe delete
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 69
 - run: w7-20261008T2311Z
 - screen: My Events / Event Details / Edit Event
@@ -34,4 +34,4 @@ Not run (step 1 seen: no prompt, change dropped; steps 2-5 not tried).
 > 
 
 **Triage.**
-
+- triaged · retest ticket C (onboarding plan, Events, Learn, Connected Apps; with fix tickets 70 and 52 if a Runna URL lands in CRED), cut after fix wave 8 for test wave 9 · Lee, 2026-10-09

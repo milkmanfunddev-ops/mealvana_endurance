@@ -1,7 +1,7 @@
 # 68-017 · All three wave simulators shut down at once mid-run (23:13Z) while host memory was low; the run rebooted its own
 
 - kind: idea
-- status: open
+- status: closed
 - ticket: 68
 - run: w7-20261008T2309Z
 - screen: none (wave infrastructure)
@@ -25,4 +25,4 @@ This run booted wave-pool-2 again itself (23:13:49Z), restarted the log stream i
 > 
 
 **Triage.**
-
+- closed · IMPROVEMENTS #129: the runbook gets the dead-simulator recovery line and the lead checks free memory before spawning; the cap stays at three · Lee, 2026-10-09

@@ -268,3 +268,45 @@ One line per Finding decision, made with Lee in the terminal: id, decision, who 
 - 59 Q1 · ruling · as built: a notification tap held for a same-session reason (startup loading, consent) opens once the reason clears; any sign-in or sign-out drops it · Lee, 2026-10-08
 - 52 Q1+Q2 · ruling · fix ticket 73: sync-status writes standardised across all five providers (one shared step, same code for the same failure, `network` offline, new `not_a_calendar`, active rows only) · Lee, 2026-10-08
 - 66 Q2 · wontfix · the 3 s Undo bar may cover Log this meal · Lee, 2026-10-08
+- 68-006 · triaged · fix ticket 74 (swap picker search crash, Create Food button state, barcode per-100 g shown as a serving), fix wave 8 · Lee, 2026-10-09
+- 68-009 · triaged · fix ticket 74 (swap picker search crash, Create Food button state, barcode per-100 g shown as a serving), fix wave 8 · Lee, 2026-10-09
+- 68-011 · triaged · fix ticket 74 (swap picker search crash, Create Food button state, barcode per-100 g shown as a serving), fix wave 8 · Lee, 2026-10-09
+- 68-004 · triaged · fix ticket 75 (strip EXIF before the meal-photos upload; the benchmark fixture loses its GPS), fix wave 8 · Lee, 2026-10-09
+- 68-005 · triaged · fix ticket 75 (strip EXIF before the meal-photos upload; the benchmark fixture loses its GPS), fix wave 8 · Lee, 2026-10-09
+- 69-012 · triaged · fix ticket 76 (garmin-backfill and siblings redact provider error bodies before logging), fix wave 8 · Lee, 2026-10-09
+- 68-008 · triaged · fix ticket 77 (Garmin reauth read from the integrations row on every device; a dead token on the automatic backfill is an expected_failure), fix wave 8 · Lee, 2026-10-09
+- 69-010 · triaged · fix ticket 77 (Garmin reauth read from the integrations row on every device; a dead token on the automatic backfill is an expected_failure), fix wave 8 · Lee, 2026-10-09
+- 68-001 · triaged · fix ticket 78 (Food Preferences Save writes only changed foods, keeps row ids; five stray dev rows deleted at the close), fix wave 8 · Lee, 2026-10-09
+- 68-002 · triaged · fix ticket 79 (describe-meal 400 and lookup-product 404 get their own copy as expected outcomes; the lookup wait is bounded with one retry), fix wave 8 · Lee, 2026-10-09
+- 68-007 · triaged · fix ticket 79 (describe-meal 400 and lookup-product 404 get their own copy as expected outcomes; the lookup wait is bounded with one retry), fix wave 8 · Lee, 2026-10-09
+- 68-018 · triaged · fix ticket 79 (describe-meal 400 and lookup-product 404 get their own copy as expected outcomes; the lookup wait is bounded with one retry), fix wave 8 · Lee, 2026-10-09
+- 69-002 · triaged · fix ticket 80 (event delete pops to My Events; an imported event saves without a race distance), fix wave 8 · Lee, 2026-10-09
+- 69-004 · triaged · fix ticket 80 (event delete pops to My Events; an imported event saves without a race distance), fix wave 8 · Lee, 2026-10-09
+- 69-003 · triaged · fix ticket 81 (geocode no-match and camera-denied are expected outcomes with copy that says what to do; process_uptime_ms from the real process start), fix wave 8 · Lee, 2026-10-09
+- 68-003 · triaged · fix ticket 81 (geocode no-match and camera-denied are expected outcomes with copy that says what to do; process_uptime_ms from the real process start), fix wave 8 · Lee, 2026-10-09
+- 67-005 · triaged · fix ticket 81 (geocode no-match and camera-denied are expected outcomes with copy that says what to do; process_uptime_ms from the real process start), fix wave 8 · Lee, 2026-10-09
+- 67-004 · triaged · fix ticket 82 (small UI batch: login hint key, singular Credit, empty-search feedback, write-back toggle re-reads its pref, watched_sec counts played time), fix wave 8 · Lee, 2026-10-09
+- 69-013 · triaged · fix ticket 82 (small UI batch: login hint key, singular Credit, empty-search feedback, write-back toggle re-reads its pref, watched_sec counts played time), fix wave 8 · Lee, 2026-10-09
+- 68-010 · triaged · fix ticket 82 (small UI batch: login hint key, singular Credit, empty-search feedback, write-back toggle re-reads its pref, watched_sec counts played time), fix wave 8 · Lee, 2026-10-09
+- 69-009 · triaged · fix ticket 82 (small UI batch: login hint key, singular Credit, empty-search feedback, write-back toggle re-reads its pref, watched_sec counts played time), fix wave 8 · Lee, 2026-10-09
+- 69-007 · triaged · fix ticket 82 (small UI batch: login hint key, singular Credit, empty-search feedback, write-back toggle re-reads its pref, watched_sec counts played time), fix wave 8 · Lee, 2026-10-09
+- 67-001 · triaged · fix ticket 83 (onboarding tiles get button + selected semantics; one Back label), fix wave 8 · Lee, 2026-10-09
+- 67-006 · closed · matched by the lead: the describe-meal 422/400 are ticket 68 checks 5 and 6 (68-002 carries the 400); the onesignal warnings are the relaunches after the 23:13Z simulator shutdown and recovered 0.5 s later (D9 record) · Lee, 2026-10-09
+- 67-007 · closed · IMPROVEMENTS #129: the runbook gets the dead-simulator recovery line and the lead checks free memory before spawning; the cap stays at three · Lee, 2026-10-09
+- 68-017 · closed · IMPROVEMENTS #129: the runbook gets the dead-simulator recovery line and the lead checks free memory before spawning; the cap stays at three · Lee, 2026-10-09
+- 67-002 · triaged · retest ticket A (auth, startup, Welcome, Sign Out; with fix ticket 53), cut after fix wave 8 for test wave 9 · Lee, 2026-10-09
+- 67-003 · triaged · retest ticket A (auth, startup, Welcome, Sign Out; with fix ticket 53), cut after fix wave 8 for test wave 9 · Lee, 2026-10-09
+- 69-006 · triaged · retest ticket A (auth, startup, Welcome, Sign Out; with fix ticket 53), cut after fix wave 8 for test wave 9 · Lee, 2026-10-09
+- 69-014 · triaged · retest ticket A (auth, startup, Welcome, Sign Out; with fix ticket 53), cut after fix wave 8 for test wave 9 · Lee, 2026-10-09
+- 69-015 · triaged · retest ticket A (auth, startup, Welcome, Sign Out; with fix ticket 53), cut after fix wave 8 for test wave 9 · Lee, 2026-10-09
+- 68-012 · triaged · retest ticket B (meal logging), cut after fix wave 8 for test wave 9 · Lee, 2026-10-09
+- 68-013 · triaged · retest ticket B (meal logging), cut after fix wave 8 for test wave 9 · Lee, 2026-10-09
+- 68-014 · triaged · retest ticket B (meal logging), cut after fix wave 8 for test wave 9 · Lee, 2026-10-09
+- 68-015 · triaged · retest ticket B (meal logging), cut after fix wave 8 for test wave 9 · Lee, 2026-10-09
+- 68-016 · triaged · retest ticket B (meal logging), cut after fix wave 8 for test wave 9 · Lee, 2026-10-09
+- 69-001 · triaged · retest ticket C (onboarding plan, Events, Learn, Connected Apps; with fix tickets 70 and 52 if a Runna URL lands in CRED), cut after fix wave 8 for test wave 9 · Lee, 2026-10-09
+- 69-005 · triaged · retest ticket C (onboarding plan, Events, Learn, Connected Apps; with fix tickets 70 and 52 if a Runna URL lands in CRED), cut after fix wave 8 for test wave 9 · Lee, 2026-10-09
+- 69-008 · triaged · retest ticket C (onboarding plan, Events, Learn, Connected Apps; with fix tickets 70 and 52 if a Runna URL lands in CRED), cut after fix wave 8 for test wave 9 · Lee, 2026-10-09
+- 69-011 · triaged · retest ticket C (onboarding plan, Events, Learn, Connected Apps; with fix tickets 70 and 52 if a Runna URL lands in CRED), cut after fix wave 8 for test wave 9 · Lee, 2026-10-09
+- wave 7 close (lead) · 70 stays open (no activity event with a device_id in run 69's console; retest ticket C) · 52 stays open (no Runna test calendar URL in CRED; Lee owes one) · 53 stays open (no run saved a sweat test; retest ticket A) · 54's Sentry count was seen only in the Debug console, not as a Sentry issue (it is a metric): closed on 50-003's pass · fix wave 8 = tickets 71, 72, 73, 74–83, batched by Touches at the wave open · 2026-10-09
+- wave 8 plan (lead, 2026-10-09, from the tickets' Touches; re-check at the open) · pass A at once: 71, 73, 74, 75, 76, 78, 83 · pass B after 73 and 75 merge: 72 (content keys after 73), 77 (connect_training_controller after 73), 79 (meal_ai_service after 75; content keys after 72) · pass C: 80 (events_controller/event_form after 72), 81 (event_form after 80; content keys after 79), then 82 (content keys after 81) · or one agent takes the content-key hunks of 72/79/81/82 in one pass (#127) · Questions for Lee from the tickets are listed on each ticket's "Questions for Lee" heading (75, 76, 79, 80 ×3, 81, 82) and taken at this close.

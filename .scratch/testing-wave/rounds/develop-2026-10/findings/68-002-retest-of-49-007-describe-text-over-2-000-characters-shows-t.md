@@ -1,7 +1,7 @@
 # 68-002 · Retest of 49-007: Describe text over 2,000 characters shows 'The AI service returned an error' instead of saying the text is too long, and reports a degraded error
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 68
 - run: w7-20261008T2309Z
 - screen: Log a Meal > Describe
@@ -31,4 +31,4 @@ Snackbar 'The AI service returned an error. Please try again.' (the text the tic
 > 
 
 **Triage.**
-
+- triaged · fix ticket 79 (describe-meal 400 and lookup-product 404 get their own copy as expected outcomes; the lookup wait is bounded with one retry), fix wave 8 · Lee, 2026-10-09

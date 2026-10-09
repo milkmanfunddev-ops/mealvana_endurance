@@ -1,7 +1,7 @@
 # 69-007 · Scrubbing a lesson to the end without playing it sends education_video_completed with watched_sec equal to the full duration
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 69
 - run: w7-20261008T2311Z
 - screen: Lesson player (Mealvana 101 - 1.1)
@@ -29,4 +29,4 @@ for 50-012 predicted this: `_maxPosition` is the furthest position the listener 
 > 
 
 **Triage.**
-
+- triaged · fix ticket 82 (small UI batch: login hint key, singular Credit, empty-search feedback, write-back toggle re-reads its pref, watched_sec counts played time), fix wave 8 · Lee, 2026-10-09

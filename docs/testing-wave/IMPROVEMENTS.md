@@ -570,12 +570,13 @@ Their dates come from the wave each entry names.
   leftover B held its address in `auth.users.email_change` (an anonymous upgrade that never verified), and
   `sweep-accounts.mjs delete --id … --apply` answered "0 accounts": its candidate query matched `email` only. The lead deleted the
   auth user by SQL at the close. Done 2026-10-09: the query also matches `email_change` (this commit).
-- 2026-10-09 · develop-2026-10 · open · **#129 all three wave simulators shut down at once under host memory pressure (wave 7).** At
+- 2026-10-09 · develop-2026-10 · done · **#129 all three wave simulators shut down at once under host memory pressure (wave 7).** At
   ~23:13Z, four minutes into the wave, wave-pool-1/2/3 went to Shutdown together (vm_stat ~4k free pages); each agent's log
   stream died with SIGKILL, and each rebooted its own simulator and restarted the stream (67-007, 68-017). Nothing of the Mac's was
   running but the three agents and idb. Rule to consider: the lead checks `vm_stat` free pages before spawning and the runbook's
   step 3 says what to do when the simulator dies (reboot it, restart the stream into the same file, note the gap, relaunch; the
   app's data survives). For Lee: whether three simulators plus three Opus agents still fit the Mac.
+  Done 2026-10-09 (Lee: keep three): runbook step 3 (recovery) and lead step 3 (`vm_stat` before claiming) say it.
 - 2026-10-09 · develop-2026-10 · done · **#130 retest tickets quoted wave-5 wording for lines the fix wave changed (wave 7).** Ticket 69
   named the tape line `HELD … (startup not routable)` and `expected_failure` console lines for content/education; fix wave 6 had
   changed both (`(no session)`; Sentry counts at Info with no console line). Three Opus code-map researchers, one per ticket, read

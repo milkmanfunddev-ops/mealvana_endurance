@@ -1,7 +1,7 @@
 # 67-007 · Wave simulators wave-pool-1 and wave-pool-3 shut down mid-run at 23:13Z; log stream lost
 
 - kind: idea
-- status: open
+- status: closed
 - ticket: 67
 - run: w7-20261008T2308Z
 - screen: none
@@ -28,4 +28,4 @@ relaunch; app data survived. Cause unknown.
 > 
 
 **Triage.**
-
+- closed · IMPROVEMENTS #129: the runbook gets the dead-simulator recovery line and the lead checks free memory before spawning; the cap stays at three · Lee, 2026-10-09

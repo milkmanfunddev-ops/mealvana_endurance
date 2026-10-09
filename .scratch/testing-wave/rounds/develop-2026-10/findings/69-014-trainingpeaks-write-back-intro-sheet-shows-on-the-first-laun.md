@@ -1,7 +1,7 @@
 # 69-014 · TrainingPeaks write-back intro sheet shows on the first launch after an app clear for an already-connected athlete
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 69
 - run: w7-lead-20261008T2354Zw7-lead-20261008T2354Z
 - screen: Connected Apps (TrainingPeaks write-back sheet)
@@ -26,4 +26,4 @@ Filed by the wave lead from runs/68/notes.md (23:14:30Z) and runs/69/notes.md ch
 > 
 
 **Triage.**
-
+- triaged · retest ticket A (auth, startup, Welcome, Sign Out; with fix ticket 53), cut after fix wave 8 for test wave 9 · Lee, 2026-10-09

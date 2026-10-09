@@ -1,7 +1,7 @@
 # 69-011 · Follow-up: Connected Apps, Runna with a test calendar, Garmin Sync Now after a reconnect, Last synced text after a reconnect, Delete synced data on a disposable account
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 69
 - run: w7-20261008T2311Z
 - screen: Connected Apps
@@ -33,4 +33,4 @@ Not run (Runna: no test calendar URL; Garmin: link expired; Delete synced data: 
 > 
 
 **Triage.**
-
+- triaged · retest ticket C (onboarding plan, Events, Learn, Connected Apps; with fix tickets 70 and 52 if a Runna URL lands in CRED), cut after fix wave 8 for test wave 9 · Lee, 2026-10-09

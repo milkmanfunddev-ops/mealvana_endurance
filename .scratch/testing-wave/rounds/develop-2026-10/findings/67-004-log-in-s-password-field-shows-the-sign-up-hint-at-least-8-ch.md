@@ -1,7 +1,7 @@
 # 67-004 · Log In's password field shows the sign-up hint 'At least 8 characters'
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 67
 - run: w7-20261008T2308Z
 - screen: Log In
@@ -28,4 +28,4 @@ older short password may read it as a rule.
 > 
 
 **Triage.**
-
+- triaged · fix ticket 82 (small UI batch: login hint key, singular Credit, empty-search feedback, write-back toggle re-reads its pref, watched_sec counts played time), fix wave 8 · Lee, 2026-10-09

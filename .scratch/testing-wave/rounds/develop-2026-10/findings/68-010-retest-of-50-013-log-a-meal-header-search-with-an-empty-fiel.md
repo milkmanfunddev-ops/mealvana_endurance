@@ -1,7 +1,7 @@
 # 68-010 · Retest of 50-013: Log a Meal header Search with an empty field gives no feedback (button or keyboard submit)
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 68
 - run: w7-20261008T2309Z
 - screen: Log a Meal (header search)
@@ -28,4 +28,4 @@ Nothing visible happens either way; the screen stays as it was, no console line.
 > 
 
 **Triage.**
-
+- triaged · fix ticket 82 (small UI batch: login hint key, singular Credit, empty-search feedback, write-back toggle re-reads its pref, watched_sec counts played time), fix wave 8 · Lee, 2026-10-09

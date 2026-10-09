@@ -1,7 +1,7 @@
 # 69-004 · An imported TrainingPeaks event cannot be edited: Save Changes demands a race distance the import never set
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 69
 - run: w7-20261008T2311Z
 - screen: Edit Event
@@ -31,4 +31,4 @@ cannot fix a typo or add a location on any imported event without also choosing 
 > 
 
 **Triage.**
-
+- triaged · fix ticket 80 (event delete pops to My Events; an imported event saves without a race distance), fix wave 8 · Lee, 2026-10-09

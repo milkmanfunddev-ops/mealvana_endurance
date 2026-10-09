@@ -1,7 +1,7 @@
 # 68-006 · Swap picker (Add Food, from Edit Meal swipe) turns into a red 'Tried to modify a provider while the widget tree was building' screen when searching
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 68
 - run: w7-20261008T2309Z
 - screen: Edit Meal > swipe item right-to-left > swap picker ('Add Food')
@@ -29,4 +29,4 @@ The whole screen went to Flutter's red error screen: 'Tried to modify a provider
 > 
 
 **Triage.**
-
+- triaged · fix ticket 74 (swap picker search crash, Create Food button state, barcode per-100 g shown as a serving), fix wave 8 · Lee, 2026-10-09

@@ -1,7 +1,7 @@
 # 67-003 · Follow-up: relaunch on Create Your Account before any account lands on Welcome; check what the athlete keeps
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 67
 - run: w7-20261008T2308Z
 - screen: Create Your Account
@@ -32,4 +32,4 @@ answers came back was not checked (the walk was redone by hand).
 > 
 
 **Triage.**
-
+- triaged · retest ticket A (auth, startup, Welcome, Sign Out; with fix ticket 53), cut after fix wave 8 for test wave 9 · Lee, 2026-10-09

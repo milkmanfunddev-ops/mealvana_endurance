@@ -1,7 +1,7 @@
 # 69-010 · Opening Connected Apps fires a Garmin backfill that, on an expired Garmin token, reports error_reported degraded to Sentry
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 69
 - run: w7-20261008T2311Z
 - screen: Connected Apps
@@ -35,4 +35,4 @@ be tried (check 13).
 > 
 
 **Triage.**
-
+- triaged · fix ticket 77 (Garmin reauth read from the integrations row on every device; a dead token on the automatic backfill is an expected_failure), fix wave 8 · Lee, 2026-10-09

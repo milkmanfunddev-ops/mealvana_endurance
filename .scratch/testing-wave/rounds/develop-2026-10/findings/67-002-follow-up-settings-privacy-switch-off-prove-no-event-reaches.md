@@ -1,7 +1,7 @@
 # 67-002 · Follow-up: Settings Privacy switch OFF, prove no event reaches Mixpanel, and the card tap target
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 67
 - run: w7-20261008T2308Z
 - screen: Privacy
@@ -36,4 +36,4 @@ semantics action, so it may work on a device; unverified.
 > 
 
 **Triage.**
-
+- triaged · retest ticket A (auth, startup, Welcome, Sign Out; with fix ticket 53), cut after fix wave 8 for test wave 9 · Lee, 2026-10-09

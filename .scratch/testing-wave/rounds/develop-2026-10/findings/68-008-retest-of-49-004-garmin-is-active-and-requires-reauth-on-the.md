@@ -1,7 +1,7 @@
 # 68-008 · Retest of 49-004: Garmin is active and requires_reauth on the server, but neither the Timeline notice nor the Connected Apps Garmin card tells the athlete to sign in again
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 68
 - run: w7-20261008T2309Z
 - screen: Timeline (macro dashboard) and Settings > Connected Apps
@@ -30,4 +30,4 @@ Nothing. No notice on the Timeline before or after the relaunch and the pull-to-
 > 
 
 **Triage.**
-
+- triaged · fix ticket 77 (Garmin reauth read from the integrations row on every device; a dead token on the automatic backfill is an expected_failure), fix wave 8 · Lee, 2026-10-09

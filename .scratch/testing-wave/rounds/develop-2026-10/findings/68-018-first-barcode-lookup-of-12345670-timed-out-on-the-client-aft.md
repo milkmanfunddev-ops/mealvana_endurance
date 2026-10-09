@@ -1,7 +1,7 @@
 # 68-018 · First barcode lookup of 12345670 timed out on the client after 30 s with no request reaching the server
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 68
 - run: w7-lead-20261008T2354Zw7-lead-20261008T2354Z
 - screen: Log a Meal > Scan barcode > Enter a barcode
@@ -26,4 +26,4 @@ Filed by the wave lead from runs/68/notes.md check 12. At 23:41:08Z the first lo
 > 
 
 **Triage.**
-
+- triaged · fix ticket 79 (describe-meal 400 and lookup-product 404 get their own copy as expected outcomes; the lookup wait is bounded with one retry), fix wave 8 · Lee, 2026-10-09

@@ -1,7 +1,7 @@
 # 69-006 · Follow-up: Welcome, see the push breadcrumb of a held-then-dropped tap on a Sentry event, and a tap held across a cancelled login
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 69
 - run: w7-20261008T2311Z
 - screen: Welcome
@@ -32,4 +32,4 @@ Not run (step 1's tape half passed in check 2; the breadcrumb was not observable
 > 
 
 **Triage.**
-
+- triaged · retest ticket A (auth, startup, Welcome, Sign Out; with fix ticket 53), cut after fix wave 8 for test wave 9 · Lee, 2026-10-09

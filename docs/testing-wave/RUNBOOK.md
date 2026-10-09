@@ -80,6 +80,12 @@ launch` again (the app keeps its state) before the first tap.
 
 Stop the log stream at step 9.
 
+A simulator that dies mid-run (#129: `simctl list` shows it Shutdown and the log stream ends with
+"terminated with signal 9") is yours to bring back: `xcrun simctl boot UDID`, start a new log
+stream appending to the same `RUNS/console.log` (`>>`), note the gap's clock times in
+`RUNS/notes.md`, and `simctl launch` again. The app's data and sign-in survive. Never touch another
+run's simulator, even when it died at the same time; file one idea Finding for the shutdown.
+
 ## 4. Start from what is on the screen
 
 Look first (a `simctl io` screenshot and `idb ui describe-all`). The wave lead cleared the app's
@@ -314,7 +320,9 @@ Finding that raises a real product question goes to the review queue
    simulator udid>`, quit it once the app runs (an install keeps the dev simulator's data and
    sign-in), remove that worktree, write the commit to `app-build.json` and commit it. Agents never
    build.
-3. One simulator per ticket, at most three at once: `SIM claim testing-wave-NN` for each, before
+3. Free memory first (#129: three simulators died at once under memory pressure): `vm_stat | grep
+   'Pages free'` before claiming; below ~50k free pages, close what can be closed and say so in
+   the wave log. One simulator per ticket, at most three at once: `SIM claim testing-wave-NN` for each, before
    spawning. It copies the dev simulator, so it carries the testing build, the mobile MCP helper and
    Lee's app data. Then `scripts/testing-wave/clear-app.sh <udid>` on each, so the app opens signed
    out with an empty database (it refuses any simulator not named `wave-*`). Skip the clear only

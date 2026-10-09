@@ -1,7 +1,7 @@
 # 68-009 · Create Custom Food: 'Create Food' stays disabled after the name is typed until something else rebuilds the screen
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 68
 - run: w7-20261008T2309Z
 - screen: Swap picker > Create Custom Food
@@ -30,4 +30,4 @@ The button stayed dim and did nothing on four taps: no row, no message, no '💾
 > 
 
 **Triage.**
-
+- triaged · fix ticket 74 (swap picker search crash, Create Food button state, barcode per-100 g shown as a serving), fix wave 8 · Lee, 2026-10-09

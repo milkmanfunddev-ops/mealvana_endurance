@@ -1,7 +1,7 @@
 # 67-005 · SlowOperation reports process_uptime_ms shorter than the startup it measured (6132 ms vs 11860 ms)
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 67
 - run: w7-20261008T2308Z
 - screen: none
@@ -29,4 +29,4 @@ The slowness itself is known noise: a cold simulator boot, and another simulator
 > 
 
 **Triage.**
-
+- triaged · fix ticket 81 (geocode no-match and camera-denied are expected outcomes with copy that says what to do; process_uptime_ms from the real process start), fix wave 8 · Lee, 2026-10-09

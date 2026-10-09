@@ -1,7 +1,7 @@
 # 69-003 · Typing a place with no geocode match in an event's Location field reports error_reported fault (area location) to Sentry
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 69
 - run: w7-20261008T2311Z
 - screen: Edit Event
@@ -29,4 +29,4 @@ red `⛔ [location] Error searching locations` box with a stack (LocationReposit
 > 
 
 **Triage.**
-
+- triaged · fix ticket 81 (geocode no-match and camera-denied are expected outcomes with copy that says what to do; process_uptime_ms from the real process start), fix wave 8 · Lee, 2026-10-09

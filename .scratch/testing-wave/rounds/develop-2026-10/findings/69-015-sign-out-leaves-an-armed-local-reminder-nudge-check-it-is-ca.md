@@ -1,7 +1,7 @@
 # 69-015 · Sign Out leaves an armed local reminder nudge: check it is cancelled
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 69
 - run: w7-lead-20261008T2354Zw7-lead-20261008T2354Z
 - screen: Settings (Sign Out)
@@ -25,4 +25,4 @@ Filed by the wave lead from runs/69/notes.md check 14 ("whether Sign Out cancels
 > 
 
 **Triage.**
-
+- triaged · retest ticket A (auth, startup, Welcome, Sign Out; with fix ticket 53), cut after fix wave 8 for test wave 9 · Lee, 2026-10-09

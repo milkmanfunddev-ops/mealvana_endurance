@@ -1,7 +1,7 @@
 # 68-013 · Follow-up Describe: untried paths (stale too-short line, Remove photo then Analyze, Review again after editing text, Describe offline)
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 68
 - run: w7-20261008T2309Z
 - screen: Log a Meal > Describe
@@ -25,4 +25,4 @@ Not run (look-around). Describe offline: not run, cap.
 > 
 
 **Triage.**
-
+- triaged · retest ticket B (meal logging), cut after fix wave 8 for test wave 9 · Lee, 2026-10-09

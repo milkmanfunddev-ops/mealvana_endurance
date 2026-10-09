@@ -1,7 +1,7 @@
 # 69-009 · After Turn Off Sharing the TrainingPeaks card's Write fuel plan toggle still shows on until Connected Apps is reopened
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 69
 - run: w7-20261008T2311Z
 - screen: Connected Apps
@@ -30,4 +30,4 @@ Turning the toggle on later (23:42:40Z) updated card and preference together (bo
 > 
 
 **Triage.**
-
+- triaged · fix ticket 82 (small UI batch: login hint key, singular Credit, empty-search feedback, write-back toggle re-reads its pref, watched_sec counts played time), fix wave 8 · Lee, 2026-10-09

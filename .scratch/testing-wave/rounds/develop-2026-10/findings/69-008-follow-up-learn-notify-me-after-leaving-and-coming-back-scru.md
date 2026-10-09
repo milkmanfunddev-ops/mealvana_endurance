@@ -1,7 +1,7 @@
 # 69-008 · Follow-up: Learn, Notify Me after leaving and coming back, scrub then play, lessons 1.4 and 1.5, a lesson with no video
 
 - kind: followup-test
-- status: open
+- status: triaged
 - ticket: 69
 - run: w7-20261008T2311Z
 - screen: Learn
@@ -33,4 +33,4 @@ only; lessons 1.2 and 1.3 load (01:24, 01:07).
 > 
 
 **Triage.**
-
+- triaged · retest ticket C (onboarding plan, Events, Learn, Connected Apps; with fix tickets 70 and 52 if a Runna URL lands in CRED), cut after fix wave 8 for test wave 9 · Lee, 2026-10-09

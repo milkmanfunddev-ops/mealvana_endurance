@@ -1,7 +1,7 @@
 # 67-001 · Retest of 48-006: onboarding choice tiles are StaticText with no selected state, and back arrows read 'Back Back'
 
 - kind: bug
-- status: open
+- status: triaged
 - ticket: 67
 - run: w7-20261008T2308Z
 - screen: Tell us about yourself
@@ -39,4 +39,4 @@ widgets, so this is the 48-006 picture confirmed. VoiceOver itself is a device c
 > 
 
 **Triage.**
-
+- triaged · fix ticket 83 (onboarding tiles get button + selected semantics; one Back label), fix wave 8 · Lee, 2026-10-09
