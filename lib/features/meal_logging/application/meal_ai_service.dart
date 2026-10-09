@@ -13,6 +13,7 @@ import '../../../shared/services/app_external_deps.dart';
 import '../../../shared/services/report/report.dart';
 import '../../../shared/services/supabase/supabase_client_provider.dart';
 import '../domain/meal_analysis_result.dart';
+import 'meal_photo_sanitizer.dart';
 
 part 'meal_ai_service.g.dart';
 
@@ -221,17 +222,20 @@ class MealAiService {
     required String extension,
     String? description,
   }) async {
-    // 1. Upload to storage
-    final photoPath = '$userId/${_uuid.v4()}.$extension';
+    // 1. Strip EXIF (GPS, device, time) before anything leaves the device.
+    final clean = await _sanitizePhoto(bytes, extension: extension);
+
+    // 2. Upload to storage. The sanitized bytes are always JPEG.
+    final photoPath = '$userId/${_uuid.v4()}.jpg';
 
     try {
       await _supabase.storage
           .from('meal-photos')
           .uploadBinary(
             photoPath,
-            bytes,
-            fileOptions: FileOptions(
-              contentType: _mimeFromExtension(extension),
+            clean,
+            fileOptions: const FileOptions(
+              contentType: 'image/jpeg',
               upsert: false,
             ),
           );
@@ -248,7 +252,7 @@ class MealAiService {
         stackTrace: st,
         area: _area,
         message: 'meal photo upload failed',
-        extra: {'extension': extension, 'bytes': bytes.length},
+        extra: {'extension': extension, 'bytes': clean.length},
       );
       throw MealAiException(
         kind: MealAiFailureKind.serverError,
@@ -257,7 +261,7 @@ class MealAiService {
       );
     }
 
-    // 2. Analyze via edge function
+    // 3. Analyze via edge function
     try {
       final trimmedDescription = description?.trim();
       final response = await _supabase.functions.invoke(
@@ -468,6 +472,31 @@ class MealAiService {
     return null;
   }
 
+  /// Re-encode [bytes] without metadata (ticket 75: no GPS leaves the
+  /// device). Runs off the UI isolate. An unreadable photo is recorded and
+  /// nothing is uploaded: there is no fallback to the original bytes.
+  Future<Uint8List> _sanitizePhoto(
+    Uint8List bytes, {
+    required String extension,
+  }) async {
+    try {
+      return await compute(stripPhotoMetadata, bytes);
+    } catch (e, st) {
+      _r.degraded(
+        e,
+        stackTrace: st,
+        area: _area,
+        message: 'meal photo could not be re-encoded; not uploaded',
+        extra: {'extension': extension, 'bytes': bytes.length},
+      );
+      throw MealAiException(
+        kind: MealAiFailureKind.serverError,
+        userMessage: 'Could not read that photo. Please try another one.',
+        debugMessage: e.toString(),
+      );
+    }
+  }
+
   /// Ensure there is a signed-in user and return their ID.
   String _requireUserId() {
     final user = _supabase.auth.currentUser;
@@ -480,23 +509,10 @@ class MealAiService {
     return user.id;
   }
 
-  /// Extract file extension from a path, defaulting to `jpg`.
+  /// Extract file extension from a path, defaulting to `jpg`. Reported on a
+  /// failed sanitize; the upload is always `.jpg`.
   String _extensionFromPath(String path) {
     final ext = path.split('.').lastOrNull?.toLowerCase();
     return (ext != null && ext.isNotEmpty) ? ext : 'jpg';
-  }
-
-  /// Map a file extension to a MIME type string.
-  String _mimeFromExtension(String ext) {
-    switch (ext) {
-      case 'png':
-        return 'image/png';
-      case 'webp':
-        return 'image/webp';
-      case 'gif':
-        return 'image/gif';
-      default:
-        return 'image/jpeg';
-    }
   }
 }
