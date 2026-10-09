@@ -1,6 +1,7 @@
 import 'package:drift/drift.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../domain/event.dart' as domain;
+import '../domain/event_origin.dart';
 import '../../../shared/database/app_database.dart';
 import '../../../shared/database/database_provider.dart';
 import '../../../shared/domain/activity_type.dart';
@@ -298,17 +299,27 @@ class EventsService {
         }
       }
 
-      // D-2c (RATIFIED 2026-09-11): a local edit of a provider-origin event
-      // flips it 'manual' — the athlete now owns the row, and it becomes
-      // exempt from re-sync overwrite (the import's dedupe-flip skips
-      // 'manual' rows). Manual/legacy rows keep their origin.
-      final flippedOrigin =
-          (event.origin == 'training_peaks' || event.origin == 'final_surge')
+      // D-2c (RATIFIED 2026-09-11): a local edit *to a provider-sourced
+      // field* flips the row 'manual' and exempts it from re-sync overwrite.
+      // A Location-, bib- or distance-only edit keeps the provider origin
+      // (ticket 80, Finding 69-004). The stored row is the baseline; when
+      // this device does not hold it (a coach editing an athlete's event)
+      // a provider row flips, the conservative reading.
+      final stored = await _eventsRepository.getEventById(
+        event.userId,
+        event.id,
+      );
+      final flippedOrigin = stored != null
+          ? originAfterEdit(before: stored, after: event)
+          : (event.origin == 'training_peaks' || event.origin == 'final_surge')
           ? 'manual'
           : event.origin;
       final updatedEvent = event.copyWith(
         updatedAt: DateTime.now(),
         origin: flippedOrigin,
+        // No form edits the provider's id; the stored one wins, so an Event
+        // built by a mapper that drops it cannot erase it (ticket 80 Q3).
+        providerEventId: stored?.providerEventId,
         // Re-derive the calendar date from the (possibly edited) startTime so
         // an edited date actually persists — copyWith otherwise keeps the
         // stale eventDate. Falls back to the stored date only when there is no
@@ -544,6 +555,7 @@ class EventsService {
       // D-2c: origin must survive every mapper — the list card's chip
       // reads it (a dropped origin renders every row as legacy).
       origin: event.origin,
+      providerEventId: event.providerEventId,
       createdAt: event.createdAt,
       updatedAt: event.updatedAt,
     );

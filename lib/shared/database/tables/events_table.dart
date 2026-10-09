@@ -76,6 +76,13 @@ class EventsTable extends Table {
   // overwrite.
   TextColumn get origin => text().nullable()();
 
+  // The provider's own id for an imported event (TrainingPeaks `EventId`).
+  // The import matches on it before (name, date), so a renamed or re-dated
+  // imported event is not imported a second time (ticket 80 Q3, Lee
+  // 2026-10-09). Null for manual rows and rows imported before v25.
+  TextColumn get providerEventId =>
+      text().nullable().named('provider_event_id')();
+
   DateTimeColumn get createdAt => dateTime().named('created_at')();
   DateTimeColumn get updatedAt => dateTime().named('updated_at')();
 

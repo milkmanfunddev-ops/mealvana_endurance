@@ -14,6 +14,7 @@ import 'package:mealvana_endurance/features/coach_mode/data/coach_repository.dar
 import 'package:mealvana_endurance/features/events/application/events_service.dart';
 import 'package:mealvana_endurance/features/events/data/events_repository.dart';
 import 'package:mealvana_endurance/features/events/domain/event.dart';
+import 'package:mealvana_endurance/features/events/domain/event_origin.dart';
 import 'package:mealvana_endurance/shared/database/app_database.dart'
     hide Event;
 import 'package:mealvana_endurance/shared/domain/activity_type.dart';
@@ -42,11 +43,32 @@ Event _event({String? origin}) => Event(
 String? dedupeOrigin(Event existing, String provider) =>
     existing.origin == null ? provider : existing.origin;
 
-/// The edit-flip rule as implemented in EventsService.updateEvent.
-String? editOrigin(Event event) =>
-    (event.origin == 'training_peaks' || event.origin == 'final_surge')
-    ? 'manual'
-    : event.origin;
+/// TrainingPeaks' import as it stores the row (provider_event_import_service):
+/// `startTime` is `eventDate.toIso8601String()`, local midnight with no `Z`.
+Event _tpImport() => Event(
+  id: 'e-tp',
+  userId: 'u1',
+  eventType: ActivityType.triathlon,
+  eventName: 'IM NC 70.3',
+  eventDate: DateTime(2026, 10, 17),
+  startTime: DateTime(2026, 10, 17).toIso8601String(),
+  goalTimeMinutes: 330,
+  origin: 'training_peaks',
+  createdAt: DateTime(2026, 9, 1),
+  updatedAt: DateTime(2026, 9, 1),
+);
+
+/// What the edit form sends back for [stored]: it parses `startTime` and
+/// re-serialises it (`_startTime!.toIso8601String()`) and trims the name.
+Event _formRoundTrip(Event stored) => stored.copyWith(
+  eventName: stored.eventName!.trim(),
+  startTime: DateTime.parse(stored.startTime!).toIso8601String(),
+);
+
+/// The real rule (EventsService.updateEvent -> originAfterEdit) for an edit
+/// made through the form.
+String? _editOrigin(Event stored, Event Function(Event) edit) =>
+    originAfterEdit(before: stored, after: edit(_formRoundTrip(stored)));
 
 void main() {
   test('a legacy (null-origin) row flips to the provider on dedupe-match', () {
@@ -54,20 +76,95 @@ void main() {
     expect(dedupeOrigin(_event(), 'final_surge'), 'final_surge');
   });
 
-  test('a provider row edited locally flips to manual', () {
-    expect(editOrigin(_event(origin: 'training_peaks')), 'manual');
-    expect(editOrigin(_event(origin: 'final_surge')), 'manual');
-    // Manual and legacy rows keep their origin through an edit.
-    expect(editOrigin(_event(origin: 'manual')), 'manual');
-    expect(editOrigin(_event()), isNull);
+  test('ticket 80: an edit of fields the athlete owns keeps the provider '
+      'origin', () {
+    final tp = _tpImport();
+    expect(_editOrigin(tp, (e) => e), 'training_peaks',
+        reason: 'the form round trip alone changes nothing');
+    expect(
+      _editOrigin(tp, (e) => e.copyWith(location: 'Raleigh, North Carolina')),
+      'training_peaks',
+    );
+    expect(_editOrigin(tp, (e) => e.copyWith(bibNumber: '1234')),
+        'training_peaks');
+    expect(_editOrigin(tp, (e) => e.copyWith(eventSubtype: 'half_ironman')),
+        'training_peaks');
+  });
+
+  test('ticket 80: an edit of a field the sync owns flips to manual', () {
+    final tp = _tpImport();
+    expect(_editOrigin(tp, (e) => e.copyWith(eventName: 'IM NC')), 'manual');
+    expect(
+      _editOrigin(
+        tp,
+        (e) => e.copyWith(startTime: DateTime(2026, 10, 18).toIso8601String()),
+      ),
+      'manual',
+      reason: 'date',
+    );
+    expect(
+      _editOrigin(
+        tp,
+        (e) => e.copyWith(
+          startTime: DateTime(2026, 10, 17, 7).toIso8601String(),
+        ),
+      ),
+      'manual',
+      reason: 'start time on the same day',
+    );
+    expect(
+      _editOrigin(tp, (e) => e.copyWith(eventType: ActivityType.running)),
+      'manual',
+    );
+    expect(_editOrigin(tp, (e) => e.copyWith(goalTimeMinutes: 320)), 'manual');
+    // TrainingPeaks does not own goal pace.
+    expect(
+      _editOrigin(tp, (e) => e.copyWith(goalPaceMinutesPerMile: 9.0)),
+      'training_peaks',
+    );
+  });
+
+  test('ticket 80: Final Surge also owns goal pace and the linked activity',
+      () {
+    final fs = _tpImport().copyWith(
+      origin: 'final_surge',
+      activityId: 'act-fs',
+      goalPaceMinutesPerMile: 8.123,
+    );
+    expect(_editOrigin(fs, (e) => e.copyWith(location: 'Raleigh')),
+        'final_surge');
+    // The form stores pace as minutes + whole seconds / 60: 8.123 comes back
+    // as 8 min 7 s, the same pace to the second.
+    expect(
+      _editOrigin(fs, (e) => e.copyWith(goalPaceMinutesPerMile: 8 + 7 / 60)),
+      'final_surge',
+    );
+    expect(
+      _editOrigin(fs, (e) => e.copyWith(goalPaceMinutesPerMile: 8.5)),
+      'manual',
+    );
+    expect(_editOrigin(fs, (e) => e.copyWith(activityId: 'act-other')),
+        'manual');
+  });
+
+  test('manual and legacy rows keep their origin through any edit', () {
+    final manual = _tpImport().copyWith(origin: 'manual');
+    expect(_editOrigin(manual, (e) => e.copyWith(eventName: 'X')), 'manual');
+    final legacy = _event();
+    expect(
+      originAfterEdit(before: legacy, after: legacy.copyWith(eventName: 'X')),
+      isNull,
+    );
   });
 
   test('re-sync exemption: a manual-flipped row is never flipped back by a '
       'later dedupe-match', () {
-    // The athlete edited a TP-imported event -> manual.
-    final edited = _event(
-      origin: 'training_peaks',
-    ).copyWith(origin: editOrigin(_event(origin: 'training_peaks')));
+    // The athlete renamed a TP-imported event -> manual.
+    final stored = _tpImport();
+    final edited = stored.copyWith(
+      eventName: 'Renamed',
+      origin: _editOrigin(stored, (e) => e.copyWith(eventName: 'Renamed')),
+    );
     expect(edited.origin, 'manual');
     // The next TP import dedupe-matches the same event: origin stands.
     expect(dedupeOrigin(edited, 'training_peaks'), 'manual');

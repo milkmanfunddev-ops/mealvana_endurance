@@ -331,7 +331,10 @@ class AppDatabase extends _$AppDatabase {
   /// of making the doubled row its new 1 serving (testing-wave 112-012).
   /// Supabase app_config.current_schema_version must be bumped to 24 when
   /// the build carrying this ships.
-  int get schemaVersion => 24;
+  /// v25: events.provider_event_id (ticket 80 Q3, round develop-2026-10),
+  /// the provider's id for an imported event. app_config goes to 25 once
+  /// migration 20261009120000_events_provider_event_id.sql is applied.
+  int get schemaVersion => 25;
 
   /// Ensure sync tracking columns exist for user-authored tables.
   /// Uses ALTER TABLE IF NOT EXISTS which is supported in modern SQLite (3.35+).
@@ -698,6 +701,12 @@ class AppDatabase extends _$AppDatabase {
           // Fork catch-up (idempotent), as in v23: a mealplanning-lineage dev
           // device at its v23 never ran develop's v22 duration_source step.
           await addColumn('activities', 'duration_source', 'TEXT');
+        }
+
+        // v25: the provider's id for an imported event (ticket 80 Q3).
+        // Nullable; existing rows stay null and fall back to (name, date).
+        if (from < 25) {
+          await addColumn('events', 'provider_event_id', 'TEXT');
         }
       },
 

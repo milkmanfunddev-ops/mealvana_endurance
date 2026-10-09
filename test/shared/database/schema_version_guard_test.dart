@@ -123,15 +123,19 @@ void main() {
 /// 2026-10-07: v24 for `meal_logs.servings` (mealplanning ticket 135, same
 /// number; Supabase migration 20260926163500). Its step repeats the
 /// duration_source catch-up for a mealplanning-lineage device at v23.
-const _pinnedVersion = 24;
+///
+/// 2026-10-09: v25 for `events.provider_event_id` (develop-2026-10 ticket 80
+/// Q3; Supabase migration 20261009120000).
+const _pinnedVersion = 25;
 // 2026-10-06 branch split: develop is rebuilt from the release line without
 // the Vana tables, so develop's v22 fingerprint IS the release line's again.
 // (The 2026-10-01 re-pin to develop's Vana-inclusive value, bf2ff574cb0b…,
 // lives on the `mealplanning` branch, which still carries those tables.)
 // 2026-10-07: re-pinned for v23 (v22 was 242db9fc97e1…), then for v24
-// (v23 was 138f2619e791…).
+// (v23 was 138f2619e791…). 2026-10-09: re-pinned for v25 (v24 was
+// 6439b5387ef9…).
 const _pinnedFingerprint =
-    '6439b5387ef989a9f51f3ca56856140a34e92e9333bb95230632d5c16c1a0e90';
+    'e88bfb92fcf804f380f4ca265f767d1605579fbc04ace1ad9ae1ba6dc6db3e1e';
 
 /// The migration ladder in app_database.dart starts at `from < 7`; versions
 /// 1–6 predate it and were consolidated. Only guard from here upward.

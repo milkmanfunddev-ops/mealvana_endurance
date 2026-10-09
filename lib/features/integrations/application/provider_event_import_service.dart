@@ -38,9 +38,12 @@ class ProviderEventImportService {
 
   /// Save TrainingPeaks events. Returns the number of newly created rows.
   ///
-  /// Dedupe is by (user, name, date). D-2c: a matched LEGACY (null-origin)
-  /// row flips to 'training_peaks'; a 'manual' row is athlete-owned and is
-  /// exempt from re-sync overwrite, origin included.
+  /// Dedupe is first by the TrainingPeaks event id, then by (user, name,
+  /// date) (ticket 80 Q3: a renamed or re-dated import still matches on its
+  /// id). D-2c: a matched LEGACY (null-origin) row flips to
+  /// 'training_peaks'; a 'manual' row is athlete-owned and is exempt from
+  /// re-sync overwrite, origin included. A (name, date) match with no stored
+  /// id gets the id, so the next sync matches on it.
   Future<int> importTrainingPeaksEvents(
     String userId,
     List<TrainingPeaksEventResult> events,
@@ -49,6 +52,18 @@ class ProviderEventImportService {
     int skipped = 0;
 
     for (final event in events) {
+      final providerEventId = event.eventId.isEmpty ? null : event.eventId;
+      if (providerEventId != null) {
+        final byId = await _eventsRepository.findEventByProviderEventId(
+          userId: userId,
+          providerEventId: providerEventId,
+        );
+        if (byId != null) {
+          skipped++;
+          continue;
+        }
+      }
+
       final existing = await _eventsRepository.findExistingEvent(
         userId: userId,
         eventName: event.eventName,
@@ -56,10 +71,16 @@ class ProviderEventImportService {
       );
 
       if (existing != null) {
-        if (existing.origin == null) {
+        final flipOrigin = existing.origin == null;
+        final storeId =
+            providerEventId != null && existing.providerEventId == null;
+        if (flipOrigin || storeId) {
           await _eventsRepository.updateEvent(
             deviceId: userId,
-            event: existing.copyWith(origin: 'training_peaks'),
+            event: existing.copyWith(
+              origin: flipOrigin ? 'training_peaks' : null,
+              providerEventId: storeId ? providerEventId : null,
+            ),
           );
         }
         skipped++;
@@ -82,6 +103,7 @@ class ProviderEventImportService {
                 ? (event.goalTimeHours! * 60).round()
                 : null,
             origin: 'training_peaks', // D-2c
+            providerEventId: providerEventId, // ticket 80 Q3
             createdAt: now,
             updatedAt: now,
           ),

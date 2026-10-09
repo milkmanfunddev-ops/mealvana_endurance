@@ -181,18 +181,35 @@ class CarbLoadNudgeService {
   /// *fired and was ignored*. Null means bookkeeping (the idempotent clear
   /// inside armEvent), which emits nothing: a re-arm reports itself through
   /// fresh notif_scheduled rows, not a cancel/re-arm pair.
-  Future<void> disarmEvent(String eventId, {String? reason}) async {
+  ///
+  /// Returns whether the event had an armed record, so a caller can write
+  /// down a disarm that found nothing (CLAUDE.md D9; ticket 80).
+  Future<bool> disarmEvent(String eventId, {String? reason}) async {
     for (final id in CarbNudgeEngine.allNotificationIds(eventId)) {
       await _gateway.cancel(id);
     }
     final hadArmed =
         (_prefs.getStringList(_armedKey(eventId)) ?? const []).isNotEmpty;
     await _prefs.remove(_armedKey(eventId));
-    if (reason == null || !hadArmed) return;
+    if (reason == null || !hadArmed) return hadArmed;
     await _analytics.track(
       'notif_cancelled',
       properties: {..._ctaProps, 'event_id': eventId, 'reason': reason},
     );
+    return hadArmed;
+  }
+
+  /// Event ids that have an armed record but are not in [liveEventIds]:
+  /// their event was deleted somewhere this device's delete never ran (the
+  /// coach portal, another device, a sync removal).
+  List<String> _orphanedArmedEventIds(Set<String> liveEventIds) {
+    const prefix = 'carb_nudge_armed_';
+    return [
+      for (final key in _prefs.getKeys())
+        if (key.startsWith(prefix) &&
+            !liveEventIds.contains(key.substring(prefix.length)))
+          key.substring(prefix.length),
+    ];
   }
 
   /// The open/resume pass: keeps every event's armed state matching
@@ -204,6 +221,15 @@ class CarbLoadNudgeService {
   }) async {
     final now = _clock();
     final today = _dayStr(now);
+
+    // Ticket 80: an armed event that no longer exists still has three OS
+    // fires pending for a race that is gone. The list is the caller's whole
+    // event set (an empty list means no events), so every armed record
+    // outside it is an orphan.
+    final liveIds = {for (final event in events) event.id};
+    for (final orphanId in _orphanedArmedEventIds(liveIds)) {
+      await disarmEvent(orphanId, reason: 'event_deleted');
+    }
 
     for (final event in events) {
       if (eventIdsWithPlan.contains(event.id)) {
