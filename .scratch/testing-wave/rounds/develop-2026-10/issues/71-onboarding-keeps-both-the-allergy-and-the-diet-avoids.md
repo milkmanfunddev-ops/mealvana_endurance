@@ -1,6 +1,6 @@
 # 71: Onboarding keeps both the allergy and the diet avoids
 
-**Status:** ready (round develop-2026-10, fix wave 8)
+**Status:** in-progress (wave 8, 2026-10-09)
 **Labels:** fix, round:develop-2026-10, area:onboarding, area:food-preferences
 **Branch:** `develop-next` (fix-wave worktree)
 **Blocked by:** nothing in code; cut at the wave-6 close from Finding 58-001.

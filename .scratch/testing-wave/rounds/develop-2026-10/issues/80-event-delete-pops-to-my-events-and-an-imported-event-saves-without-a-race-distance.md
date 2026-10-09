@@ -1,6 +1,6 @@
 # 80: Event delete leaves Event Details and cancels its carb-load reminders; an imported event saves without a race distance
 
-**Status:** ready (round develop-2026-10, fix wave 8)
+**Status:** in-progress (wave 8, 2026-10-09)
 **Labels:** fix, round:develop-2026-10, area:events, area:notifications
 **Branch:** `develop-next` (fix-wave worktree)
 **Source:** Findings 69-002, 69-004 (and 69-005 steps 2–4, answered from code below); TRIAGE.md rulings of 2026-10-09.

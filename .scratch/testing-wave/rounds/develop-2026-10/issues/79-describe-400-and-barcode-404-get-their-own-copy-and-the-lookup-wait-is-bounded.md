@@ -1,6 +1,6 @@
 # 79: Describe's too-long 400 and the barcode 404 get their own words and count as expected; the lookup wait is bounded
 
-**Status:** ready (round develop-2026-10, fix wave 8)
+**Status:** in-progress (wave 8, 2026-10-09)
 **Labels:** fix, round:develop-2026-10, area:meal-logging, area:barcode
 **Branch:** `develop-next` (fix-wave worktree)
 **Source:** Findings 68-002, 68-007, 68-018; TRIAGE.md rulings of 2026-10-09.

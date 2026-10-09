@@ -1,6 +1,6 @@
 # 73: Sync-status writes are standardised across the five providers
 
-**Status:** ready (round develop-2026-10, fix wave 8)
+**Status:** in-progress (wave 8, 2026-10-09)
 **Labels:** fix, round:develop-2026-10, area:integrations
 **Branch:** `develop-next` (fix-wave worktree)
 **Blocked by:** nothing in code; cut at the wave-6 close from ticket 52's Q1+Q2.

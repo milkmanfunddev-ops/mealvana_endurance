@@ -1,6 +1,6 @@
 # 75: Meal photos are uploaded without EXIF; the benchmark fixtures lose their GPS
 
-**Status:** ready (round develop-2026-10, fix wave 8)
+**Status:** in-progress (wave 8, 2026-10-09)
 **Labels:** fix, round:develop-2026-10, area:meal-logging, area:privacy
 **Branch:** `develop-next` (fix-wave worktree)
 **Source:** Findings 68-004, 68-005; TRIAGE.md rulings of 2026-10-09

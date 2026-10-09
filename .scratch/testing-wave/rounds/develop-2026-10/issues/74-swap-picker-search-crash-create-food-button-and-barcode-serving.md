@@ -1,6 +1,6 @@
 # 74: Swap picker search crash, Create Food button that never enables, barcode values per 100 g shown as one serving
 
-**Status:** ready (round develop-2026-10, fix wave 8)
+**Status:** in-progress (wave 8, 2026-10-09)
 **Labels:** fix, round:develop-2026-10, area:meal-logging, area:nutrition-plan
 **Branch:** `develop-next` (fix-wave worktree)
 **Source:** Findings 68-006, 68-009, 68-011; TRIAGE.md rulings of 2026-10-09 ("one ticket, fix all three")

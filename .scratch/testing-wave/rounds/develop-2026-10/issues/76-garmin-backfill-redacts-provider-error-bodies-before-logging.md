@@ -1,6 +1,6 @@
 # 76: Garmin functions log a provider's status and error code, never its error body
 
-**Status:** ready (round develop-2026-10, fix wave 8)
+**Status:** in-progress (wave 8, 2026-10-09)
 **Labels:** fix, round:develop-2026-10, area:integrations, area:server, area:privacy
 **Branch:** `develop-next` (fix-wave worktree)
 **Source:** Finding 69-012; TRIAGE.md rulings of 2026-10-09

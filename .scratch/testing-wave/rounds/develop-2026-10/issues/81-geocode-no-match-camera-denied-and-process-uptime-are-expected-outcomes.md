@@ -1,6 +1,6 @@
 # 81: A place search with no match and a camera with access off are expected outcomes; process uptime counts from main()
 
-**Status:** ready (round develop-2026-10, fix wave 8)
+**Status:** in-progress (wave 8, 2026-10-09)
 **Labels:** fix, round:develop-2026-10, area:events, area:meal-logging, area:startup
 **Branch:** `develop-next` (fix-wave worktree)
 **Source:** Findings 69-003, 68-003, 67-005; TRIAGE.md rulings of 2026-10-09

@@ -1,6 +1,6 @@
 # 83: Onboarding's choice tiles are buttons that report selected, and the app-bar back arrow is named "Back" once
 
-**Status:** ready (round develop-2026-10, fix wave 8)
+**Status:** in-progress (wave 8, 2026-10-09)
 **Labels:** fix, round:develop-2026-10, area:onboarding, area:accessibility
 **Branch:** `develop-next` (fix-wave worktree)
 **Source:** Finding 67-001 (the retest of 48-006); TRIAGE.md rulings of 2026-10-09

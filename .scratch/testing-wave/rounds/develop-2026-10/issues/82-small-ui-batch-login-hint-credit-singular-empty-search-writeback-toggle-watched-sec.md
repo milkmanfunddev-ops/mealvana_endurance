@@ -1,6 +1,6 @@
 # 82: Small UI batch: Log In's own password hint, "1 Credit", empty Search says so, the write-back toggle follows the sheet, watched_sec is time played
 
-**Status:** ready (round develop-2026-10, fix wave 8)
+**Status:** in-progress (wave 8, 2026-10-09)
 **Labels:** fix, round:develop-2026-10, area:auth, area:ai-credits, area:meal-logging, area:integrations, area:education
 **Branch:** `develop-next` (fix-wave worktree)
 **Source:** Findings 67-004, 69-013, 68-010, 69-009, 69-007; TRIAGE.md rulings of 2026-10-09

@@ -1,6 +1,6 @@
 # 77: Reconnect is read from the server's integrations row on every device; a dead Garmin token is an expected failure
 
-**Status:** ready (round develop-2026-10, fix wave 8)
+**Status:** in-progress (wave 8, 2026-10-09)
 **Labels:** fix, round:develop-2026-10, area:integrations, area:sync
 **Branch:** `develop-next` (fix-wave worktree)
 **Source:** Findings 68-008, 69-010; TRIAGE.md rulings of 2026-10-09

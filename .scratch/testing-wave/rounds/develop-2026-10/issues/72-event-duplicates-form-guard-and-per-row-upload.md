@@ -1,6 +1,6 @@
 # 72: Event duplicates: the form refuses a same-name same-day event, and the events upload sends rows one at a time
 
-**Status:** ready (round develop-2026-10, fix wave 8)
+**Status:** in-progress (wave 8, 2026-10-09)
 **Labels:** fix, round:develop-2026-10, area:events, area:sync
 **Branch:** `develop-next` (fix-wave worktree)
 **Blocked by:** nothing in code; cut at the wave-6 close from ticket 65's Q3. Prod's `events_user_date_name_unique` index waits for this ticket to ship.

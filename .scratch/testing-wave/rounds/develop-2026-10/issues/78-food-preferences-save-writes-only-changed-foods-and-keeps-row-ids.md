@@ -1,6 +1,6 @@
 # 78: Food preferences: Save writes only the foods that changed, and existing rows keep their id and created_at
 
-**Status:** ready (round develop-2026-10, fix wave 8)
+**Status:** in-progress (wave 8, 2026-10-09)
 **Labels:** fix, round:develop-2026-10, area:settings, area:sync
 **Branch:** `develop-next` (fix-wave worktree)
 **Source:** Finding 68-001; TRIAGE.md rulings of 2026-10-09.
