@@ -41,7 +41,9 @@ import '../../domain/integration.dart';
 import '../../domain/integration_exceptions.dart';
 import '../../../onboarding/presentation/providers/onboarding_controller.dart';
 import '../../domain/runna_defaults.dart';
+import '../../../../shared/services/launch_trail.dart';
 import 'integrations_providers.dart';
+import 'reconnect_notice_controller.dart';
 
 part 'connect_training_controller.g.dart';
 
@@ -278,6 +280,17 @@ class ConnectTrainingController extends _$ConnectTrainingController {
   /// persisted cooldown timestamp below ([_shouldTriggerGarminBackfill]).
   bool _garminBackfillTriggeredThisSession = false;
 
+  /// Whether this launch has recorded the automatic backfill's skip for a
+  /// Garmin row that needs a reconnect (ticket 77, Finding 69-010, D9).
+  /// Static, since this auto-dispose controller rebuilds on every open of
+  /// Connected Apps: one breadcrumb and one LaunchTrail line per launch.
+  static bool _garminAutoBackfillSkipRecorded = false;
+
+  /// Returns [_garminAutoBackfillSkipRecorded] to a fresh launch, for tests.
+  @visibleForTesting
+  static void debugResetGarminAutoBackfillSkip() =>
+      _garminAutoBackfillSkipRecorded = false;
+
   /// SharedPreferences key prefix (suffixed with the user ID) recording the
   /// last time we auto-triggered a Garmin backfill. Survives controller
   /// rebuilds and hot restarts so the cooldown actually holds.
@@ -449,6 +462,50 @@ class ConnectTrainingController extends _$ConnectTrainingController {
     );
 
     final isGarminActive = garminIntegration?.isActive ?? false;
+    final garminNeedsReconnect = garminIntegration?.needsReconnect ?? false;
+
+    // Ticket 77 (Finding 68-008): the card follows the rows while the screen
+    // is open, so a pull that brings another device's `requires_reauth` (or
+    // a reconnect's `success`) flips Reconnect / Sync Now with no rebuild.
+    // Only the four flags are patched; the initial values below come from
+    // the same rows at build.
+    if (!ref.mounted) return const ConnectTrainingState();
+    if (!_isUsingTempUserId) {
+      ref.listen(integrationsNeedingReconnectProvider(_currentUserId!), (
+        _,
+        next,
+      ) {
+        final needing = next.value;
+        if (needing == null || !ref.mounted) return;
+        final current = state.value;
+        if (current == null) return;
+        state = AsyncData(
+          current.copyWith(
+            garminNeedsReauth: needing.contains('garmin'),
+            trainingPeaksNeedsReauth: needing.contains('training_peaks'),
+            finalSurgeNeedsReauth: needing.contains('final_surge'),
+            vdotNeedsReauth: needing.contains('vdot'),
+          ),
+        );
+      });
+    }
+
+    // Ticket 77 (Finding 69-010): no automatic backfill while the row says
+    // requires_reauth; only a reconnect fixes a dead token, and firing it
+    // on every open reported the 409 each time. The skip is written down
+    // once per launch (D9). The cooldown stamp is left alone, so the first
+    // open after a reconnect fires at once.
+    if (isGarminActive && garminNeedsReconnect && !_isUsingTempUserId) {
+      if (!_garminAutoBackfillSkipRecorded) {
+        _garminAutoBackfillSkipRecorded = true;
+        _report.breadcrumb(
+          'Garmin auto backfill skipped: integration requires_reauth',
+          category: 'garmin.expected',
+          data: {'reason': 'token_expired'},
+        );
+        LaunchTrail.add('garmin auto backfill skipped: requires_reauth');
+      }
+    }
 
     // Fire-and-forget a Garmin backfill on the first build of each app
     // session when Garmin is connected. Without this, weight/body fat
@@ -456,6 +513,7 @@ class ConnectTrainingController extends _$ConnectTrainingController {
     // device organically syncs — which may be hours away. We don't await
     // it because Garmin replies 202 and the data lands later via webhook.
     if (isGarminActive &&
+        !garminNeedsReconnect &&
         !_garminBackfillTriggeredThisSession &&
         !_isUsingTempUserId &&
         _shouldTriggerGarminBackfill(prefs)) {
@@ -488,7 +546,7 @@ class ConnectTrainingController extends _$ConnectTrainingController {
       trainingPeaksNeedsReauth:
           trainingPeaksIntegration?.needsReconnect ?? false,
       vdotNeedsReauth: vdotIntegration?.needsReconnect ?? false,
-      garminNeedsReauth: garminIntegration?.needsReconnect ?? false,
+      garminNeedsReauth: garminNeedsReconnect,
     );
   }
 
@@ -1240,7 +1298,7 @@ class ConnectTrainingController extends _$ConnectTrainingController {
           );
         }
         if (_isBackfillReauth(response.status, response.data)) {
-          await _markGarminNeedsReauth();
+          await _onGarminTokenExpired();
           return false;
         }
         if (_isTransientBackfillFailure(response.status, '${response.data}')) {
@@ -1286,15 +1344,7 @@ class ConnectTrainingController extends _$ConnectTrainingController {
       // failure, not a code fault, and retrying soon is pointless.
       if (e is FunctionException &&
           isGarminReauthRequired(e.status, e.details)) {
-        _report.degraded(
-          e,
-          stackTrace: st,
-          area: 'garmin',
-          message:
-              'garmin-backfill 409: Garmin token expired, athlete must '
-              'reconnect Garmin',
-        );
-        await _markGarminNeedsReauth();
+        await _onGarminTokenExpired();
         return false;
       }
       // Garmin's backfill API is frequently flaky: it returns 502 (Bad gateway)
@@ -1336,10 +1386,31 @@ class ConnectTrainingController extends _$ConnectTrainingController {
       isGarminReauthRequired(status, data) ||
       (status == 401 && data is Map && data['requires_reauth'] == true);
 
+  /// A dead Garmin token is an expected failure (ticket 77, Finding 69-010):
+  /// one breadcrumb plus one `expected_failure {area: garmin, reason:
+  /// token_expired}`, no Sentry event and no `error_reported`. Then the
+  /// local row is marked so the card and the notice show Reconnect.
+  Future<void> _onGarminTokenExpired() async {
+    // Unmounted (the athlete left the screen mid-call): still recorded, as a
+    // Sentry count instead of the analytics event.
+    final analytics = ref.mounted
+        ? ref.read(appExternalDepsProvider).analytics
+        : null;
+    await _report.noteExpected(
+      'garmin-backfill 409: Garmin token expired, athlete must reconnect '
+      'Garmin',
+      area: 'garmin',
+      reason: 'token_expired',
+      analytics: analytics,
+    );
+    await _markGarminNeedsReauth();
+  }
+
   /// Mirrors the server's `requires_reauth` on the local garmin row (the
   /// server stamped its own), so Connected Apps shows Reconnect now and the
-  /// Reconnect notice fires through the repository hook. Repeating it is
-  /// safe: the same status is written again and the notice is remembered.
+  /// Reconnect notice reads it from the row's Drift watch. Repeating it is
+  /// safe: the same status is written again and the derived notice is the
+  /// same.
   Future<void> _markGarminNeedsReauth() async {
     if (!ref.mounted) return;
     final userId = _currentUserId;

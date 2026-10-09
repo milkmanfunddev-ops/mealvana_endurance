@@ -23,7 +23,6 @@ class IntegrationsRepository with SyncableRepository {
     required AppDatabase database,
     required SupabaseClient supabase,
     Report? report,
-    this.onSyncStatusWritten,
   }) : _db = database,
        _supabase = supabase,
        _report = report;
@@ -32,12 +31,6 @@ class IntegrationsRepository with SyncableRepository {
   final SupabaseClient _supabase;
   final Report? _report;
   Report get _r => _report ?? SentryReport.global;
-
-  /// Called after [updateSyncStatus] writes a row, with the provider and the
-  /// status now stored. The Reconnect notice (ticket 138, Finding 118-007)
-  /// listens here so it learns of a move into `requires_reauth` no matter
-  /// which sync path found it.
-  final void Function(String provider, String status)? onSyncStatusWritten;
   static const _uuid = Uuid();
 
   // ==========================================================================
@@ -297,6 +290,17 @@ class IntegrationsRepository with SyncableRepository {
     return results.map(_toModel).toList();
   }
 
+  /// Every integration row for [userId], re-emitted whenever any of them
+  /// changes in Drift: this device's own status write, a pull's
+  /// [syncFromRemote], a reconnect or a disconnect. The Reconnect notice and
+  /// the Connected Apps card read `requires_reauth` from here (ticket 77,
+  /// Finding 68-008), so a row another device moved reaches this one too.
+  Stream<List<IntegrationModel>> watchIntegrationsForUser(String userId) {
+    final query = _db.select(_db.integrationsTable)
+      ..where((t) => t.userId.equals(userId));
+    return query.watch().map((rows) => rows.map(_toModel).toList());
+  }
+
   /// Get all active integrations for a user
   Future<List<IntegrationModel>> getActiveIntegrationsForUser(
     String userId,
@@ -414,9 +418,12 @@ class IntegrationsRepository with SyncableRepository {
   /// - Ticket 64 (develop-2026-10): a disconnected (inactive) or missing row
   ///   takes no status write. A sync or token refresh that finishes after
   ///   Disconnect would otherwise put `error`/`requires_reauth` back on the
-  ///   row disconnect just cleared, and push it. The skip writes nothing,
-  ///   fires no [onSyncStatusWritten] (no Reconnect notice for a provider
-  ///   the athlete disconnected) and pushes nothing; it is noted (D9).
+  ///   row disconnect just cleared, and push it. The skip writes nothing
+  ///   (so no Reconnect notice for a provider the athlete disconnected)
+  ///   and pushes nothing; it is noted (D9).
+  ///
+  /// Ticket 77: the Reconnect notice and the card watch the row itself
+  /// ([watchIntegrationsForUser]), so this write needs no hook to reach them.
   Future<void> updateSyncStatus(
     String userId,
     String provider, {
@@ -454,8 +461,6 @@ class IntegrationsRepository with SyncableRepository {
             updatedAt: Value(DateTime.now()),
           ),
         );
-
-    onSyncStatusWritten?.call(provider, storedStatus);
 
     await _pushUserProviderToSupabase(userId, provider);
   }

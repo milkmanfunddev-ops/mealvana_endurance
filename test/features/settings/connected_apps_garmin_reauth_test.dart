@@ -204,13 +204,14 @@ void main() {
       garminRefusesToken();
       final container = await pumpSettings(tester);
 
-      await tester.runAsync(() async {
-        final ok = await container
-            .read(connectTrainingControllerProvider.notifier)
-            .triggerGarminBackfill();
-        expect(ok, isFalse);
-      });
+      // In the test's own zone: since ticket 77 the card watches the row in
+      // Drift, and a Drift write from runAsync's real zone would wait on a
+      // watch query queued in the fake zone.
+      final ok = container
+          .read(connectTrainingControllerProvider.notifier)
+          .triggerGarminBackfill();
       await tester.pumpAndSettle();
+      expect(await ok, isFalse);
 
       final row = await repository.getIntegration(_profileId, 'garmin');
       expect(row!.lastSyncStatus, requiresReauthStatus);
@@ -222,6 +223,51 @@ void main() {
       expect(find.textContaining('reauth_required'), findsNothing);
     },
   );
+
+  testWidgets('the card follows the row under an open screen (ticket 77)', (
+    tester,
+  ) async {
+    // The automatic backfill ran moments ago, so opening fires nothing.
+    await prefs.setInt(
+      'garmin_backfill_last_at_$_profileId',
+      DateTime.now().millisecondsSinceEpoch,
+    );
+    await pumpSettings(tester);
+    expect(inCard(garmin, find.text('Sync Now')), findsOneWidget);
+
+    // A pull lands another device's requires_reauth while the screen is open.
+    // Written in the test's zone (see the test above).
+    final moved = repository.updateSyncStatus(
+      _profileId,
+      'garmin',
+      status: requiresReauthStatus,
+      error: reauthRequiredCode,
+    );
+    await tester.pumpAndSettle();
+    await moved;
+    await tester.pumpAndSettle();
+    expect(inCard(garmin, find.text(reconnect)), findsOneWidget);
+    expect(inCard(garmin, find.text('Sync Now')), findsNothing);
+
+    // Device A reconnects; the next pull brings success back.
+    final back = repository.updateSyncStatus(
+      _profileId,
+      'garmin',
+      status: 'success',
+    );
+    await tester.pumpAndSettle();
+    await back;
+    await tester.pumpAndSettle();
+    expect(inCard(garmin, find.text('Sync Now')), findsOneWidget);
+    expect(inCard(garmin, find.text(reconnect)), findsNothing);
+    verifyNever(
+      () => functions.invoke(
+        'garmin-backfill',
+        headers: any(named: 'headers'),
+        body: any(named: 'body'),
+      ),
+    );
+  });
 
   testWidgets('a stored requires_reauth survives a fresh build', (
     tester,
