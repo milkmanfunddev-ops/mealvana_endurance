@@ -97,6 +97,8 @@ dependencies:
 
   # Meal photo capture (meal logging)
   image_picker: ^1.2.2
+  # EXIF strip + orientation bake before meal photo upload (ticket 75)
+  image: ^4.5.4
   
   # Font Awesome Icons
   font_awesome_flutter: ^11.0.0

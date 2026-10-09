@@ -27,18 +27,22 @@ Consumers under test: `supabase/functions/analyze-meal-photo` (image path) and
 
 ## Image manifest
 
+The ten JPEGs were rewritten on 2026-10-09 (testing-wave ticket 75): EXIF Orientation
+applied to the pixels (all upright portrait), then saved at quality 80 with the ICC profile and
+**no EXIF** (no GPS, device or time tags). `originals/` still carry their metadata.
+
 | Benchmark id | Original | Format | Dimensions | Note |
 |---|---|---|---|---|
-| img-01 | IMG_4914.HEIC | HEIC→JPEG | 4032×3024 | camera photo |
-| img-02 | IMG_5343.HEIC | HEIC→JPEG | 4032×3024 | camera photo |
-| img-03 | IMG_5587.HEIC | HEIC→JPEG | 4032×3024 | camera photo |
-| img-04 | IMG_6329.heic | HEIC→JPEG | 4032×3024 | camera photo |
-| img-05 | IMG_6525.HEIC | HEIC→JPEG | 4032×3024 | camera photo |
-| img-06 | IMG_6620.HEIC | HEIC→JPEG | 4032×3024 | camera photo |
-| img-07 | IMG_7238.HEIC | HEIC→JPEG | 4032×3024 | camera photo |
-| img-08 | IMG_7600.HEIC | HEIC→JPEG | 4032×3024 | camera photo |
-| img-09 | IMG_8334.HEIC | HEIC→JPEG | 4032×3024 | camera photo |
-| img-10 | IMG_8530.HEIC | HEIC→JPEG | 4032×3024 | camera photo |
+| img-01 | IMG_4914.HEIC | HEIC→JPEG | 3024×4032 | camera photo |
+| img-02 | IMG_5343.HEIC | HEIC→JPEG | 3024×4032 | camera photo |
+| img-03 | IMG_5587.HEIC | HEIC→JPEG | 3024×4032 | camera photo |
+| img-04 | IMG_6329.heic | HEIC→JPEG | 3024×4032 | camera photo |
+| img-05 | IMG_6525.HEIC | HEIC→JPEG | 3024×4032 | camera photo |
+| img-06 | IMG_6620.HEIC | HEIC→JPEG | 3024×4032 | camera photo |
+| img-07 | IMG_7238.HEIC | HEIC→JPEG | 3024×4032 | camera photo |
+| img-08 | IMG_7600.HEIC | HEIC→JPEG | 3024×4032 | camera photo |
+| img-09 | IMG_8334.HEIC | HEIC→JPEG | 3024×4032 | camera photo |
+| img-10 | IMG_8530.HEIC | HEIC→JPEG | 3024×4032 | camera photo |
 | img-11 | IMG_8531.PNG | PNG (as-is) | 1284×2778 | **screenshot, not a camera photo — confirm keep/drop** |
 
 ## Flags for the human / harness
@@ -48,7 +52,7 @@ Consumers under test: `supabase/functions/analyze-meal-photo` (image path) and
   Confirm whether it belongs in the set — that decides whether this is a 10- or 11-image benchmark.
 - **img-11 PNG is 7.7 MB** — over the vision API's ~5 MB/image limit; it must be compressed
   before submission even in the "uncompressed" arm.
-- The full-res JPEGs (~1.6–2.8 MB) are under the API limit but are **source**, not the final
+- The full-res JPEGs (~0.9–1.6 MB) are under the API limit but are **source**, not the final
   arms — the harness owns resizing to compressed (~1000px) vs uncompressed.
 
 ## Status

@@ -18,6 +18,7 @@
 // all Drift operations (same style as test/features/formula_kit/data/).
 
 import 'dart:convert';
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:drift/drift.dart' show Value;
@@ -1840,8 +1841,14 @@ void main() {
           ),
         ).thenThrow(StorageException('Upload failed'));
 
+        // Real JPEG bytes: empty input now fails in the EXIF strip
+        // (ticket 75) before it ever reaches uploadBinary.
+        final photo = File(
+          'test/fixtures/meal_photos/gps_orientation6.jpg',
+        ).readAsBytesSync();
+
         await expectLater(
-          () => service.analyzePhotoBytes(Uint8List(0)),
+          () => service.analyzePhotoBytes(photo),
           throwsA(
             isA<MealAiException>().having(
               (e) => e.kind,
