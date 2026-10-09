@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:geolocator/geolocator.dart';
 import 'package:location_iq/location_iq.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'analytics/analytics_tracker.dart';
 import 'report/report.dart';
 import '../data/repositories/location_repository.dart';
 import '../../features/weather/domain/location.dart' as domain;
@@ -25,19 +26,25 @@ LocationService locationService(Ref ref) {
   return LocationService(
     report: ref.watch(reportProvider),
     locationRepository: ref.watch(locationRepositoryProvider),
+    analytics: ref.read(analyticsTrackerProvider),
   );
 }
 
 class LocationService {
   final Report _report;
+  final AnalyticsTracker? _analytics;
   final LocationRepository locationRepository;
   static const Duration _failureCooldown = Duration(minutes: 2);
   static DateTime? _lastFailureAt;
   static LocationFailureReason? _lastFailureReason;
   final String _instanceId = DateTime.now().microsecondsSinceEpoch.toString();
 
-  LocationService({required Report report, required this.locationRepository})
-    : _report = report;
+  LocationService({
+    required Report report,
+    required this.locationRepository,
+    AnalyticsTracker? analytics,
+  }) : _report = report,
+       _analytics = analytics;
 
   LocationFailureReason? getLastFailureReason() => _lastFailureReason;
 
@@ -270,17 +277,27 @@ class LocationService {
   ///
   /// Useful for address fields where users type and see suggestions.
   /// Returns a list of matching locations with addresses and coordinates.
+  /// An empty list means nothing matched (an expected outcome, noted and
+  /// counted); null means the search failed (a fault, already reported).
   ///
   /// Example:
   /// ```dart
   /// final results = await service.searchLocations('Boston Marathon');
   /// ```
-  Future<List<LocationIQAutocompleteResult>> searchLocations(
+  Future<List<LocationIQAutocompleteResult>?> searchLocations(
     String query, {
     int limit = 5,
   }) async {
     try {
       return await locationRepository.searchLocations(query, limit: limit);
+    } on LocationNoMatchException {
+      await _report.noteExpected(
+        'Location search: no match',
+        area: 'location',
+        reason: 'no_match',
+        analytics: _analytics,
+      );
+      return const [];
     } catch (e, stackTrace) {
       _report.fault(
         e,
@@ -288,7 +305,7 @@ class LocationService {
         area: 'location',
         message: 'Error searching locations',
       );
-      return [];
+      return null;
     }
   }
 

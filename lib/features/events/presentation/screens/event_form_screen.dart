@@ -83,6 +83,10 @@ class _EventFormScreenState extends ConsumerState<EventFormScreen> {
   final _locationFocusNode = FocusNode();
   List<LocationIQAutocompleteResult> _locationSearchResults = [];
   bool _isSearchingLocation = false;
+
+  /// LocationIQ found no place for the last search (ticket 81). The typed
+  /// text is still saved as the location.
+  bool _locationNoMatch = false;
   bool _isSelectingLocation = false;
   Timer? _locationSearchDebounce;
 
@@ -295,6 +299,7 @@ class _EventFormScreenState extends ConsumerState<EventFormScreen> {
       // Clear any stale location search results/state from before selection
       _locationSearchResults = [];
       _isSearchingLocation = false;
+      _locationNoMatch = false;
 
       // Auto-fill date and time if available
       if (event.eventDate != null) {
@@ -372,6 +377,7 @@ class _EventFormScreenState extends ConsumerState<EventFormScreen> {
       setState(() {
         _locationSearchResults = [];
         _isSearchingLocation = false;
+        _locationNoMatch = false;
       });
       _locationSearchDebounce?.cancel();
     }
@@ -391,12 +397,14 @@ class _EventFormScreenState extends ConsumerState<EventFormScreen> {
       setState(() {
         _locationSearchResults = [];
         _isSearchingLocation = false;
+        _locationNoMatch = false;
       });
       return;
     }
 
     setState(() {
       _isSearchingLocation = true;
+      _locationNoMatch = false;
     });
 
     _locationSearchDebounce = Timer(const Duration(milliseconds: 500), () {
@@ -412,8 +420,11 @@ class _EventFormScreenState extends ConsumerState<EventFormScreen> {
 
       if (mounted) {
         setState(() {
-          _locationSearchResults = results;
+          // [] is "nothing matched"; null is a failed search, already
+          // reported by the service, which shows no line.
+          _locationSearchResults = results ?? [];
           _isSearchingLocation = false;
+          _locationNoMatch = results != null && results.isEmpty;
         });
       }
     } catch (e, stackTrace) {
@@ -429,6 +440,7 @@ class _EventFormScreenState extends ConsumerState<EventFormScreen> {
         setState(() {
           _locationSearchResults = [];
           _isSearchingLocation = false;
+          _locationNoMatch = false;
         });
       }
     }
@@ -445,6 +457,7 @@ class _EventFormScreenState extends ConsumerState<EventFormScreen> {
       _locationController.text = formattedLocation;
       _locationSearchResults = [];
       _isSearchingLocation = false;
+      _locationNoMatch = false;
     });
 
     _locationFocusNode.unfocus();
@@ -725,6 +738,7 @@ class _EventFormScreenState extends ConsumerState<EventFormScreen> {
                 _isSearchingEvents = false;
                 _locationSearchResults = [];
                 _isSearchingLocation = false;
+                _locationNoMatch = false;
               });
               _eventSearchDebounce?.cancel();
               _locationSearchDebounce?.cancel();
@@ -770,8 +784,9 @@ class _EventFormScreenState extends ConsumerState<EventFormScreen> {
                       EventSubtypeDropdown(
                         sportCategory: _selectedSportType,
                         selectedSubtype: _selectedEventSubtype,
-                        isRequired: !(_storedWithoutDistance &&
-                            _selectedSportType == widget.event?.eventType),
+                        isRequired:
+                            !(_storedWithoutDistance &&
+                                _selectedSportType == widget.event?.eventType),
                         onSubtypeChanged: (subtype) {
                           setState(() {
                             _selectedEventSubtype = subtype;
@@ -1008,6 +1023,27 @@ class _EventFormScreenState extends ConsumerState<EventFormScreen> {
                             ),
                             textCapitalization: TextCapitalization.words,
                           ),
+                          if (_locationNoMatch && !_isSearchingLocation)
+                            Padding(
+                              key: const ValueKey(
+                                'event_form.location_no_match',
+                              ),
+                              padding: const EdgeInsets.only(
+                                top: AppSpacing.xxs,
+                              ),
+                              child: Text(
+                                ref
+                                    .read(contentServiceProvider)
+                                    .getValue(
+                                      ContentKeys.eventFormLocationNoMatch,
+                                    ),
+                                style: AppTextStyles.bodySmall.copyWith(
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurfaceVariant,
+                                ),
+                              ),
+                            ),
                           // Location search results dropdown
                           if (_locationSearchResults.isNotEmpty)
                             GestureDetector(

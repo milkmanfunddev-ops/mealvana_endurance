@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show PlatformException;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
@@ -1991,6 +1992,9 @@ class _AiTabState extends ConsumerState<_AiTab> {
         ? 'photo_camera'
         : 'photo_gallery';
     final picker = ref.read(imagePickerProvider);
+    // Read before the first await, like the tracker below (ticket 81).
+    final report = ref.read(reportProvider);
+    final analytics = ref.read(appExternalDepsProvider).analytics;
     XFile? file;
     try {
       // 1000px keeps enough detail for food recognition while trimming ~30%
@@ -2001,16 +2005,37 @@ class _AiTabState extends ConsumerState<_AiTab> {
         maxWidth: 1000,
       );
     } catch (e, st) {
-      // Permission denied or no camera: the app lives with it.
-      ref
-          .read(reportProvider)
-          .degraded(
-            e,
-            stackTrace: st,
-            area: 'meal_logging',
-            message: 'log meal: image picker failed',
-            extra: {'method': method},
+      // Camera access off is the athlete's own setting, not a failure: a
+      // note and one expected_failure count, and a line that says where to
+      // turn it on (ticket 81, 68-003). The gallery path is unchanged.
+      if (source == ImageSource.camera &&
+          e is PlatformException &&
+          e.code == 'camera_access_denied') {
+        await report.noteExpected(
+          'log meal: camera access off',
+          area: 'meal_logging',
+          reason: 'camera_permission_denied',
+          analytics: analytics,
+          data: {'method': method},
+        );
+        if (mounted) {
+          MealvanaSnackbar.showInfo(
+            context,
+            ref
+                .read(contentServiceProvider)
+                .getValue(ContentKeys.mealLogDescribeCameraAccessOff),
           );
+        }
+        return;
+      }
+      // Permission denied or no camera: the app lives with it.
+      report.degraded(
+        e,
+        stackTrace: st,
+        area: 'meal_logging',
+        message: 'log meal: image picker failed',
+        extra: {'method': method},
+      );
       if (mounted) {
         MealvanaSnackbar.showError(
           context,
@@ -2022,10 +2047,7 @@ class _AiTabState extends ConsumerState<_AiTab> {
     if (file == null || !mounted) return;
     // Only a photo that came back counts: a cancelled or failed pick sends
     // nothing (ticket 60, 49-006).
-    ref
-        .read(appExternalDepsProvider)
-        .analytics
-        .track('meal_ai_photo_attached', properties: {'method': method});
+    analytics.track('meal_ai_photo_attached', properties: {'method': method});
     setState(() {
       _photo = file;
       _photoSource = source;

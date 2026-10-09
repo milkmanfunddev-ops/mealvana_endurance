@@ -1,5 +1,10 @@
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:location_iq/location_iq.dart';
+// The package exports no error types; a type test survives obfuscation
+// where a match on runtimeType text would not.
+// ignore: implementation_imports
+import 'package:location_iq/src/core/error/exceptions.dart'
+    show NotFoundException;
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'location_repository.g.dart';
@@ -52,6 +57,9 @@ class LocationRepository {
         limit: limit,
       );
       return results;
+    } on NotFoundException {
+      // LocationIQ answers 404 "Unable to geocode" when nothing matches.
+      throw LocationNoMatchException(query);
     } catch (e) {
       throw Exception('Failed to search locations: $e');
     }
@@ -86,4 +94,15 @@ class LocationRepository {
       throw Exception('Failed to reverse geocode coordinates: $e');
     }
   }
+}
+
+/// LocationIQ found no place for [query] (its 404 "Unable to geocode").
+/// An expected outcome, not a failure (develop-2026-10 ticket 81).
+class LocationNoMatchException implements Exception {
+  const LocationNoMatchException(this.query);
+
+  final String query;
+
+  @override
+  String toString() => 'LocationNoMatchException: no place matches "$query"';
 }

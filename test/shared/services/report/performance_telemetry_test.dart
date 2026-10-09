@@ -146,6 +146,43 @@ void main() {
     });
   });
 
+  // Ticket 81, 67-005: `process_uptime_ms` 6132 for a startup.total of
+  // 11860 ms. The clock started at the class's first use, after
+  // startup.total's own stopwatch. It now starts at `markProcessStart()`,
+  // the first statement of `bootstrap()`.
+  group('process uptime counts from markProcessStart (67-005)', () {
+    Future<int> uptimeOfSlowStep(String operation) async {
+      final recording = RecordingReport();
+      PerformanceTelemetry.reportOverride = recording;
+      PerformanceTelemetry.recordDuration(
+        operation,
+        const Duration(seconds: 11),
+      );
+      await settle();
+      expect(recording.degradeds, hasLength(1));
+      return recording.degradeds.single.extra!['process_uptime_ms'] as int;
+    }
+
+    test('uptime includes the time since the mark', () async {
+      PerformanceTelemetry.markProcessStart();
+      await Future<void>.delayed(const Duration(milliseconds: 60));
+
+      expect(await uptimeOfSlowStep('startup.total'), greaterThanOrEqualTo(60));
+    });
+
+    test('a second mark keeps the first', () async {
+      PerformanceTelemetry.markProcessStart();
+      await Future<void>.delayed(const Duration(milliseconds: 60));
+      PerformanceTelemetry.markProcessStart();
+
+      expect(await uptimeOfSlowStep('startup.total'), greaterThanOrEqualTo(60));
+    });
+
+    test('with no mark the payload still carries an uptime', () async {
+      expect(await uptimeOfSlowStep('startup.total'), greaterThanOrEqualTo(0));
+    });
+  });
+
   group('time spent on the athlete is not the app being slow (08-009)', () {
     Future<Breadcrumb> lastPerformanceCrumb() async {
       late List<Breadcrumb> crumbs;
