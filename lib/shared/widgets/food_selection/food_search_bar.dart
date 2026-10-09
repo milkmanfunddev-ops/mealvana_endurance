@@ -45,6 +45,19 @@ class FoodSearchBar extends ConsumerWidget {
   /// target the input directly (e.g. ValueKey('add_food.search_field')).
   final Key? fieldKey;
 
+  /// Search tap and keyboard submit. An empty query says what to do instead
+  /// of doing nothing (testing-wave 68-010); `onSearch` is not called.
+  void _search(BuildContext context, ContentService content) {
+    if (controller.text.trim().isEmpty) {
+      MealvanaSnackbar.showInfo(
+        context,
+        content.getValue(ContentKeys.foodSearchEmptyQuery),
+      );
+      return;
+    }
+    onSearch(controller.text);
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final content = ref.watch(contentServiceProvider);
@@ -68,7 +81,7 @@ class FoodSearchBar extends ConsumerWidget {
                 }
               }
             },
-            onSubmitted: (_) => onSearch(controller.text),
+            onSubmitted: (_) => _search(context, content),
             style: AppTextStyles.inputText.copyWith(
               color: Theme.of(context).colorScheme.onSurface,
             ),
@@ -110,7 +123,7 @@ class FoodSearchBar extends ConsumerWidget {
                         defaultValue: 'Search',
                       ),
                       child: GestureDetector(
-                        onTap: () => onSearch(controller.text),
+                        onTap: () => _search(context, content),
                         child: Container(
                           width: 36,
                           height: 36,

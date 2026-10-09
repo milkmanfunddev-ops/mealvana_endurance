@@ -285,8 +285,10 @@ class _EmailLoginScreenState extends ConsumerState<EmailLoginScreen> {
                         'auth.email_signup.password_label',
                         defaultValue: 'Password',
                       ),
+                      // Log In's own hint; Sign Up's states the 8-character
+                      // rule (testing-wave 67-004).
                       hintText: contentService.getValue(
-                        'auth.email_signup.password_hint',
+                        ContentKeys.loginPasswordHint,
                         defaultValue: 'Enter your password',
                       ),
                       prefixIcon: Icon(
