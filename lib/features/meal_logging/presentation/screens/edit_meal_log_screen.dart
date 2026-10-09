@@ -1,3 +1,5 @@
+import '../../../content/domain/content_keys.dart';
+import '../../../content/application/content_service.dart';
 import 'dart:convert';
 import 'dart:io';
 
@@ -300,6 +302,15 @@ class _EditMealLogScreenState extends ConsumerState<EditMealLogScreen> {
       if (!mounted) return;
       if (e.kind == MealAiFailureKind.notFood) {
         MealvanaSnackbar.showWarning(context, e.userMessage);
+      } else if (e.kind == MealAiFailureKind.photoUnreadable) {
+        // Ticket 75 (wave-8 review): the sanitizer could not decode the
+        // photo; its line comes from content, `userMessage` is empty.
+        MealvanaSnackbar.showError(
+          context,
+          ref
+              .read(contentServiceProvider)
+              .getValue(ContentKeys.mealLogDescribePhotoUnreadable),
+        );
       } else {
         MealvanaSnackbar.showError(context, e.userMessage);
       }
