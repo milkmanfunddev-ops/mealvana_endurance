@@ -14,11 +14,17 @@ class EventSubtypeDropdown extends StatelessWidget {
     required this.sportCategory,
     required this.selectedSubtype,
     required this.onSubtypeChanged,
+    this.isRequired = true,
   });
 
   final ActivityType sportCategory;
   final EventSubtype? selectedSubtype;
   final ValueChanged<EventSubtype> onSubtypeChanged;
+
+  /// Whether an empty distance fails validation. False only for an event
+  /// that was stored without one (a provider import never sets it) and is
+  /// still on its stored sport (ticket 80, Finding 69-004).
+  final bool isRequired;
 
   @override
   Widget build(BuildContext context) {
@@ -100,7 +106,7 @@ class EventSubtypeDropdown extends StatelessWidget {
             }
           },
           validator: (value) {
-            if (value == null) {
+            if (value == null && isRequired) {
               return 'Please select a race distance';
             }
             return null;

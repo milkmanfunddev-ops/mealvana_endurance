@@ -257,4 +257,60 @@ void main() {
     }
     expect(gateway.shows, hasLength(1));
   });
+
+  test('ticket 80: the sweep disarms an armed record whose event no longer '
+      'exists, and leaves a live one alone', () async {
+    const goneId = 'evt-deleted-elsewhere';
+    final gone = (id: goneId, name: 'Deleted Race', raceDate: race);
+    final analytics = _ReasonAnalytics();
+    final s = CarbLoadNudgeService(
+      gateway: gateway,
+      prefs: prefs,
+      analytics: analytics,
+      clock: () => DateTime(2026, 9, 20, 12), // before the window
+    );
+    await s.armEvent(event);
+    await s.armEvent(gone);
+    gateway.calls.clear();
+
+    // The coach portal (or another device) deleted `gone`: the sweep's
+    // event list no longer carries it.
+    await s.evaluateOnOpen(events: [event], eventIdsWithPlan: {});
+
+    expect(
+      gateway.cancels.map((c) => c.id).toSet(),
+      containsAll(CarbNudgeEngine.allNotificationIds(goneId)),
+    );
+    expect(prefs.getStringList('carb_nudge_armed_$goneId'), isNull);
+    expect(analytics.cancelReasons[goneId], ['event_deleted']);
+    // The live event is re-armed as before, never cancelled with a reason.
+    expect(prefs.getStringList('carb_nudge_armed_$eventId'), isNotEmpty);
+    expect(analytics.cancelReasons[eventId], isNull);
+  });
+
+  test('ticket 80: an empty event list disarms every armed record', () async {
+    final s = await service(DateTime(2026, 9, 20, 12));
+    await s.armEvent(event);
+    gateway.calls.clear();
+
+    await s.evaluateOnOpen(events: const [], eventIdsWithPlan: {});
+
+    expect(
+      gateway.cancels.map((c) => c.id).toSet(),
+      CarbNudgeEngine.allNotificationIds(eventId).toSet(),
+    );
+    expect(prefs.getStringList('carb_nudge_armed_$eventId'), isNull);
+  });
+}
+
+class _ReasonAnalytics extends Fake implements AnalyticsTracker {
+  final cancelReasons = <String, List<String>>{};
+
+  @override
+  Future<void> track(String eventName, {Map<String, dynamic>? properties}) async {
+    if (eventName != 'notif_cancelled') return;
+    (cancelReasons[properties!['event_id'] as String] ??= []).add(
+      properties['reason'] as String,
+    );
+  }
 }

@@ -48,6 +48,7 @@ class Event {
     this.needsUpload,
     this.localUpdatedAt,
     this.origin,
+    this.providerEventId,
   });
 
   final String id;
@@ -103,6 +104,12 @@ class Event {
   /// local edit of a provider row flips it 'manual' and exempts it from
   /// re-sync overwrite.
   final String? origin;
+
+  /// The provider's own id for an imported event (TrainingPeaks `EventId`).
+  /// The import matches on it before (name, date), so a renamed or re-dated
+  /// imported event is never imported twice (ticket 80 Q3). Null for manual
+  /// rows and for rows imported before it was stored.
+  final String? providerEventId;
 
   /// The calendar `eventDate` is ALWAYS the date written in `startTime`
   /// (ticket 65, round develop-2026-10): `startTime` is the source and
@@ -185,6 +192,7 @@ class Event {
     bool? needsUpload,
     DateTime? localUpdatedAt,
     String? origin,
+    String? providerEventId,
   }) {
     return Event(
       id: id ?? this.id,
@@ -218,6 +226,7 @@ class Event {
       needsUpload: needsUpload ?? this.needsUpload,
       localUpdatedAt: localUpdatedAt ?? this.localUpdatedAt,
       origin: origin ?? this.origin,
+      providerEventId: providerEventId ?? this.providerEventId,
     );
   }
 

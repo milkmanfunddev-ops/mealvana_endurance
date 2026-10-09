@@ -67,6 +67,11 @@ class _EventFormScreenState extends ConsumerState<EventFormScreen> {
   EventSubtype? _selectedEventSubtype;
   bool _isSaving = false;
 
+  /// The edited event was stored with no race distance (a TrainingPeaks or
+  /// Final Surge import never sets one). While the sport stays the stored
+  /// one, an empty distance saves as empty (ticket 80, Finding 69-004).
+  bool _storedWithoutDistance = false;
+
   // Event name search state (Public Events)
   final _eventNameFocusNode = FocusNode();
   List<PublicEvent> _eventSearchResults = [];
@@ -139,6 +144,7 @@ class _EventFormScreenState extends ConsumerState<EventFormScreen> {
           ? DateTime.parse(widget.event!.startTime!)
           : null;
       _selectedSportType = widget.event!.eventType;
+      _storedWithoutDistance = widget.event!.eventSubtype == null;
       // Convert string to EventSubtype
       if (widget.event!.eventSubtype != null) {
         final subtypes = EventSubtype.getSubtypesForEventType(
@@ -764,6 +770,8 @@ class _EventFormScreenState extends ConsumerState<EventFormScreen> {
                       EventSubtypeDropdown(
                         sportCategory: _selectedSportType,
                         selectedSubtype: _selectedEventSubtype,
+                        isRequired: !(_storedWithoutDistance &&
+                            _selectedSportType == widget.event?.eventType),
                         onSubtypeChanged: (subtype) {
                           setState(() {
                             _selectedEventSubtype = subtype;

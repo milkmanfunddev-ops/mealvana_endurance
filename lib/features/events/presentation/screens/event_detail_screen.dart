@@ -311,8 +311,16 @@ class EventDetailScreen extends ConsumerWidget {
           // Show success message
           MealvanaSnackbar.showSuccess(context, 'Event deleted successfully');
 
-          // Navigate back to events list
-          context.go('/main');
+          // Leave the deleted event's details (ticket 80, Finding 69-002):
+          // back to the screen that opened it, My Events when nothing is
+          // beneath (a deep link or web URL). `go('/main')` did nothing over
+          // the pageless route most entries push.
+          final navigator = Navigator.of(context);
+          if (navigator.canPop()) {
+            navigator.pop();
+          } else {
+            GoRouter.maybeOf(context)?.go('/events');
+          }
         }
       } catch (e, stackTrace) {
         ref

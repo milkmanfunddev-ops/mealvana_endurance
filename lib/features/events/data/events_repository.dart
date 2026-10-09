@@ -466,9 +466,6 @@ class EventsRepository with SyncableRepository {
         await _uploadEventDeletion(userIdForRemoteDelete, eventId);
       }
 
-      // Get the event first to check for associated activity
-      final event = await getEventById(deviceId, eventId);
-
       // CASCADE: Delete carb loading plan first (Drift doesn't enforce FK constraints)
       // This must happen BEFORE deleting the event so we can find the plan by eventId
       await _carbLoadingRepository.deleteCarbLoadingPlanByEventId(
@@ -476,17 +473,10 @@ class EventsRepository with SyncableRepository {
         eventId: eventId,
       );
 
-      // CASCADE: Delete associated activity if exists
-      if (event != null && event.activityId != null) {
-        final activityId = event.activityId!;
-        await (_database.delete(
-          _database.activitiesTable,
-        )..where((tbl) => tbl.id.equals(activityId))).go();
-        _report.info(
-          'CASCADE deleted activity $activityId for event $eventId',
-          area: 'events',
-        );
-      }
+      // The linked activity is NOT deleted (ticket 80 Q2, Lee 2026-10-09):
+      // the server keeps it (the FK runs activities -> events, not back), so
+      // a local-only delete just came back on the next activities pull. A
+      // linked activity is usually the provider's workout; it stays.
 
       // OFFLINE-FIRST: Hard delete event from Drift IMMEDIATELY
       await (_database.delete(
@@ -644,6 +634,36 @@ class EventsRepository with SyncableRepository {
     }
   }
 
+  /// The user's event stored with the provider's own id [providerEventId],
+  /// or null (ticket 80 Q3). The import's first match:
+  /// unlike (name, date) it still finds an imported event after the athlete
+  /// renamed or re-dated it.
+  Future<domain.Event?> findEventByProviderEventId({
+    required String userId,
+    required String providerEventId,
+  }) async {
+    try {
+      final query = _database.select(_database.eventsTable)
+        ..where(
+          (tbl) =>
+              tbl.userId.lower().equals(userId.toLowerCase()) &
+              tbl.providerEventId.equals(providerEventId),
+        )
+        ..limit(1);
+      final event = await query.getSingleOrNull();
+      return event != null ? _mapToEventDomain(event) : null;
+    } catch (e, stackTrace) {
+      _report.fault(
+        e,
+        stackTrace: stackTrace,
+        area: 'events',
+        extra: {'userId': userId, 'providerEventId': providerEventId},
+        message: 'Failed to find event by provider event id',
+      );
+      return null; // fall back to the (name, date) match
+    }
+  }
+
   /// The owner's other local event with the same trimmed name on the same
   /// calendar day, or null (develop-2026-10 ticket 72). The form guard's key:
   /// the server's `events_user_date_name_unique (user_id, event_date,
@@ -714,6 +734,7 @@ class EventsRepository with SyncableRepository {
         needsUpload: Value(event.needsUpload ?? false),
         localUpdatedAt: Value(event.localUpdatedAt ?? DateTime.now()),
         origin: Value(event.origin),
+        providerEventId: Value(event.providerEventId),
         // Metadata
         createdAt: event.createdAt,
         updatedAt: event.updatedAt,
@@ -762,6 +783,7 @@ class EventsRepository with SyncableRepository {
         needsUpload: Value(event.needsUpload ?? false),
         localUpdatedAt: Value(event.localUpdatedAt ?? DateTime.now()),
         origin: Value(event.origin),
+        providerEventId: Value(event.providerEventId),
         // Metadata
         createdAt: Value(event.createdAt),
         updatedAt: Value(event.updatedAt),
@@ -874,6 +896,10 @@ class EventsRepository with SyncableRepository {
       'created_at': event.createdAt.toIso8601String(),
       'updated_at': DateTime.now().toIso8601String(),
       'origin': event.origin,
+      // Sent only when set: an absent key leaves the server value alone on
+      // upsert, and a server without the v25 column still takes manual rows.
+      if (event.providerEventId != null)
+        'provider_event_id': event.providerEventId,
       // 'needs_upload': false, // Local-only field, do not send to Supabase
       // 'local_updated_at': DateTime.now().toIso8601String(), // Local-only field
     };
@@ -916,6 +942,7 @@ class EventsRepository with SyncableRepository {
       createdAt: event.createdAt,
       updatedAt: event.updatedAt,
       origin: event.origin,
+      providerEventId: event.providerEventId,
     );
   }
 
@@ -965,6 +992,10 @@ class EventsRepository with SyncableRepository {
       ageGroupPlacement: Value(json['age_group_placement'] as int?),
       needsUpload: const Value(false), // Coming from server, so not dirty
       origin: Value(json['origin'] as String?),
+      // Absent (a server before the v25 column) leaves the local value alone.
+      providerEventId: json.containsKey('provider_event_id')
+          ? Value(json['provider_event_id'] as String?)
+          : const Value.absent(),
       localUpdatedAt: Value(DateTime.now()),
       createdAt: DateTime.parse(json['created_at'] as String),
       updatedAt: DateTime.parse(json['updated_at'] as String),

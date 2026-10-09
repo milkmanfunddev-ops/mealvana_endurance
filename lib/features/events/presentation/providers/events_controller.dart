@@ -3,6 +3,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../application/events_service.dart';
 import '../../../activities/application/activities_service.dart';
 import '../../../activities/presentation/providers/activities_controller.dart';
+import '../../../carb_loading/application/carb_load_nudge_service.dart';
 import '../../../carb_loading/presentation/providers/carb_loading_controller.dart';
 import '../../../carb_loading/presentation/providers/carb_nudge_coordinator.dart';
 import '../../../macro_dashboard/presentation/providers/carb_dashboard_providers.dart';
@@ -254,11 +255,18 @@ class EventsController extends _$EventsController {
     // CRITICAL: Cache ALL ref-dependent values BEFORE any async operations
     final service = ref.read(eventsServiceProvider);
     final report = ref.read(reportProvider);
+    final nudges = _readCarbNudges(report, eventId);
 
     try {
       final deviceIdValue = await ref.read(userIdProvider.future);
 
       await service.deleteEvent(deviceId: deviceIdValue, eventId: eventId);
+
+      // Ticket 80 (Finding 69-005): the event's carb-load reminders go with
+      // it, or the OS fires them for a race that no longer exists. A failed
+      // cancel does not fail the delete: the row is already gone, and the
+      // next open/resume sweep disarms the orphaned record.
+      await _disarmCarbNudges(nudges, report, eventId);
 
       // Check if provider is still mounted before accessing ref
       if (!ref.mounted) return;
@@ -277,7 +285,8 @@ class EventsController extends _$EventsController {
       ref.invalidate(carbLoadingDaysForPlanProvider);
       ref.invalidate(carbDashboardForDateProvider);
 
-      // Invalidate activities providers since event deletion cascade-deletes associated activity
+      // The linked activity is kept (ticket 80 Q2, Lee 2026-10-09), but the
+      // activity surfaces render the event link, so they refresh too.
       ref.invalidate(activitiesControllerProvider);
       ref.invalidate(allActivitiesProvider);
     } catch (e) {
@@ -285,6 +294,55 @@ class EventsController extends _$EventsController {
       rethrow;
     } finally {
       keepAliveLink.close();
+    }
+  }
+
+  /// The nudge service, or null when it cannot be built (its preferences
+  /// are missing). A delete must never fail on reminder plumbing.
+  CarbLoadNudgeService? _readCarbNudges(Report report, String eventId) {
+    try {
+      return ref.read(carbLoadNudgeServiceProvider);
+    } catch (e, stackTrace) {
+      report.degraded(
+        e,
+        stackTrace: stackTrace,
+        area: 'carb_loading',
+        message: 'Carb nudge service unavailable for event delete',
+        extra: {'eventId': eventId},
+      );
+      return null;
+    }
+  }
+
+  /// Cancels every carb-load reminder for a deleted event. Never throws:
+  /// a failure is written down as degraded, and a delete that found nothing
+  /// armed leaves a note (CLAUDE.md D9).
+  Future<void> _disarmCarbNudges(
+    CarbLoadNudgeService? nudges,
+    Report report,
+    String eventId,
+  ) async {
+    if (nudges == null) return; // written down by _readCarbNudges
+    try {
+      final hadArmed = await nudges.disarmEvent(
+        eventId,
+        reason: 'event_deleted',
+      );
+      if (!hadArmed) {
+        report.note(
+          'Event delete: no carb-load reminders were armed',
+          area: 'carb_loading',
+          data: {'eventId': eventId},
+        );
+      }
+    } catch (e, stackTrace) {
+      report.degraded(
+        e,
+        stackTrace: stackTrace,
+        area: 'carb_loading',
+        message: 'Carb nudge disarm after event delete failed',
+        extra: {'eventId': eventId},
+      );
     }
   }
 

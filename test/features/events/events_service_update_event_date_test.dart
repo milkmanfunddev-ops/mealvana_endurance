@@ -75,6 +75,8 @@ void main() {
         requireRemoteAck: any(named: 'requireRemoteAck'),
       ),
     ).thenAnswer((inv) async => inv.namedArguments[#event] as Event);
+    // Ticket 80: updateEvent reads the stored row as the D-2c baseline.
+    when(() => repo.getEventById(any(), any())).thenAnswer((_) async => null);
 
     final service = EventsService(
       _MockDb(),
@@ -143,6 +145,10 @@ void main() {
           requireRemoteAck: any(named: 'requireRemoteAck'),
         ),
       ).thenAnswer((inv) async => inv.namedArguments[#event] as Event);
+      // Ticket 80: updateEvent reads the stored row as the D-2c baseline.
+      when(
+        () => repo.getEventById(any(), any()),
+      ).thenAnswer((_) async => null);
       when(
         () => activities.updateActivity(
           deviceId: any(named: 'deviceId'),
