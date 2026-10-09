@@ -386,6 +386,7 @@
     "describe": {
       "too_long": "That's more than {n} characters. Keep it to what you ate and how much.",
       "camera_access_off": "Camera access is off. Turn it on for Mealvana in Settings.",
+      "photo_unreadable": "Could not read that photo. Please try another one.",
       "not_food": "That doesn't sound like food or drink. Describe what you ate or drank.",
       "review_again": "Review again",
       "too_short": "Add a bit more: at least {n} characters, like what you ate and how much."

@@ -45,6 +45,9 @@ class FoodPreferencesController extends _$FoodPreferencesController {
   // The levels the last load resolved (or the last save left): a save
   // writes only what differs from them (ticket 78).
   Map<String, int> _baseline = const {};
+  /// False until a [load] finished with a value: a save against an empty
+  /// baseline would write every on-screen food again (68-001).
+  bool _baselineLoaded = false;
 
   // Keys whose level came from a legacy display-name row: their level must
   // be written under the key, or it is lost when that row is deleted.
@@ -57,6 +60,7 @@ class FoodPreferencesController extends _$FoodPreferencesController {
     _loadGeneration++;
     _legacyNames = const {};
     _baseline = const {};
+    _baselineLoaded = false;
     _foldedKeys = const {};
     return const {};
   }
@@ -89,6 +93,7 @@ class FoodPreferencesController extends _$FoodPreferencesController {
     );
     if (!ref.mounted || generation != _loadGeneration) return;
     _baseline = result.value ?? const {};
+    _baselineLoaded = result.hasValue;
     state = result;
   }
 
@@ -214,6 +219,14 @@ class FoodPreferencesController extends _$FoodPreferencesController {
           data: {'count': levelsByKey.length},
         );
         throw StateError('No signed-in user to save food preferences for');
+      }
+      if (!_baselineLoaded) {
+        await report.note(
+          'Food preferences save: the load failed or never ran; nothing saved',
+          area: _area,
+          data: {'count': levelsByKey.length},
+        );
+        throw StateError('Food preferences were not loaded; nothing saved');
       }
       final baseline = _baseline;
       final levels = {

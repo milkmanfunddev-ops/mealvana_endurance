@@ -78,6 +78,11 @@ function errorCodeOf(body: string): string | null {
  * is kept, nothing else). Anything else gives nulls.
  */
 export function dbErrorSummary(err: unknown): DbErrorSummary {
+  if (err instanceof SyntaxError) {
+    // A JSON parse error quotes the start of the text it refused, which for
+    // a token endpoint is the response body. Keep the name only.
+    return { code: null, message: 'SyntaxError (message withheld: may quote the body)' };
+  }
   if (err instanceof Error) {
     return { code: null, message: `${err.name}: ${err.message}` };
   }

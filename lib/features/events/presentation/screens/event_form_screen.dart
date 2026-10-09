@@ -1,3 +1,4 @@
+import 'package:supabase_flutter/supabase_flutter.dart' show PostgrestException;
 import 'dart:async';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
@@ -654,7 +655,11 @@ class _EventFormScreenState extends ConsumerState<EventFormScreen> {
     } catch (e, stackTrace) {
       // Ticket 72: a same-name same-day event is refused by the controller
       // (which writes the refusal down); the athlete renames or moves it.
-      final refusedAsDuplicate = e is DuplicateEventNameOnDayException;
+      final refusedAsDuplicate =
+          e is DuplicateEventNameOnDayException ||
+          // The coach-on-athlete path waits for the server, whose unique index
+          // answers 23505 when the athlete's rows were not on this device.
+          (e is PostgrestException && e.code == '23505');
       if (!refusedAsDuplicate) {
         ref
             .read(reportProvider)

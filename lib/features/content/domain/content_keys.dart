@@ -78,6 +78,10 @@ class ContentKeys {
   // 68-003): an expected outcome, the gallery untouched.
   static const String mealLogDescribeCameraAccessOff =
       'meal_log.describe.camera_access_off';
+  // A picked photo the sanitizer could not decode (ticket 75; wave-8 review):
+  // nothing is uploaded, the athlete picks another.
+  static const String mealLogDescribePhotoUnreadable =
+      'meal_log.describe.photo_unreadable';
 
   // Main Screen
   static const String mainScreenTitle = 'main_screen.title';

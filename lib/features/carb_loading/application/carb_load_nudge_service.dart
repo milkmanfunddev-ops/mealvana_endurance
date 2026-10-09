@@ -116,7 +116,8 @@ class CarbLoadNudgeService {
   };
 
   static const _shownDayKey = 'carb_nudge_last_shown_day';
-  static String _armedKey(String eventId) => 'carb_nudge_armed_$eventId';
+  static const _armedKeyPrefix = 'carb_nudge_armed_';
+  static String _armedKey(String eventId) => '$_armedKeyPrefix$eventId';
 
   static String _dayStr(DateTime d) =>
       '${d.year}-${d.month.toString().padLeft(2, '0')}-'
@@ -203,7 +204,7 @@ class CarbLoadNudgeService {
   /// their event was deleted somewhere this device's delete never ran (the
   /// coach portal, another device, a sync removal).
   List<String> _orphanedArmedEventIds(Set<String> liveEventIds) {
-    const prefix = 'carb_nudge_armed_';
+    const prefix = _armedKeyPrefix;
     return [
       for (final key in _prefs.getKeys())
         if (key.startsWith(prefix) &&

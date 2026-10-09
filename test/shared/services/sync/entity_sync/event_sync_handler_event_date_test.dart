@@ -77,6 +77,18 @@ void main() {
     expect(report.faults, isEmpty);
   });
 
+  test('origin and provider_event_id survive the download (wave-8 review: '
+      'insertOrReplace rebuilds the row)', () async {
+    await handler.upsertEvent({
+      ..._devRow(),
+      'origin': 'training_peaks',
+      'provider_event_id': 'tp-123',
+    }, _athlete);
+    final row = await db.select(db.eventsTable).getSingle();
+    expect(row.origin, 'training_peaks');
+    expect(row.providerEventId, 'tp-123');
+  });
+
   test('a row whose columns agree records no note', () async {
     await handler.upsertEvent(_devRow(eventDate: '2026-06-20'), _athlete);
 

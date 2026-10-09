@@ -35,6 +35,11 @@ enum MealAiFailureKind {
   /// for this kind; [MealAiException.userMessage] is empty.
   tooLong,
 
+  /// The picked photo could not be decoded and re-encoded without its
+  /// metadata (ticket 75), so nothing was uploaded. The screen shows its own
+  /// content line for this kind; [MealAiException.userMessage] is empty.
+  photoUnreadable,
+
   /// The edge function or AI Gateway returned an unexpected error.
   serverError,
 }
@@ -523,8 +528,8 @@ class MealAiService {
         extra: {'extension': extension, 'bytes': bytes.length},
       );
       throw MealAiException(
-        kind: MealAiFailureKind.serverError,
-        userMessage: 'Could not read that photo. Please try another one.',
+        kind: MealAiFailureKind.photoUnreadable,
+        userMessage: '',
         debugMessage: e.toString(),
       );
     }

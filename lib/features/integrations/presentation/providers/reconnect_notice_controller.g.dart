@@ -290,7 +290,7 @@ final class ReconnectNoticeControllerProvider
 }
 
 String _$reconnectNoticeControllerHash() =>
-    r'2da3cc02f20a049b19fa16c28775f56e40ba08df';
+    r'80f934a96783901ce95937bd10ed203f64fc598c';
 
 /// The "sign in again" notice for a connected app on the Timeline (ticket
 /// 138, Finding 118-007; ticket 77 ruling of 2026-10-09).

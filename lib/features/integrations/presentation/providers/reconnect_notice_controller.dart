@@ -80,6 +80,7 @@ class ReconnectNoticeController extends _$ReconnectNoticeController {
   final Set<String> _dismissed = {};
   Set<String> _needing = const {};
   String? _userId;
+  Object? _reportedWatchError;
 
   @override
   String? build() {
@@ -94,9 +95,20 @@ class ReconnectNoticeController extends _$ReconnectNoticeController {
       return null;
     }
     ref.watch(integrationRowsLaunchPullProvider(userId));
-    _needing =
-        ref.watch(integrationsNeedingReconnectProvider(userId)).value ??
-        const {};
+    final needing = ref.watch(integrationsNeedingReconnectProvider(userId));
+    if (needing.hasError && !identical(needing.error, _reportedWatchError)) {
+      // D9: a dead watch would otherwise read as "nothing needs a reconnect".
+      _reportedWatchError = needing.error;
+      ref
+          .read(reportProvider)
+          .degraded(
+            needing.error!,
+            stackTrace: needing.stackTrace,
+            area: 'integrations',
+            message: 'reconnect notice: integrations watch failed; no notice shown',
+          );
+    }
+    _needing = needing.value ?? const {};
     return _pick();
   }
 

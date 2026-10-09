@@ -203,7 +203,7 @@ void main() {
     });
 
     test(
-      'unreadable bytes: serverError, one degraded, nothing uploaded',
+      'unreadable bytes: photoUnreadable, one degraded, nothing uploaded',
       () async {
         await expectLater(
           () => service.analyzePhotoBytes(Uint8List(0)),
@@ -211,7 +211,7 @@ void main() {
             isA<MealAiException>().having(
               (e) => e.kind,
               'kind',
-              MealAiFailureKind.serverError,
+              MealAiFailureKind.photoUnreadable,
             ),
           ),
         );

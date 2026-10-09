@@ -1951,6 +1951,15 @@ class _AiTabState extends ConsumerState<_AiTab> {
         // describe-meal's 400 too_long: the same line the validator shows,
         // for a server whose limit is below ours (ticket 79). No snackbar.
         setState(() => _notFoodError = _describeTooLongLine());
+      } else if (e.kind == MealAiFailureKind.photoUnreadable) {
+        // Ticket 75: the sanitizer could not decode the photo; nothing went
+        // up. The line comes from content, not the service.
+        MealvanaSnackbar.showError(
+          context,
+          ref
+              .read(contentServiceProvider)
+              .getValue(ContentKeys.mealLogDescribePhotoUnreadable),
+        );
       } else {
         MealvanaSnackbar.showError(context, e.userMessage);
       }

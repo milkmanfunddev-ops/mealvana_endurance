@@ -756,10 +756,9 @@ class _FoodDetailScreenState extends ConsumerState<FoodDetailScreen> {
             // the validity at build stayed disabled while the name was typed.
             child: ValueListenableBuilder<TextEditingValue>(
               valueListenable: _nameController,
-              builder: (context, name, _) => KylePrimaryButton(
+              builder: (context, _, __) => KylePrimaryButton(
                 key: const ValueKey('custom_food.create_button'),
-                onPressed:
-                    name.text.trim().isNotEmpty && _hasValidCategorySelection
+                onPressed: _hasValidName && _hasValidCategorySelection
                     ? _handleSave
                     : null,
                 text: _primaryButtonText,

@@ -992,10 +992,9 @@ class EventsRepository with SyncableRepository {
       ageGroupPlacement: Value(json['age_group_placement'] as int?),
       needsUpload: const Value(false), // Coming from server, so not dirty
       origin: Value(json['origin'] as String?),
-      // Absent (a server before the v25 column) leaves the local value alone.
-      providerEventId: json.containsKey('provider_event_id')
-          ? Value(json['provider_event_id'] as String?)
-          : const Value.absent(),
+      // The upsert is insertOrReplace, so an absent key (a server before the
+      // column) reads NULL either way; say so rather than pretend to keep it.
+      providerEventId: Value(json['provider_event_id'] as String?),
       localUpdatedAt: Value(DateTime.now()),
       createdAt: DateTime.parse(json['created_at'] as String),
       updatedAt: DateTime.parse(json['updated_at'] as String),

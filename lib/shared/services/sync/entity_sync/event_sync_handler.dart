@@ -108,6 +108,10 @@ class EventSyncHandler {
           ),
           finalPlacement: Value(data['final_placement'] as int?),
           ageGroupPlacement: Value(data['age_group_placement'] as int?),
+          // Ticket 80 (wave-8 review): insertOrReplace rebuilds the row, so
+          // every server column must come along or it reads NULL afterwards.
+          origin: Value(data['origin'] as String?),
+          providerEventId: Value(data['provider_event_id'] as String?),
           createdAt: DateTime.parse(data['created_at'] as String),
           updatedAt: supabaseUpdatedAt,
         );

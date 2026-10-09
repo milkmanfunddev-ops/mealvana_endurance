@@ -106,3 +106,10 @@ Deno.test('dbErrorSummary of anything else gives nulls', () => {
   assertEquals(dbErrorSummary(null), { code: null, message: null });
   assertEquals(dbErrorSummary({ code: 1, message: {} }), { code: null, message: null });
 });
+
+Deno.test('dbErrorSummary withholds a SyntaxError message (it quotes the refused text)', () => {
+  const s = dbErrorSummary(new SyntaxError('Unexpected token \'<\', "<html>refresh_token=abc" is not valid JSON'));
+  assertEquals(s.code, null);
+  assertEquals(s.message?.includes('abc'), false);
+  assertEquals(s.message?.startsWith('SyntaxError'), true);
+});
