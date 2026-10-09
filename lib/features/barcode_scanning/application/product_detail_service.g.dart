@@ -55,4 +55,4 @@ final class ProductDetailServiceProvider
 }
 
 String _$productDetailServiceHash() =>
-    r'0cff9b6a80b0e6dfe19fb15985de43294a63cfd2';
+    r'4a2504add700631ba16ddc71094d09c3bb899ed8';

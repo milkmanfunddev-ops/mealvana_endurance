@@ -53,7 +53,7 @@ final class FoodPreferencesControllerProvider
 }
 
 String _$foodPreferencesControllerHash() =>
-    r'b0c2e2c9821352124fae5d0d0a54deb26b7200ff';
+    r'83c4eef0cc78a057a7107a493b6f0c0d0cf50be8';
 
 /// Settings > Food Likes & Dislikes: loads the athlete's levels (synced from
 /// the server on demand) and saves them through [FoodPreferencesRepository],
