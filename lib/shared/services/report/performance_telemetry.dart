@@ -32,8 +32,22 @@ abstract final class PerformanceTelemetry {
   /// Span operation for every step span and fallback transaction.
   static const String spanOperation = 'perf.step';
 
-  static final Stopwatch _processUptime = Stopwatch()..start();
+  /// The process clock behind every `process_uptime_ms`. It counts from the
+  /// Dart entry: [markProcessStart] is the first statement of `bootstrap()`,
+  /// which every `main()` calls, so the engine's start before `main` (a few
+  /// hundred ms) is not in it. Every step the app measures starts after
+  /// `main`, so uptime is at least any step's duration (ticket 81, 67-005).
+  static Stopwatch? _processClock;
   static final Set<String> _reportedCeilingBreaches = {};
+
+  /// Starts the process clock. Called once from `bootstrap()`; a second call
+  /// (a hot restart reruns `main`) keeps the first mark.
+  static void markProcessStart() => _processClock ??= Stopwatch()..start();
+
+  /// Milliseconds since [markProcessStart], or since the first read when
+  /// nothing marked (a test, or an entry that skips `bootstrap`).
+  static int get _uptimeMs =>
+      (_processClock ??= Stopwatch()..start()).elapsedMilliseconds;
 
   /// Tests inject a `RecordingReport`; production reads the global.
   static Report? reportOverride;
@@ -109,7 +123,7 @@ abstract final class PerformanceTelemetry {
       'duration_ms': duration.inMilliseconds,
       if (userWait != null) 'user_wait_ms': waited.inMilliseconds,
       if (userWait != null) 'wall_ms': wall.inMilliseconds,
-      'process_uptime_ms': _processUptime.elapsedMilliseconds,
+      'process_uptime_ms': _uptimeMs,
       ...data,
     };
 
@@ -159,7 +173,8 @@ abstract final class PerformanceTelemetry {
         );
       }
       // The SDK refuses a child that starts before its parent.
-      final start = startedAt != null && startedAt.isBefore(parent.startTimestamp)
+      final start =
+          startedAt != null && startedAt.isBefore(parent.startTimestamp)
           ? parent.startTimestamp
           : startedAt;
       return parent.startChild(
@@ -214,10 +229,7 @@ abstract final class PerformanceTelemetry {
         message: message,
         category: category,
         level: warning ? SentryLevel.warning : SentryLevel.info,
-        data: <String, dynamic>{
-          'process_uptime_ms': _processUptime.elapsedMilliseconds,
-          ...data,
-        },
+        data: <String, dynamic>{'process_uptime_ms': _uptimeMs, ...data},
       ),
     );
   }
@@ -235,7 +247,7 @@ abstract final class PerformanceTelemetry {
       if (oldSchemaVersion != null) 'old_schema_version': oldSchemaVersion,
       if (newSchemaVersion != null) 'new_schema_version': newSchemaVersion,
       if (context != null) 'context': context,
-      'process_uptime_ms': _processUptime.elapsedMilliseconds,
+      'process_uptime_ms': _uptimeMs,
     };
 
     record(
@@ -267,6 +279,7 @@ abstract final class PerformanceTelemetry {
   static void debugReset() {
     _reportedCeilingBreaches.clear();
     reportOverride = null;
+    _processClock = null;
   }
 }
 

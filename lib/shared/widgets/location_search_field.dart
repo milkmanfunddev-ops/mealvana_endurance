@@ -100,7 +100,7 @@ class _LocationSearchFieldState extends ConsumerState<LocationSearchField> {
       );
       if (mounted) {
         setState(() {
-          _results = results;
+          _results = results ?? [];
           _isSearching = false;
         });
       }

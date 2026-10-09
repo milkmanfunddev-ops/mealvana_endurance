@@ -32,6 +32,7 @@ import '../../services/app_config.dart';
 import '../../services/app_external_deps.dart';
 import '../../services/privacy/analytics_consent.dart';
 import '../../services/report/metrickit_relay.dart';
+import '../../services/report/performance_telemetry.dart';
 import '../../services/report/report.dart';
 import '../../services/sentry/sentry_provider_observer.dart';
 import '../../widgets/root_app_widget.dart';
@@ -55,6 +56,10 @@ List<NavigatorObserver> appNavigatorObservers() => [SentryNavigatorObserver()];
 /// Boots the app for [flavor]. Never throws past the DSN check: a flavor
 /// with no DSN runs the app with Sentry disabled and says so on the console.
 Future<void> bootstrap(AppFlavor flavor) async {
+  // The process clock behind `process_uptime_ms` starts at the Dart entry,
+  // before any step the app measures (ticket 81, 67-005).
+  PerformanceTelemetry.markProcessStart();
+
   // Before Sentry init so the SDK's frame tracking sees the first frame.
   SentryWidgetsFlutterBinding.ensureInitialized();
 
