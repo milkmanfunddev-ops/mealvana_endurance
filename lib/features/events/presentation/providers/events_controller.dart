@@ -6,6 +6,7 @@ import '../../../activities/presentation/providers/activities_controller.dart';
 import '../../../carb_loading/presentation/providers/carb_loading_controller.dart';
 import '../../../carb_loading/presentation/providers/carb_nudge_coordinator.dart';
 import '../../../macro_dashboard/presentation/providers/carb_dashboard_providers.dart';
+import '../../domain/duplicate_event_name_on_day.dart';
 import '../../domain/event.dart';
 import '../../../activities/domain/activity.dart';
 import '../../../../shared/services/report/report.dart';
@@ -95,11 +96,20 @@ class EventsController extends _$EventsController {
     // CRITICAL: Cache ALL ref-dependent values BEFORE any async operations
     // to avoid "Ref disposed" errors if provider rebuilds during async work
     final service = ref.read(eventsServiceProvider);
+    final repo = ref.read(eventsRepositoryProvider);
     final report = ref.read(reportProvider);
 
     try {
       // Read deviceId BEFORE async operations
       final deviceIdValue = await ref.read(userIdProvider.future);
+
+      await _refuseSameNameSameDay(
+        repo,
+        report,
+        userId: forUserId ?? deviceIdValue,
+        eventName: eventName,
+        eventDate: Event.dateFromStartTime(startTime),
+      );
 
       // Use cached service reference (no ref access after this point)
       final createdEvent = await service.createEvent(
@@ -135,6 +145,8 @@ class EventsController extends _$EventsController {
       unawaited(ref.read(carbNudgeCoordinatorProvider.notifier).run());
 
       return createdEvent.id;
+    } on DuplicateEventNameOnDayException {
+      rethrow; // written down by _refuseSameNameSameDay; not a fault
     } catch (e) {
       // Use cached report (safe - no ref access)
       report.fault(e, area: 'events', message: 'Error creating event');
@@ -151,10 +163,20 @@ class EventsController extends _$EventsController {
 
     // CRITICAL: Cache ALL ref-dependent values BEFORE any async operations
     final service = ref.read(eventsServiceProvider);
+    final repo = ref.read(eventsRepositoryProvider);
     final report = ref.read(reportProvider);
 
     try {
       final deviceIdValue = await ref.read(userIdProvider.future);
+
+      await _refuseSameNameSameDay(
+        repo,
+        report,
+        userId: event.userId,
+        eventName: event.eventName,
+        eventDate: event.withDerivedEventDate().eventDate,
+        excludeEventId: event.id,
+      );
 
       await service.updateEvent(deviceId: deviceIdValue, event: event);
 
@@ -176,12 +198,52 @@ class EventsController extends _$EventsController {
       // verified in prod that the rows moved while the screen did not).
       ref.invalidate(activitiesControllerProvider);
       ref.invalidate(allActivitiesProvider);
+    } on DuplicateEventNameOnDayException {
+      rethrow; // written down by _refuseSameNameSameDay; not a fault
     } catch (e) {
       report.fault(e, area: 'events', message: 'Error updating event');
       rethrow;
     } finally {
       keepAliveLink.close();
     }
+  }
+
+  /// Throws [DuplicateEventNameOnDayException] when [userId] already has a
+  /// local event with the same trimmed name on [eventDate] (ticket 72). The
+  /// server's `events_user_date_name_unique` index would refuse that row with
+  /// 23505 on every upload, so the form refuses it up front. A write with no
+  /// name or no date cannot collide (nulls are distinct in the index).
+  Future<void> _refuseSameNameSameDay(
+    EventsRepository repo,
+    Report report, {
+    required String userId,
+    required String? eventName,
+    required DateTime? eventDate,
+    String? excludeEventId,
+  }) async {
+    final name = eventName?.trim() ?? '';
+    if (name.isEmpty || eventDate == null) return;
+    final existing = await repo.findSameNameSameDayEvent(
+      userId: userId,
+      eventName: name,
+      eventDate: eventDate,
+      excludeEventId: excludeEventId,
+    );
+    if (existing == null) return;
+    report.info(
+      'Event write refused: same name on the same day',
+      area: 'events',
+      data: {
+        'existingEventId': existing.id,
+        if (excludeEventId != null) 'editedEventId': excludeEventId,
+      },
+    );
+    throw DuplicateEventNameOnDayException(
+      userId: userId,
+      eventName: name,
+      eventDate: eventDate,
+      existingEventId: existing.id,
+    );
   }
 
   /// Delete an event

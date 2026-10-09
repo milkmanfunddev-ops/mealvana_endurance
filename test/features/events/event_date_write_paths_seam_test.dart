@@ -242,7 +242,8 @@ void main() {
 
       final dirtyPayload = server.writes.skip(writesBefore).single;
       expect(dirtyPayload.method, 'POST');
-      final body = (dirtyPayload.body! as List).single as Map;
+      // One upsert per dirty row since ticket 72: the body is the row itself.
+      final body = dirtyPayload.body! as Map;
       expectColumnsAgree(
         await driftRow(row.id),
         Map<String, dynamic>.from(body),

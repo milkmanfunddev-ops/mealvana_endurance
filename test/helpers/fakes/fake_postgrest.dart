@@ -21,6 +21,13 @@ class FakePostgrest {
   /// Tables whose writes the server refuses with PostgREST 42501 (RLS).
   final Set<String> rejectWrites = {};
 
+  /// Per table, a unique index the server enforces: a write carrying any row
+  /// the predicate matches is refused whole with PostgREST 409 / 23505, the
+  /// way one conflicting row fails a batched upsert (develop-2026-10 ticket
+  /// 72, `events_user_date_name_unique`).
+  final Map<String, bool Function(Map<String, dynamic> row)> uniqueViolations =
+      {};
+
   /// Every write, in order: (method, table, decoded body).
   final List<({String method, String table, Object? body})> writes = [];
 
@@ -89,6 +96,21 @@ class FakePostgrest {
         'details': null,
         'hint': null,
       });
+    }
+    final violates = uniqueViolations[table];
+    if (violates != null) {
+      final rows = body is List ? body : [if (body != null) body];
+      final conflict = rows.whereType<Map<String, dynamic>>().any(violates);
+      if (conflict) {
+        return _json(request, 409, {
+          'code': '23505',
+          'message':
+              'duplicate key value violates unique constraint '
+              '"${table}_user_date_name_unique"',
+          'details': 'Key already exists.',
+          'hint': null,
+        });
+      }
     }
     return _json(request, 201, body is List ? body : [if (body != null) body]);
   }
