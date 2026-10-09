@@ -35,12 +35,11 @@ class FoodMappingService {
       apiProduct.productName,
     );
 
-    // Use API's serving size if available, otherwise use default
-    final servingGrams =
-        apiProduct.servingGrams ?? assumedServingGrams ?? 100.0;
-
-    // Calculate nutritional values for the serving
-    final nutritionalValues = apiProduct.calculateForServing(servingGrams);
+    final basis = _servingBasis(
+      apiProduct,
+      assumedServingGrams: assumedServingGrams,
+    );
+    final nutritionalValues = basis.values;
 
     return Food(
       id: const Uuid().v4(), // Generate proper UUID for database
@@ -58,9 +57,7 @@ class FoodMappingService {
       servingUnit: 'servings',
       servingUnitPlural: 'servings',
       servingQualifier: null,
-      servingSize:
-          apiProduct.servingSize ??
-          '${servingGrams.toStringAsFixed(servingGrams == servingGrams.toInt() ? 0 : 1)}g',
+      servingSize: basis.label,
 
       // Nutritional information (per serving)
       carbsPerServing: nutritionalValues.carbohydrates,
@@ -120,8 +117,8 @@ class FoodMappingService {
     ApiFoodProduct apiProduct,
   ) {
     // Use fresh nutritional data from API if available
-    final servingGrams = apiProduct.servingGrams ?? 100.0;
-    final nutritionalValues = apiProduct.calculateForServing(servingGrams);
+    final basis = _servingBasis(apiProduct);
+    final nutritionalValues = basis.values;
 
     return Food(
       id: const Uuid().v4(),
@@ -140,8 +137,7 @@ class FoodMappingService {
       servingUnit: 'servings',
       servingUnitPlural: 'servings',
       servingQualifier: null,
-      servingSize:
-          apiProduct.servingSize ?? '${servingGrams.toStringAsFixed(0)}g',
+      servingSize: basis.label,
 
       // Use fresh nutritional data from API
       carbsPerServing: nutritionalValues.carbohydrates,
@@ -166,6 +162,94 @@ class FoodMappingService {
       maxServingsDuring: existingFood.maxServingsDuring ?? 1,
     );
   }
+}
+
+/// Grams in a label serving text: "15 g", "1 portion (37 g)", "250ml".
+final RegExp _servingGramsPattern = RegExp(
+  r'(\d+(?:[.,]\d+)?)\s*(g|ml)\b',
+  caseSensitive: false,
+);
+
+/// The serving a mapped [Food] counts as "1 serving", and its values.
+///
+/// Testing-wave 68-011: a product cached with per-100 g values and no
+/// `serving_grams` (Nutella, 3017620422003) was shown as "1 serving" with the
+/// per-100 g numbers (539 kcal), because the old fallback was 100 g and the
+/// label was the product's own serving text ("15 g"). Values and label now
+/// always describe the same amount:
+/// a. grams known (declared `serving_grams`, a gram/ml `serving_quantity`,
+///    grams in the serving text, or [assumedServingGrams]): values for those
+///    grams; label the serving text when it names them, else "N g" (N the grams);
+/// b. no grams but per-serving values: those values, label the serving text;
+/// c. neither: per-100 g values, label "100 g".
+_ServingBasis _servingBasis(
+  ApiFoodProduct product, {
+  double? assumedServingGrams,
+}) {
+  final textGrams = _gramsInServingText(product.servingSize);
+  final quantityUnit = product.servingQuantityUnit?.trim().toLowerCase();
+  final quantityIsMass =
+      quantityUnit == null || quantityUnit == 'g' || quantityUnit == 'ml';
+
+  double? grams;
+  if (product.servingGrams != null && product.servingGrams! > 0) {
+    grams = product.servingGrams;
+  } else if (product.servingQuantity != null &&
+      product.servingQuantity! > 0 &&
+      quantityIsMass) {
+    grams = product.servingQuantity;
+  } else if (textGrams != null) {
+    grams = textGrams;
+  } else if (assumedServingGrams != null && assumedServingGrams > 0) {
+    grams = assumedServingGrams;
+  }
+
+  if (grams != null) {
+    final textNamesGrams = textGrams != null && (textGrams - grams).abs() < 0.5;
+    return _ServingBasis(
+      values: product.calculateForServing(grams),
+      label: textNamesGrams ? product.servingSize! : _gramsLabel(grams),
+    );
+  }
+
+  if (product.caloriesPerServing != null) {
+    return _ServingBasis(
+      values: NutritionalValues(
+        calories: product.caloriesPerServing?.round(),
+        carbohydrates: product.carbohydratesPerServing,
+        protein: product.proteinPerServing,
+        fat: product.fatPerServing,
+        sodiumMg: product.sodiumMgPerServing?.round(),
+      ),
+      label: product.servingSize,
+    );
+  }
+
+  return _ServingBasis(
+    values: product.calculateForServing(100.0),
+    label: '100 g',
+  );
+}
+
+double? _gramsInServingText(String? servingSize) {
+  if (servingSize == null) return null;
+  final match = _servingGramsPattern.firstMatch(servingSize);
+  if (match == null) return null;
+  final grams = double.tryParse(match.group(1)!.replaceAll(',', '.'));
+  return (grams != null && grams > 0) ? grams : null;
+}
+
+String _gramsLabel(double grams) =>
+    '${grams == grams.roundToDouble() ? grams.toStringAsFixed(0) : grams.toStringAsFixed(1)} g';
+
+class _ServingBasis {
+  const _ServingBasis({required this.values, required this.label});
+
+  final NutritionalValues values;
+
+  /// What "1 serving" is, for [Food.servingSize]. Null only when the source
+  /// declared per-serving values without saying what the serving is.
+  final String? label;
 }
 
 @riverpod

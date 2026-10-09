@@ -350,8 +350,6 @@ class _FoodDetailScreenState extends ConsumerState<FoodDetailScreen> {
 
   bool get _hasValidName => _nameController.text.trim().isNotEmpty;
 
-  bool get _isValid => _hasValidName && _hasValidCategorySelection;
-
   bool get _shouldShowFluidField {
     // Show if already has fluid value > 0
     if ((widget.foodData.fluidMlPerServing ?? 0) > 0) return true;
@@ -752,11 +750,21 @@ class _FoodDetailScreenState extends ConsumerState<FoodDetailScreen> {
                 ),
               ],
             ),
-            child: KylePrimaryButton(
-              key: const ValueKey('custom_food.create_button'),
-              onPressed: _isValid ? _handleSave : null,
-              text: _primaryButtonText,
-              isFullWidth: true,
+            // Rebuilds on every name edit (testing-wave 68-009): the field
+            // listeners call setState only once, and the tap that focuses
+            // the empty name field spends that once, so a button reading
+            // the validity at build stayed disabled while the name was typed.
+            child: ValueListenableBuilder<TextEditingValue>(
+              valueListenable: _nameController,
+              builder: (context, name, _) => KylePrimaryButton(
+                key: const ValueKey('custom_food.create_button'),
+                onPressed:
+                    name.text.trim().isNotEmpty && _hasValidCategorySelection
+                    ? _handleSave
+                    : null,
+                text: _primaryButtonText,
+                isFullWidth: true,
+              ),
             ),
           ),
         ],

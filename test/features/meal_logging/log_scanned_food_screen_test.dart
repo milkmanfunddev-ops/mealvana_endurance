@@ -33,11 +33,12 @@ Future<void> _open(
   WidgetTester tester, {
   ValueChanged<ScannedFoodLogRequest?>? onResult,
   MealSlot initialSlot = MealSlot.snack,
+  Food food = _gel,
 }) async {
   await tester.binding.setSurfaceSize(const Size(800, 1400));
   addTearDown(() => tester.binding.setSurfaceSize(null));
   await tester.pumpWidget(
-    _host(onResult: onResult ?? (_) {}, initialSlot: initialSlot),
+    _host(onResult: onResult ?? (_) {}, initialSlot: initialSlot, food: food),
   );
   await tester.tap(find.text('open'));
   await tester.pumpAndSettle();
@@ -48,6 +49,7 @@ Future<void> _open(
 Widget _host({
   required ValueChanged<ScannedFoodLogRequest?> onResult,
   MealSlot initialSlot = MealSlot.snack,
+  Food food = _gel,
 }) {
   return ProviderScope(
     child: MaterialApp(
@@ -60,7 +62,7 @@ Widget _host({
                     .push<ScannedFoodLogRequest>(
                       MaterialPageRoute(
                         builder: (_) => LogScannedFoodScreen(
-                          food: _gel,
+                          food: food,
                           initialSlot: initialSlot,
                         ),
                       ),
@@ -76,7 +78,46 @@ Widget _host({
   );
 }
 
+/// A barcode product as `FoodMappingService.mapToFood` shapes it: counted in
+/// generic "servings", with [Food.servingSize] saying what one serving is.
+Food _scanned(String servingSize, int kcal) => Food(
+  id: 'nutella-1',
+  name: 'Nutella',
+  servingAmount: 1,
+  servingUnit: 'servings',
+  servingSize: servingSize,
+  caloriesPerServing: kcal,
+  carbsPerServing: 8.6,
+  proteinPerServing: 0.9,
+  fatPerServing: 4.6,
+);
+
 void main() {
+  group('per-serving descriptor (testing-wave 68-011)', () {
+    testWidgets('a real unit keeps amount + unit: "Per serving: 1 gel"', (
+      tester,
+    ) async {
+      await _open(tester);
+      expect(find.text('Per serving: 1 gel'), findsOneWidget);
+    });
+
+    testWidgets('a generic "servings" unit names the serving: 15 g', (
+      tester,
+    ) async {
+      await _open(tester, food: _scanned('15 g', 81));
+      expect(find.text('Per serving: 15 g'), findsOneWidget);
+      expect(find.textContaining('1 servings'), findsNothing);
+    });
+
+    testWidgets('the per-100 g basis reads "Per serving: 100 g"', (
+      tester,
+    ) async {
+      await _open(tester, food: _scanned('100 g', 539));
+      expect(find.text('Per serving: 100 g'), findsOneWidget);
+      expect(find.textContaining('1 servings'), findsNothing);
+    });
+  });
+
   testWidgets('renders the scanned product name and per-serving nutrition', (
     tester,
   ) async {

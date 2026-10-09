@@ -86,6 +86,37 @@ class _SwapFoodScreenState extends ConsumerState<SwapFoodScreen> {
       isCoachView: widget.isCoachView,
     );
 
+    // Seed the shared search pool OUTSIDE build (testing-wave 68-006). A
+    // seed from build wrote the search provider while the tree was building
+    // whenever a query was active (updateFoodPool re-runs the search, G28):
+    // the red "Tried to modify a provider while the widget tree was
+    // building" screen. The listener seeds only when the pool itself changes,
+    // so a selection change or My Foods toggle (also SwapFoodState copies)
+    // does not re-run the search. No fireImmediately: a provider write
+    // inside initState trips the same assert; the post-frame seed below
+    // covers a provider that is already warm.
+    ref.listenManual<AsyncValue<SwapFoodState>>(
+      swapFoodControllerProvider(_params),
+      (previous, next) {
+        final nextState = next.value;
+        if (nextState == null) return;
+        final previousState = previous?.value;
+        final poolChanged =
+            !identical(
+              previousState?.allFoodsForSearch,
+              nextState.allFoodsForSearch,
+            ) ||
+            !identical(previousState?.allUserFoods, nextState.allUserFoods);
+        if (poolChanged) _seedSearchController(nextState);
+      },
+    );
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final warm = ref.read(swapFoodControllerProvider(_params)).value;
+      if (warm != null) _seedSearchController(warm);
+    });
+
     // Track screen viewed
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final analytics = ref.read(appExternalDepsProvider);
@@ -765,11 +796,9 @@ class _SwapFoodScreenState extends ConsumerState<SwapFoodScreen> {
           child: controllerState.when(
             loading: () => const Center(child: CircularProgressIndicator()),
             error: (error, _) => _buildErrorState(error),
-            data: (state) {
-              // Seed search controller whenever data loads/reloads
-              _seedSearchController(state);
-              return _buildContent(state, searchState);
-            },
+            // The search pool is seeded by the listener in initState, never
+            // here: build must not write a provider (68-006).
+            data: (state) => _buildContent(state, searchState),
           ),
         ),
       ),
