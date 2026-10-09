@@ -1,6 +1,6 @@
 # 75: Meal photos are uploaded without EXIF; the benchmark fixtures lose their GPS
 
-**Status:** in-progress (wave 8, 2026-10-09)
+**Status:** landed-pending-merge (wave 8, 2026-10-09, 97f9cabf0)
 **Labels:** fix, round:develop-2026-10, area:meal-logging, area:privacy
 **Branch:** `develop-next` (fix-wave worktree)
 **Source:** Findings 68-004, 68-005; TRIAGE.md rulings of 2026-10-09
@@ -62,20 +62,20 @@ test/features/meal_logging/meal_logging_business_logic_test.dart
 
 ## Tests
 
-- [ ] **Seam test through the real service** (`meal_photo_exif_seam_test.dart`). The fixture `test/fixtures/meal_photos/gps_orientation6.jpg` is written once with PIL, not with the `image` package the code uses: 64×48 pixels, Orientation 6, a GPS IFD at the neutral point run 68 used (40°44'30"N, 73°59'15"W), Make "Apple", Model "iPhone 14 Plus", DateTime. That is the shape image_picker hands over. Use the mocked storage pattern of `meal_logging_business_logic_test.dart:1826-1856`, capture the bytes `uploadBinary` receives, and stub `functions.invoke` with an analysis answer. Assert on the captured bytes:
+- [x] **Seam test through the real service** (`meal_photo_exif_seam_test.dart`). The fixture `test/fixtures/meal_photos/gps_orientation6.jpg` is written once with PIL, not with the `image` package the code uses: 64×48 pixels, Orientation 6, a GPS IFD at the neutral point run 68 used (40°44'30"N, 73°59'15"W), Make "Apple", Model "iPhone 14 Plus", DateTime. That is the shape image_picker hands over. Use the mocked storage pattern of `meal_logging_business_logic_test.dart:1826-1856`, capture the bytes `uploadBinary` receives, and stub `functions.invoke` with an analysis answer. Assert on the captured bytes:
   - no `Exif\0\0` APP1 segment (scan the JPEG markers);
   - re-decoded, the image is 48×64, the rotation applied;
   - the upload path ends `.jpg`, the content type is `image/jpeg`;
   - the same through `analyzePhoto(File(fixture))`, and through `analyzePhotoBytes` with `extension: 'png'` on a PNG fixture.
   Red before the fix (the bytes go up unchanged).
-- [ ] Unreadable bytes: `analyzePhotoBytes(Uint8List(0))` throws `MealAiException(serverError)`, records one `degraded` in `meal_logging`, and `uploadBinary` is never called.
-- [ ] `meal_logging_business_logic_test.dart:1826-1856`: the StorageException case feeds `Uint8List(0)`, which now fails before the upload. Give it the fixture's bytes so it still reaches `uploadBinary` and still expects one `fault` with a `StorageException`.
-- [ ] Call `stripPhotoMetadata` directly in the tests, or through the service in a plain `test()`. Never under `pumpAndSettle`: `compute` does not resolve there (memory, "Tests").
-- [ ] #116: `grep -rl` under `test/` for `MealAiService`, `analyzePhoto`, `analyzePhotoBytes`, `_analyzeBytes`, `stripPhotoMetadata`, `mealAiServiceProvider`; run every file named. Known: `meal_logging_business_logic_test.dart`, `meal_ai_service_credits_test.dart`, `describe_back_keeps_analysis_test.dart`, `describe_not_food_test.dart`, `describe_error_lines_wrap_test.dart`. Fakes of `MealAiService` are unaffected (no signature change).
-- [ ] The new `degraded` uses the existing `Report`; no new reporting helper or silent catch, so `source_guard.dart` is unchanged. Run `test/shared/source_guard/` anyway (#117).
-- [ ] Async paths, written in the fix notes: (i) Analyze tapped twice: two uploads of two sanitized copies under two UUIDs, as today (Describe already guards a second tap); (ii) the screen leaves while the isolate runs: the service holds no `ref`, the result is dropped by the caller as today. No retry or timeout added.
-- [ ] Fixtures: after the one-off, `python3 -c` over `images/img-*.jpg` prints an empty EXIF for all ten (paste the output into the fix notes, with no coordinates).
-- [ ] `flutter analyze` clean on the touched Dart files.
+- [x] Unreadable bytes: `analyzePhotoBytes(Uint8List(0))` throws `MealAiException(serverError)`, records one `degraded` in `meal_logging`, and `uploadBinary` is never called.
+- [x] `meal_logging_business_logic_test.dart:1826-1856`: the StorageException case feeds `Uint8List(0)`, which now fails before the upload. Give it the fixture's bytes so it still reaches `uploadBinary` and still expects one `fault` with a `StorageException`.
+- [x] Call `stripPhotoMetadata` directly in the tests, or through the service in a plain `test()`. Never under `pumpAndSettle`: `compute` does not resolve there (memory, "Tests").
+- [x] #116: `grep -rl` under `test/` for `MealAiService`, `analyzePhoto`, `analyzePhotoBytes`, `_analyzeBytes`, `stripPhotoMetadata`, `mealAiServiceProvider`; run every file named. Known: `meal_logging_business_logic_test.dart`, `meal_ai_service_credits_test.dart`, `describe_back_keeps_analysis_test.dart`, `describe_not_food_test.dart`, `describe_error_lines_wrap_test.dart`. Fakes of `MealAiService` are unaffected (no signature change).
+- [x] The new `degraded` uses the existing `Report`; no new reporting helper or silent catch, so `source_guard.dart` is unchanged. Run `test/shared/source_guard/` anyway (#117).
+- [x] Async paths, written in the fix notes: (i) Analyze tapped twice: two uploads of two sanitized copies under two UUIDs, as today (Describe already guards a second tap); (ii) the screen leaves while the isolate runs: the service holds no `ref`, the result is dropped by the caller as today. No retry or timeout added.
+- [x] Fixtures: after the one-off, `python3 -c` over `images/img-*.jpg` prints an empty EXIF for all ten (paste the output into the fix notes, with no coordinates).
+- [x] `flutter analyze` clean on the touched Dart files.
 
 ## Deploy
 
@@ -93,3 +93,48 @@ Next test wave, meal-logging retest ticket, on a simulator:
 
 **Rulings (Lee, 2026-10-09, wave 7 close).**
 - Q1: keep `originals/` as it is; rewrite only the ten JPEGs; no history rewrite.
+
+## Fix notes
+
+Commit `97f9cabf0` on `testing-wave/develop-2026-10/75`.
+
+**What changed.**
+- `lib/features/meal_logging/application/meal_photo_sanitizer.dart` (new): `stripPhotoMetadata(Uint8List)` decodes with the `image` package, runs `bakeOrientation`, sets `exif = ExifData()` and encodes JPEG at quality 90. Empty or undecodable input throws `MealPhotoUnreadable`. Finding while testing: `image` 4.5.4's JPEG decoder already applies the Orientation tag itself and drops it; `bakeOrientation` stays for the other formats (WebP/TIFF carry orientation through `exif`).
+- `meal_ai_service.dart`: `_analyzeBytes` calls one named helper, `_sanitizePhoto(bytes, extension:)`, before the upload (`compute(stripPhotoMetadata, bytes)`). The upload path is always `<uid>/<uuid>.jpg` with `image/jpeg`. Any failure in the sanitize (not only `MealPhotoUnreadable`, since an error can also come back across the isolate) records `_r.degraded(…, area: 'meal_logging', message: 'meal photo could not be re-encoded; not uploaded', extra: {extension, bytes})` (D9: Sentry warning, PROD-readable) and throws `MealAiException(serverError, 'Could not read that photo. Please try another one.')`. Nothing is uploaded and there is no fallback to the original bytes. `_mimeFromExtension` was deleted (now dead); `_extensionFromPath` stays, feeding the report's `extension`. The StorageException fault's `bytes` extra is now the sanitized length. No signature or caller change.
+- `pubspec.yaml`: `image: ^4.5.4` added; `pubspec.lock` changes one line (`image` transitive → `direct main`, same 4.5.4 / sha).
+- Fixtures (written once with PIL 12.1, not with the `image` package): `test/fixtures/meal_photos/gps_orientation6.jpg` (64×48 stored, Orientation 6, GPS 40°44'30"N 73°59'15"W, Make Apple, Model iPhone 14 Plus, DateTime 2025:07:19 11:13:21, red block top-left) and `gps_orientation6.png` (same pixels plus an `eXIf` chunk with the same tags). The PNG is one file more than Touches listed; the checklist's PNG case needed it.
+- Benchmark: `images/img-01.jpg` … `img-10.jpg` rewritten with the ticket's one-off (`ImageOps.exif_transpose`, quality 80, ICC profile kept, no `exif=`). `originals/` and git history untouched (Q1 ruling). README manifest: all ten now 3024×4032 (img-04 was already portrait, Orientation 1; the manifest had it wrong before); a note on the rewrite; the size line updated (~0.9–1.6 MB; the rewrite roughly halves each file, likely PIL's default 4:2:0 subsampling at q80).
+
+**Fixture verification (no coordinates).** Before: nine of ten Orientation 6, img-04 Orientation 1, all ten with a GPS IFD. After, PIL per file: size (3024, 4032), `getexif()` = `{}`, ICC kept; byte scans find no `Exif` and no `xmpmeta`. Pixels kept: mean absolute difference against `exif_transpose(original)` per RGB channel 1.0–1.7 of 255 for every file:
+```
+img-01.jpg (3024, 4032) exif {} icc True mean|diff| [1.38, 1.34, 1.55]
+img-02.jpg (3024, 4032) exif {} icc True mean|diff| [1.47, 1.42, 1.61]
+img-03.jpg (3024, 4032) exif {} icc True mean|diff| [1.22, 1.14, 1.32]
+img-04.jpg (3024, 4032) exif {} icc True mean|diff| [1.28, 1.2, 1.54]
+img-05.jpg (3024, 4032) exif {} icc True mean|diff| [1.14, 1.09, 1.21]
+img-06.jpg (3024, 4032) exif {} icc True mean|diff| [1.02, 1.0, 1.19]
+img-07.jpg (3024, 4032) exif {} icc True mean|diff| [1.16, 1.14, 1.23]
+img-08.jpg (3024, 4032) exif {} icc True mean|diff| [1.51, 1.42, 1.58]
+img-09.jpg (3024, 4032) exif {} icc True mean|diff| [1.58, 1.51, 1.71]
+img-10.jpg (3024, 4032) exif {} icc True mean|diff| [1.36, 1.31, 1.48]
+```
+The seam test file also checks every benchmark JPEG for an `Exif` APP1 segment (eleven tests: ten files plus "all ten present").
+
+**#77, async paths.**
+- Two photos picked back to back, or Analyze tapped twice: each call runs its own `compute` and uploads its own sanitized copy under its own UUID, as before (Describe already guards a second tap). The sanitizer is a pure function with no shared state, so two runs at once cannot mix bytes.
+- The screen leaves or refreshes while the isolate runs: the service holds no `ref`; the isolate finishes, the upload and analysis carry on, and the caller drops the result as it did before. No retry or timeout added.
+- A sanitize that fails: one `degraded` in `meal_logging` (Sentry warning), a `MealAiException(serverError)` the screen shows as "Could not read that photo. Please try another one.", and nothing uploaded. Twice at once gives two degradeds and no upload.
+
+**Tests run** (only the files for this change; no full suite):
+- `test/features/meal_logging/meal_photo_exif_seam_test.dart`: 17 passed (fixture guard; analyzePhotoBytes JPEG: no Exif APP1, 48×64, red block top-right, `.jpg`, `image/jpeg`; analyzePhoto(File); PNG with `extension: 'png'`; unreadable bytes → serverError, one degraded, `uploadBinary` never called; garbage bytes → `MealPhotoUnreadable`; 11 benchmark checks). Red before the fix: run against the pre-fix `meal_ai_service.dart`, the service tests failed, and the benchmark checks failed before the rewrite.
+- `test/features/meal_logging/meal_logging_business_logic_test.dart`: 95 passed (StorageException case now feeds the JPEG fixture and still expects one `StorageException` fault).
+- `test/features/meal_logging/meal_ai_service_credits_test.dart`: 4 passed.
+- `test/features/meal_logging/describe_back_keeps_analysis_test.dart`: 5 passed.
+- `test/features/meal_logging/describe_error_lines_wrap_test.dart`: 2 passed.
+- `test/features/meal_logging/describe_not_food_test.dart`: 3 passed.
+- `test/shared/source_guard/`: 20 passed (unchanged; the new degraded goes through the existing `Report`).
+- #116 grep (`MealAiService`, `analyzePhoto`, `analyzePhotoBytes`, `_analyzeBytes`, `stripPhotoMetadata`, `mealAiServiceProvider`, `MealPhotoUnreadable`) named exactly the six meal_logging files above. #76: only those two files stub `uploadBinary`.
+- `flutter analyze` on the four touched Dart files: no issues in the new or changed code. Two older `unused_local_variable` warnings in `meal_logging_business_logic_test.dart` (lines 1381 and 1969) sit outside this diff and were left alone.
+
+No codegen (no annotated file changed). No deploy.
+
