@@ -7,8 +7,10 @@
 // The function now answers 409 `code: garmin_reauth_required` for that case
 // (supabase/functions/garmin-backfill/outcome.ts). This test drives the REAL
 // notifier through a REAL FunctionsClient whose HTTP layer returns the exact
-// body the function sends, and pins that a dead token is reported as
-// Degraded (expected; only a reconnect fixes it), while an unexpected 500
+// body the function sends, and pins that a dead token is an expected failure
+// (ticket 77, Finding 69-010: one note carrying `expected_failure:
+// token_expired` and one `expected_failure` analytics event, no Degraded and
+// no `error_reported`; only a reconnect fixes it), while an unexpected 500
 // stays a Fault.
 
 import 'dart:convert';
@@ -24,18 +26,21 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:mealvana_endurance/features/activities/application/activity_deduplication_service.dart';
 import 'package:mealvana_endurance/features/activities/data/activities_repository.dart';
 import 'package:mealvana_endurance/features/integrations/data/integrations_repository.dart';
+import 'package:mealvana_endurance/features/integrations/domain/integration.dart';
 import 'package:mealvana_endurance/features/integrations/presentation/providers/connect_training_controller.dart';
 import 'package:mealvana_endurance/features/integrations/presentation/providers/integrations_providers.dart';
 import 'package:mealvana_endurance/shared/database/app_database.dart';
 import 'package:mealvana_endurance/shared/providers/user_id_provider.dart';
+import 'package:mealvana_endurance/shared/services/app_external_deps.dart';
 import 'package:mealvana_endurance/shared/services/preferences_service.dart';
-import 'package:mealvana_endurance/shared/services/prefs_provider.dart';
 import 'package:mealvana_endurance/shared/services/report/report.dart';
 
 import '../../helpers/fakes/recording_report.dart';
 import '../../helpers/widget_test_harness.dart';
 
 class _MockSession extends Mock implements Session {}
+
+class _MockUser extends Mock implements User {}
 
 const _authUid = '00000000-0000-0000-0000-00000000bbbb';
 
@@ -56,13 +61,19 @@ final _reauthBody = jsonEncode({
 void main() {
   late AppDatabase db;
   late RecordingReport report;
+  late IntegrationsRepository repository;
 
   Future<ProviderContainer> containerAnswering(int status, String body) async {
     db = AppDatabase.memory();
     addTearDown(db.close);
     report = RecordingReport();
 
-    SharedPreferences.setMockInitialValues({});
+    // The automatic backfill ran moments ago (cooldown), so only the
+    // explicit call below reaches garmin-backfill.
+    SharedPreferences.setMockInitialValues({
+      'garmin_backfill_last_at_$_authUid':
+          DateTime.now().millisecondsSinceEpoch,
+    });
     final prefs = await SharedPreferences.getInstance();
 
     final functions = FunctionsClient(
@@ -81,10 +92,35 @@ void main() {
 
     final session = _MockSession();
     when(() => session.accessToken).thenReturn('athlete-jwt');
+    // A signed-in athlete, so the controller works on their real id.
+    final authUser = _MockUser();
+    when(() => authUser.id).thenReturn(_authUid);
+    when(() => authUser.isAnonymous).thenReturn(false);
     final goTrue = fakeGoTrueClient();
     when(() => goTrue.currentSession).thenReturn(session);
+    when(() => goTrue.currentUser).thenReturn(authUser);
     final supabase = fakeSupabaseClient(auth: goTrue);
     when(() => supabase.functions).thenReturn(functions);
+
+    // The repository's own push has no server here; its report is apart
+    // from the controller's, which is what this test reads.
+    repository = IntegrationsRepository(
+      database: db,
+      supabase: supabase,
+      report: RecordingReport(),
+    );
+    // A connected Garmin whose token Garmin has since refused.
+    await repository.upsertIntegration(
+      IntegrationModel(
+        userId: _authUid,
+        provider: 'garmin',
+        accessToken: 'garmin-access',
+        refreshToken: 'garmin-refresh',
+        providerAthleteId: 'garmin-user-1',
+        isActive: true,
+        lastSyncStatus: 'success',
+      ),
+    );
 
     final container = ProviderContainer(
       overrides: [
@@ -95,13 +131,7 @@ void main() {
         ),
         inMemoryDatabaseOverride(db),
         reportProvider.overrideWithValue(report),
-        integrationsRepositoryProvider.overrideWithValue(
-          IntegrationsRepository(
-            database: db,
-            supabase: supabase,
-            report: report,
-          ),
-        ),
+        integrationsRepositoryProvider.overrideWithValue(repository),
         activitiesRepositoryProvider.overrideWithValue(
           ActivitiesRepository(
             supabase: supabase,
@@ -120,9 +150,11 @@ void main() {
     return container;
   }
 
-  test('a dead Garmin token (409 garmin_reauth_required) is Degraded, not a '
-      'Fault', () async {
+  test('a dead Garmin token (409 garmin_reauth_required) is an expected '
+      'failure, not Degraded or a Fault', () async {
     final container = await containerAnswering(409, _reauthBody);
+    final analytics = container.read(appExternalDepsProvider).analytics;
+    clearInteractions(analytics);
 
     final queued = await container
         .read(connectTrainingControllerProvider.notifier)
@@ -130,9 +162,31 @@ void main() {
 
     expect(queued, isFalse);
     expect(report.faults, isEmpty);
-    expect(report.degradeds, hasLength(1));
-    expect(report.degradeds.single.area, 'garmin');
-    expect(report.degradeds.single.message, contains('reconnect Garmin'));
+    expect(report.degradeds, isEmpty);
+    final garminNotes = report.notes.where((n) => n.area == 'garmin').toList();
+    expect(garminNotes, hasLength(1));
+    expect(garminNotes.single.message, contains('reconnect Garmin'));
+    expect(garminNotes.single.data, {'expected_failure': 'token_expired'});
+    verify(
+      () => analytics.track(
+        expectedFailureEvent,
+        properties: {'area': 'garmin', 'reason': 'token_expired'},
+      ),
+    ).called(1);
+    verifyNever(
+      () => analytics.track(
+        errorReportedEvent,
+        properties: any(named: 'properties'),
+      ),
+    );
+
+    final row = await repository.getIntegration(_authUid, 'garmin');
+    expect(row!.lastSyncStatus, requiresReauthStatus);
+    expect(
+      container.read(connectTrainingControllerProvider).value!
+          .garminNeedsReauth,
+      isTrue,
+    );
   });
 
   test('an unexpected 500 from garmin-backfill stays a Fault', () async {

@@ -73,7 +73,6 @@ void main() {
   late FakePostgrest server;
   late IntegrationsRepository repository;
   late RecordingReport report;
-  final statusWrites = <(String, String)>[];
 
   TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -89,14 +88,11 @@ void main() {
     ];
     // develop only pushes rows the session owns (DEV-A2).
     await server.signIn(_userId);
-    statusWrites.clear();
     report = RecordingReport();
     repository = IntegrationsRepository(
       database: db,
       supabase: server.client,
       report: report,
-      onSyncStatusWritten: (provider, status) =>
-          statusWrites.add((provider, status)),
     );
   });
 
@@ -137,9 +133,9 @@ void main() {
       expect(row!.lastSyncStatus, requiresReauthStatus);
       expect(row.needsReconnect, isTrue);
       expect(row.lastSyncError, 'reauth_required');
-      // The hook hears the status the row KEEPS, never the overwritten one.
-      expect(statusWrites, isNotEmpty);
-      expect(statusWrites.every((w) => w.$2 == requiresReauthStatus), isTrue);
+      // The server hears the status the row KEEPS, never the overwritten one
+      // (ticket 77: the Reconnect notice reads the row, not a hook).
+      expect(lastIntegrationUpsert()['last_sync_status'], requiresReauthStatus);
     });
 
     test('on an ordinary row the same error is stored as the network code',
@@ -246,11 +242,7 @@ void main() {
       );
       final after = await repository.getIntegration(_userId, 'training_peaks');
       expect(after!.lastSyncAt, row.lastSyncAt);
-      expect(statusWrites, [
-        ('training_peaks', 'error'),
-        ('training_peaks', 'success'),
-        ('training_peaks', 'error'),
-      ]);
+      expect(after.lastSyncStatus, 'error');
     });
   });
 
@@ -350,8 +342,8 @@ void main() {
         expect(upload.success, isTrue);
         expect(upload.count, 0);
         expect(server.writes.length, writesBefore);
-        // No Reconnect notice for a provider the athlete disconnected.
-        expect(statusWrites, isEmpty);
+        // No Reconnect notice for a provider the athlete disconnected: the
+        // row it reads (ticket 77) is unchanged above.
         final notes = skipNotes();
         expect(notes, hasLength(1));
         expect(notes.single.area, 'integrations');
@@ -373,7 +365,6 @@ void main() {
 
       expect(await repository.getIntegration(_userId, 'training_peaks'), isNull);
       expect(server.writes, isEmpty);
-      expect(statusWrites, isEmpty);
       expect(skipNotes().single.data, {
         'provider': 'training_peaks',
         'status': 'error',
@@ -402,11 +393,10 @@ void main() {
       ]);
 
       expect(server.writes.length, writesBefore);
-      expect(statusWrites, isEmpty);
       expect(skipNotes(), hasLength(2));
     });
 
-    test('an active row still writes, fires the hook and pushes', () async {
+    test('an active row still writes and pushes', () async {
       await repository.upsertIntegration(_tp());
       final writesBefore = server.writes.length;
 
@@ -419,7 +409,6 @@ void main() {
 
       final row = await repository.getIntegration(_userId, 'training_peaks');
       expect(row!.lastSyncStatus, requiresReauthStatus);
-      expect(statusWrites, [('training_peaks', requiresReauthStatus)]);
       expect(server.writes.length, writesBefore + 1);
       expect(lastIntegrationUpsert()['last_sync_status'], requiresReauthStatus);
       expect(skipNotes(), isEmpty);
@@ -443,7 +432,6 @@ void main() {
       expect(row.lastSyncStatus, isNull);
       expect(row.lastSyncError, isNull);
       expect(server.writes.length, writesBefore);
-      expect(statusWrites, isEmpty);
       expect(skipNotes(), hasLength(1));
     });
   });

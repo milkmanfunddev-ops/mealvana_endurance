@@ -36,6 +36,7 @@ import 'package:mealvana_endurance/features/integrations/data/training_peaks_api
 import 'package:mealvana_endurance/features/integrations/domain/integration.dart';
 import 'package:mealvana_endurance/features/integrations/domain/integration_exceptions.dart';
 import 'package:mealvana_endurance/features/integrations/presentation/providers/integrations_providers.dart';
+import 'package:mealvana_endurance/features/integrations/presentation/providers/reconnect_notice_controller.dart';
 import 'package:mealvana_endurance/features/settings/presentation/screens/connected_apps_screen.dart';
 import 'package:mealvana_endurance/shared/database/app_database.dart';
 import 'package:mealvana_endurance/shared/providers/user_id_provider.dart';
@@ -143,6 +144,15 @@ void main() {
           activitiesRepositoryProvider.overrideWithValue(activitiesRepository),
           userIdProvider.overrideWith((ref) async => _authUid),
           contentServiceProvider.overrideWith(testContentService),
+          // Ticket 77: the card also follows a Drift watch of the rows. These
+          // tests write Drift from runAsync's real zone, which would wait on a
+          // watch query queued in the fake zone (and the watch's close timer
+          // outlives the tree). The cards here read the controller's own
+          // flags; the watch is driven in connected_apps_garmin_reauth_test
+          // and reauth_from_server_row_seam_test.
+          integrationsNeedingReconnectProvider(
+            _profileId,
+          ).overrideWith((ref) => const Stream<Set<String>>.empty()),
           if (tpApi != null)
             trainingPeaksSyncServiceProvider.overrideWith(
               (ref) async => TrainingPeaksSyncService(
