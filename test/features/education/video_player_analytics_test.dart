@@ -5,6 +5,11 @@
 // only when at least 90 % was watched (lesson 1.3 left at 15 % used to log a
 // completion).
 //
+// 69-007 (develop-2026-10 ticket 82): watched means PLAYED. A scrub to the end
+// without playing sent `watched_sec: 96` and a completion. `watched_sec` and
+// `percent_watched` now count time played; `furthest_sec` keeps the furthest
+// position reached.
+//
 // 32-007: a lesson opened offline is weather, not a fault. iOS phrases it as
 // `PlatformException(VideoError, Failed to load video: Could not connect to
 // the server., ...)` (run 32 console, 08:17:08).
@@ -19,6 +24,7 @@ import 'package:flutter/services.dart' show PlatformException;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:chewie/chewie.dart';
+import 'package:video_player/video_player.dart';
 import 'package:video_player_platform_interface/video_player_platform_interface.dart';
 
 import 'package:mealvana_endurance/features/education/presentation/screens/video_player_screen.dart';
@@ -33,11 +39,14 @@ import '../../helpers/widget_test_harness.dart' show MockSharedPreferences;
 const _duration = Duration(seconds: 100);
 
 /// video_player's platform side: a 100 s clip that initializes at once and
-/// seeks at once, or (with [createError]) a load that fails.
+/// seeks at once, or (with [createError]) a load that fails. [position] is
+/// what the controller's 100 ms poll reads while playing; the test advances
+/// it the way a playing clip would.
 class _FakeVideoPlatform extends VideoPlayerPlatform {
   _FakeVideoPlatform({this.createError});
 
   final Object? createError;
+  Duration position = Duration.zero;
   final _events = StreamController<VideoEvent>.broadcast();
 
   @override
@@ -69,7 +78,9 @@ class _FakeVideoPlatform extends VideoPlayerPlatform {
   }
 
   @override
-  Future<void> seekTo(int playerId, Duration position) async {}
+  Future<void> seekTo(int playerId, Duration position) async {
+    this.position = position;
+  }
 
   @override
   Future<void> dispose(int playerId) async {}
@@ -90,7 +101,7 @@ class _FakeVideoPlatform extends VideoPlayerPlatform {
   Future<void> setPlaybackSpeed(int playerId, double speed) async {}
 
   @override
-  Future<Duration> getPosition(int playerId) async => Duration.zero;
+  Future<Duration> getPosition(int playerId) async => position;
 
   @override
   Future<void> setMixWithOthers(bool mixWithOthers) async {}
@@ -138,44 +149,107 @@ void main() {
     }
   }
 
-  /// Watch up to [percent] of the clip, then leave the screen.
-  Future<void> watchThenClose(WidgetTester tester, int percent) async {
-    VideoPlayerPlatform.instance = _FakeVideoPlatform();
-    await open(tester);
-    final chewie = tester.widget<Chewie>(find.byType(Chewie));
-    await tester.runAsync(
-      () => chewie.controller.videoPlayerController.seekTo(
-        _duration * (percent / 100),
-      ),
-    );
-    await tester.pump();
+  late _FakeVideoPlatform platform;
 
-    // Leave the lesson: the screen's dispose sends the exit events.
+  Future<VideoPlayerController> openLesson(WidgetTester tester) async {
+    platform = _FakeVideoPlatform();
+    VideoPlayerPlatform.instance = platform;
+    await open(tester);
+    return tester
+        .widget<Chewie>(find.byType(Chewie))
+        .controller
+        .videoPlayerController;
+  }
+
+  /// Real playback: play, then move the clip forward 100 ms per 100 ms pump
+  /// (the controller polls the position every 100 ms while playing) until
+  /// [to], then pause.
+  Future<void> playTo(
+    WidgetTester tester,
+    VideoPlayerController video,
+    Duration to,
+  ) async {
+    await video.play();
+    await tester.pump();
+    while (platform.position < to) {
+      platform.position += const Duration(milliseconds: 100);
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+    await video.pause();
+    await tester.pump();
+  }
+
+  /// Leave the lesson: the screen's dispose sends the exit events.
+  Future<void> close(WidgetTester tester) async {
     await tester.pumpWidget(const SizedBox());
     await tester.pump(const Duration(seconds: 5));
   }
 
-  testWidgets('left at 15 %: education_video_closed {percent_watched: 15}, '
-      'and no completed', (tester) async {
-    await watchThenClose(tester, 15);
+  Map<String, dynamic>? closedProperties() =>
+      analytics.findEvents('education_video_closed').single.properties;
 
-    final closed = analytics.findEvents('education_video_closed');
-    expect(closed, hasLength(1));
-    expect(closed.single.properties?['percent_watched'], 15);
-    expect(closed.single.properties?['video_id'], 'lesson-1-3');
-    expect(analytics.findEvents('education_video_completed'), isEmpty);
-  });
-
-  testWidgets('watched to 91 %: closed and completed, with the same '
+  testWidgets('played to 91 %: closed and completed, with the same '
       'properties', (tester) async {
-    await watchThenClose(tester, 91);
+    final video = await openLesson(tester);
+    await playTo(tester, video, const Duration(seconds: 91));
+    await close(tester);
 
     final closed = analytics.findEvents('education_video_closed');
     final completed = analytics.findEvents('education_video_completed');
     expect(closed, hasLength(1));
     expect(completed, hasLength(1));
+    expect(closed.single.properties?['video_id'], 'lesson-1-3');
+    expect(closed.single.properties?['watched_sec'], 91);
     expect(closed.single.properties?['percent_watched'], 91);
+    expect(closed.single.properties?['furthest_sec'], 91);
+    expect(closed.single.properties?['duration_sec'], 100);
     expect(completed.single.properties, closed.single.properties);
+  });
+
+  testWidgets('left at 15 %: education_video_closed {percent_watched: 15}, '
+      'and no completed', (tester) async {
+    final video = await openLesson(tester);
+    await playTo(tester, video, const Duration(seconds: 15));
+    await close(tester);
+
+    expect(closedProperties()?['watched_sec'], 15);
+    expect(closedProperties()?['percent_watched'], 15);
+    expect(analytics.findEvents('education_video_completed'), isEmpty);
+  });
+
+  testWidgets('69-007: scrubbed to the end, never played: watched 0, '
+      'furthest 100, no completed', (tester) async {
+    final video = await openLesson(tester);
+    await video.seekTo(_duration);
+    await tester.pump();
+    await close(tester);
+
+    expect(closedProperties()?['watched_sec'], 0);
+    expect(closedProperties()?['percent_watched'], 0);
+    expect(closedProperties()?['furthest_sec'], 100);
+    expect(analytics.findEvents('education_video_completed'), isEmpty);
+  });
+
+  testWidgets('played 10 s, then dragged to the end while playing: the '
+      'drag does not count', (tester) async {
+    final video = await openLesson(tester);
+    await video.play();
+    await tester.pump();
+    while (platform.position < const Duration(seconds: 10)) {
+      platform.position += const Duration(milliseconds: 100);
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+    // The drag: one jump while still playing, then a few more polls.
+    await video.seekTo(_duration);
+    await tester.pump(const Duration(milliseconds: 300));
+    await video.pause();
+    await tester.pump();
+    await close(tester);
+
+    expect(closedProperties()?['watched_sec'], 10);
+    expect(closedProperties()?['percent_watched'], 10);
+    expect(closedProperties()?['furthest_sec'], 100);
+    expect(analytics.findEvents('education_video_completed'), isEmpty);
   });
 
   testWidgets('a lesson opened offline is a breadcrumb and one count, not a '
@@ -197,10 +271,10 @@ void main() {
       (c) => c.severity == 'breadcrumb' && c.area == 'education.weather',
     );
     expect(crumbs, hasLength(1));
-    expect(
-      analytics.findEvents(expectedFailureEvent).single.properties,
-      {'area': 'education', 'reason': 'offline'},
-    );
+    expect(analytics.findEvents(expectedFailureEvent).single.properties, {
+      'area': 'education',
+      'reason': 'offline',
+    });
 
     await tester.pumpWidget(const SizedBox());
   });

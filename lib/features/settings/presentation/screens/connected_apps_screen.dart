@@ -972,6 +972,11 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
       await prefs.setTpWritebackEnabled(false);
     }
     await prefs.setTpWritebackNoticeShown(true);
+    // The write-back toggle row redraws only when this keepAlive provider is
+    // invalidated; without it the card kept showing "on" after Turn Off
+    // Sharing (testing-wave 69-009). Runs whatever the choice: the explicit
+    // default above may have written too.
+    if (context.mounted) ref.invalidate(preferencesServiceProvider);
   }
 
   Future<void> _connectTrainingPeaks(

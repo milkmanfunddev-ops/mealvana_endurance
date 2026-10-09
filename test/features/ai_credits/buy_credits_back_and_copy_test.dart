@@ -4,6 +4,10 @@
 // Opened by deep link the screen is the root of its stack: the back control
 // must go home. Pushed from somewhere, it must pop back there. The
 // explanation comes from `ai_credits.how_*`, not a Dart literal.
+//
+// 69-013 (ticket 82): the tester pack read "1 Credits". Pack titles and the
+// balance come from the `ai_credits.pack_title_*` / `balance_*` one/other
+// pairs.
 
 import 'dart:async';
 
@@ -11,6 +15,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:purchases_flutter/purchases_flutter.dart';
 
 import 'package:mealvana_endurance/features/ai_credits/application/credits_controller.dart';
 import 'package:mealvana_endurance/features/ai_credits/application/purchase_controller.dart';
@@ -28,6 +33,19 @@ class _FakeCreditsController extends CreditsController {
   FutureOr<CreditWallet> build() => const CreditWallet(balance: 12);
 }
 
+class _OneCreditController extends CreditsController {
+  @override
+  FutureOr<CreditWallet> build() => const CreditWallet(balance: 1);
+}
+
+/// A real RevenueCat [Package] for a credits SKU, as the store returns it.
+Package _creditsPackage(String sku, String price) => Package(
+  sku,
+  PackageType.custom,
+  StoreProduct(sku, 'AI credits', 'Credits ($sku)', 0.99, price, 'USD'),
+  const PresentedOfferingContext('credits', null, null),
+);
+
 class _IdlePurchaseController extends PurchaseController {
   @override
   FutureOr<void> build() => null;
@@ -40,6 +58,8 @@ void main() {
     WidgetTester tester, {
     required String initialLocation,
     bool aiCreditsEnabled = true,
+    List<Package> packages = const [],
+    CreditsController Function() credits = _FakeCreditsController.new,
   }) async {
     final router = GoRouter(
       initialLocation: initialLocation,
@@ -73,8 +93,8 @@ void main() {
             AppConfig.forTesting(aiCreditsEnabled: aiCreditsEnabled),
           ),
           contentServiceProvider.overrideWith(testContentService),
-          creditsControllerProvider.overrideWith(_FakeCreditsController.new),
-          visibleCreditPackagesProvider.overrideWith((ref) async => const []),
+          creditsControllerProvider.overrideWith(credits),
+          visibleCreditPackagesProvider.overrideWith((ref) async => packages),
           purchaseControllerProvider.overrideWith(_IdlePurchaseController.new),
         ],
         child: MaterialApp.router(routerConfig: router),
@@ -161,5 +181,38 @@ void main() {
     await tapBack(tester);
 
     expect(path(router), '/');
+  });
+
+  testWidgets('69-013: "1 Credit", "50 Credits", "250 Credits"; a balance '
+      'of 12 reads "12 credits"', (tester) async {
+    expect(defaults[ContentKeys.aiCreditsPackTitleOne], '{n} Credit');
+    expect(defaults[ContentKeys.aiCreditsPackTitleOther], '{n} Credits');
+
+    await pumpApp(
+      tester,
+      initialLocation: '/buy-credits',
+      packages: [
+        _creditsPackage('mealvana_credits_test_1', r'$0.99'),
+        _creditsPackage('mealvana_credits_50', r'$4.99'),
+        _creditsPackage('mealvana_credits_250', r'$19.99'),
+      ],
+    );
+
+    expect(find.text('1 Credit'), findsOneWidget);
+    expect(find.text('1 Credits'), findsNothing);
+    expect(find.text('50 Credits'), findsOneWidget);
+    expect(find.text('250 Credits'), findsOneWidget);
+    expect(find.text('12 credits'), findsOneWidget);
+  });
+
+  testWidgets('a balance of 1 reads "1 credit"', (tester) async {
+    await pumpApp(
+      tester,
+      initialLocation: '/buy-credits',
+      credits: _OneCreditController.new,
+    );
+
+    expect(find.text('1 credit'), findsOneWidget);
+    expect(find.text('1 credits'), findsNothing);
   });
 }

@@ -203,17 +203,27 @@ class _EnabledBody extends ConsumerWidget {
   }
 }
 
+/// "1 Credit" / "50 Credits": a one/other content-key pair with `{n}`
+/// (testing-wave 69-013). Zero takes the plural ("0 credits").
+String _creditsLabel(
+  ContentService content,
+  int n,
+  String oneKey,
+  String otherKey,
+) => ContentKeys.format(content.getValue(n == 1 ? oneKey : otherKey), {'n': n});
+
 // ---------------------------------------------------------------------------
 // Balance header
 // ---------------------------------------------------------------------------
 
-class _BalanceHeader extends StatelessWidget {
+class _BalanceHeader extends ConsumerWidget {
   const _BalanceHeader({required this.walletAsync});
 
   final AsyncValue<CreditWallet> walletAsync;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final content = ref.watch(contentServiceProvider);
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(20),
@@ -225,7 +235,12 @@ class _BalanceHeader extends StatelessWidget {
               loading: () => const CircularProgressIndicator(),
               error: (_, __) => const Text('—'),
               data: (wallet) => Text(
-                '${wallet.balance.clamp(0, double.maxFinite).toInt()} credits',
+                _creditsLabel(
+                  content,
+                  wallet.balance.clamp(0, double.maxFinite).toInt(),
+                  ContentKeys.aiCreditsBalanceOne,
+                  ContentKeys.aiCreditsBalanceOther,
+                ),
                 style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                   fontWeight: FontWeight.bold,
                 ),
@@ -242,7 +257,7 @@ class _BalanceHeader extends StatelessWidget {
 // Package list
 // ---------------------------------------------------------------------------
 
-class _PackageList extends StatelessWidget {
+class _PackageList extends ConsumerWidget {
   const _PackageList({
     required this.packages,
     required this.isBusy,
@@ -261,7 +276,8 @@ class _PackageList extends StatelessWidget {
       creditsForProductId(identifier);
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final content = ref.watch(contentServiceProvider);
     return Column(
       children: packages.map((pkg) {
         final product = pkg.storeProduct;
@@ -275,7 +291,12 @@ class _PackageList extends StatelessWidget {
             ),
             title: credits != null
                 ? Text(
-                    '$credits Credits',
+                    _creditsLabel(
+                      content,
+                      credits,
+                      ContentKeys.aiCreditsPackTitleOne,
+                      ContentKeys.aiCreditsPackTitleOther,
+                    ),
                     style: const TextStyle(fontWeight: FontWeight.bold),
                   )
                 : Text(product.title),

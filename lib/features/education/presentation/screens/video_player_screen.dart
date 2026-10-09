@@ -48,6 +48,16 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
   /// user actually watched.
   Duration _maxPosition = Duration.zero;
 
+  /// Time actually played (testing-wave 69-007): the sum of position steps
+  /// taken while the player reports `isPlaying`, each step > 0 and at most
+  /// [_maxTickStep]. video_player polls the position every 100 ms while
+  /// playing, so playback moves in small steps; a drag is one jump (or
+  /// happens while paused) and does not count. A rewatch can exceed the
+  /// duration; `percent_watched` clamps at 100.
+  Duration _played = Duration.zero;
+  Duration? _lastTickPosition;
+  static const Duration _maxTickStep = Duration(seconds: 1);
+
   @override
   void initState() {
     super.initState();
@@ -71,14 +81,23 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
     if (value.position > _maxPosition) {
       _maxPosition = value.position;
     }
+    final last = _lastTickPosition;
+    if (value.isPlaying && last != null) {
+      final step = value.position - last;
+      if (step > Duration.zero && step <= _maxTickStep) _played += step;
+    }
+    _lastTickPosition = value.position;
   }
 
   /// The share of a lesson that counts as watched (ticket 41, 32-015).
   static const double completedPercent = 90;
 
   /// Every exit sends `education_video_closed`; `education_video_completed`
-  /// only when at least [completedPercent] was watched, so funnels built on
-  /// "completed" mean watched (lesson 1.3 left at 15 % used to log it).
+  /// only when at least [completedPercent] of the duration was played, so
+  /// funnels built on "completed" mean watched (lesson 1.3 left at 15 % used
+  /// to log it; a scrub to the end without playing did too, 69-007).
+  /// `percent_watched` and `watched_sec` are played time; `furthest_sec` is
+  /// the furthest position reached (the old meaning, Lee 2026-10-09 Q1).
   void _trackWatchCompleted() {
     final duration = _videoController?.value.duration;
     if (_analytics == null ||
@@ -95,17 +114,15 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
     final videoId = widget.contentId;
     if (videoId == null || videoId.isEmpty) return;
 
-    final percent =
-        (_maxPosition.inMilliseconds / duration.inMilliseconds * 100).clamp(
-          0.0,
-          100.0,
-        );
+    final percent = (_played.inMilliseconds / duration.inMilliseconds * 100)
+        .clamp(0.0, 100.0);
 
     final properties = <String, dynamic>{
       'video_id': videoId,
       'title': widget.title,
       'percent_watched': percent.round(),
-      'watched_sec': _maxPosition.inSeconds,
+      'watched_sec': _played.inSeconds,
+      'furthest_sec': _maxPosition.inSeconds,
       'duration_sec': duration.inSeconds,
     };
     _track('education_video_closed', properties);
@@ -133,6 +150,9 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
     await _videoController?.dispose();
     _chewieController = null;
     _videoController = null;
+    // A fresh controller's first tick must not be compared with the old
+    // one's position. Played time from before a retry is kept.
+    _lastTickPosition = null;
 
     final videoUrl = widget.videoUrl.trim();
     if (videoUrl.isEmpty) {
