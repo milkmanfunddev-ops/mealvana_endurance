@@ -112,6 +112,23 @@ Their dates come from the wave each entry names.
   should split a shared file's hunks into one ticket where the hunks are small (60's three lines could have ridden on 63).
 
 ## Done
+- 2026-10-09 · develop-2026-10 · done · **#131 the lead pre-adds shared content keys before cutting a fix wave (wave 8).** Five of
+  fourteen tickets (72, 73, 79, 81, 82) each added keys to `content_keys.dart` and `content_defaults.json`; by #63 that was a
+  five-deep sequential chain. The lead added all thirteen keys (and their defaults) in one commit before the worktrees and told
+  each agent "do not edit those two files"; the chain collapsed into one pass and the wave ran in three passes (8, 5, 1) instead
+  of four or five. Rule: at the open, grep the wave's tickets for content keys and add them first; a ticket's key name may be
+  normalised then (72's `events.form.*` became `event_form.*` beside 81's). Done 2026-10-09: this entry; the skill's step 1 says it.
+- 2026-10-09 · develop-2026-10 · done · **#132 "no signature changed, so no codegen" left three stale provider hashes (wave 8).**
+  Tickets 71/78, 73 and 79 changed a `@riverpod` provider's body (not its signature) and skipped codegen; the merge tree's
+  unfiltered codegen rewrote `product_detail_service.g.dart`, `onboarding_controller.g.dart` and `food_preferences_controller.g.dart`,
+  and ticket 81's agent had to revert four such files from its own codegen run. Rule for the fix-wave prompt: a ticket that edits
+  ANY line inside an annotated file runs the unfiltered codegen and commits what changes; "signature" is not the test. Done
+  2026-10-09: this entry; the lead's prompts carry it from wave 9.
+- 2026-10-09 · develop-2026-10 · done · **#133 a "went red before the fix" claim that was never checked (wave 8).** Ticket 81's
+  checklist said the uptime unit test "read ~0 before the fix"; the Spec reviewer found it would have passed on the old code
+  (earlier tests in the file had started the lazy clock). Rule: a fix-wave agent that claims red-first says in the Fix notes HOW
+  it saw red (the command and the failing assertion), or does not claim it; the lead's review asks for the evidence. Done
+  2026-10-09: this entry.
 
 - 2026-10-08 · develop-2026-10 · done · **#115 wave 3's three retest tickets each carried 13 checks and took
   22–39 minutes of agent time with 15 Findings apiece.** The ten-check rule held up: nothing was skipped, but
