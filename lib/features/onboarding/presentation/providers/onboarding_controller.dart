@@ -208,7 +208,9 @@ class OnboardingController extends _$OnboardingController {
         area: 'onboarding',
       );
       // Update our session user reference
-      _currentUser = currentUser;
+      // The saved value, not the profile read before it: this controller is
+      // kept alive, so the next save diffs against it (ticket 71).
+      _currentUser = currentUser.copyWith(dietaryPreference: preference);
 
       // If dietary preference changed, remove old preference-based food avoids
       if (preferenceChanged &&
@@ -326,7 +328,8 @@ class OnboardingController extends _$OnboardingController {
         area: 'onboarding',
       );
       // Update our session user reference
-      _currentUser = currentUser;
+      // The saved list, not the profile read before it (ticket 71).
+      _currentUser = currentUser.copyWith(allergies: allergies);
 
       // Remove food preferences for allergies that were removed
       for (final removedAllergy in removedAllergies) {
@@ -374,8 +377,21 @@ class OnboardingController extends _$OnboardingController {
     return !state.hasError;
   }
 
-  /// Update food preferences to "avoid" for foods containing allergens or excluded by dietary preference
-  /// Saves each allergy/dietary preference with its own source tag for proper undo support
+  /// Set foods containing [allergies]' allergens or excluded by
+  /// [dietaryPreference] to avoid (level 0), each row tagged with its own
+  /// source ('allergy:gluten', 'dietary:vegan') so removing that restriction
+  /// later removes only its avoids.
+  ///
+  /// Reached from Settings (Allergies, Dietary Preference) on an account
+  /// that already has rows, so this is one MERGE save of every new avoid
+  /// (ticket 71, Finding 58-001): one save per allergy and one for the diet,
+  /// each a replace, left only the last set and wiped the athlete's own
+  /// likes. A food already avoided by another restriction keeps its row and
+  /// source; a food in two new sets takes the first (allergies before diet).
+  ///
+  /// Twice at once (two quick Settings saves): the repository serialises the
+  /// local writes in call order and both are merges, so both sets land; its
+  /// immediate upload reruns for the second save.
   Future<void> _updateFoodPreferencesForAllergies(
     String userId,
     List<Allergy> allergies,
@@ -383,69 +399,74 @@ class OnboardingController extends _$OnboardingController {
   ) async {
     try {
       final foodRepository = ref.read(foodRepositoryProvider);
+      final existingSources = await _authService.getFoodPreferenceSources(
+        userId,
+      );
+      final preferences = <String, FoodPreference>{};
+      final sliderLevels = <String, int>{};
+      final sources = <String, String>{};
+      var alreadyAvoided = 0;
 
-      // Process each allergy individually with its own source tag
+      void addAvoids(Iterable<String> foods, String source) {
+        for (final food in foods) {
+          if (sources.containsKey(food)) continue;
+          final existing = existingSources[food];
+          if (existing != null &&
+              (existing.startsWith('allergy:') ||
+                  existing.startsWith('dietary:'))) {
+            alreadyAvoided++;
+            continue;
+          }
+          preferences[food] = FoodPreference.dislike;
+          sliderLevels[food] = 0;
+          sources[food] = source;
+        }
+      }
+
       for (final allergy in allergies) {
         final allergyFoods = await foodRepository.getFoodsToAvoid(
           allergies: [allergy],
         );
-
-        if (allergyFoods.isNotEmpty) {
-          final preferences = <String, FoodPreference>{};
-          final sliderLevels = <String, int>{};
-          for (final foodName in allergyFoods) {
-            preferences[foodName] = FoodPreference.dislike;
-            sliderLevels[foodName] = 0;
-          }
-
-          // Save with allergy-specific source (e.g., 'allergy:gluten')
-          await _authService.saveFoodPreferences(
-            userId,
-            preferences,
-            sliderLevels: sliderLevels,
-            source: 'allergy:${allergy.dbValue}',
-          );
-
-          _report.info(
-            '🍎 Set ${allergyFoods.length} foods to avoid for allergy: ${allergy.displayName}',
-            area: 'onboarding',
-          );
-        }
+        addAvoids(allergyFoods, 'allergy:${allergy.dbValue}');
+        _report.info(
+          '🍎 ${allergyFoods.length} foods to avoid for allergy: ${allergy.displayName}',
+          area: 'onboarding',
+        );
       }
 
-      // Process dietary preference if set
       if (dietaryPreference != null &&
           dietaryPreference != DietaryPreference.none) {
         final dietaryFoods = await foodRepository.getFoodsToAvoid(
           dietaryPreference: dietaryPreference,
         );
-
-        if (dietaryFoods.isNotEmpty) {
-          final preferences = <String, FoodPreference>{};
-          final sliderLevels = <String, int>{};
-          for (final foodName in dietaryFoods) {
-            preferences[foodName] = FoodPreference.dislike;
-            sliderLevels[foodName] = 0;
-          }
-
-          // Save with dietary-specific source (e.g., 'dietary:vegan')
-          await _authService.saveFoodPreferences(
-            userId,
-            preferences,
-            sliderLevels: sliderLevels,
-            source: 'dietary:${dietaryPreference.dbValue}',
-          );
-
-          _report.info(
-            '🥗 Set ${dietaryFoods.length} foods to avoid for diet: ${dietaryPreference.displayName}',
-            area: 'onboarding',
-          );
-        }
+        addAvoids(dietaryFoods, 'dietary:${dietaryPreference.dbValue}');
+        _report.info(
+          '🥗 ${dietaryFoods.length} foods to avoid for diet: ${dietaryPreference.displayName}',
+          area: 'onboarding',
+        );
       }
+
+      if (preferences.isEmpty) {
+        _report.breadcrumb(
+          'Food avoids: nothing new to save',
+          category: 'onboarding',
+          data: {'already_avoided': alreadyAvoided},
+        );
+        return;
+      }
+
+      await _authService.saveFoodPreferences(
+        userId,
+        preferences,
+        sliderLevels: sliderLevels,
+        sources: sources,
+        mergeMode: true,
+      );
 
       _report.info(
         '✅ Food preferences updated for allergen/dietary restrictions',
         area: 'onboarding',
+        data: {'saved': preferences.length, 'already_avoided': alreadyAvoided},
       );
     } catch (e, stackTrace) {
       unawaited(

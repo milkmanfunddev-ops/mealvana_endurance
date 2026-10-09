@@ -32,12 +32,16 @@ class FoodPreferencesDao extends DatabaseAccessor<AppDatabase>
   /// - 'manual': User explicitly set this preference (default)
   /// - 'allergy:{name}': Auto-set due to an allergy (e.g., 'allergy:gluten')
   /// - 'dietary:{name}': Auto-set due to dietary preference (e.g., 'dietary:vegan')
+  /// [sources] overrides [source] per food, for one save that carries rows
+  /// from several origins (Settings' allergy and diet avoids, ticket 71) or
+  /// a pull that keeps the server's source.
   Future<void> saveFoodPreferences(
     String userId,
     Map<String, domain.FoodPreference> preferences, {
     Map<String, int>? sliderLevels,
     bool mergeMode = false,
     String source = 'manual',
+    Map<String, String>? sources,
   }) async {
     // Get existing preferences to merge metadata properly
     Map<String, domain.FoodPreference>? existingPrefs;
@@ -66,7 +70,7 @@ class FoodPreferencesDao extends DatabaseAccessor<AppDatabase>
             foodName: entry.key,
             preference: entry.value.value,
             preferenceLevel: Value(sliderLevel),
-            preferenceSource: Value(source),
+            preferenceSource: Value(sources?[entry.key] ?? source),
             createdAt: Value(DateTime.now()),
             updatedAt: Value(DateTime.now()),
           ),

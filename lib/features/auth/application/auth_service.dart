@@ -355,20 +355,27 @@ class AuthService {
     return user.onboardingCompleted;
   }
 
-  /// Save food preferences (typically during onboarding).
+  /// Save food preferences through [FoodPreferencesRepository], which marks
+  /// them dirty and uploads them at once (ticket 58). The profile is not
+  /// marked dirty: its upload carries no food preferences.
   ///
-  /// Replaces the local set through [FoodPreferencesRepository], which marks
-  /// it dirty and uploads it at once (ticket 58). The profile is not marked
-  /// dirty: its upload carries no food preferences.
+  /// By default this replaces the user's whole local set: right only for an
+  /// account with no rows yet (the plan resolver's defaults). [mergeMode]
+  /// writes just [preferences] and keeps every other row: Settings' allergy
+  /// and diet avoids use it, so a manual like or another restriction's avoid
+  /// survives (ticket 71).
   /// [source] identifies the origin of the preference:
   /// - 'manual': User explicitly set this preference (default)
   /// - 'allergy:{name}': Auto-set due to an allergy (e.g., 'allergy:gluten')
   /// - 'dietary:{name}': Auto-set due to dietary preference (e.g., 'dietary:vegan')
+  /// [sources] overrides [source] per food.
   Future<void> saveFoodPreferences(
     String userId,
     Map<String, FoodPreference> preferences, {
     Map<String, int>? sliderLevels,
     String source = 'manual',
+    Map<String, String>? sources,
+    bool mergeMode = false,
   }) async {
     // userId is Supabase auth UUID (from auth.currentUser.id)
     final deviceId =
@@ -395,6 +402,10 @@ class AuthService {
         preferences,
         sliderLevels: normalizedLevels,
         source: source,
+        sources: sources,
+        mergeMode: mergeMode,
+        // A user edit either way: a merge must still reach the server.
+        upload: true,
       );
 
       _report.breadcrumb(

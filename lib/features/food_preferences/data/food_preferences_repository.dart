@@ -189,6 +189,7 @@ class FoodPreferencesRepository with SyncableRepository {
   /// - 'dietary:{name}': Auto-set due to dietary preference (e.g., 'dietary:vegan')
   /// [upload] - a user edit saved with [mergeMode] (Settings) that must still
   /// reach the server. A replace ([mergeMode] false) always uploads.
+  /// [sources] overrides [source] per food (ticket 71).
   ///
   /// A user-edit save marks the pending (dirty) flag before its upload starts
   /// and the upload clears it, so a save whose upload never lands is retried
@@ -201,6 +202,7 @@ class FoodPreferencesRepository with SyncableRepository {
     Map<String, int>? sliderLevels,
     bool mergeMode = false,
     String source = 'manual',
+    Map<String, String>? sources,
     bool upload = false,
   }) async {
     try {
@@ -223,6 +225,7 @@ class FoodPreferencesRepository with SyncableRepository {
           sliderLevels: sliderLevels,
           mergeMode: mergeMode,
           source: source,
+          sources: sources,
         );
 
         // For local user edits, attempt immediate remote write.
