@@ -4,6 +4,8 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
+import 'provider_error_summary.dart';
+
 /// Why a sync failed, as stored in `integrations.last_sync_error`
 /// (testing-wave develop-2026-10 ticket 37). The row holds a short wire
 /// code, never English: the card and snackbars map the code to content
@@ -164,30 +166,27 @@ class IntegrationApiException implements Exception {
   final bool isRetryable;
   final String? provider; // 'final_surge', 'training_peaks', etc.
 
-  /// The most of a response body that goes into a Report's `extra`.
-  static const maxReportedBodyChars = 1000;
-
-  /// Status and clipped response body for a Report's `extra`. `toString()`
-  /// drops the body outside debug builds, so without this a prod 4xx reaches
-  /// Sentry with no clue what the provider objected to.
+  /// Status and error code for a Report's `extra`, never the body (ticket
+  /// 84, Lee's ruling of 2026-10-09: one rule for every provider and
+  /// endpoint, the same as the server's `providerErrorSummary`). [body]
+  /// stays on the exception for in-memory checks only.
   Map<String, dynamic> get reportExtra {
-    final b = body;
-    return {
-      'statusCode': statusCode,
-      if (b != null)
-        'responseBody': b.length > maxReportedBodyChars
-            ? b.substring(0, maxReportedBodyChars)
-            : b,
-    };
+    final s = summary;
+    return {'statusCode': s.status, 'errorCode': s.errorCode};
   }
+
+  /// The redacted view of this failure: status and error code only.
+  ProviderErrorSummary get summary => providerErrorSummary(statusCode, body);
+
+  /// ` (status: N, error: <code>)` for `toString()`; never the body.
+  String get redactedSuffix => providerErrorSuffix(summary);
 
   @override
   String toString() {
     final buffer = StringBuffer('IntegrationApiException');
     if (provider != null) buffer.write('[$provider]');
     buffer.write(': $message');
-    if (statusCode != null) buffer.write(' (status: $statusCode)');
-    if (body != null && kDebugMode) buffer.write('\nBody: $body');
+    buffer.write(redactedSuffix);
     return buffer.toString();
   }
 }
@@ -290,7 +289,7 @@ class ServerException extends IntegrationApiException {
     final buffer = StringBuffer('ServerException');
     if (provider != null) buffer.write('[$provider]');
     buffer.write(': $message');
-    if (statusCode != null) buffer.write(' (status: $statusCode)');
+    buffer.write(redactedSuffix);
     return buffer.toString();
   }
 }
@@ -316,6 +315,7 @@ class ForbiddenException extends IntegrationApiException {
     final buffer = StringBuffer('ForbiddenException');
     if (provider != null) buffer.write('[$provider]');
     buffer.write(': $message');
+    buffer.write(redactedSuffix);
     if (isPremiumRequired) buffer.write(' (premium required)');
     return buffer.toString();
   }

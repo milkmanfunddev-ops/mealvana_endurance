@@ -271,8 +271,8 @@ void main() {
         ]);
       });
 
-      test('a 400 inside the window is Degraded with the TP response body in '
-          'extra, never a Fault', () async {
+      test('a 400 inside the window is Degraded with the status and TP error '
+          'code in extra, never the body or a Fault', () async {
         final transport = _Transport(workoutDay: '2026-09-12T00:00:00');
         final h = await build(transport, now: DateTime(2026, 9, 14, 9));
 
@@ -286,8 +286,12 @@ void main() {
         expect(h.report.faults, isEmpty);
         expect(h.report.degradeds, hasLength(1));
         final extra = h.report.degradeds.single.extra!;
+        // Ticket 84 (Lee, 2026-10-09): status + error code only, every
+        // endpoint; TP's error_description no longer reaches Sentry.
         expect(extra['statusCode'], 400);
-        expect(extra['responseBody'], _tp400Body);
+        expect(extra['errorCode'], 'invalid_request');
+        expect(extra.containsKey('responseBody'), isFalse);
+        expect(extra.values.join(' '), isNot(contains('editable range')));
         expect(extra['workoutId'], _workoutId);
         expect(transport.ledgerCloses.single['error'], 'api_400');
       });
@@ -483,7 +487,8 @@ void main() {
         expect(report.faults, isEmpty);
         final extra = report.degradeds.single.extra!;
         expect(extra['statusCode'], 400);
-        expect(extra['responseBody'], '{"error":"invalid_grant"}');
+        expect(extra['errorCode'], 'invalid_grant');
+        expect(extra.containsKey('responseBody'), isFalse);
         verify(
           () => repo.updateSyncStatus(
             'u1',

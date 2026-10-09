@@ -667,14 +667,8 @@ class TrainingPeaksApiException extends IntegrationApiException {
 
   @override
   String toString() {
-    final buffer = StringBuffer('TrainingPeaksApiException: $message');
-    if (statusCode != null) {
-      buffer.write(' (status: $statusCode)');
-    }
-    if (body != null && kDebugMode) {
-      buffer.write('\nBody: $body');
-    }
-    return buffer.toString();
+    // Ticket 84: status and error code only, never the body, in any build.
+    return 'TrainingPeaksApiException: $message$redactedSuffix';
   }
 }
 

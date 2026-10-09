@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 
 import 'http_retry_client.dart';
 import '../domain/integration_exceptions.dart';
+import '../domain/provider_error_summary.dart';
 
 /// API client for Final Surge workout data
 ///
@@ -77,15 +78,12 @@ class FinalSurgeApiClient {
       body: bodyParams,
     );
 
+    // Ticket 84: never print the body; it reaches the wave's console logs.
     if (kDebugMode) {
       print('   Token exchange response status: ${response.statusCode}');
-      print('   Response body: ${response.body}');
     }
 
     if (response.statusCode != 200) {
-      if (kDebugMode) {
-        print('❌ Token exchange failed: ${response.body}');
-      }
       throw FinalSurgeApiException(
         'Token exchange failed',
         statusCode: response.statusCode,
@@ -99,14 +97,17 @@ class FinalSurgeApiClient {
       print('   JSON keys: ${json.keys.toList()}');
     }
 
-    // Final Surge returns 200 even on error - check the error field
-    final errorMessage = json['error'] as String?;
-    if (errorMessage != null && errorMessage.isNotEmpty) {
-      if (kDebugMode) {
-        print('❌ Token exchange error: $errorMessage');
-      }
+    // Final Surge returns 200 even on error - check the error field.
+    // Ticket 84: only a code-shaped `error` goes into the message; free text
+    // (which can carry a token, Finding 69-012) gives no detail.
+    final errorMessage = json['error'];
+    if (errorMessage is String && errorMessage.isNotEmpty) {
+      final code = providerErrorSummary(
+        response.statusCode,
+        response.body,
+      ).errorCode;
       throw FinalSurgeApiException(
-        'Token exchange failed: $errorMessage',
+        code != null ? 'Token exchange failed: $code' : 'Token exchange failed',
         statusCode: response.statusCode,
         body: response.body,
       );
@@ -275,8 +276,9 @@ class FinalSurgeApiClient {
         // Final Surge may return an error in the response body even with 200 status
         final errorMessage = json['ErrorMessage'] as String?;
         if (errorMessage != null && errorMessage.isNotEmpty) {
+          // Ticket 84: the free-text ErrorMessage stays out of the message.
           throw FinalSurgeApiException(
-            'Failed to fetch workout: $errorMessage',
+            'Failed to fetch workout: provider returned an error',
             statusCode: response.statusCode,
             body: response.body,
           );
@@ -458,14 +460,8 @@ class FinalSurgeApiException extends IntegrationApiException {
 
   @override
   String toString() {
-    final buffer = StringBuffer('FinalSurgeApiException: $message');
-    if (statusCode != null) {
-      buffer.write(' (status: $statusCode)');
-    }
-    if (body != null && kDebugMode) {
-      buffer.write('\nBody: $body');
-    }
-    return buffer.toString();
+    // Ticket 84: status and error code only, never the body, in any build.
+    return 'FinalSurgeApiException: $message$redactedSuffix';
   }
 }
 

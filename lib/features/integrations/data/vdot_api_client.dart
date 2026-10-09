@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 
 import 'http_retry_client.dart';
 import '../domain/integration_exceptions.dart';
+import '../domain/provider_error_summary.dart';
 
 /// API client for the V.O2 (VDOT) REST API.
 ///
@@ -42,37 +43,15 @@ class VdotApiClient {
   String get _basicAuthHeader =>
       'Basic ${base64Encode(utf8.encode('$_clientId:$_clientSecret'))}';
 
-  /// Pull a human-readable reason out of an error response body.
+  /// The reason a token exchange failed, for the thrown exception's message.
   ///
   /// VDOT's token endpoint is a custom (.NET) service that returns
-  /// `{"status":"NOK","error":"invalid_code", ...}` rather than RFC 6749's
-  /// `{"error":"...","error_description":"..."}`. We fold whichever field is
-  /// present into the thrown exception's message so the real reason is visible
-  /// in release builds too — `VdotApiException.toString()` only appends the raw
-  /// body in debug mode.
-  static String _extractErrorReason(String body) {
-    if (body.isEmpty) return 'empty response body';
-    try {
-      final decoded = jsonDecode(body);
-      if (decoded is Map<String, dynamic>) {
-        for (final key in const [
-          'error_description',
-          'error',
-          'message',
-          'status',
-        ]) {
-          final value = decoded[key];
-          if (value is String && value.isNotEmpty) return value;
-        }
-      }
-    } catch (_) {
-      // Non-JSON body (e.g. an HTML error page) — fall through to raw text.
-    }
-    final collapsed = body.replaceAll(RegExp(r'\s+'), ' ').trim();
-    return collapsed.length > 200
-        ? '${collapsed.substring(0, 200)}…'
-        : collapsed;
-  }
+  /// `{"status":"NOK","error":"invalid_code", ...}`. Ticket 84 (Lee's ruling
+  /// of 2026-10-09): only the error code is kept, never `error_description`
+  /// or any raw text, since a free-text field can carry a token (Finding
+  /// 69-012). No code gives `HTTP <status>`.
+  static String _extractErrorReason(int status, String body) =>
+      providerErrorSummary(status, body).errorCode ?? 'HTTP $status';
 
   /// Exchange an authorization code for an access + refresh token.
   ///
@@ -132,7 +111,7 @@ class VdotApiClient {
     }
 
     if (response.statusCode != 200) {
-      final reason = _extractErrorReason(response.body);
+      final reason = _extractErrorReason(response.statusCode, response.body);
       // `invalid_payload` from VDOT means a required body field (grant_type /
       // client_id / client_secret) was missing or empty, OR the body was sent
       // as JSON instead of x-www-form-urlencoded — it is NOT about the code
@@ -250,13 +229,12 @@ class VdotApiClient {
       request: () => _httpClient.get(uri, headers: _authedHeaders(accessToken)),
       onResponse: (response) {
         if (kDebugMode && response.statusCode != 200) {
-          // VDOT's 401/4xx body sometimes contains useful detail. Surface it
-          // so we don't keep blaming "token expired" for unrelated failures.
-          print('🔎 [vdot] GET $uri -> ${response.statusCode}');
-          print('       headers: ${response.headers}');
-          final body = response.body;
-          print(
-            '       body: ${body.length > 500 ? '${body.substring(0, 500)}…' : body}',
+          // Ticket 84: the status and error code only, never the body, which
+          // reaches the wave's console logs.
+          final s = providerErrorSummary(response.statusCode, response.body);
+          debugPrint(
+            '🔎 [vdot] GET ${uri.path} -> ${s.status} '
+            'error: ${s.errorCode ?? 'none'}',
           );
         }
         _handleErrorResponse(response, 'Failed to fetch VDOT workouts');
@@ -450,9 +428,7 @@ class VdotApiException extends IntegrationApiException {
 
   @override
   String toString() {
-    final buffer = StringBuffer('VdotApiException: $message');
-    if (statusCode != null) buffer.write(' (status: $statusCode)');
-    if (body != null && kDebugMode) buffer.write('\nBody: $body');
-    return buffer.toString();
+    // Ticket 84: status and error code only, never the body, in any build.
+    return 'VdotApiException: $message$redactedSuffix';
   }
 }
