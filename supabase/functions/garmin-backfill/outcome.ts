@@ -15,7 +15,17 @@
  * Each now gets an answer that says which it was, so the app can act on it and
  * the app's HTTP layer stops reporting a dead token or a throttle as a server
  * fault (it reports 5xx only). Only a real upstream outage keeps 502.
+ *
+ * Ticket 76 (Finding 69-012): Garmin's refusal text is read in memory only,
+ * to spot a dead token; what reaches a log, Sentry or the answer is Garmin's
+ * status and error code (the shared rule in `../_shared/provider_error.ts`).
  */
+
+import { isGarminTokenInactive } from '../_shared/garmin/token.ts';
+import {
+  providerErrorSummary,
+  type ProviderErrorSummary,
+} from '../_shared/provider_error.ts';
 
 export type BackfillFailureCode =
   | 'garmin_reauth_required'
@@ -65,5 +75,26 @@ export function classifyBackfillFailure(
     status: 502,
     code: 'garmin_unavailable',
     message: 'Garmin backfill request failed for all summary types',
+  };
+}
+
+/** One rejected backfill type: what may be logged, and whether the token is dead. */
+export interface BackfillRejection {
+  summary: ProviderErrorSummary;
+  tokenInactive: boolean;
+}
+
+/**
+ * Reads Garmin's refusal of one backfill type. `text` is checked for
+ * "Token is not active" in memory and then dropped; only `summary` (status
+ * and error code) may leave this function.
+ */
+export function describeBackfillRejection(
+  status: number,
+  text: string,
+): BackfillRejection {
+  return {
+    summary: providerErrorSummary(status, text),
+    tokenInactive: isGarminTokenInactive(status, text),
   };
 }

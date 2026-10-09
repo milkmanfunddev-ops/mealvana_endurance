@@ -16,7 +16,15 @@
  * Finding 118-016: Garmin's "Token is not active" answer means the athlete
  * has to sign in again; [markGarminRequiresReauth] records that on the
  * integrations row the way ticket 64 does for TrainingPeaks and V.O2.
+ *
+ * Ticket 76 (Finding 69-012): every log here goes through the shared
+ * redaction rule in `../provider_error.ts`. A refused refresh logs Garmin's
+ * status and error code, never its body (Garmin's invalid_grant description
+ * carries the refresh token); a database error logs its code and message,
+ * never `details` (a "Failing row" holds the tokens).
  */
+
+import { dbErrorSummary, providerErrorSummary } from '../provider_error.ts';
 
 export const GARMIN_TOKEN_URL =
   'https://diauth.garmin.com/di-oauth2-service/oauth/token';
@@ -106,8 +114,8 @@ export async function ensureFreshGarminToken(
 
     if (!resp.ok) {
       console.error(
-        `${prefix} Token refresh failed (${resp.status}):`,
-        (await resp.text()).slice(0, 300),
+        `${prefix} Token refresh failed`,
+        providerErrorSummary(resp.status, await resp.text()),
       );
       return row.access_token;
     }
@@ -134,12 +142,12 @@ export async function ensureFreshGarminToken(
       .eq('provider', 'garmin');
 
     if (updateErr) {
-      console.error(`${prefix} Failed to persist refreshed token:`, updateErr);
+      console.error(`${prefix} Failed to persist refreshed token:`, dbErrorSummary(updateErr));
     }
 
     return newAccessToken;
   } catch (err) {
-    console.error(`${prefix} Token refresh error:`, err);
+    console.error(`${prefix} Token refresh error:`, dbErrorSummary(err));
     return row.access_token;
   }
 }
@@ -174,7 +182,7 @@ export async function deregisterGarminForUser(
       .maybeSingle();
 
     if (error) {
-      console.error(`${prefix} Garmin deregistration: integrations read failed for user ${userId}:`, error);
+      console.error(`${prefix} Garmin deregistration: integrations read failed for user ${userId}:`, dbErrorSummary(error));
       return 'failed';
     }
     if (!row?.access_token) return 'no_token';
@@ -239,9 +247,9 @@ export async function markGarminRequiresReauth(
       .eq('user_id', userId)
       .eq('provider', 'garmin');
     if (error) {
-      console.error(`${logPrefix} Failed to mark Garmin requires_reauth:`, error);
+      console.error(`${logPrefix} Failed to mark Garmin requires_reauth:`, dbErrorSummary(error));
     }
   } catch (err) {
-    console.error(`${logPrefix} Failed to mark Garmin requires_reauth:`, err);
+    console.error(`${logPrefix} Failed to mark Garmin requires_reauth:`, dbErrorSummary(err));
   }
 }

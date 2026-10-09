@@ -35,11 +35,12 @@ import {
 } from '../_shared/sentry.ts';
 import {
   classifyBackfillFailure,
+  describeBackfillRejection,
   RATE_LIMIT_RETRY_AFTER_SECONDS,
 } from './outcome.ts';
+import type { ProviderErrorSummary } from '../_shared/provider_error.ts';
 import {
   ensureFreshGarminToken,
-  isGarminTokenInactive,
   markGarminRequiresReauth,
 } from '../_shared/garmin/token.ts';
 
@@ -218,7 +219,9 @@ serve(withSentry('garmin-backfill', async (req: Request) => {
     const startSec = endSec - windowDays * 86400;
 
     const queued: Record<string, number> = {};
-    const errors: Record<string, string> = {};
+    // Ticket 76 (Finding 69-012): a rejected type keeps Garmin's status and
+    // error code only, never its body; a thrown fetch keeps String(err).
+    const errors: Record<string, ProviderErrorSummary | string> = {};
     // Finding 118-016: Garmin's "Token is not active" means the athlete has
     // to sign in again, not that Garmin is busy.
     let tokenInactive = false;
@@ -249,16 +252,20 @@ serve(withSentry('garmin-backfill', async (req: Request) => {
         queued[summaryType] = resp.status;
 
         if (!resp.ok) {
-          const text = await resp.text();
-          errors[summaryType] = text.slice(0, 500);
-          if (isGarminTokenInactive(resp.status, text)) tokenInactive = true;
+          const rejection = describeBackfillRejection(
+            resp.status,
+            await resp.text(),
+          );
+          errors[summaryType] = rejection.summary;
+          tokenInactive ||= rejection.tokenInactive;
           captureEdgeMessage(`[garmin-backfill] ${summaryType} backfill rejected`, {
             level: 'warning',
             extra: {
               userId: user.id,
               summaryType,
-              status: resp.status,
-              body: text.slice(0, 500),
+              status: rejection.summary.status,
+              error_code: rejection.summary.error_code,
+              token_inactive: rejection.tokenInactive,
             },
           });
         } else {
