@@ -1,6 +1,6 @@
 # 80: Event delete leaves Event Details and cancels its carb-load reminders; an imported event saves without a race distance
 
-**Status:** in-progress (wave 8, 2026-10-09)
+**Status:** landed-pending-merge (wave 8, 2026-10-09, bd4809c86)
 **Labels:** fix, round:develop-2026-10, area:events, area:notifications
 **Branch:** `develop-next` (fix-wave worktree)
 **Source:** Findings 69-002, 69-004 (and 69-005 steps 2–4, answered from code below); TRIAGE.md rulings of 2026-10-09.
@@ -116,39 +116,42 @@ No codegen expected: `EventsController` (`@riverpod`) changes only a method body
 
 ## Tests
 
-- [ ] **Seam, through the real notifier** (`event_delete_disarms_carb_nudges_seam_test.dart`: `ProviderContainer`, real `EventsController`, `EventsService` and `EventsRepository` over in-memory Drift with `FakePostgrest`, a real `CarbLoadNudgeService` over a recording `CarbNudgeGateway` fake and mock SharedPreferences, as `g27_carb_nudge_test.dart` builds it).
+- [x] **Seam, through the real notifier** (`event_delete_disarms_carb_nudges_seam_test.dart`: `ProviderContainer`, real `EventsController`, `EventsService` and `EventsRepository` over in-memory Drift with `FakePostgrest`, a real `CarbLoadNudgeService` over a recording `CarbNudgeGateway` fake and mock SharedPreferences, as `g27_carb_nudge_test.dart` builds it).
   - Seed an event 30 days out and run the sweep: three fires are scheduled.
   - `deleteEvent`: the gateway records `cancel` for all three `CarbNudgeEngine.allNotificationIds(id)`, `carb_nudge_armed_<id>` is gone, `notif_cancelled {reason: event_deleted}` fires once, and the event row is gone.
   - With the gateway's `cancel` throwing: the delete still completes and one `degraded` in area `carb_loading` is recorded.
-- [ ] **Unit** (`g27_carb_nudge_test.dart`, new case): an armed record for an id absent from `events` is disarmed by `evaluateOnOpen` with `event_deleted`. An armed record for an id still present is untouched.
-- [ ] **Widget** (`event_delete_pops_test.dart`, on `event_detail_narrow_viewport_test.dart`'s harness):
+- [x] **Unit** (`g27_carb_nudge_test.dart`, new case): an armed record for an id absent from `events` is disarmed by `evaluateOnOpen` with `event_deleted`. An armed record for an id still present is untouched.
+- [x] **Widget** (`event_delete_pops_test.dart`, on `event_detail_narrow_viewport_test.dart`'s harness):
   - A host screen pushes `EventDetailScreen` with `Navigator.push(MaterialPageRoute)`, as `event_list_card.dart:113` does, under a `GoRouter` at `/main`. More options → Delete Event → Delete returns to the host, and the "Event deleted successfully" snackbar is visible.
   - Second case: a `GoRouter` with only `/events/:eventId` on the stack (nothing to pop) ends at `/events`.
-- [ ] **Widget** (`event_form_imported_without_distance_test.dart`, on `event_form_goal_pace_by_sport_test.dart`'s harness): an `Event(origin: 'training_peaks', eventType: triathlon, eventSubtype: null)` in edit mode.
+- [x] **Widget** (`event_form_imported_without_distance_test.dart`, on `event_form_goal_pace_by_sport_test.dart`'s harness): an `Event(origin: 'training_peaks', eventType: triathlon, eventSubtype: null)` in edit mode.
   - Type a Location and Save Changes: `updateEvent` is called with `eventSubtype` null and no "Please select a race distance" line.
   - Change the sport category to Running and clear nothing: a distance is preselected (today's reset).
   - Create mode still refuses a null distance.
-- [ ] **Unit** (`event_origin_d2c_test.dart`): replace the mirrored `editOrigin` with the real `originAfterEdit`.
+- [x] **Unit** (`event_origin_d2c_test.dart`): replace the mirrored `editOrigin` with the real `originAfterEdit`.
   - A Location-only, bib-only or distance-only edit of a `training_peaks` row keeps `training_peaks`.
   - A name, date, start-time, sport or goal-time edit flips it to `manual`.
   - A `final_surge` pace edit flips it.
   - `manual` and null-origin rows keep their origin.
   - The re-sync exemption case stays.
   - Fixtures are producer-shaped: the TrainingPeaks import's `startTime` is `eventDate.toIso8601String()` (local midnight, no `Z`, `provider_event_import_service.dart:80`), and the form re-serialises the parsed value (`event_form_screen.dart:585`). The comparison must not flip on that round trip.
-- [ ] `flutter analyze` clean on touched files.
-- [ ] #116: `grep -rl` under `test/` for `EventDetailScreen`, `EventFormScreen`, `EventSubtypeDropdown`, `EventsController`, `eventsControllerProvider`, `deleteEvent`, `EventsService`, `updateEvent`, `CarbLoadNudgeService`, `evaluateOnOpen`, `disarmEvent` and `carbLoadNudgeServiceProvider`, and run every file named (today that includes `events_controller_invalidates_activities_test.dart`, `events_providers_dispose_during_await_test.dart`, `events_service_update_event_date_test.dart`, `event_date_write_paths_seam_test.dart`, `events_repository_crud_test.dart`, `event_form_back_button_test.dart`, `event_form_goal_pace_by_sport_test.dart`, `g29_carb_nudge_telemetry_test.dart`, `test/smoke_tests/events_meal_logging_smoke_test.dart`, `test/seeded_tests/events_meal_logging_content_test.dart`).
-- [ ] #117: the new catch's report is `report.degraded`, already in `reportCalls`. Run `test/shared/source_guard/`.
-- [ ] #118: a failed disarm is not written into notifier state.
-- [ ] Async paths, written down in Fix notes:
+- [x] `flutter analyze` clean on touched files.
+- [x] #116: `grep -rl` under `test/` for `EventDetailScreen`, `EventFormScreen`, `EventSubtypeDropdown`, `EventsController`, `eventsControllerProvider`, `deleteEvent`, `EventsService`, `updateEvent`, `CarbLoadNudgeService`, `evaluateOnOpen`, `disarmEvent` and `carbLoadNudgeServiceProvider`, and run every file named (today that includes `events_controller_invalidates_activities_test.dart`, `events_providers_dispose_during_await_test.dart`, `events_service_update_event_date_test.dart`, `event_date_write_paths_seam_test.dart`, `events_repository_crud_test.dart`, `event_form_back_button_test.dart`, `event_form_goal_pace_by_sport_test.dart`, `g29_carb_nudge_telemetry_test.dart`, `test/smoke_tests/events_meal_logging_smoke_test.dart`, `test/seeded_tests/events_meal_logging_content_test.dart`).
+- [x] #117: the new catch's report is `report.degraded`, already in `reportCalls`. Run `test/shared/source_guard/`.
+- [x] #118: a failed disarm is not written into notifier state.
+- [x] Async paths, written down in Fix notes:
   - Delete tapped twice: the dialog closes on the first confirm; the second tap lands on the popped screen.
   - The sweep running while a delete disarms: both cancel the same ids; `disarmEvent` is idempotent and the second sends no `notif_cancelled`, because the armed record is already gone.
   - A delete whose server ack fails (the background upload, `events_repository.dart:428-447`): the local row is gone, so the reminders are rightly cancelled.
   - The detail screen popped while `deleteEvent` is still awaiting: `context.mounted` guards the pop, and the disarm belongs to the controller (`keepAlive` link, `:190`).
-- [ ] Timeouts/retries: none added.
+- [x] Timeouts/retries: none added.
 
 ## Deploy
 
-None. Client-only: no SQL, no function.
+Changed by the Q3 fold (ticket 80 agent, wave 8). Not done by the agent:
+1. Apply `supabase/migrations/20261009120000_events_provider_event_id.sql` to **dev** before a build carrying Drift v25 reaches a device; prod at the next prod bundle. Additive, nullable, idempotent; a partial non-unique index only (never an `onConflict` target).
+2. After 1: dev `app_config.current_schema_version` may go to 25 (playbook §7 for prod). A device at v25 with the server at 24 runs the `from < 25` step and does not resync, so this is not urgent.
+Until 1 is applied: manual-event uploads still work (the client omits `provider_event_id` when null); an imported TrainingPeaks event's upload fails with PGRST204 and the row stays dirty.
 
 ## Retest
 
@@ -174,9 +177,50 @@ On a simulator, in the retest ticket after fix wave 8, as test@test.com:
 2. Deleting an event deletes its linked activity on the phone only (`events_repository.dart:411-421`). The server keeps it, so it can reappear after a pull. A linked activity is usually a Final Surge workout. Should an event delete stop deleting the linked activity (keep the workout), or delete it on the server too? Recommended: keep the workout. Drop the local cascade and keep the activities invalidation. It goes into this ticket if ruled before the wave.
 3. Editing an imported event's name or date flips it to `manual`, and the next TrainingPeaks sync no longer matches it on (name, date). From code the sync then imports the provider's version as a second event (`provider_event_import_service.dart:52-87`). Accept that for now, or match imports on a provider id in a later ticket? Recommended: a later ticket. The events table has no provider-id column today, so it needs a migration.
 
-Next: /testing-wave develop-2026-10 (fix wave 8)
 
 **Rulings (Lee, 2026-10-09, wave 7 close).**
 - Q1: after a delete the app goes back to where it came from (pop), My Events as the fallback.
 - Q2: the linked activity stays on the server; the delete removes only the event row remotely.
 - Q3: FOLD INTO 80: store the TrainingPeaks event id on import and match the sync on it, so a renamed or re-dated imported event is not imported again. Add the item to Fix, its files to Touches, and a seam test (producer-shaped import payload with the provider id).
+
+## Fix notes
+
+(wave 8 agent, 2026-10-09, commit `bd4809c86` on `testing-wave/develop-2026-10/80`, base `b174f1da1` with ticket 72.)
+
+**Touches added beyond the list.** `events_repository.dart` (Q2 cascade removal, provider-id mapping, `findEventByProviderEventId`), `event.dart` (`providerEventId`), `events_table.dart` + `app_database.dart` (+ `.g.dart`, Drift v25), `provider_event_import_service.dart` (Q3; **reserved directory `lib/features/integrations/` for this wave**, one method body changed), `supabase/migrations/20261009120000_events_provider_event_id.sql` (new, not applied), `events_controller.g.dart` (hash only), and tests `event_imported_edit_resync_seam_test.dart` (new), `events_service_update_event_date_test.dart` (stub for the new `getEventById` read), `schema_version_guard_test.dart` (re-pinned to v25). `carb_load_nudge_service.dart` also changed outside `evaluateOnOpen`: `disarmEvent` now returns whether anything was armed.
+
+**69-002 (delete leaves Event Details).** `_showDeleteConfirmation` now pops after the success snackbar (`Navigator.canPop` → `pop`, else `GoRouter.maybeOf(context)?.go('/events')`). Home button unchanged.
+
+**69-004 (imported event demands a distance).** `EventSubtypeDropdown.isRequired` (default true). The form passes `isRequired: false` while the edited event was stored with `eventSubtype == null` and the sport is still the stored one. Changing sport still preselects the first distance.
+
+**Origin (item 4).** New `lib/features/events/domain/event_origin.dart`: `originAfterEdit` / `syncOwnedFieldChanged`. TrainingPeaks owns name (trimmed), event type, goal time, start time (compared as instants) and date (calendar day); Final Surge adds goal pace (equal within one second, so the form's minutes+seconds round trip does not flip it) and `activityId`. `EventsService.updateEvent` reads the stored row as the baseline; when it is not on this device (coach editing an athlete's event) a provider row flips as before. The stored `providerEventId` wins over the edited event's, so a mapper that drops it cannot erase it.
+
+**Item 3: reminders on delete. Reminder ids cancelled:** `CarbNudgeEngine.allNotificationIds(eventId)` = `notificationId(eventId, d)` for d in 3, 2, 1, i.e. `('carb_nudge:<eventId>:<d>').hashCode & 0x7fffffff`, scheduled through `NotificationServiceCarbNudgeGateway` → `NotificationService.scheduleCarbNudge`, cancelled via `NotificationService.cancelById`. The armed record `carb_nudge_armed_<eventId>` (SharedPreferences) is removed.
+- `EventsController.deleteEvent` reads `carbLoadNudgeServiceProvider` before the first await (guarded: a missing provider records `degraded` and the delete goes on), and after `service.deleteEvent` succeeds calls `disarmEvent(id, reason: 'event_deleted')`. A throw is `report.degraded(area: 'carb_loading', message: 'Carb nudge disarm after event delete failed')` and does not fail the delete or touch notifier state (#118). A disarm that found nothing armed records `report.note('Event delete: no carb-load reminders were armed', area: 'carb_loading')` (D9).
+- `evaluateOnOpen` first disarms (reason `event_deleted`) every `carb_nudge_armed_*` record whose id is not in the event list: catches deletes made on the coach portal, another device, or a sync removal, and a previous user's records after sign-out (69-015).
+- **Proved by** `event_delete_disarms_carb_nudges_seam_test.dart`: real controller/service/repository on in-memory Drift + FakePostgrest, real `CarbLoadNudgeService` over a recording gateway. An event created through the controller and armed by the real sweep schedules exactly `allNotificationIds(id)`; `deleteEvent` cancels exactly that set, removes the armed record, sends one `notif_cancelled {reason: event_deleted, event_id}`, deletes the Drift row and sends one server DELETE. Gateway `cancel` throwing → delete completes, one `degraded` in `carb_loading`. Never-armed delete → one `note`. `g27_carb_nudge_test.dart` covers the orphan sweep (orphan disarmed with `event_deleted`, live event untouched; empty list disarms all).
+
+**Q2.** `EventsRepository.deleteEvent` no longer deletes the linked activity from Drift; the server never deleted it. The activities invalidation stays.
+
+**Q3.** New nullable column `events.provider_event_id` (Drift v25 with a `from < 25` step; Supabase migration file). `importTrainingPeaksEvents` matches on the TrainingPeaks `Id` first (skip), then on (name, date) as before; a (name, date) match with no stored id gets the id (and a legacy null origin still flips). New rows store the id. The upload sends `provider_event_id` only when set; the pull leaves the local value alone when the server row has no such key. Rows imported before v25 are matched by (name, date) once, get the id, and are protected from then on; one already renamed before that sync will import once more. Final Surge is unchanged (it already dedupes on the linked activity).
+
+**#77 concurrency.**
+- Delete tapped twice: the confirm dialog closes on the first tap, and the second tap lands on a screen that is popping. If a second `deleteEvent` does run (test "deleting twice"), the repository delete of a missing row is a no-op, the disarm cancels the same ids again, and no second `notif_cancelled` fires because the armed record is already gone (a `note` is recorded instead).
+- Delete while the detail screen is mid-pop: the controller holds a `keepAlive` link and read every ref value before the first await, so the disarm finishes; the screen's pop is guarded by `context.mounted`.
+- Sweep running while a delete disarms: both cancel the same ids; `disarmEvent` is idempotent and only the first sees the armed record, so one `notif_cancelled`. If the sweep read the event list before the delete, it may re-arm the deleted event (three new schedules); the next open/resume sweep then disarms it as an orphan. Window: one sweep.
+- Server ack of the delete fails (background upload): the local row is gone, so cancelling the reminders is right.
+- An import saving while the edit form is open: the import never overwrites a matched row except to fill a null origin or a missing provider id. The form then saves its copy, whose `providerEventId` may be stale null; the service takes the stored id, so it survives. The origin is computed against the stored row at save time.
+- Two imports racing (foreground Sync Now and background coordinator): both may miss the id match and both create, as before this ticket; the server's `events_user_date_name_unique` index refuses the second upload (ticket 72 path). Not changed here.
+
+**Not changed (noticed).** The delete is a hard delete with a fire-and-forget server DELETE; a failed DELETE is logged "record stays dirty for retry" but nothing is left to retry, so the server row survives and comes back on the next pull. Pre-existing; not in this ticket's rulings.
+
+**Tests run** (fix-wave rules: own files + #116 set; no full suite):
+- New/changed: `event_delete_disarms_carb_nudges_seam_test.dart` 4/4, `event_imported_edit_resync_seam_test.dart` 6/6, `event_delete_pops_test.dart` 2/2, `event_form_imported_without_distance_test.dart` 5/5, `event_origin_d2c_test.dart` 8/8, `g27_carb_nudge_test.dart` 10/10, `events_service_update_event_date_test.dart` and `schema_version_guard_test.dart` 12/12 together.
+- #116: every test file under `test/` naming `EventDetailScreen`, `EventFormScreen`, `EventSubtypeDropdown`, `EventsController`, `eventsControllerProvider`, `deleteEvent`, `EventsService`, `eventsServiceProvider`, `updateEvent`, `CarbLoadNudgeService`, `evaluateOnOpen`, `disarmEvent`, `carbLoadNudgeServiceProvider`, `EventsRepository`, `ProviderEventImportService`, `importTrainingPeaksEvents`, `originAfterEdit`, `EventsTable`/`eventsTable`, `schemaVersion` or `providerEventId` (52 files, includes `test/migrations/*`, the smoke and seeded events tests, `provider_event_import_service_test.dart`, `integration_sync_coordinator_test.dart`, `sign_out_clears_device_test.dart`) plus `test/shared/source_guard/`: 467 passed, 0 failed.
+- `flutter analyze` on the 20 touched Dart files: no new issues (9 pre-existing infos/warnings in untouched lines).
+- Codegen: unfiltered `build_runner`; only `app_database.g.dart` (new column) and `events_controller.g.dart` (hash) changed.
+
+**Questions for Lee.**
+1. The delete confirmation still says "This will also delete any associated nutrition plans and carb loading plans." After Q2 the linked activity (and so its nutrition plan) is kept. Should the copy drop "nutrition plans"? It is a hardcoded string; the agent did not change it.
+2. Q3 needs the migration applied on dev before the next dev build reaches a device, or imported TrainingPeaks events fail to upload (PGRST204) until it is. Apply it with this wave's other dev SQL?
+
