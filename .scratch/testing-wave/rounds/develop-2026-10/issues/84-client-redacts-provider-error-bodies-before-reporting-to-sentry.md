@@ -1,6 +1,6 @@
 # 84: The app reports a provider's status and error code, never its error body
 
-**Status:** in-progress (wave 8, 2026-10-09)
+**Status:** landed-pending-merge (wave 8, 2026-10-09, abb2b9ca7)
 **Labels:** fix, round:develop-2026-10, area:integrations, area:privacy
 **Branch:** `develop-next` (fix-wave worktree)
 **Source:** Finding 69-012 (the device-side twin of ticket 76); TRIAGE.md rulings of 2026-10-09 (Lee: "a separate client fix ticket, fix wave 8, after 73")
@@ -63,7 +63,7 @@ test/features/integrations/tp_writeback_400_test.dart
 
 ## Tests
 
-- [ ] **Seam, one case per provider path** (`provider_error_redaction_seam_test.dart`). Each stub answers with Garmin's real shape, the body carrying a token: `{"error":"invalid_grant","error_description":"Invalid refresh token: <base64 of {"refreshTokenValue":"rt-live-5f2c"}>"}`. Run the real client or service with `package:http/testing.dart`'s `MockClient` and a Report fake. Tests run with `kDebugMode` true, so they also prove the debug `toString()` path. Each case asserts the Report's message, `extra` and error text, and the exception's `toString()`. None contains `rt-live-5f2c`, the base64 string or a 12-character slice of it, `Invalid refresh token`, or `error_description`. Each contains the status and `invalid_grant`.
+- [x] **Seam, one case per provider path** (`provider_error_redaction_seam_test.dart`). Each stub answers with Garmin's real shape, the body carrying a token: `{"error":"invalid_grant","error_description":"Invalid refresh token: <base64 of {"refreshTokenValue":"rt-live-5f2c"}>"}`. Run the real client or service with `package:http/testing.dart`'s `MockClient` and a Report fake. Tests run with `kDebugMode` true, so they also prove the debug `toString()` path. Each case asserts the Report's message, `extra` and error text, and the exception's `toString()`. None contains `rt-live-5f2c`, the base64 string or a 12-character slice of it, `Invalid refresh token`, or `error_description`. Each contains the status and `invalid_grant`.
   - **TrainingPeaks refresh:** `TrainingPeaksOAuthService.refreshTokenIfNeeded` on an expired row, the token endpoint answering 400 → one `degraded`, `extra == {statusCode: 400, errorCode: 'invalid_grant'}`. The same through `forceRefreshToken`, and through `TrainingPeaksSyncService._refreshToken` (via a sync) on the harness of `tp_refresh_requires_reconnect_seam_test.dart`.
   - **TrainingPeaks code exchange:** `exchangeCodeForToken` answering 400 → the thrown exception's `toString()`.
   - **Final Surge code exchange:** `FinalSurgeApiClient.exchangeCodeForToken` answering 400 with the body, and answering 200 with `{"error":"Invalid refresh token: rt-live-5f2c"}` → message `Token exchange failed`, no token.
@@ -71,12 +71,12 @@ test/features/integrations/tp_writeback_400_test.dart
   - **V.O2 code exchange:** `VdotApiClient.exchangeCodeForToken` answering 400 `{"status":"NOK","error":"invalid_code","error_description":"code rt-live-5f2c is invalid"}` → `Token exchange failed: invalid_code`. With `"error":"invalid_payload"` the hint is still appended.
   - **`HttpRetryClient`**: a 403 and a 500 carrying the token in the body → `toString()` and `reportExtra` hold none of it.
   Red before the fix for every case.
-- [ ] `provider_error_summary_test.dart`: `invalid_grant` body → code; `{"errorMessage":"Token is not active"}` → null; HTML → null; `{"error":"has a space"}` → null; a 200-character `error` → null; null or empty body → null.
-- [ ] `tp_writeback_400_test.dart:274-296`: the write-back 400 is still Degraded. `extra['errorCode']` is `invalid_request`, `extra['statusCode']` is 400, and there is no `responseBody` (`:290` today expects the whole body).
-- [ ] `test/shared/source_guard/`: the helper is a pure transform, not a reporting call or a silent catch, so `source_guard.dart` and `allow_list.md` do not change. Run the folder anyway (#117).
-- [ ] #116: `grep -rl` under `test/` for `reportExtra`, `responseBody`, `maxReportedBodyChars`, `IntegrationApiException`, `TrainingPeaksApiException`, `FinalSurgeApiException`, `VdotApiException`, `GarminOAuthException`, `_extractErrorReason`, `exchangeCodeForToken`, `Token exchange failed`; run every file named. Tests that match an exception's `toString()` text may need the new wording.
-- [ ] Async paths: none added (pure transforms of responses already awaited). No retry or timeout.
-- [ ] `flutter analyze` clean on the touched files.
+- [x] `provider_error_summary_test.dart`: `invalid_grant` body → code; `{"errorMessage":"Token is not active"}` → null; HTML → null; `{"error":"has a space"}` → null; a 200-character `error` → null; null or empty body → null.
+- [x] `tp_writeback_400_test.dart:274-296`: the write-back 400 is still Degraded. `extra['errorCode']` is `invalid_request`, `extra['statusCode']` is 400, and there is no `responseBody` (`:290` today expects the whole body).
+- [x] `test/shared/source_guard/`: the helper is a pure transform, not a reporting call or a silent catch, so `source_guard.dart` and `allow_list.md` do not change. Run the folder anyway (#117).
+- [x] #116: `grep -rl` under `test/` for `reportExtra`, `responseBody`, `maxReportedBodyChars`, `IntegrationApiException`, `TrainingPeaksApiException`, `FinalSurgeApiException`, `VdotApiException`, `GarminOAuthException`, `_extractErrorReason`, `exchangeCodeForToken`, `Token exchange failed`; run every file named. Tests that match an exception's `toString()` text may need the new wording.
+- [x] Async paths: none added (pure transforms of responses already awaited). No retry or timeout.
+- [x] `flutter analyze` clean on the touched files.
 
 ## Deploy
 
@@ -98,3 +98,37 @@ Next test wave, Connected Apps retest ticket. Reads only: dev Sentry via the Sen
 
 **Rulings (Lee, 2026-10-09, wave 7 close).**
 - Q1: one rule everywhere: status + error code only, every provider and endpoint; `tp_writeback_400_test.dart` changes with it.
+
+## Fix notes
+
+Code commit `abb2b9ca7` on `testing-wave/develop-2026-10/84` (base `6a0307732`, after 73).
+
+**The helper.** `lib/features/integrations/domain/provider_error_summary.dart`: `providerErrorSummary(int? status, String? body)` returns the record `ProviderErrorSummary = ({int? status, String? errorCode})`, the same rule as `_shared/provider_error.ts` (first of `error`, `errorCode`, `code` matching `^[A-Za-z0-9_.-]{1,64}$`, else null). `providerErrorSuffix` renders ` (status: N, error: <code>)` for every `toString()`.
+
+**Per client.**
+- `IntegrationApiException`: `reportExtra` is `{statusCode, errorCode}`; `responseBody` and `maxReportedBodyChars` are gone. New getters `summary` and `redactedSuffix`. `toString()` writes the suffix in every build and never the body. `ServerException` and `ForbiddenException` use the same suffix, so a 5xx/403 now also names its code. `body` stays on the object, unread.
+- TrainingPeaks: the ticket said nothing beyond item 2, but `TrainingPeaksApiException.toString()` overrides the base and appended the body in debug builds. Its override now uses the suffix (`training_peaks_api_client.dart`, outside the ticket's Touches; no message there carried a body). Refresh, code exchange, sync `_refreshToken` and the write-back sites need no call-site change.
+- Final Surge: `FinalSurgeApiException.toString()` gets the same treatment. The debug `print`s of the whole body go. A 200 with `error` is `Token exchange failed: <code>` when the error is code-shaped, otherwise plain `Token exchange failed`. The data endpoint's 200-with-`ErrorMessage` (`fetchWorkoutById`) no longer folds the free text into the message ("every endpoint" ruling).
+- V.O2: `_extractErrorReason(status, body)` is `summary.errorCode ?? 'HTTP <status>'`; `error_description` and the raw-text fallback are gone; the `invalid_payload` hint still fires. `VdotApiException.toString()` uses the suffix. The debug print of a failed workout GET (headers + 500 chars of body) is now path, status and code only.
+- Garmin: `@visibleForTesting static GarminOAuthService.tokenExchangeFailure(http.Response)` builds `Token exchange failed: 400 invalid_grant`. The connect controller's fault, on-screen error and Mixpanel `errorMessage` inherit it unchanged.
+- `test/shared/source_guard/allow_list.md`: the vdot `_extractErrorReason` catch entry went stale; it is replaced by the helper's `on FormatException` (a non-JSON body means "no code").
+
+**Old report vs new** (TP refresh refused with Garmin's body shape):
+- before: `extra: {statusCode: 400, responseBody: {"error":"invalid_grant","error_description":"Invalid refresh token: eyJyZWZyZXNoVG9rZW5WYWx1ZSI6InJ0LWxpdmUtNWYyYyJ9"}}`; error text `TrainingPeaksApiException: Token refresh failed (status: 400)\nBody: {...the same body...}` in debug builds.
+- after: `extra: {statusCode: 400, errorCode: invalid_grant}`; error text `TrainingPeaksApiException: Token refresh failed (status: 400, error: invalid_grant)`. D9 holds: the report still says provider (exception class/area), endpoint (message), status and code.
+- Garmin connect, before: `GarminOAuthException: Token exchange failed: 400 {"error":"invalid_grant","error_description":"Invalid refresh token: eyJ..."}`; after: `GarminOAuthException: Token exchange failed: 400 invalid_grant`.
+
+**#77.** No async path added: the helper is a pure transform of a response already awaited, and `tokenExchangeFailure` is a pure constructor. Running twice at once or after a refresh gives the same output twice.
+
+**Tests run** (only the files for this change, per the runbook):
+- `provider_error_redaction_seam_test.dart`: 14/14 pass. Red check: with the four old client/exception files restored from HEAD, the 12 non-Garmin cases fail; the 2 Garmin cases need the new helper to compile, so they were not red-checked that way (the old message embedded `${response.body}` verbatim).
+- `provider_error_summary_test.dart`: 10/10.
+- `tp_writeback_400_test.dart`: 11/11 (both `responseBody` expectations replaced by `errorCode` + no `responseBody`).
+- #116 grep hits and other importers of the touched files, all pass: runna_ics_client 9, sync_error_code 26, tp_ispremium_a1 7, final_surge_lookback 3, runna_sync_service 12, sync_failure_recorder_seam 20, sync_now_analytics 9, disconnect_clears_reconnect_seam 1, reconnect_unhides_seam 9, final_surge_sync_service 15, final_surge_completion_sync_seam 6, tp_refresh_requires_reconnect_seam 19, connect_cancel_is_quiet_seam 2, settings/connected_apps_garmin_reauth 3, settings/connected_apps_reconnect 6, reconnect_clears_sync_state 6, disconnect_soft_hide_state_machine 8, sync_status_write_seam 12, tp_writeback_di10 9.
+- `test/shared/source_guard/`: 20/20.
+- `flutter analyze` on the touched files: one info, pre-existing (`curly_braces_in_flow_control_structures` in `RateLimitException.toString`, untouched).
+
+Retest (Sentry console and simulator) is the lead's, in the next test wave.
+
+Seen, not fixed (out of scope): `FinalSurgeApiClient.exchangeCodeForToken` still prints the first and last 5 characters of the client secret in debug builds, and the whole secret when it is too short (`final_surge_api_client.dart:45-58`). It is the app's own secret, not a user token, but it reaches the wave's console logs.
+
