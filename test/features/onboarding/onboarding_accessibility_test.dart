@@ -8,6 +8,11 @@
 // Ticket 43 (Finding 30-010): Welcome's Build My Plan and the three sign-in
 // pills on Create account are named buttons (they read as static text), and
 // a busy sign-in pill keeps its name while it shows only a spinner.
+//
+// Ticket 83 (Finding 67-001): the single-choice tiles on Tell us about
+// yourself (gender), Basic body composition (Imperial / Metric) and
+// Nutrition Settings (gut training, sweat rate) are buttons with a selected
+// state that follows a tap; they read as StaticText before.
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -21,6 +26,8 @@ import 'package:mealvana_endurance/features/auth/presentation/screens/post_onboa
 import 'package:mealvana_endurance/features/content/application/content_service.dart';
 import 'package:mealvana_endurance/features/onboarding/domain/onboarding_integration_profile.dart';
 import 'package:mealvana_endurance/features/onboarding/presentation/providers/onboarding_preview_providers.dart';
+import 'package:mealvana_endurance/features/onboarding/presentation/screens/body_composition_screen.dart';
+import 'package:mealvana_endurance/features/onboarding/presentation/screens/nutrition_settings_screen.dart';
 import 'package:mealvana_endurance/features/onboarding/presentation/screens/personal_info_screen.dart';
 import 'package:mealvana_endurance/features/onboarding/presentation/screens/welcome_screen.dart';
 import 'package:mealvana_endurance/features/onboarding/presentation/widgets/onboarding_multi_select_step.dart';
@@ -195,6 +202,58 @@ void main() {
       handle.dispose();
     });
 
+    testWidgets('the gender tiles are buttons with a selected state', (
+      tester,
+    ) async {
+      final handle = tester.ensureSemantics();
+      await pumpPersonalInfo(tester);
+
+      SemanticsNode tile(String key) => tester.getSemantics(
+        find.byKey(ValueKey('personal_info.gender_$key')),
+      );
+
+      expect(
+        tile('male'),
+        isSemantics(
+          label: 'Male',
+          isButton: true,
+          hasSelectedState: true,
+          isSelected: false,
+          hasTapAction: true,
+        ),
+      );
+      expect(
+        tile('non_binary'),
+        isSemantics(label: 'Non-binary', isButton: true, isSelected: false),
+      );
+
+      await tester.tap(find.byKey(const ValueKey('personal_info.gender_male')));
+      await tester.pumpAndSettle();
+      expect(
+        tile('male'),
+        isSemantics(
+          label: 'Male',
+          isButton: true,
+          hasSelectedState: true,
+          isSelected: true,
+          hasTapAction: true,
+        ),
+      );
+      expect(
+        tile('female'),
+        isSemantics(
+          label: 'Female',
+          isButton: true,
+          hasSelectedState: true,
+          isSelected: false,
+        ),
+      );
+      // The drawn "MALE" is not a second, separate node.
+      expect(find.bySemanticsLabel('MALE'), findsNothing);
+      await expectLater(tester, meetsGuideline(labeledTapTargetGuideline));
+      handle.dispose();
+    });
+
     testWidgets('a filled name field keeps its name', (tester) async {
       final handle = tester.ensureSemantics();
       await pumpPersonalInfo(tester);
@@ -221,6 +280,155 @@ void main() {
         _fieldSemantics(tester, last),
         isSemantics(isTextField: true, label: 'Last name', value: 'Huang'),
       );
+      handle.dispose();
+    });
+  });
+
+  group('Basic body composition', () {
+    testWidgets('Imperial and Metric are buttons with a selected state', (
+      tester,
+    ) async {
+      final handle = tester.ensureSemantics();
+      tester.view.physicalSize = standardPhoneSize;
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            mockAppExternalDeps(),
+            mockSharedPreferences(),
+            onboardingIntegrationProfileProvider.overrideWith(
+              (ref) async => OnboardingIntegrationProfile.empty,
+            ),
+          ],
+          child: wrapForTest(const BodyCompositionScreen(stepIndex: 5)),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      const imperial = ValueKey('body_comp.units_imperial_button');
+      const metric = ValueKey('body_comp.units_metric_button');
+      expect(
+        tester.getSemantics(find.byKey(imperial)),
+        isSemantics(
+          label: 'Imperial',
+          isButton: true,
+          hasSelectedState: true,
+          isSelected: true,
+          hasTapAction: true,
+        ),
+      );
+      expect(
+        tester.getSemantics(find.byKey(metric)),
+        isSemantics(
+          label: 'Metric',
+          isButton: true,
+          hasSelectedState: true,
+          isSelected: false,
+          hasTapAction: true,
+        ),
+      );
+
+      await tester.tap(find.byKey(metric));
+      await tester.pumpAndSettle();
+      expect(
+        tester.getSemantics(find.byKey(metric)),
+        isSemantics(label: 'Metric', isButton: true, isSelected: true),
+      );
+      expect(
+        tester.getSemantics(find.byKey(imperial)),
+        isSemantics(
+          label: 'Imperial',
+          isButton: true,
+          hasSelectedState: true,
+          isSelected: false,
+        ),
+      );
+      await expectLater(tester, meetsGuideline(labeledTapTargetGuideline));
+      handle.dispose();
+    });
+  });
+
+  group('Nutrition Settings', () {
+    testWidgets('gut and sweat tiles are buttons named with their multiplier '
+        'and a selected state', (tester) async {
+      final handle = tester.ensureSemantics();
+      tester.view.physicalSize = standardPhoneSize;
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [mockAppExternalDeps(), mockSharedPreferences()],
+          child: wrapForTest(const NutritionSettingsScreen(stepIndex: 6)),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      SemanticsNode tile(String key) =>
+          tester.getSemantics(find.byKey(ValueKey('nutrition_settings.$key')));
+
+      // Defaults: Moderate and Medium.
+      expect(
+        tile('gut_moderate'),
+        isSemantics(
+          label: 'Moderate, 1.0×',
+          isButton: true,
+          hasSelectedState: true,
+          isSelected: true,
+          hasTapAction: true,
+        ),
+      );
+      expect(
+        tile('gut_low'),
+        isSemantics(
+          label: 'Low, 0.7×',
+          isButton: true,
+          hasSelectedState: true,
+          isSelected: false,
+          hasTapAction: true,
+        ),
+      );
+      expect(
+        tile('sweat_medium'),
+        isSemantics(label: 'Medium, 1.0×', isButton: true, isSelected: true),
+      );
+
+      await tester.tap(
+        find.byKey(const ValueKey('nutrition_settings.gut_high')),
+      );
+      await tester.pumpAndSettle();
+      expect(
+        tile('gut_high'),
+        isSemantics(label: 'High, 1.2×', isButton: true, isSelected: true),
+      );
+      expect(
+        tile('gut_moderate'),
+        isSemantics(
+          label: 'Moderate, 1.0×',
+          isButton: true,
+          hasSelectedState: true,
+          isSelected: false,
+        ),
+      );
+
+      await tester.tap(
+        find.byKey(const ValueKey('nutrition_settings.sweat_light')),
+      );
+      await tester.pumpAndSettle();
+      expect(
+        tile('sweat_light'),
+        isSemantics(label: 'Light, 0.85×', isButton: true, isSelected: true),
+      );
+      expect(
+        tile('sweat_medium'),
+        isSemantics(
+          label: 'Medium, 1.0×',
+          isButton: true,
+          hasSelectedState: true,
+          isSelected: false,
+        ),
+      );
+      await expectLater(tester, meetsGuideline(labeledTapTargetGuideline));
       handle.dispose();
     });
   });

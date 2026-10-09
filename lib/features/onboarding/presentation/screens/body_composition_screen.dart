@@ -407,23 +407,33 @@ class _UnitSegment extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      key: segmentKey,
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 22),
-        decoration: BoxDecoration(
-          color: isSelected ? OnbTokens.orange : Colors.transparent,
-          borderRadius: BorderRadius.circular(OnbTokens.rPill),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            fontFamily: OnbTokens.fontBody,
-            fontSize: 13,
-            fontWeight: FontWeight.w500,
-            color: isSelected ? OnbTokens.bg : OnbTokens.creamA(0.7),
+    // One button node with a selected state (Finding 67-001: it read as
+    // StaticText); the drawn label is excluded so it is read once.
+    return Semantics(
+      container: true,
+      button: true,
+      selected: isSelected,
+      label: label,
+      child: GestureDetector(
+        key: segmentKey,
+        onTap: onTap,
+        child: ExcludeSemantics(
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 22),
+            decoration: BoxDecoration(
+              color: isSelected ? OnbTokens.orange : Colors.transparent,
+              borderRadius: BorderRadius.circular(OnbTokens.rPill),
+            ),
+            child: Text(
+              label,
+              style: TextStyle(
+                fontFamily: OnbTokens.fontBody,
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+                color: isSelected ? OnbTokens.bg : OnbTokens.creamA(0.7),
+              ),
+            ),
           ),
         ),
       ),

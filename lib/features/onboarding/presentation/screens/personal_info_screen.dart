@@ -702,36 +702,47 @@ class _GenderCard extends StatelessWidget {
     // fills cream with plum content (per the rendered prototype).
     final foreground = isSelected ? OnbTokens.bg : OnbTokens.creamA(0.5);
 
-    return GestureDetector(
-      key: cardKey,
-      onTap: () => onTap(gender),
-      child: Container(
-        height: 76.5,
-        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 6),
-        decoration: BoxDecoration(
-          color: isSelected ? OnbTokens.cream : Colors.transparent,
-          border: Border.all(color: OnbTokens.creamA(0.55)),
-          borderRadius: BorderRadius.circular(OnbTokens.rTile),
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, size: 22, color: foreground),
-            const SizedBox(height: 7),
-            Text(
-              // Gender.other renders "Non-binary" per its displayName.
-              gender.displayName.toUpperCase(),
-              textAlign: TextAlign.center,
-              maxLines: 1,
-              style: TextStyle(
-                fontFamily: OnbTokens.fontBody,
-                fontSize: 11,
-                fontWeight: FontWeight.w700,
-                letterSpacing: 0.66,
-                color: foreground,
-              ),
+    // One button node with a selected state, named by the gender (Finding
+    // 67-001: it read as StaticText). The drawn upper-case label is
+    // excluded so the tile is read once.
+    return Semantics(
+      container: true,
+      button: true,
+      selected: isSelected,
+      label: gender.displayName,
+      child: GestureDetector(
+        key: cardKey,
+        onTap: () => onTap(gender),
+        child: ExcludeSemantics(
+          child: Container(
+            height: 76.5,
+            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 6),
+            decoration: BoxDecoration(
+              color: isSelected ? OnbTokens.cream : Colors.transparent,
+              border: Border.all(color: OnbTokens.creamA(0.55)),
+              borderRadius: BorderRadius.circular(OnbTokens.rTile),
             ),
-          ],
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(icon, size: 22, color: foreground),
+                const SizedBox(height: 7),
+                Text(
+                  // Gender.other renders "Non-binary" per its displayName.
+                  gender.displayName.toUpperCase(),
+                  textAlign: TextAlign.center,
+                  maxLines: 1,
+                  style: TextStyle(
+                    fontFamily: OnbTokens.fontBody,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.66,
+                    color: foreground,
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );

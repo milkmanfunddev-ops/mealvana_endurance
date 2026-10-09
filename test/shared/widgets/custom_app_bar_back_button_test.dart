@@ -69,4 +69,33 @@ void main() {
 
     expect(find.text('Open child'), findsOneWidget);
   });
+  // Ticket 83 (Finding 67-001): iOS read the arrow as "Back\nBack", the
+  // Semantics label plus the Tooltip's message. The control has one name.
+  testWidgets('is one button named Back, read once', (tester) async {
+    final handle = tester.ensureSemantics();
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(body: Center(child: CustomAppBarBackButton())),
+      ),
+    );
+
+    final node = tester.getSemantics(
+      find.descendant(
+        of: find.byType(CustomAppBarBackButton),
+        matching: find.byType(Icon),
+      ),
+    );
+    expect(
+      node,
+      isSemantics(label: 'Back', isButton: true, hasTapAction: true),
+    );
+    final data = node.getSemanticsData();
+    expect(data.label, 'Back');
+    // The tooltip is the part iOS appended as the second "Back".
+    expect(data.tooltip, isEmpty);
+    expect(find.bySemanticsLabel('Back'), findsOneWidget);
+    // The long-press tooltip itself still exists.
+    expect(find.byTooltip('Back'), findsOneWidget);
+    handle.dispose();
+  });
 }

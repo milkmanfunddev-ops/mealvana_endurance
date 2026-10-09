@@ -86,6 +86,10 @@ class _CustomAppBarBackButtonState extends State<CustomAppBarBackButton> {
         shape: const CircleBorder(),
         child: Tooltip(
           message: 'Back',
+          // The Semantics below is the control's one name. A tooltip in the
+          // semantics tree made iOS read "Back\nBack" (Finding 67-001); the
+          // long-press tooltip still shows.
+          excludeFromSemantics: true,
           child: InkWell(
             onTap: widget.enabled ? _handleTap : null,
             customBorder: const CircleBorder(),

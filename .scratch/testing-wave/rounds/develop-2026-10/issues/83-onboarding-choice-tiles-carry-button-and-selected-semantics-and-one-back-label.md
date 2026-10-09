@@ -1,6 +1,6 @@
 # 83: Onboarding's choice tiles are buttons that report selected, and the app-bar back arrow is named "Back" once
 
-**Status:** in-progress (wave 8, 2026-10-09)
+**Status:** landed-pending-merge (wave 8, 2026-10-08, 4e3f7201a)
 **Labels:** fix, round:develop-2026-10, area:onboarding, area:accessibility
 **Branch:** `develop-next` (fix-wave worktree)
 **Source:** Finding 67-001 (the retest of 48-006); TRIAGE.md rulings of 2026-10-09
@@ -55,15 +55,15 @@ test/shared/widgets/custom_app_bar_back_button_test.dart
 
 ## Tests
 
-- [ ] Widget (`onboarding_accessibility_test.dart`, new cases; the `PersonalInfoScreen` harness is already in the file (import `:23`); for the other two screens, use the pump helpers from `test/features/onboarding/body_composition_screen_test.dart` and `nutrition_settings_screen_test.dart`), with `tester.ensureSemantics()`:
+- [x] Widget (`onboarding_accessibility_test.dart`, new cases; the `PersonalInfoScreen` harness is already in the file (import `:23`); for the other two screens, use the pump helpers from `test/features/onboarding/body_composition_screen_test.dart` and `nutrition_settings_screen_test.dart`), with `tester.ensureSemantics()`:
   - Tell us about yourself: `getSemantics(find.byKey(ValueKey('personal_info.gender_male')))` is `isSemantics(label: 'Male', isButton: true, hasSelectedState: true, isSelected: false, hasTapAction: true)`. After tapping it, `isSelected: true`, and Female reads `isSelected: false`. Non-binary is named "Non-binary".
   - Basic body composition: `body_comp.units_imperial_button` and `body_comp.units_metric_button` are buttons named "Imperial" / "Metric" with a selected state that follows a tap.
   - Nutrition Settings: `nutrition_settings.gut_moderate` is a button named "Moderate, 1.0×", selected by default. Tap `gut_high`: it is selected and Moderate is not. The same for one sweat tile.
   - Each case ends with `await expectLater(tester, meetsGuideline(labeledTapTargetGuideline))`, as `:136` does.
-- [ ] Widget (`custom_app_bar_back_button_test.dart`, new case): `tester.ensureSemantics()`. The node at `find.byType(CustomAppBarBackButton)` is `isSemantics(label: 'Back', isButton: true, hasTapAction: true)`, and its label is exactly `'Back'` (it fails today with "Back\nBack"). `find.byTooltip('Back')` still finds one widget.
-- [ ] `flutter analyze` clean on touched files.
-- [ ] #116: before committing, `grep -rl` under `test/` for `PersonalInfoScreen`, `BodyCompositionScreen`, `NutritionSettingsScreen`, `CustomAppBarBackButton` and the tile keys (`personal_info.gender_`, `body_comp.units_`, `nutrition_settings.gut_`/`sweat_`), and run every file named: at least `personal_info_screen_test.dart`, `body_composition_screen_test.dart`, `nutrition_settings_screen_test.dart`, `onboarding_overflow_test.dart`, `onboarding_step_alignment_test.dart`, `onboarding_autofill_in_init_state_test.dart`, `back_button_fallback_test.dart`, `edit_meal_log_guard_test.dart`, `review_remove_undo_and_discard_test.dart`, `buy_credits_back_and_copy_test.dart` and `formula_kit_content_test.dart`. Run the onboarding golden suites too, if `grep -rl` finds goldens for these screens. The semantics wrap draws nothing, so the goldens must not move.
-- [ ] #117: no Report helper and no catch, so `test/shared/source_guard/` is not needed.
+- [x] Widget (`custom_app_bar_back_button_test.dart`, new case): `tester.ensureSemantics()`. The node at `find.byType(CustomAppBarBackButton)` is `isSemantics(label: 'Back', isButton: true, hasTapAction: true)`, and its label is exactly `'Back'` (it fails today with "Back\nBack"). `find.byTooltip('Back')` still finds one widget.
+- [x] `flutter analyze` clean on touched files.
+- [x] #116: before committing, `grep -rl` under `test/` for `PersonalInfoScreen`, `BodyCompositionScreen`, `NutritionSettingsScreen`, `CustomAppBarBackButton` and the tile keys (`personal_info.gender_`, `body_comp.units_`, `nutrition_settings.gut_`/`sweat_`), and run every file named: at least `personal_info_screen_test.dart`, `body_composition_screen_test.dart`, `nutrition_settings_screen_test.dart`, `onboarding_overflow_test.dart`, `onboarding_step_alignment_test.dart`, `onboarding_autofill_in_init_state_test.dart`, `back_button_fallback_test.dart`, `edit_meal_log_guard_test.dart`, `review_remove_undo_and_discard_test.dart`, `buy_credits_back_and_copy_test.dart` and `formula_kit_content_test.dart`. Run the onboarding golden suites too, if `grep -rl` finds goldens for these screens. The semantics wrap draws nothing, so the goldens must not move.
+- [x] #117: no Report helper and no catch, so `test/shared/source_guard/` is not needed.
 
 ## Deploy
 
@@ -75,5 +75,15 @@ Next test wave, on a simulator, with `idb ui describe-all`:
 - **67-001 (tiles):** Tell us about yourself. MALE / FEMALE / NON-BINARY each list as `Button` (not StaticText). After tapping MALE, Male carries the selected value or trait and the others do not. Basic body composition: Imperial / Metric are Buttons, and the chosen one is selected. Nutrition Settings: the six tiles are Buttons named like "Moderate, 1.0×", and the default (Moderate, Medium) is selected.
 - **67-001 (back):** the top-left back arrow on Sign Up with Email, Settings and Connected Apps lists as `Button 'Back'`, one "Back", not `'Back\nBack'`.
 - VoiceOver's spoken output stays ticket 51's device check.
+
+## Fix notes
+
+Commit `4e3f7201a` on `testing-wave/develop-2026-10/83`.
+
+- **Tiles.** `_GenderCard` (`personal_info_screen.dart`), `_UnitSegment` (`body_composition_screen.dart`) and `_SegmentChip` (`nutrition_settings_screen.dart`) each wrap their `GestureDetector` in `Semantics(container: true, button: true, selected: …, label: …)` and wrap the drawn visuals in `ExcludeSemantics`. Labels: `gender.displayName` ("Male", "Female", "Non-binary"), "Imperial" / "Metric", and `'${spec.label}, ${spec.multiplier}'` ("Moderate, 1.0×"). The keys stay on the `GestureDetector`, so existing tap-by-key tests are unchanged. None of the three is a `kyle_design` library component and none has a component spec; they stay private to their screens, as the Decisions say. Nothing is redrawn and no onboarding body copy changed.
+- **Back.** `CustomAppBarBackButton`'s `Tooltip` now sets `excludeFromSemantics: true`. The inner `Semantics(button: true, label: 'Back')` is the one name; the long-press tooltip still shows (`find.byTooltip('Back')` still finds it). No constructor change, so its callers are untouched. The new test was red before the fix on the node's `tooltip` field ("Back"), which is the half iOS appended.
+- **Tests, written red first.** `onboarding_accessibility_test.dart`: three new cases (gender, units, gut/sweat), each tapping and checking that `isSelected` moves, each ending with `labeledTapTargetGuideline`; 11/11 pass. `custom_app_bar_back_button_test.dart`: one new case; 3/3 pass.
+- **#116 sweep.** `grep -rl` under `test/` for the changed classes, the tile keys and `BuyCreditsScreen` named 14 files; all run together: `buy_credits_back_and_copy_test`, `edit_meal_log_guard_test`, `review_remove_undo_and_discard_test`, `body_composition_screen_test`, `nutrition_settings_screen_test`, `onboarding_accessibility_test`, `onboarding_autofill_in_init_state_test`, `onboarding_overflow_test`, `onboarding_step_alignment_test`, `personal_info_screen_test`, `formula_kit_content_test`, `back_button_fallback_test`, `custom_app_bar_back_button_test`, `misc_smoke_test`: 90/90 pass. No golden mounts these screens. Two Patrol files also name these widgets (`integration_test/flows/onboarding_signup_flow_test.dart`, `meal_card_interaction_flow_test.dart`); they tap by key or type and were not run (fix wave: no simulator).
+- `flutter analyze` on the six touched files: no issues. No codegen, no generated files.
 
 ## Questions for Lee
