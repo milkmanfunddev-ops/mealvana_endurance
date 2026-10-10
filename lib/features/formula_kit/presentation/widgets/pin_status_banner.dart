@@ -544,17 +544,6 @@ class _PinStatusBannerState extends State<PinStatusBanner>
     );
   }
 
-  /// "this ride" / "this run" / "this swim" when the row label carries a
-  /// sport (brick legs: "During Bike"), otherwise a neutral "this workout".
-  /// The decision itself has no sport field; the label is all the row knows.
-  static String _activityWord(String label) {
-    final words = label.toLowerCase().split(RegExp(r'\s+'));
-    if (words.contains('bike') || words.contains('ride')) return 'this ride';
-    if (words.contains('run')) return 'this run';
-    if (words.contains('swim')) return 'this swim';
-    return 'this workout';
-  }
-
   Widget _buildRow(PinStatusBannerRow row) {
     // Never `decision.usedPin` alone: the ephemeral default also carries
     // usedPin:true and must not get the green check / template name.
@@ -563,23 +552,21 @@ class _PinStatusBannerState extends State<PinStatusBanner>
     // FP-4b: honored-but-conflicting rows carry the persistent label. An
     // ephemeral row is not honored, so it never resolves a conflict.
     final conflict = honored ? widget.conflictForRow?.call(row) : null;
-    // Ephemeral default is an info row (muted), not success, not a warning.
-    final rowColor = honored
-        ? AppColors.electrolyte
-        : ephemeralDefault
-        ? AppColors.inactive
-        : AppColors.warning;
+    final rowColor = honored ? AppColors.electrolyte : AppColors.warning;
     // Non-honored row copy is a three-way:
     //   reason == pinnedTemplateUnrenderable → pin matched scope but a required
     //     ingredient was missing from the food pool (PR 3 #35 guard).
     //   pin_set_size  > 0                    → pins existed in scope, but the
     //     solver still picked a non-pinned candidate.
     //   pin_set_size == 0                    → user has no pins for this scope.
+    // FP-2 (formula-pin-surface.md): an ephemeral default-formula decision
+    // renders as NO pin row, i.e. exactly like "No pin found": it is not
+    // the user's pin. The header's "N skipped, tap ? for why" carries the
+    // explanation; the row itself names nothing the athlete did not choose.
     final templateLabel = honored
         ? (row.decision.pinnedTemplateName ?? 'Pinned formula')
         : ephemeralDefault
-        ? 'Default used · your formula doesn\'t cover '
-              '${_activityWord(row.label)}'
+        ? 'No pin found'
         : (row.decision.fallthroughReason ==
                   PinFallthroughReason.pinnedTemplateUnrenderable
               ? 'Pin ingredient unavailable'
@@ -626,21 +613,6 @@ class _PinStatusBannerState extends State<PinStatusBanner>
                             : Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
                     ),
-                    // Name what was skipped right on the row so the default
-                    // never reads as the athlete's choice; "?" has the why.
-                    if (ephemeralDefault && row.decision.hasSkippedFormulas)
-                      Padding(
-                        padding: const EdgeInsets.only(top: AppSpacing.xxs),
-                        child: Text(
-                          'Skipped: '
-                          '${row.decision.skippedPersonalFormulas.map((f) => f.name).join(', ')}',
-                          style: AppTextStyles.bodySmall.copyWith(
-                            color: Theme.of(
-                              context,
-                            ).colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                      ),
                   ],
                 ),
               ),

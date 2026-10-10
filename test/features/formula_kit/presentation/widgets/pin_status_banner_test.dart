@@ -381,32 +381,29 @@ void main() {
       expect(find.text('Bagel + Cream Cheese'), findsOneWidget);
     });
 
-    testWidgets('the ephemeral row reads as "Default used", not as a pinned '
-        'template name', (tester) async {
-      await tester.pumpWidget(_host(rows));
-      await _expand(tester);
+    testWidgets(
+      'the ephemeral row reads "No pin found" (FP-2), not as a pinned '
+      'template name',
+      (tester) async {
+        await tester.pumpWidget(_host(rows));
+        await _expand(tester);
 
-      expect(find.text('Carb Drink Mix + Banana + Water'), findsNothing);
-      expect(
-        find.text("Default used · your formula doesn't cover this workout"),
-        findsOneWidget,
-      );
-    });
+        expect(find.text('Carb Drink Mix + Banana + Water'), findsNothing);
+        expect(find.text('No pin found'), findsOneWidget);
+      },
+    );
 
-    testWidgets('the skipped formula names are still shown on the row', (
-      tester,
-    ) async {
+    testWidgets('the skipped formula names are NOT drawn on the row (FP-2: '
+        'the header carries the skip)', (tester) async {
       await tester.pumpWidget(_host(rows));
       await _expand(tester);
 
       expect(
         find.textContaining('(enervit gel + Water) + Sports Drink'),
-        findsOneWidget,
+        findsNothing,
       );
-      expect(
-        find.textContaining('Stroopwafel + Sports Drink + Water'),
-        findsOneWidget,
-      );
+      expect(find.textContaining('Skipped:'), findsNothing);
+      expect(find.textContaining('Default used'), findsNothing);
     });
 
     testWidgets('the header still says the formulas were skipped', (
@@ -422,7 +419,7 @@ void main() {
       expect(find.text('Using your pinned formulas'), findsNothing);
     });
 
-    testWidgets('a brick leg names its sport from the row label', (
+    testWidgets('a brick leg ephemeral row is also a plain no-pin row', (
       tester,
     ) async {
       await tester.pumpWidget(
@@ -435,10 +432,8 @@ void main() {
       );
       await _expand(tester);
 
-      expect(
-        find.text("Default used · your formula doesn't cover this ride"),
-        findsOneWidget,
-      );
+      expect(find.text('No pin found'), findsOneWidget);
+      expect(find.textContaining('Default used'), findsNothing);
       expect(find.byIcon(Icons.check_circle_outline), findsNothing);
     });
   });
