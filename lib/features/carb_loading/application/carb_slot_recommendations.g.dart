@@ -116,12 +116,30 @@ final class CarbSlotRecommendationsFamily extends $Family
 }
 
 /// Provider face of [resolveCarbRecommendation] for the slot page's tap.
+///
+/// Exact hit → done. Otherwise the mirror may simply predate a server-side
+/// catalog seed (the `foods` sync only ever runs on an EMPTY mirror), so
+/// re-sync the catalog once ([FoodRepository.refreshAfterMiss], throttled)
+/// and run the FULL resolver again. Offline, throttled, or no signed-in
+/// user → the refresh is a no-op and the full resolver (exact then token,
+/// the ratified G25/G26 behaviour) still runs exactly once, so nothing
+/// regresses: the token pass stays the fallback, and null still hands off
+/// to search.
 
 @ProviderFor(carbRecommendationResolution)
 const carbRecommendationResolutionProvider =
     CarbRecommendationResolutionFamily._();
 
 /// Provider face of [resolveCarbRecommendation] for the slot page's tap.
+///
+/// Exact hit → done. Otherwise the mirror may simply predate a server-side
+/// catalog seed (the `foods` sync only ever runs on an EMPTY mirror), so
+/// re-sync the catalog once ([FoodRepository.refreshAfterMiss], throttled)
+/// and run the FULL resolver again. Offline, throttled, or no signed-in
+/// user → the refresh is a no-op and the full resolver (exact then token,
+/// the ratified G25/G26 behaviour) still runs exactly once, so nothing
+/// regresses: the token pass stays the fallback, and null still hands off
+/// to search.
 
 final class CarbRecommendationResolutionProvider
     extends
@@ -134,6 +152,15 @@ final class CarbRecommendationResolutionProvider
         $FutureModifier<CarbFoodResolution?>,
         $FutureProvider<CarbFoodResolution?> {
   /// Provider face of [resolveCarbRecommendation] for the slot page's tap.
+  ///
+  /// Exact hit → done. Otherwise the mirror may simply predate a server-side
+  /// catalog seed (the `foods` sync only ever runs on an EMPTY mirror), so
+  /// re-sync the catalog once ([FoodRepository.refreshAfterMiss], throttled)
+  /// and run the FULL resolver again. Offline, throttled, or no signed-in
+  /// user → the refresh is a no-op and the full resolver (exact then token,
+  /// the ratified G25/G26 behaviour) still runs exactly once, so nothing
+  /// regresses: the token pass stays the fallback, and null still hands off
+  /// to search.
   const CarbRecommendationResolutionProvider._({
     required CarbRecommendationResolutionFamily super.from,
     required String super.argument,
@@ -180,9 +207,18 @@ final class CarbRecommendationResolutionProvider
 }
 
 String _$carbRecommendationResolutionHash() =>
-    r'082395d47aaf1bff6ad0a6d80304b7c4d6390ceb';
+    r'6b0dee06235a72275d8c7ba2d0a90041375bcb2e';
 
 /// Provider face of [resolveCarbRecommendation] for the slot page's tap.
+///
+/// Exact hit → done. Otherwise the mirror may simply predate a server-side
+/// catalog seed (the `foods` sync only ever runs on an EMPTY mirror), so
+/// re-sync the catalog once ([FoodRepository.refreshAfterMiss], throttled)
+/// and run the FULL resolver again. Offline, throttled, or no signed-in
+/// user → the refresh is a no-op and the full resolver (exact then token,
+/// the ratified G25/G26 behaviour) still runs exactly once, so nothing
+/// regresses: the token pass stays the fallback, and null still hands off
+/// to search.
 
 final class CarbRecommendationResolutionFamily extends $Family
     with $FunctionalFamilyOverride<FutureOr<CarbFoodResolution?>, String> {
@@ -196,6 +232,15 @@ final class CarbRecommendationResolutionFamily extends $Family
       );
 
   /// Provider face of [resolveCarbRecommendation] for the slot page's tap.
+  ///
+  /// Exact hit → done. Otherwise the mirror may simply predate a server-side
+  /// catalog seed (the `foods` sync only ever runs on an EMPTY mirror), so
+  /// re-sync the catalog once ([FoodRepository.refreshAfterMiss], throttled)
+  /// and run the FULL resolver again. Offline, throttled, or no signed-in
+  /// user → the refresh is a no-op and the full resolver (exact then token,
+  /// the ratified G25/G26 behaviour) still runs exactly once, so nothing
+  /// regresses: the token pass stays the fallback, and null still hands off
+  /// to search.
 
   CarbRecommendationResolutionProvider call(String query) =>
       CarbRecommendationResolutionProvider._(argument: query, from: this);
