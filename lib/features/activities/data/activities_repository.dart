@@ -1474,10 +1474,19 @@ class ActivitiesRepository with SyncableRepository {
 
       // No existing provider workout found: create a new row
       final estimated = await _withEstimatedDuration(activity);
+      final isProviderLinked =
+          provider != null &&
+          providerWorkoutId != null &&
+          providerWorkoutId.isNotEmpty;
       final activityWithFlags = estimated.copyWith(
         id: '', // Force INSERT by clearing ID
         needsUpload: true,
         localUpdatedAt: DateTime.now(),
+        // Record the provider's date from the first sync so an in-app
+        // reschedule is detectable on the next one (see _mergeProviderUpdate).
+        providerScheduledAt: isProviderLinked
+            ? (activity.providerScheduledAt ?? activity.scheduledDateTime)
+            : null,
       );
 
       final generatedId = await _saveToDrift(activityWithFlags);
@@ -1637,6 +1646,28 @@ class ActivitiesRepository with SyncableRepository {
     domain.Activity existing,
     domain.Activity incoming,
   ) {
+    // Local reschedule beats provider re-sync (Xuan, 2026-10-10,
+    // qa/intake/2026-10-10-local-reschedule-beats-provider-resync.md):
+    // `provider_scheduled_at` records what the provider last said the date
+    // was. When the athlete's row no longer sits on that date, they moved it
+    // in the app, and the provider's date must not overwrite theirs. A row
+    // that never diverged keeps following the provider. The provider's own
+    // date is always recorded so a later provider change stays detectable.
+    // Not ruled (left as-is): a coach moving it in the provider AFTER the
+    // local move still loses to the local date.
+    // Rows without a recorded provider date (synced before this landed, or
+    // reconciled from an in-app row) cannot show a divergence: they follow
+    // the provider once, which records the date for next time.
+    final providerDate =
+        incoming.providerScheduledAt ?? incoming.scheduledDateTime;
+    final lastProviderDate = existing.providerScheduledAt;
+    final rescheduledLocally =
+        lastProviderDate != null &&
+        !existing.scheduledDateTime.isAtSameMomentAs(lastProviderDate);
+    final scheduledDateTime = rescheduledLocally
+        ? existing.scheduledDateTime
+        : incoming.scheduledDateTime;
+
     return domain.Activity(
       // identity
       id: existing.id,
@@ -1645,7 +1676,7 @@ class ActivitiesRepository with SyncableRepository {
       // provider-owned workout data (allow null overwrites)
       activityType: incoming.activityType,
       title: incoming.title,
-      scheduledDateTime: incoming.scheduledDateTime,
+      scheduledDateTime: scheduledDateTime,
       status: existing.status,
       distanceMiles: incoming.distanceMiles,
       durationMinutes: incoming.durationMinutes,
@@ -1669,11 +1700,13 @@ class ActivitiesRepository with SyncableRepository {
       // mark-done / Garmin-verified row from silently reverting to PLANNED on
       // the next TP/FS re-sync. planned_time follows a provider RESCHEDULE
       // (that is scheduling, which owns planned_time); otherwise it stays.
-      plannedTime:
-          incoming.plannedTime ??
-          (incoming.scheduledDateTime != existing.scheduledDateTime
-              ? incoming.scheduledDateTime
-              : existing.plannedTime),
+      // A locally rescheduled row keeps its own planned_time with its date.
+      plannedTime: rescheduledLocally
+          ? existing.plannedTime
+          : incoming.plannedTime ??
+                (incoming.scheduledDateTime != existing.scheduledDateTime
+                    ? incoming.scheduledDateTime
+                    : existing.plannedTime),
       actualTime: incoming.actualTime ?? existing.actualTime,
       caloriesBurned: incoming.caloriesBurned ?? existing.caloriesBurned,
 
@@ -1733,7 +1766,8 @@ class ActivitiesRepository with SyncableRepository {
       paceMaxMinutesPerMile: incoming.paceMaxMinutesPerMile,
       needsNutritionRefresh: incoming.needsNutritionRefresh,
       providerDeletedAt: incoming.providerDeletedAt,
-      providerScheduledAt: incoming.providerScheduledAt,
+      // Always the provider's own date, never the local one.
+      providerScheduledAt: providerDate,
       scheduleChangedAt: incoming.scheduleChangedAt,
 
       // preserve brick grouping metadata
@@ -2262,8 +2296,10 @@ class ActivitiesRepository with SyncableRepository {
             : activity.needsNutritionRefresh,
         providerDeletedAt:
             activity.providerDeletedAt ?? existing?.providerDeletedAt,
+        // The merge already set this to the provider's own date; falling
+        // back to the existing value here would mask a provider move.
         providerScheduledAt:
-            activity.providerScheduledAt ?? existing?.providerScheduledAt,
+            merged.providerScheduledAt ?? merged.scheduledDateTime,
         scheduleChangedAt:
             activity.scheduleChangedAt ?? existing?.scheduleChangedAt,
         needsUpload: true,
