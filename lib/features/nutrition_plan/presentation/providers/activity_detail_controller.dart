@@ -429,8 +429,14 @@ class ActivityDetailController extends _$ActivityDetailController {
         // The state's nutritionPlan may have been updated (e.g., by food swaps) but
         // the activity object still has the old nutritionPlanData from when it was loaded.
         // We must use the current nutritionPlan from state to avoid overwriting changes.
-        final updatedActivity = activity.copyWith(
-          scheduledDateTime: currentState.scheduledDateTime,
+        // A date carried in state that differs from the row is a move, and a
+        // move takes plannedTime with it (Activity.movedTo).
+        final pendingDate = currentState.scheduledDateTime;
+        final positioned =
+            pendingDate == null || pendingDate == activity.scheduledDateTime
+            ? activity
+            : activity.movedTo(pendingDate);
+        final updatedActivity = positioned.copyWith(
           nutritionPlanData: currentState.nutritionPlan != null
               ? _buildNutritionPlanData(
                   plan: currentState.nutritionPlan!,
@@ -1222,11 +1228,10 @@ class ActivityDetailController extends _$ActivityDetailController {
         return;
       }
 
-      // Update the activity with the new scheduled date/time
-      final updatedActivity = currentState.activity!.copyWith(
-        scheduledDateTime: newDateTime,
-        updatedAt: DateTime.now(),
-      );
+      // Move the activity: plannedTime follows scheduledDateTime when set
+      // (Activity.movedTo), so the timeline and calendar — which render
+      // displayTime — land on the same day the plan screen shows.
+      final updatedActivity = currentState.activity!.movedTo(newDateTime);
 
       // Update local state immediately for UI responsiveness
       state = AsyncData(
@@ -1237,10 +1242,11 @@ class ActivityDetailController extends _$ActivityDetailController {
         ),
       );
 
-      // Save to database
-      await _activitiesService.updateActivity(
+      // Save to database (repository re-stamps needsUpload/localUpdatedAt)
+      await _activitiesService.rescheduleActivity(
         deviceId: user.id,
-        activity: updatedActivity,
+        activity: currentState.activity!,
+        newDateTime: newDateTime,
       );
 
       // Invalidate activities list and calendar so they reflect the new date

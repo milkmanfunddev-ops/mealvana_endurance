@@ -132,6 +132,22 @@ class Activity {
   /// the legacy scheduledDateTime for rows predating the two-time columns.
   DateTime get displayTime => actualTime ?? plannedTime ?? scheduledDateTime;
 
+  /// The activity rescheduled by an in-app edit (DATE/TIME pencils, plan
+  /// regeneration with an edited date, a linked event's date move).
+  ///
+  /// `plannedTime` moves with `scheduledDateTime` when it is set, because
+  /// [displayTime] prefers it: moving only the scheduled time leaves the
+  /// timeline and calendar on the old day while the plan screen shows the
+  /// new one (prod 1.29.0, activity c0c76488). A null `plannedTime` stays
+  /// null (legacy rows), and `actualTime` is never touched — a performed
+  /// session keeps the time it was performed at.
+  Activity movedTo(DateTime newDateTime) {
+    return copyWith(
+      scheduledDateTime: newDateTime,
+      plannedTime: plannedTime == null ? null : newDateTime,
+    );
+  }
+
   // Activity parameters (shared)
   final double? distanceMiles;
   final int? durationMinutes;
