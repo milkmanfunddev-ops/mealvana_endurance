@@ -125,9 +125,8 @@ class _EventsListScreenState extends ConsumerState<EventsListScreen> {
               eventDate = activity.scheduledDateTime;
             } else {
               final startTime = event.startTime;
-              eventDate = (startTime != null
-                      ? DateTime.tryParse(startTime)
-                      : null) ??
+              eventDate =
+                  (startTime != null ? DateTime.tryParse(startTime) : null) ??
                   event.eventDate;
             }
             if (eventDate == null) {

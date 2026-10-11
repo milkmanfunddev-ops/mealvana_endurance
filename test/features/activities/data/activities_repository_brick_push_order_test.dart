@@ -142,42 +142,46 @@ void main() {
     }
   }
 
-  group('createBrickFromActivities pushes the whole write set, brick first',
-      () {
-    test('upsert order is [brick, legA, legB]; every row leaves dirty',
+  group(
+    'createBrickFromActivities pushes the whole write set, brick first',
+    () {
+      test(
+        'upsert order is [brick, legA, legB]; every row leaves dirty',
         () async {
-      final swim = await seed(ActivityType.swimming, 'Swim', 7);
-      final run = await seed(ActivityType.running, 'Run', 11);
-      remote.upserts.clear();
+          final swim = await seed(ActivityType.swimming, 'Swim', 7);
+          final run = await seed(ActivityType.running, 'Run', 11);
+          remote.upserts.clear();
 
-      final brick = await repository.createBrickFromActivities(
-        activities: [swim, run],
-        segmentOrder: const ['swimming', 'running'],
+          final brick = await repository.createBrickFromActivities(
+            activities: [swim, run],
+            segmentOrder: const ['swimming', 'running'],
+          );
+          await pumpUntilUpserts(3);
+
+          expect(
+            remote.upsertedIds,
+            [brick.id, swim.id, run.id],
+            reason:
+                'the brick row must exist remotely before a leg referencing it '
+                '(fk_activities_brick_id) is upserted; before the fix NOTHING '
+                'was pushed here',
+          );
+
+          // The legs went up pointing at the brick, in the Postgres spelling.
+          for (final leg in remote.upserts.skip(1)) {
+            expect(leg['brick_id'], brick.id);
+            expect(leg['status'], 'archived_for_brick');
+          }
+
+          // The push acknowledged, so the dirty flags are clear — nothing is
+          // left for the next uploadDirtyRecords sweep.
+          for (final id in [brick.id, swim.id, run.id]) {
+            expect((await row(id)).needsUpload, isFalse, reason: id);
+          }
+        },
       );
-      await pumpUntilUpserts(3);
-
-      expect(
-        remote.upsertedIds,
-        [brick.id, swim.id, run.id],
-        reason:
-            'the brick row must exist remotely before a leg referencing it '
-            '(fk_activities_brick_id) is upserted; before the fix NOTHING '
-            'was pushed here',
-      );
-
-      // The legs went up pointing at the brick, in the Postgres spelling.
-      for (final leg in remote.upserts.skip(1)) {
-        expect(leg['brick_id'], brick.id);
-        expect(leg['status'], 'archived_for_brick');
-      }
-
-      // The push acknowledged, so the dirty flags are clear — nothing is
-      // left for the next uploadDirtyRecords sweep.
-      for (final id in [brick.id, swim.id, run.id]) {
-        expect((await row(id)).needsUpload, isFalse, reason: id);
-      }
-    });
-  });
+    },
+  );
 
   group('ungroupBrick pushes the restored legs BEFORE the tombstone', () {
     test('upsert order is [legA, legB, brick tombstone]', () async {
@@ -245,8 +249,7 @@ void main() {
   });
 
   group('one status spelling on disk', () {
-    test('toCompanion writes the Postgres enum value, not the Dart name',
-        () {
+    test('toCompanion writes the Postgres enum value, not the Dart name', () {
       final now = DateTime.now();
       Activity withStatus(ActivityStatus status) => Activity(
         id: 'a1',
@@ -260,7 +263,9 @@ void main() {
       );
 
       expect(
-        mapper.toCompanion(withStatus(ActivityStatus.archivedForBrick)).status
+        mapper
+            .toCompanion(withStatus(ActivityStatus.archivedForBrick))
+            .status
             .value,
         'archived_for_brick',
       );
@@ -285,8 +290,7 @@ void main() {
       expect((await row(run.id)).status, 'archived_for_brick');
     });
 
-    test('the archived-leg reader still finds legacy camelCase rows',
-        () async {
+    test('the archived-leg reader still finds legacy camelCase rows', () async {
       final swim = await seed(ActivityType.swimming, 'Swim', 7);
       final run = await seed(ActivityType.running, 'Run', 11);
       await database.customStatement(
@@ -298,10 +302,9 @@ void main() {
         'legacy-brick',
       );
       expect(found.map((a) => a.id), [swim.id, run.id]);
-      expect(
-        found.map((a) => a.status).toSet(),
-        {ActivityStatus.archivedForBrick},
-      );
+      expect(found.map((a) => a.status).toSet(), {
+        ActivityStatus.archivedForBrick,
+      });
     });
   });
 }

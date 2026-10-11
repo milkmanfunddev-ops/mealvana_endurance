@@ -107,45 +107,53 @@ void main() {
   }
 
   ProviderContainer containerFor(_CountingFoodRepository repository) {
-    final container = ProviderContainer(overrides: [
-      appDatabaseProvider.overrideWithValue(db),
-      userIdProvider.overrideWith((ref) async => userId),
-      foodRepositoryProvider.overrideWithValue(repository),
-    ]);
+    final container = ProviderContainer(
+      overrides: [
+        appDatabaseProvider.overrideWithValue(db),
+        userIdProvider.overrideWith((ref) async => userId),
+        foodRepositoryProvider.overrideWithValue(repository),
+      ],
+    );
     addTearDown(container.dispose);
     return container;
   }
 
   test(
-      '(a) exact miss: the mirror predates the Rice seed → one catalog '
-      'refresh → Rice resolves, not its token-pass sibling Rice pudding',
-      () async {
-    final repository = await seedMirror(
-      wireRowsWithoutRice,
-      seedOnRefresh: true,
-    );
-    // Pre-condition: the stale mirror really lacks 'Rice' and the token
-    // pass alone would land on 'Rice pudding' (the reproduced bug).
-    final staleOnly = await resolveCarbRecommendation(db, 'Rice');
-    expect(staleOnly?.title, 'Rice pudding');
+    '(a) exact miss: the mirror predates the Rice seed → one catalog '
+    'refresh → Rice resolves, not its token-pass sibling Rice pudding',
+    () async {
+      final repository = await seedMirror(
+        wireRowsWithoutRice,
+        seedOnRefresh: true,
+      );
+      // Pre-condition: the stale mirror really lacks 'Rice' and the token
+      // pass alone would land on 'Rice pudding' (the reproduced bug).
+      final staleOnly = await resolveCarbRecommendation(db, 'Rice');
+      expect(staleOnly?.title, 'Rice pudding');
 
-    final container = containerFor(repository);
-    final resolution = await container.read(
-      carbRecommendationResolutionProvider('Rice').future,
-    );
+      final container = containerFor(repository);
+      final resolution = await container.read(
+        carbRecommendationResolutionProvider('Rice').future,
+      );
 
-    expect(resolution, isNotNull);
-    expect(resolution!.title, 'Rice',
-        reason: 'the seeded row must win, never the token-pass sibling');
-    expect(resolution.component.carbG, 45.0,
-        reason: 'real macros of the seeded Rice row (not Rice pudding\'s 30)');
-    expect(resolution.component.calories, 200);
-    expect(repository.refreshCalls, 1);
-    expect(repository.seenUserIds, [userId]);
-  });
+      expect(resolution, isNotNull);
+      expect(
+        resolution!.title,
+        'Rice',
+        reason: 'the seeded row must win, never the token-pass sibling',
+      );
+      expect(
+        resolution.component.carbG,
+        45.0,
+        reason: 'real macros of the seeded Rice row (not Rice pudding\'s 30)',
+      );
+      expect(resolution.component.calories, 200);
+      expect(repository.refreshCalls, 1);
+      expect(repository.seenUserIds, [userId]);
+    },
+  );
 
-  test(
-      '(b) refresh fails closed (offline) → the ratified token-pass result '
+  test('(b) refresh fails closed (offline) → the ratified token-pass result '
       'still comes back, nothing throws', () async {
     final repository = await seedMirror(
       wireRowsWithoutRice,
@@ -159,8 +167,11 @@ void main() {
 
     expect(repository.refreshCalls, 1);
     expect(resolution, isNotNull);
-    expect(resolution!.title, 'Rice pudding',
-        reason: 'offline the full resolver (exact then token) runs as before');
+    expect(
+      resolution!.title,
+      'Rice pudding',
+      reason: 'offline the full resolver (exact then token) runs as before',
+    );
     expect(resolution.component.carbG, 30.0);
   });
 
@@ -180,19 +191,23 @@ void main() {
     expect(repository.refreshCalls, 0);
   });
 
-  test(
-      'exactOnly: the exact pass alone misses a sibling-only mirror and hits '
+  test('exactOnly: the exact pass alone misses a sibling-only mirror and hits '
       'the real row once seeded', () async {
     await seedMirror(wireRowsWithoutRice, seedOnRefresh: false);
-    expect(await resolveCarbRecommendation(db, 'Rice', exactOnly: true),
-        isNull);
-    expect((await resolveCarbRecommendation(db, 'Rice'))?.title,
-        'Rice pudding');
+    expect(
+      await resolveCarbRecommendation(db, 'Rice', exactOnly: true),
+      isNull,
+    );
+    expect(
+      (await resolveCarbRecommendation(db, 'Rice'))?.title,
+      'Rice pudding',
+    );
 
     await seedMirror(wireFoodRowsPostSeed, seedOnRefresh: false);
     expect(
-        (await resolveCarbRecommendation(db, 'Rice', exactOnly: true))?.title,
-        'Rice');
+      (await resolveCarbRecommendation(db, 'Rice', exactOnly: true))?.title,
+      'Rice',
+    );
   });
 
   test('refreshAfterMiss is throttled per instance and fails closed', () async {
@@ -212,7 +227,10 @@ void main() {
     verifyNever(() => supabase.from(any()));
 
     final after = await db.select(db.foodsTable).get();
-    expect(after.length, before.length,
-        reason: 'a failed fetch must leave the existing mirror intact');
+    expect(
+      after.length,
+      before.length,
+      reason: 'a failed fetch must leave the existing mirror intact',
+    );
   });
 }

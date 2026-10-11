@@ -123,34 +123,31 @@ void main() {
       totalDurationMinutes: 120,
     );
 
-    test(
-      'holds duration, drops the baked pace, derives a consistent triplet '
-      'at the CF-6 swim base (60 min → 3000 m at 2:00 /100m)',
-      () {
-        notifier.initializeFromBrickMetadata(
-          swimNoDistance,
-          DateTime(2026, 10, 7, 7),
-        );
+    test('holds duration, drops the baked pace, derives a consistent triplet '
+        'at the CF-6 swim base (60 min → 3000 m at 2:00 /100m)', () {
+      notifier.initializeFromBrickMetadata(
+        swimNoDistance,
+        DateTime(2026, 10, 7, 7),
+      );
 
-        final swim = state().legs[0];
-        expect(swim.sport, 'swimming');
-        expect(swim.durationMinutes, 60);
-        expect(swim.durationPaceMode, DurationPaceMode.byDuration);
-        expect(swim.distanceMeters, 3000.0);
-        expect(swim.pacePer100mSeconds, 120);
+      final swim = state().legs[0];
+      expect(swim.sport, 'swimming');
+      expect(swim.durationMinutes, 60);
+      expect(swim.durationPaceMode, DurationPaceMode.byDuration);
+      expect(swim.distanceMeters, 3000.0);
+      expect(swim.pacePer100mSeconds, 120);
 
-        // The three numbers agree: distance / 100 * pace ≈ duration.
-        final derivedSeconds =
-            swim.distanceMeters! / 100 * swim.pacePer100mSeconds!;
-        expect((derivedSeconds - 3600).abs(), lessThanOrEqualTo(60));
+      // The three numbers agree: distance / 100 * pace ≈ duration.
+      final derivedSeconds =
+          swim.distanceMeters! / 100 * swim.pacePer100mSeconds!;
+      expect((derivedSeconds - 3600).abs(), lessThanOrEqualTo(60));
 
-        final bike = state().legs[1];
-        expect(bike.sport, 'cycling');
-        expect(bike.distanceMiles, 10.0);
-        expect(bike.speedMph, 10.0);
-        expect(bike.durationMinutes, 60);
-      },
-    );
+      final bike = state().legs[1];
+      expect(bike.sport, 'cycling');
+      expect(bike.distanceMiles, 10.0);
+      expect(bike.speedMph, 10.0);
+      expect(bike.durationMinutes, 60);
+    });
   });
 
   group('legs', () {

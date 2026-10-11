@@ -67,9 +67,7 @@ Future<void> _pumpList(WidgetTester tester, List<Event> events) async {
         eventsControllerProvider.overrideWith(
           () => _FixedEventsController(events),
         ),
-        activitiesControllerProvider.overrideWith(
-          _NoActivitiesController.new,
-        ),
+        activitiesControllerProvider.overrideWith(_NoActivitiesController.new),
       ],
       child: wrapForTest(const EventsListScreen()),
     ),
@@ -97,10 +95,9 @@ void main() {
     'unparseable start_time falls back to event_date instead of dropping',
     (tester) async {
       final fourteenDaysOut = DateTime.now().add(const Duration(days: 14));
-      await _pumpList(
-        tester,
-        [_event(eventDate: fourteenDaysOut, startTime: 'not-a-timestamp')],
-      );
+      await _pumpList(tester, [
+        _event(eventDate: fourteenDaysOut, startTime: 'not-a-timestamp'),
+      ]);
 
       expect(
         find.byKey(const ValueKey('my_events.upcoming_heading')),
@@ -110,16 +107,15 @@ void main() {
     },
   );
 
-  testWidgets(
-    'event with no date signal at all is still skipped',
-    (tester) async {
-      await _pumpList(tester, [_event()]);
+  testWidgets('event with no date signal at all is still skipped', (
+    tester,
+  ) async {
+    await _pumpList(tester, [_event()]);
 
-      expect(
-        find.byKey(const ValueKey('my_events.upcoming_heading')),
-        findsNothing,
-      );
-      expect(find.text(_eventName), findsNothing);
-    },
-  );
+    expect(
+      find.byKey(const ValueKey('my_events.upcoming_heading')),
+      findsNothing,
+    );
+    expect(find.text(_eventName), findsNothing);
+  });
 }
