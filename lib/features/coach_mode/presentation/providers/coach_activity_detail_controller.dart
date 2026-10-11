@@ -162,8 +162,14 @@ class CoachActivityDetailController extends _$CoachActivityDetailController {
       final coachUserId = await ref.read(userIdProvider.future);
       final activitiesService = ref.read(activitiesServiceProvider);
 
-      final updatedActivity = activity.copyWith(
-        scheduledDateTime: currentState.scheduledDateTime,
+      // Same rule as the athlete side: a date carried in state that differs
+      // from the row is a move, and plannedTime moves with it.
+      final pendingDate = currentState.scheduledDateTime;
+      final positioned =
+          pendingDate == null || pendingDate == activity.scheduledDateTime
+          ? activity
+          : activity.movedTo(pendingDate);
+      final updatedActivity = positioned.copyWith(
         nutritionPlanData: currentState.nutritionPlan?.toJson(),
       );
 
