@@ -111,19 +111,21 @@ class _EventsListScreenState extends ConsumerState<EventsListScreen> {
                   )
                 : null;
 
-            // Get event date
+            // Get event date: linked activity first, then a parseable
+            // startTime, then the row's own eventDate (rows created with an
+            // event_date but no start_time must still be listed).
             DateTime? eventDate;
             if (activity != null) {
               eventDate = activity.scheduledDateTime;
-            } else if (event.startTime != null) {
-              try {
-                eventDate = DateTime.parse(event.startTime!);
-              } catch (e) {
-                // Skip events without valid dates
-                continue;
-              }
             } else {
-              // Skip events without dates
+              final startTime = event.startTime;
+              eventDate = (startTime != null
+                      ? DateTime.tryParse(startTime)
+                      : null) ??
+                  event.eventDate;
+            }
+            if (eventDate == null) {
+              // Skip events with no date signal at all
               continue;
             }
 
