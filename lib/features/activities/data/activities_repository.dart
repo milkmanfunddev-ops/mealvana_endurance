@@ -1957,6 +1957,49 @@ class ActivitiesRepository with SyncableRepository {
     }());
   }
 
+  /// Best-effort immediate push of a brick write set, PARENT FIRST: the
+  /// brick row (when given), then each leg. Legs reference the brick
+  /// (fk_activities_brick_id), so a leg pointing at a brick the server does
+  /// not hold yet would be rejected — the parent goes up first, and a failed
+  /// parent stops the legs (they would only fail the FK). Every row is
+  /// re-read from Drift so the payload is exactly what the transaction
+  /// committed; _uploadActivityToSupabase clears needs_upload on success and
+  /// any failure is logged and leaves the row dirty for uploadDirtyRecords.
+  Future<void> _pushBrickWriteSet({
+    String? brickId,
+    required List<String> legIds,
+    required String operation,
+  }) async {
+    final ordered = <String>[if (brickId != null) brickId, ...legIds];
+    for (final activityId in ordered) {
+      try {
+        final row = await (_database.select(
+          _database.activitiesTable,
+        )..where((tbl) => tbl.id.equals(activityId))).getSingleOrNull();
+        if (row == null) continue;
+        await _uploadActivityToSupabase(
+          _mapper.fromDriftRow(row),
+          operation: 'update',
+        );
+      } catch (e, stackTrace) {
+        _logger.warning(
+          'Immediate upload failed; record stays dirty for retry',
+          context: 'ACTIVITIES_REPOSITORY',
+          error: e,
+          stackTrace: stackTrace,
+          data: {'operation': operation, 'recordId': activityId},
+        );
+        _sentry.reportNetworkError(
+          e,
+          url: 'supabase:activities:$operation',
+          method: 'UPSERT',
+          stackTrace: stackTrace,
+        );
+        if (activityId == brickId) return;
+      }
+    }
+  }
+
   /// Clear dirty flag after successful upload
   Future<void> _clearDirtyFlag(String activityId) async {
     await (_database.update(_database.activitiesTable)
@@ -2579,7 +2622,7 @@ class ActivitiesRepository with SyncableRepository {
       }
 
       // Use transaction to ensure atomicity
-      return await _database.transaction(() async {
+      final created = await _database.transaction(() async {
         // Step 1: Build BrickSegment list from activities
         final segments = <BrickSegment>[];
         int totalDurationMinutes = 0;
@@ -2767,6 +2810,22 @@ class ActivitiesRepository with SyncableRepository {
 
         return _mapper.fromDriftRow(savedBrick);
       });
+
+      // Push the whole write set now, brick FIRST (2026-10-07 ghost-brick
+      // fix): nothing was pushed here before, so a regroup after an ungroup
+      // left the server with the tombstoned old brick, the legs still
+      // archived against it, and no new brick until the next dirty sweep.
+      // The legs reference the brick row (fk_activities_brick_id), so the
+      // parent must exist remotely before a leg pointing at it is upserted.
+      unawaited(
+        _pushBrickWriteSet(
+          brickId: created.id,
+          legIds: activities.map((a) => a.id).toList(),
+          operation: 'brick_create',
+        ),
+      );
+
+      return created;
     } catch (e, stackTrace) {
       _logger.error(
         'Failed to create brick from activities',
@@ -2854,6 +2913,10 @@ class ActivitiesRepository with SyncableRepository {
 
   Future<void> ungroupBrick(String brickId) async {
     String? userIdForSupabaseDelete;
+    // Every leg this ungroup hands back (restored archived rows and legs
+    // synthesized from a fresh brick's segments) — pushed remotely after the
+    // transaction, BEFORE the brick tombstone.
+    final restoredLegIds = <String>[];
 
     try {
       // Use transaction to ensure atomicity for local Drift operations
@@ -2915,7 +2978,7 @@ class ActivitiesRepository with SyncableRepository {
                 scheduledDateTime: legStart,
                 now: now,
               );
-              await _saveToDrift(leg);
+              restoredLegIds.add(await _saveToDrift(leg));
               legStart = legStart.add(
                 Duration(minutes: segment.durationMinutes),
               );
@@ -2944,6 +3007,7 @@ class ActivitiesRepository with SyncableRepository {
           );
 
           await _saveToDrift(restoredActivity);
+          restoredLegIds.add(restoredActivity.id);
         }
 
         // copyWith(brickId: null) is a no-op (`brickId ?? this.brickId`), so
@@ -2992,9 +3056,17 @@ class ActivitiesRepository with SyncableRepository {
         );
       });
 
-      // Step 5: Delete from Supabase AFTER transaction completes (non-blocking)
+      // Step 5: Push to Supabase AFTER transaction completes (non-blocking).
+      // Legs FIRST, then the tombstone (2026-10-07 ghost-brick fix: only the
+      // tombstone was pushed, so the server kept the legs archived against a
+      // deleted brick until the next dirty sweep — and a regroup in between
+      // produced the ghost state).
       if (userIdForSupabaseDelete != null) {
         unawaited(() async {
+          await _pushBrickWriteSet(
+            legIds: restoredLegIds,
+            operation: 'brick_ungroup',
+          );
           try {
             await _uploadActivityDeletion(userIdForSupabaseDelete!, brickId);
           } catch (e, stackTrace) {

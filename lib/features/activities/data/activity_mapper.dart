@@ -394,7 +394,11 @@ class ActivityMapper {
       activityType: Value(activity.activityType.name),
       title: Value(activity.title),
       scheduledDateTime: Value(activity.scheduledDateTime),
-      status: Value(activity.status.name),
+      // One spelling on disk: the Postgres enum value ('archived_for_brick',
+      // 'in_progress'), the same thing a sync pull writes. Rows written by
+      // older builds carry the camelCase enum name; parseActivityStatus and
+      // the status filters keep accepting both, so no migration is needed.
+      status: Value(activityStatusToDbValue(activity.status.name)),
       distanceMiles: Value(activity.distanceMiles),
       durationMinutes: Value(activity.durationMinutes),
       durationSource: Value(activity.durationSource),
