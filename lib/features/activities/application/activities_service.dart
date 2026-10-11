@@ -903,6 +903,28 @@ class ActivitiesService {
     }
   }
 
+  /// Move an activity to a new scheduled date/time from an in-app edit.
+  ///
+  /// The one write path for the DATE/TIME pencils: applies
+  /// [domain.Activity.movedTo] (plannedTime follows scheduledDateTime when
+  /// set, actualTime untouched) and persists through [updateActivity], which
+  /// re-stamps the row dirty (`needsUpload`, `localUpdatedAt`) for the sync
+  /// queue.
+  Future<domain.Activity> rescheduleActivity({
+    required String deviceId,
+    required domain.Activity activity,
+    required DateTime newDateTime,
+    String? currentUserId,
+    WriteConsistency? consistency,
+  }) {
+    return updateActivity(
+      deviceId: deviceId,
+      activity: activity.movedTo(newDateTime),
+      currentUserId: currentUserId,
+      consistency: consistency,
+    );
+  }
+
   /// Update an existing activity
   /// If [currentUserId] is provided and different from activity.userId, validates coach-athlete relationship
   Future<domain.Activity> updateActivity({

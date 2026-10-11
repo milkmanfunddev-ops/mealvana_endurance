@@ -96,6 +96,37 @@ class FoodRepository with SyncableRepository {
     }
   }
 
+  /// Last time [refreshAfterMiss] actually hit the network (per instance).
+  DateTime? _lastMissRefreshAt;
+
+  /// Minimum gap between two [refreshAfterMiss] network calls.
+  @visibleForTesting
+  static const Duration missRefreshThrottle = Duration(minutes: 5);
+
+  /// One-shot catalog re-sync after a local lookup MISS.
+  ///
+  /// [isStale] only forces a `foods` sync when the mirror is EMPTY and
+  /// nothing calls `ensureSynced('foods')` later, so a catalog row seeded
+  /// server-side after a device's first sync never arrives on its own. A
+  /// caller that expected a row and did not find it calls this, then
+  /// re-runs its lookup. Throttled per instance ([missRefreshThrottle]) so
+  /// repeated misses (or repeated taps offline) do not hammer the network;
+  /// a throttled call returns false without touching anything.
+  ///
+  /// Fails closed offline: [syncFromRemote] fetches FIRST and only replaces
+  /// the mirror after a successful fetch, so a failed fetch leaves the
+  /// existing mirror intact and this returns false.
+  Future<bool> refreshAfterMiss(String userId) async {
+    final now = DateTime.now();
+    final last = _lastMissRefreshAt;
+    if (last != null && now.difference(last) < missRefreshThrottle) {
+      return false;
+    }
+    _lastMissRefreshAt = now;
+    final result = await syncFromRemote(userId);
+    return result.success;
+  }
+
   @override
   Future<UploadResult> uploadDirtyRecords(String userId) async {
     // Foods are read-only reference data managed by backend

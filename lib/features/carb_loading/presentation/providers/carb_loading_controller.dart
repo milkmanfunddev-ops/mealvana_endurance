@@ -4,6 +4,7 @@ import '../../application/carb_load_nudge_service.dart';
 import '../../application/carb_loading_service.dart';
 import '../../domain/carb_loading_entryway_engine.dart';
 import '../../data/carb_loading_repository.dart';
+import '../../../events/presentation/providers/events_controller.dart';
 import '../../../macro_dashboard/presentation/providers/carb_dashboard_providers.dart';
 import 'carb_nudge_coordinator.dart';
 import '../../../../shared/database/app_database.dart' as db;
@@ -40,6 +41,12 @@ class CarbLoadingController extends _$CarbLoadingController {
     ref.invalidate(carbLoadingDaysForPlanProvider);
     ref.invalidate(carbLoadingDaysForRangeProvider);
     ref.invalidate(carbDashboardForDateProvider);
+    // Event Details' carb row reads `event.hasCarbLoading` through this
+    // family, and the service flips that flag on the events row with every
+    // plan create/delete. The whole family (every forUserId instance), so
+    // removal flips "Carb Loading Plan" back to "Set Up Carb Loading" in
+    // the same frame instead of pointing at a plan that no longer exists.
+    ref.invalidate(eventDetailProvider);
   }
 
   /// Background sync: ensures data is fresh, then refreshes UI

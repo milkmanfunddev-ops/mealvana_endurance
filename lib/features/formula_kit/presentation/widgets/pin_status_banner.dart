@@ -18,6 +18,17 @@ class PinStatusBannerRow {
 
   /// The pin decision for this phase. Drives icon + colour per row.
   final PinDecision decision;
+
+  /// True iff a REAL pin fired for this phase. An ephemeral decision (the
+  /// server's automatic default-formula pick, `usedPin: true` +
+  /// `ephemeral: true`) is never honored: the athlete didn't pin it. This is
+  /// the single seam the banner and its owner's analytics read, so the
+  /// default can never be drawn or counted as an honored pin again (prod
+  /// 1.29.0, Xuan 2026-10).
+  bool get honored => decision.usedPin && !decision.ephemeral;
+
+  /// True iff this row is the ephemeral default standing in for a pin.
+  bool get isEphemeralDefault => decision.usedPin && decision.ephemeral;
 }
 
 /// Activity-detail banner that surfaces Formula Kit pin honoring telemetry.
@@ -126,9 +137,9 @@ class _PinStatusBannerState extends State<PinStatusBanner>
     }
   }
 
-  bool get _hasAnyFallthrough => widget.rows.any((r) => !r.decision.usedPin);
+  bool get _hasAnyFallthrough => widget.rows.any((r) => !r.honored);
 
-  bool get _hasAnyHonored => widget.rows.any((r) => r.decision.usedPin);
+  bool get _hasAnyHonored => widget.rows.any((r) => r.honored);
 
   /// Rows where the user authored a formula for the phase that didn't apply.
   /// Drives the "?" affordance — this is the case the banner was previously
@@ -293,7 +304,7 @@ class _PinStatusBannerState extends State<PinStatusBanner>
           ? '1 of your formulas was skipped — tap ? for why'
           : '$count of your formulas were skipped — tap ? for why';
     }
-    final honoredCount = widget.rows.where((r) => r.decision.usedPin).length;
+    final honoredCount = widget.rows.where((r) => r.honored).length;
     final skippedCount = widget.rows.length - honoredCount;
     if (skippedCount == 0) {
       return honoredCount == 1 ? '1 pin honored' : '$honoredCount pins honored';
@@ -534,8 +545,12 @@ class _PinStatusBannerState extends State<PinStatusBanner>
   }
 
   Widget _buildRow(PinStatusBannerRow row) {
-    final honored = row.decision.usedPin;
-    // FP-4b: honored-but-conflicting rows carry the persistent label.
+    // Never `decision.usedPin` alone: the ephemeral default also carries
+    // usedPin:true and must not get the green check / template name.
+    final honored = row.honored;
+    final ephemeralDefault = row.isEphemeralDefault;
+    // FP-4b: honored-but-conflicting rows carry the persistent label. An
+    // ephemeral row is not honored, so it never resolves a conflict.
     final conflict = honored ? widget.conflictForRow?.call(row) : null;
     final rowColor = honored ? AppColors.electrolyte : AppColors.warning;
     // Non-honored row copy is a three-way:
@@ -544,8 +559,14 @@ class _PinStatusBannerState extends State<PinStatusBanner>
     //   pin_set_size  > 0                    → pins existed in scope, but the
     //     solver still picked a non-pinned candidate.
     //   pin_set_size == 0                    → user has no pins for this scope.
+    // FP-2 (formula-pin-surface.md): an ephemeral default-formula decision
+    // renders as NO pin row, i.e. exactly like "No pin found": it is not
+    // the user's pin. The header's "N skipped, tap ? for why" carries the
+    // explanation; the row itself names nothing the athlete did not choose.
     final templateLabel = honored
         ? (row.decision.pinnedTemplateName ?? 'Pinned formula')
+        : ephemeralDefault
+        ? 'No pin found'
         : (row.decision.fallthroughReason ==
                   PinFallthroughReason.pinnedTemplateUnrenderable
               ? 'Pin ingredient unavailable'
@@ -581,13 +602,18 @@ class _PinStatusBannerState extends State<PinStatusBanner>
                 ),
               ),
               Expanded(
-                child: Text(
-                  templateLabel,
-                  style: AppTextStyles.bodyMedium.copyWith(
-                    color: honored
-                        ? Theme.of(context).colorScheme.onSurface
-                        : Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      templateLabel,
+                      style: AppTextStyles.bodyMedium.copyWith(
+                        color: honored
+                            ? Theme.of(context).colorScheme.onSurface
+                            : Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],

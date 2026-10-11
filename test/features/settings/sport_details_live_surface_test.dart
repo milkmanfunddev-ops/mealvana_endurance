@@ -34,10 +34,6 @@ void main() {
       tester,
       const CyclingDetailsScreen(mode: ScreenMode.settings),
       overrides: [authServiceProvider.overrideWithValue(auth)],
-      // Settings mode has a PRE-EXISTING 14 px right overflow at 390 pt
-      // (present before the D-2 row; filed 2026-09-11). This test pins
-      // composition, not layout.
-      overflowSizes: const [],
     );
     expect(find.byType(KyleSourceProvenanceRow), findsOneWidget);
   });
@@ -49,8 +45,6 @@ void main() {
       tester,
       const SwimmingDetailsScreen(mode: ScreenMode.settings),
       overrides: [authServiceProvider.overrideWithValue(auth)],
-      // Same pre-existing settings-mode overflow (34 px) — see above.
-      overflowSizes: const [],
     );
     expect(find.byType(KyleSourceProvenanceRow), findsOneWidget);
   });

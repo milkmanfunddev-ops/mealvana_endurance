@@ -1457,10 +1457,19 @@ class ActivitiesRepository with SyncableRepository {
 
       // No existing provider workout found: create a new row
       final estimated = await _withEstimatedDuration(activity);
+      final isProviderLinked =
+          provider != null &&
+          providerWorkoutId != null &&
+          providerWorkoutId.isNotEmpty;
       final activityWithFlags = estimated.copyWith(
         id: '', // Force INSERT by clearing ID
         needsUpload: true,
         localUpdatedAt: DateTime.now(),
+        // Record the provider's date from the first sync so an in-app
+        // reschedule is detectable on the next one (see _mergeProviderUpdate).
+        providerScheduledAt: isProviderLinked
+            ? (activity.providerScheduledAt ?? activity.scheduledDateTime)
+            : null,
       );
 
       final generatedId = await _saveToDrift(activityWithFlags);
@@ -1642,6 +1651,32 @@ class ActivitiesRepository with SyncableRepository {
         incoming.isProviderCompleted &&
         !garminCompleted &&
         existing.status != domain.ActivityStatus.archivedForBrick;
+    // Local reschedule beats provider re-sync (Xuan, 2026-10-10,
+    // qa/intake/2026-10-10-local-reschedule-beats-provider-resync.md):
+    // `provider_scheduled_at` records what the provider last said the date
+    // was. When the athlete's row no longer sits on that date, they moved it
+    // in the app, and the provider's date must not overwrite theirs. A row
+    // that never diverged keeps following the provider. The provider's own
+    // date is always recorded so a later provider change stays detectable.
+    // Not ruled (left as-is): a coach moving it in the provider AFTER the
+    // local move still loses to the local date.
+    // Rows without a recorded provider date (synced before this landed, or
+    // reconciled from an in-app row) cannot show a divergence: they follow
+    // the provider once, which records the date for next time.
+    // Three-time model (Xuan 2026-10-11): "moved locally" is the athlete's
+    // planned time differing from the provider's time. scheduledDateTime is
+    // only the fallback for legacy rows without a planned time — it is being
+    // retired, and a Garmin completion overwrites it.
+    final providerDate =
+        incoming.providerScheduledAt ?? incoming.scheduledDateTime;
+    final lastProviderDate = existing.providerScheduledAt;
+    final athleteTime = existing.plannedTime ?? existing.scheduledDateTime;
+    final rescheduledLocally =
+        lastProviderDate != null &&
+        !athleteTime.isAtSameMomentAs(lastProviderDate);
+    final scheduledDateTime = rescheduledLocally
+        ? existing.scheduledDateTime
+        : incoming.scheduledDateTime;
 
     return domain.Activity(
       // identity
@@ -1651,7 +1686,7 @@ class ActivitiesRepository with SyncableRepository {
       // provider-owned workout data (allow null overwrites)
       activityType: incoming.activityType,
       title: incoming.title,
-      scheduledDateTime: incoming.scheduledDateTime,
+      scheduledDateTime: scheduledDateTime,
       status: adoptCompletion
           ? domain.ActivityStatus.completed
           : existing.status,
@@ -1676,12 +1711,12 @@ class ActivitiesRepository with SyncableRepository {
       // workout provider update never carries these — preserving them keeps a
       // mark-done / Garmin-verified row from silently reverting to PLANNED on
       // the next TP/FS re-sync. planned_time follows a provider RESCHEDULE
-      // (that is scheduling, which owns planned_time); otherwise it stays.
-      plannedTime:
-          incoming.plannedTime ??
-          (incoming.scheduledDateTime != existing.scheduledDateTime
-              ? incoming.scheduledDateTime
-              : existing.plannedTime),
+      // (that is scheduling, which owns planned_time). A locally rescheduled
+      // row keeps the athlete's time; otherwise planned_time is the
+      // provider's time, which also fills legacy rows that had none.
+      plannedTime: rescheduledLocally
+          ? athleteTime
+          : incoming.plannedTime ?? incoming.scheduledDateTime,
       // A completion without measurements keeps what the row already had
       // (an athlete's own mark-done numbers), wave 25 review.
       actualTime: adoptCompletion
@@ -1757,7 +1792,8 @@ class ActivitiesRepository with SyncableRepository {
       paceMaxMinutesPerMile: incoming.paceMaxMinutesPerMile,
       needsNutritionRefresh: incoming.needsNutritionRefresh,
       providerDeletedAt: incoming.providerDeletedAt,
-      providerScheduledAt: incoming.providerScheduledAt,
+      // Always the provider's own date, never the local one.
+      providerScheduledAt: providerDate,
       scheduleChangedAt: incoming.scheduleChangedAt,
 
       // preserve brick grouping metadata
@@ -1973,6 +2009,43 @@ class ActivitiesRepository with SyncableRepository {
         );
       }
     }());
+  }
+
+  /// Best-effort immediate push of a brick write set, PARENT FIRST: the
+  /// brick row (when given), then each leg. Legs reference the brick
+  /// (fk_activities_brick_id), so a leg pointing at a brick the server does
+  /// not hold yet would be rejected — the parent goes up first, and a failed
+  /// parent stops the legs (they would only fail the FK). Every row is
+  /// re-read from Drift so the payload is exactly what the transaction
+  /// committed; _uploadActivityToSupabase clears needs_upload on success and
+  /// any failure is logged and leaves the row dirty for uploadDirtyRecords.
+  Future<void> _pushBrickWriteSet({
+    String? brickId,
+    required List<String> legIds,
+    required String operation,
+  }) async {
+    final ordered = <String>[if (brickId != null) brickId, ...legIds];
+    for (final activityId in ordered) {
+      try {
+        final row = await (_database.select(
+          _database.activitiesTable,
+        )..where((tbl) => tbl.id.equals(activityId))).getSingleOrNull();
+        if (row == null) continue;
+        await _uploadActivityToSupabase(
+          _mapper.fromDriftRow(row),
+          operation: 'update',
+        );
+      } catch (e, stackTrace) {
+        _report.degraded(
+          e,
+          stackTrace: stackTrace,
+          area: 'activities',
+          message: 'Immediate upload failed; record stays dirty for retry',
+          extra: {'operation': operation, 'recordId': activityId},
+        );
+        if (activityId == brickId) return;
+      }
+    }
   }
 
   /// Clear dirty flag after successful upload
@@ -2280,8 +2353,10 @@ class ActivitiesRepository with SyncableRepository {
             : activity.needsNutritionRefresh,
         providerDeletedAt:
             activity.providerDeletedAt ?? existing?.providerDeletedAt,
+        // The merge already set this to the provider's own date; falling
+        // back to the existing value here would mask a provider move.
         providerScheduledAt:
-            activity.providerScheduledAt ?? existing?.providerScheduledAt,
+            merged.providerScheduledAt ?? merged.scheduledDateTime,
         scheduleChangedAt:
             activity.scheduleChangedAt ?? existing?.scheduleChangedAt,
         needsUpload: true,
@@ -2677,7 +2752,7 @@ class ActivitiesRepository with SyncableRepository {
       }
 
       // Use transaction to ensure atomicity
-      return await _database.transaction(() async {
+      final created = await _database.transaction(() async {
         // Step 1: Build BrickSegment list from activities
         final segments = <BrickSegment>[];
         int totalDurationMinutes = 0;
@@ -2865,6 +2940,22 @@ class ActivitiesRepository with SyncableRepository {
 
         return _mapper.fromDriftRow(savedBrick);
       });
+
+      // Push the whole write set now, brick FIRST (2026-10-07 ghost-brick
+      // fix): nothing was pushed here before, so a regroup after an ungroup
+      // left the server with the tombstoned old brick, the legs still
+      // archived against it, and no new brick until the next dirty sweep.
+      // The legs reference the brick row (fk_activities_brick_id), so the
+      // parent must exist remotely before a leg pointing at it is upserted.
+      unawaited(
+        _pushBrickWriteSet(
+          brickId: created.id,
+          legIds: activities.map((a) => a.id).toList(),
+          operation: 'brick_create',
+        ),
+      );
+
+      return created;
     } catch (e, stackTrace) {
       _report.fault(
         e,
@@ -2952,6 +3043,10 @@ class ActivitiesRepository with SyncableRepository {
 
   Future<void> ungroupBrick(String brickId) async {
     String? userIdForSupabaseDelete;
+    // Every leg this ungroup hands back (restored archived rows and legs
+    // synthesized from a fresh brick's segments) — pushed remotely after the
+    // transaction, BEFORE the brick tombstone.
+    final restoredLegIds = <String>[];
 
     try {
       // Use transaction to ensure atomicity for local Drift operations
@@ -3013,7 +3108,7 @@ class ActivitiesRepository with SyncableRepository {
                 scheduledDateTime: legStart,
                 now: now,
               );
-              await _saveToDrift(leg);
+              restoredLegIds.add(await _saveToDrift(leg));
               legStart = legStart.add(
                 Duration(minutes: segment.durationMinutes),
               );
@@ -3042,6 +3137,7 @@ class ActivitiesRepository with SyncableRepository {
           );
 
           await _saveToDrift(restoredActivity);
+          restoredLegIds.add(restoredActivity.id);
         }
 
         // copyWith(brickId: null) is a no-op (`brickId ?? this.brickId`), so
@@ -3090,9 +3186,17 @@ class ActivitiesRepository with SyncableRepository {
         );
       });
 
-      // Step 5: Delete from Supabase AFTER transaction completes (non-blocking)
+      // Step 5: Push to Supabase AFTER transaction completes (non-blocking).
+      // Legs FIRST, then the tombstone (2026-10-07 ghost-brick fix: only the
+      // tombstone was pushed, so the server kept the legs archived against a
+      // deleted brick until the next dirty sweep — and a regroup in between
+      // produced the ghost state).
       if (userIdForSupabaseDelete != null) {
         unawaited(() async {
+          await _pushBrickWriteSet(
+            legIds: restoredLegIds,
+            operation: 'brick_ungroup',
+          );
           try {
             await _uploadActivityDeletion(userIdForSupabaseDelete!, brickId);
           } catch (e, stackTrace) {

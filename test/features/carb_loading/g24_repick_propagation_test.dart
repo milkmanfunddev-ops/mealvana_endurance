@@ -144,20 +144,27 @@ void main() {
           mealLogsForDateProvider.overrideWith((ref, date) async* {
             yield const [];
           }),
-          eventDetailProvider.overrideWith(
-            (ref, _, {forUserId}) async => (
+          // Truthful stub (G24b): hasCarbLoading comes from the in-memory
+          // Drift events row the service writes, not a constant. Riverpod 3
+          // hands the family its whole argument record
+          // `(eventId, forUserId: ...)`; the row is keyed by the event id.
+          eventDetailProvider.overrideWith((ref, args) async {
+            final row = await (db.select(
+              db.eventsTable,
+            )..where((t) => t.id.equals(args.$1))).getSingle();
+            return (
               activity: null,
               event: Event(
-                id: eventId,
-                userId: userId,
+                id: row.id,
+                userId: row.userId,
                 eventType: ActivityType.running,
                 eventDate: race,
-                hasCarbLoading: true,
-                createdAt: DateTime(2026, 9, 1),
-                updatedAt: DateTime(2026, 9, 1),
+                hasCarbLoading: row.hasCarbLoading,
+                createdAt: row.createdAt,
+                updatedAt: row.updatedAt,
               ),
-            ),
-          ),
+            );
+          }),
           currentUserProvider.overrideWith((ref) async => _profile()),
         ],
         child: MaterialApp(

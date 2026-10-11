@@ -683,10 +683,9 @@ class MacroTargetsController extends _$MacroTargetsController {
             await activitiesService.updateActivity(
               deviceId: deviceId,
               currentUserId: deviceId,
-              activity: existingActivity.copyWith(
+              activity: existingActivity.movedTo(scheduledDateTime).copyWith(
                 title: existingTitle,
                 activityType: ActivityType.running,
-                scheduledDateTime: scheduledDateTime,
                 distanceMiles: distance,
                 durationMinutes: estimatedDurationMinutes,
                 paceTargetMinutesPerMile: paceMinutes,
@@ -932,10 +931,9 @@ class MacroTargetsController extends _$MacroTargetsController {
             await activitiesService.updateActivity(
               deviceId: deviceId,
               currentUserId: deviceId,
-              activity: existingActivity.copyWith(
+              activity: existingActivity.movedTo(scheduledDateTime).copyWith(
                 title: existingTitle,
                 activityType: ActivityType.cycling,
-                scheduledDateTime: scheduledDateTime,
                 distanceMiles: distanceMiles,
                 durationMinutes: estimatedCyclingDurationMin > 0
                     ? estimatedCyclingDurationMin.round()
@@ -1222,10 +1220,9 @@ class MacroTargetsController extends _$MacroTargetsController {
             await activitiesService.updateActivity(
               deviceId: deviceId,
               currentUserId: deviceId,
-              activity: existingActivity.copyWith(
+              activity: existingActivity.movedTo(scheduledDateTime).copyWith(
                 title: existingTitle,
                 activityType: ActivityType.swimming,
-                scheduledDateTime: scheduledDateTime,
                 distanceMiles: distanceMiles,
                 durationMinutes: durationMinutes > 0
                     ? durationMinutes.round()
@@ -1504,10 +1501,9 @@ class MacroTargetsController extends _$MacroTargetsController {
             await activitiesService.updateActivity(
               deviceId: deviceId,
               currentUserId: deviceId,
-              activity: existingActivity.copyWith(
+              activity: existingActivity.movedTo(scheduledDateTime).copyWith(
                 title: brickTitle,
                 activityType: ActivityType.brick,
-                scheduledDateTime: scheduledDateTime,
                 brickMetadata: preservedMetadata,
                 durationMinutes: totalDurationMinutes,
                 timeBeforeMinutes: preActivityMinutes,

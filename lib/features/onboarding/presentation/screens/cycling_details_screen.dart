@@ -289,13 +289,20 @@ class _CyclingDetailsScreenState extends ConsumerState<CyclingDetailsScreen> {
                             ),
                           ),
                           const SizedBox(width: 12),
-                          const Text(
-                            'Cycling Details',
-                            style: TextStyle(
-                              fontFamily: 'Sansita',
-                              fontSize: 20,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.orange,
+                          // Expanded so the title takes the remaining width
+                          // and never pushes the Row past 390 pt (it
+                          // overflowed before: the Text was unconstrained).
+                          const Expanded(
+                            child: Text(
+                              'Cycling Details',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontFamily: 'Sansita',
+                                fontSize: 20,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.orange,
+                              ),
                             ),
                           ),
                         ],

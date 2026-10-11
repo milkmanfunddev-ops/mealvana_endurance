@@ -424,16 +424,13 @@ class EventsService {
         return;
       }
       if (activity.scheduledDateTime == newStart &&
-          (activity.plannedTime == null || activity.plannedTime == newStart)) {
+          activity.plannedTime == newStart) {
         return; // nothing moved
       }
 
       await _activitiesService.updateActivity(
         deviceId: deviceId,
-        activity: activity.copyWith(
-          scheduledDateTime: newStart,
-          plannedTime: activity.plannedTime == null ? null : newStart,
-        ),
+        activity: activity.movedTo(newStart),
         currentUserId: currentUserId,
         consistency: consistency,
       );
