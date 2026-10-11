@@ -37,11 +37,13 @@ void main() {
       },
     );
 
-    test('keeps plannedTime null when it was null', () {
+    // Three-time model (Xuan 2026-10-11): a move always sets the athlete's
+    // planned time, filling legacy rows that had none.
+    test('sets plannedTime even when it was null', () {
       final moved = base().movedTo(target);
 
       expect(moved.scheduledDateTime, target);
-      expect(moved.plannedTime, isNull);
+      expect(moved.plannedTime, target);
       expect(moved.displayTime, target);
     });
 

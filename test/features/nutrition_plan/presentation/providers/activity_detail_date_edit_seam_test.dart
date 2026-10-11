@@ -262,7 +262,8 @@ void main() {
         expect(after.plannedTime, newTime);
       });
 
-      test('a row with planned_time null keeps it null', () async {
+      // Three-time model (Xuan 2026-10-11): the edit fills the athlete's time.
+      test('a row with planned_time null gets it set', () async {
         final seeded = await seedRow(clearPlannedTime: true);
         expect(seeded.plannedTime, isNull);
         final newDate = DateTime(2026, 10, 15, 7, 30);
@@ -271,7 +272,7 @@ void main() {
 
         final after = await readRow(seeded.id);
         expect(after.scheduledDateTime, newDate);
-        expect(after.plannedTime, isNull);
+        expect(after.plannedTime, newDate);
         expect(after.needsUpload, isTrue);
       });
 

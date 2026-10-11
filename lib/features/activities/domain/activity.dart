@@ -135,17 +135,15 @@ class Activity {
   /// The activity rescheduled by an in-app edit (DATE/TIME pencils, plan
   /// regeneration with an edited date, a linked event's date move).
   ///
-  /// `plannedTime` moves with `scheduledDateTime` when it is set, because
-  /// [displayTime] prefers it: moving only the scheduled time leaves the
-  /// timeline and calendar on the old day while the plan screen shows the
-  /// new one (prod 1.29.0, activity c0c76488). A null `plannedTime` stays
-  /// null (legacy rows), and `actualTime` is never touched — a performed
-  /// session keeps the time it was performed at.
+  /// `plannedTime` is the athlete's time (three-time model, Xuan 2026-10-11,
+  /// qa/intake/2026-10-11-three-times-model.md), so a move always sets it —
+  /// also on legacy rows where it was null. `scheduledDateTime` moves too
+  /// while it still exists; it is being retired to a mirror, so nothing new
+  /// should key on it. Moving only the scheduled time left the timeline on
+  /// the old day (prod 1.29.0, activity c0c76488). `actualTime` is never
+  /// touched — a performed session keeps the time it was performed at.
   Activity movedTo(DateTime newDateTime) {
-    return copyWith(
-      scheduledDateTime: newDateTime,
-      plannedTime: plannedTime == null ? null : newDateTime,
-    );
+    return copyWith(scheduledDateTime: newDateTime, plannedTime: newDateTime);
   }
 
   // Activity parameters (shared)

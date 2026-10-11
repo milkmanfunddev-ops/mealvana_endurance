@@ -1658,12 +1658,17 @@ class ActivitiesRepository with SyncableRepository {
     // Rows without a recorded provider date (synced before this landed, or
     // reconciled from an in-app row) cannot show a divergence: they follow
     // the provider once, which records the date for next time.
+    // Three-time model (Xuan 2026-10-11): "moved locally" is the athlete's
+    // planned time differing from the provider's time. scheduledDateTime is
+    // only the fallback for legacy rows without a planned time — it is being
+    // retired, and a Garmin completion overwrites it.
     final providerDate =
         incoming.providerScheduledAt ?? incoming.scheduledDateTime;
     final lastProviderDate = existing.providerScheduledAt;
+    final athleteTime = existing.plannedTime ?? existing.scheduledDateTime;
     final rescheduledLocally =
         lastProviderDate != null &&
-        !existing.scheduledDateTime.isAtSameMomentAs(lastProviderDate);
+        !athleteTime.isAtSameMomentAs(lastProviderDate);
     final scheduledDateTime = rescheduledLocally
         ? existing.scheduledDateTime
         : incoming.scheduledDateTime;
@@ -1699,14 +1704,12 @@ class ActivitiesRepository with SyncableRepository {
       // workout provider update never carries these — preserving them keeps a
       // mark-done / Garmin-verified row from silently reverting to PLANNED on
       // the next TP/FS re-sync. planned_time follows a provider RESCHEDULE
-      // (that is scheduling, which owns planned_time); otherwise it stays.
-      // A locally rescheduled row keeps its own planned_time with its date.
+      // (that is scheduling, which owns planned_time). A locally rescheduled
+      // row keeps the athlete's time; otherwise planned_time is the
+      // provider's time, which also fills legacy rows that had none.
       plannedTime: rescheduledLocally
-          ? existing.plannedTime
-          : incoming.plannedTime ??
-                (incoming.scheduledDateTime != existing.scheduledDateTime
-                    ? incoming.scheduledDateTime
-                    : existing.plannedTime),
+          ? athleteTime
+          : incoming.plannedTime ?? incoming.scheduledDateTime,
       actualTime: incoming.actualTime ?? existing.actualTime,
       caloriesBurned: incoming.caloriesBurned ?? existing.caloriesBurned,
 
