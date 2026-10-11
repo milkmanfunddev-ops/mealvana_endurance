@@ -7,6 +7,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mealvana_endurance/features/activities/domain/brick_metadata.dart';
 import 'package:mealvana_endurance/features/nutrition_plan/presentation/providers/brick_input_controller.dart';
+import 'package:mealvana_endurance/shared/widgets/kyle_design/inputs/duration_pace_toggle.dart'
+    show DurationPaceMode;
 
 void main() {
   late ProviderContainer container;
@@ -90,6 +92,65 @@ void main() {
       notifier.initializeFromBrickMetadata(shuffled, DateTime(2026, 8, 26));
       expect(state().segmentOrder, ['cycling', 'running']);
     });
+  });
+
+  group('seeded swim leg with no distance (importer-shaped row)', () {
+    // TrainingPeaks/FinalSurge importers store duration + a pace derived
+    // against a 1000 m default, then drop the distance. The seeded segment
+    // therefore has duration 60, no distance_meters and a baked 360 s/100m
+    // that never belonged to a consistent (distance, pace, duration) triplet.
+    const swimNoDistance = BrickMetadata(
+      segmentOrder: ['swimming', 'cycling'],
+      segments: [
+        BrickSegment(
+          sport: 'swimming',
+          order: 1,
+          durationMinutes: 60,
+          intensity: 'moderate',
+          pacePer100mSeconds: 360,
+        ),
+        BrickSegment(
+          sport: 'cycling',
+          order: 2,
+          durationMinutes: 60,
+          intensity: 'moderate',
+          distanceMiles: 10.0,
+          speedMph: 10.0,
+        ),
+      ],
+      originalActivityIds: ['s1', 'b1'],
+      createdFromExisting: true,
+      totalDurationMinutes: 120,
+    );
+
+    test(
+      'holds duration, drops the baked pace, derives a consistent triplet '
+      'at the CF-6 swim base (60 min → 3000 m at 2:00 /100m)',
+      () {
+        notifier.initializeFromBrickMetadata(
+          swimNoDistance,
+          DateTime(2026, 10, 7, 7),
+        );
+
+        final swim = state().legs[0];
+        expect(swim.sport, 'swimming');
+        expect(swim.durationMinutes, 60);
+        expect(swim.durationPaceMode, DurationPaceMode.byDuration);
+        expect(swim.distanceMeters, 3000.0);
+        expect(swim.pacePer100mSeconds, 120);
+
+        // The three numbers agree: distance / 100 * pace ≈ duration.
+        final derivedSeconds =
+            swim.distanceMeters! / 100 * swim.pacePer100mSeconds!;
+        expect((derivedSeconds - 3600).abs(), lessThanOrEqualTo(60));
+
+        final bike = state().legs[1];
+        expect(bike.sport, 'cycling');
+        expect(bike.distanceMiles, 10.0);
+        expect(bike.speedMph, 10.0);
+        expect(bike.durationMinutes, 60);
+      },
+    );
   });
 
   group('legs', () {

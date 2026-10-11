@@ -1040,10 +1040,31 @@ class BrickInputController extends _$BrickInputController {
     return input.copyWith(speedMph: speed, durationMinutes: durationMinutes);
   }
 
+  /// CF-6 swim base pace (2:00 /100m), the ruled fallback when a leg has no
+  /// pace of its own. Keep in step with `WorkoutDetailsWidget._sportBasePace`.
+  static const int _swimBasePacePer100mSeconds = 120;
+
   BrickSegmentInput _hydrateSwimmingInput(BrickSegmentInput input) {
-    final distance = input.distanceMeters;
+    var distance = input.distanceMeters;
     var pacePer100mSeconds = input.pacePer100mSeconds;
     var durationMinutes = input.durationMinutes;
+
+    // Importer-shaped row: TrainingPeaks/FinalSurge store a swim's duration
+    // and a pace derived against a 1000 m default, then drop the distance.
+    // With no distance the baked pace can be neither held nor derived (the
+    // widget would fall back to 1500 m and the F-27 band guard fires on a
+    // 6:00 /100m that nobody entered). Hold the duration, reset the pace to
+    // the CF-6 swim base and derive the distance so the triplet agrees.
+    if ((distance == null || distance <= 0) && durationMinutes > 0) {
+      pacePer100mSeconds = _swimBasePacePer100mSeconds;
+      distance = durationMinutes * 60 / pacePer100mSeconds * 100;
+      return input.copyWith(
+        distanceMeters: distance,
+        pacePer100mSeconds: pacePer100mSeconds,
+        durationMinutes: durationMinutes,
+        durationPaceMode: DurationPaceMode.byDuration,
+      );
+    }
 
     if ((pacePer100mSeconds == null || pacePer100mSeconds <= 0) &&
         distance != null &&
