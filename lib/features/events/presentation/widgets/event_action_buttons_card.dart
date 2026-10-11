@@ -8,6 +8,8 @@ import '../../../carb_loading/presentation/providers/carb_loading_controller.dar
 import '../../../carb_loading/presentation/screens/carb_loading_protocol_selection_screen.dart';
 import '../../../carb_loading/presentation/screens/carb_plan_summary_screen.dart';
 import '../../../carb_loading/domain/carb_loading_entryway_engine.dart';
+import '../../../calendar/presentation/providers/calendar_selected_date_provider.dart';
+import '../../../home_shell/presentation/providers/home_shell_tab_request.dart';
 import '../../../../features/auth/data/user_repository.dart';
 import '../../../../shared/database/app_database.dart' as db;
 import '../../application/nutrition_plan_navigation.dart';
@@ -215,7 +217,12 @@ class EventActionButtonsCard extends ConsumerWidget {
       // retired behavior push-replaced onto the legacy day page and popped
       // event details out of the stack; CE-2 rules the opposite: selection
       // returns HERE, the row flips to its plan state, and only when the
-      // window is already underway does a snackbar CTA offer today's fuel.
+      // window is already underway does a snackbar CTA offer today's fuel
+      // (CE-3: → the dashboard TIMELINE, today). Unwinding alone is not
+      // enough: `popUntil(isFirst)` reaches the shell but leaves it on
+      // whichever tab Event Details was entered from (My Events), so the
+      // CTA also asks the shell for the Timeline tab and parks the selected
+      // date on today.
       await carbLoadingController.createCarbLoadingPlan(
         eventId: event.id,
         protocolDays: selectedProtocol,
@@ -234,12 +241,21 @@ class EventActionButtonsCard extends ConsumerWidget {
           startDate.month,
           startDate.day,
         ).isAfter(today);
+        // Captured now: the action fires later, possibly after this card
+        // is gone, when neither `ref` nor `context` may be touched.
+        final tabRequest = ref.read(homeShellTabRequestProvider.notifier);
+        final selectedDate = ref.read(calendarSelectedDateProvider.notifier);
+        final navigator = Navigator.of(context);
         MealvanaSnackbar.showSuccess(
           context,
           'Created $selectedProtocol-day carb loading plan!',
           actionLabel: underway ? "Go to today's fuel" : null,
           onAction: underway
-              ? () => Navigator.of(context).popUntil((r) => r.isFirst)
+              ? () {
+                  selectedDate.setDate(DateTime.now());
+                  tabRequest.select(HomeShellTabRequest.timeline);
+                  navigator.popUntil((r) => r.isFirst);
+                }
               : null,
         );
       }
