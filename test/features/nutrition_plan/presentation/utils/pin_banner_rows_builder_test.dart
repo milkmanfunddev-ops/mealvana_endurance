@@ -214,6 +214,51 @@ void main() {
       expect(data.rows[1].decision.usedPin, isFalse);
       expect(data.rows[1].decision.ephemeral, isFalse);
     });
+
+    test('ephemeral during decision WITH skipped personal formulas is kept '
+        'as a row — but the row is never honored', () {
+      // Audit 2026-07-18 keep rule: the default-formula safety net firing
+      // *because* the user's own formula was scope-excluded must stay
+      // visible so the card can explain the miss. Prod 1.29.0 (Xuan): that
+      // kept row still carries `usedPin: true`, which the banner must never
+      // read as an honored pin — `PinStatusBannerRow.honored` is the seam
+      // the widget and the screen's `honored_count` analytics share.
+      final sections = [
+        _beforeSection(subs: [_sub('meal', pin: _honored())]),
+        _duringSection(
+          pin: const PinDecision(
+            usedPin: true,
+            ephemeral: true,
+            pinnedTemplateId: 'tpl-default',
+            pinnedTemplateName: 'Carb Drink Mix + Banana + Water',
+            fallthroughReason: null,
+            pinSetSize: 0,
+            skippedPersonalFormulas: [
+              SkippedPersonalFormula(
+                id: 'pf-1',
+                name: '(enervit gel + Water) + Sports Drink',
+                reason: SkippedFormulaReason.durationOutOfScope,
+                formulaDurations: ['90-150 min'],
+                workoutBracket: '< 90 min',
+              ),
+            ],
+          ),
+        ),
+      ];
+
+      final data = collectPinBannerRows(sections);
+
+      expect(data.isOnboarding, isFalse);
+      expect(data.rows.map((r) => r.label).toList(), ['Meal', 'During']);
+      final during = data.rows[1];
+      // Existing behaviour: the ephemeral+skipped decision passes through.
+      expect(during.decision.ephemeral, isTrue);
+      expect(during.decision.hasSkippedFormulas, isTrue);
+      expect(during.decision.usedPin, isTrue);
+      // New contract: ephemeral is never honored; the real Meal pin is.
+      expect(during.honored, isFalse);
+      expect(data.rows[0].honored, isTrue);
+    });
   });
 
   group('collectPinBannerRows — synthesis of missing pinnable rows', () {
@@ -432,16 +477,13 @@ void main() {
     // only Snack/Top-Off/After and the athlete's During pins had no
     // on-screen trace (Xuan's Sept 5 RUN/BIKE/RUN brick — bug
     // 2026-09-04-brick-during-pins-invisible-and-tri-scope-unreachable).
-    PlanSection segment(
-      int order,
-      String sportName, {
-      PinDecision? pin,
-    }) => PlanSection(
-      id: 'during_segment_$order',
-      title: 'During $sportName',
-      foodItems: const [],
-      pinDecision: pin,
-    );
+    PlanSection segment(int order, String sportName, {PinDecision? pin}) =>
+        PlanSection(
+          id: 'during_segment_$order',
+          title: 'During $sportName',
+          foodItems: const [],
+          pinDecision: pin,
+        );
 
     test('each leg gets its OWN row, labeled by the section title', () {
       final data = collectPinBannerRows([
@@ -464,17 +506,19 @@ void main() {
       );
     });
 
-    test('brick segments count as pinnable phases for the onboarding state',
-        () {
-      // Segments alone, zero decisions anywhere, user has no pins → the
-      // banner must offer discovery, not hide.
-      final data = collectPinBannerRows([
-        segment(1, 'Run'),
-        segment(2, 'Bike'),
-      ]);
-      expect(data.isOnboarding, isTrue);
-      expect(data.rows, isEmpty);
-    });
+    test(
+      'brick segments count as pinnable phases for the onboarding state',
+      () {
+        // Segments alone, zero decisions anywhere, user has no pins → the
+        // banner must offer discovery, not hide.
+        final data = collectPinBannerRows([
+          segment(1, 'Run'),
+          segment(2, 'Bike'),
+        ]);
+        expect(data.isOnboarding, isTrue);
+        expect(data.rows, isEmpty);
+      },
+    );
 
     test('transition sections (T1/T2) stay non-pinnable', () {
       final data = collectPinBannerRows([
