@@ -29,10 +29,50 @@ Where the buttons live: `macro_dashboard` (card, done/skip, brick pill, "+ Add A
 detail, move, delete, fuel log) · `home_shell` + `shared/widgets/kyle_design` (calendar sheet, dots) · `events`
 (event-date move) · `coach_mode` (portal).
 
-**A moved workout and its platform:** if the athlete moves a synced workout in the app, it stays on the athlete's
-day after a re-sync. If the coach then moves it on the platform, the athlete's day still wins and the coach's new
-date is only recorded; a coach move to exactly the athlete's time re-converges and follows the platform again. A
-workout with no recorded platform date yet follows the platform once, after which the date is recorded.
+### Synced workouts
+
+- **When they refresh.** Opening the app checks each connected platform and pulls one that hasn't synced in four hours.
+  Pull down on the Timeline to force a pull of all of them. "Sync Now" sits on each platform's card under Settings →
+  Connected Apps (long-press the card to disconnect). Garmin is never pulled: the watch upload reaches our server,
+  which writes the workout and sends a notification. Nothing syncs on a timer or in the background.
+- **How far they look.** Final Surge: 7 days back, 13 ahead. TrainingPeaks: today to 45 days ahead (races 90), nothing
+  past. V.O2: 14 back, 45 ahead. Runna: whatever its calendar link holds, about two weeks. Garmin: a resend request
+  covers the last 30 days.
+- **What the platform controls.** Sport, title, distance, duration, pace, intensity, TSS and the coach's notes, and the
+  date and time unless the athlete moved the workout in the app. Edits to those fields in the app are replaced on the
+  next sync. **What the athlete keeps:** the fuel plan, fuel log, ratings, completion notes, reminders, brick grouping
+  and a mark-done (unless the platform reports its own completion).
+- **A moved workout.** If the athlete moves a synced workout in the app, it stays on the athlete's day after a
+  re-sync. If the coach then moves it on the platform, the athlete's day still wins and the coach's new date is only
+  recorded; a coach move to exactly the athlete's time re-converges and follows the platform again. A workout with no
+  recorded platform date yet follows the platform once, after which the date is recorded.
+- **The coach changes it.** A move of more than 30 minutes or to another day, a duration change over 15 minutes or a
+  distance change over 10% updates the workout and marks its fuel plan out of date: the detail screen shows a
+  "Schedule Changed" banner with "Regenerate Plan". The Timeline card shows nothing, and the plan is never rewritten
+  by itself. Smaller changes update the workout quietly.
+- **The coach deletes it.** The workout is marked deleted on the platform but stays visible to the athlete, fuel plan
+  and completion included; only the coach portal hides it.
+- **The athlete deletes it.** It stays gone through later syncs and Garmin uploads. It returns as done if Final Surge
+  or TrainingPeaks later reports it completed.
+- **The platform says it's done.** Final Surge: the card reads "verified · Final Surge" and locks (no undo or skip),
+  with the actual time, distance and duration filled in. TrainingPeaks: never marks a workout done; only actual TSS,
+  IF and calories arrive. V.O2: only a workout new to the app arrives as done. Runna: never.
+- **Garmin.** A recorded activity completes the planned workout of the same sport that day (closest start time wins;
+  a skipped workout within 15 minutes is revived; an activity under two minutes or under a fifth of the planned
+  duration is refused). With no planned workout that day it becomes a new completed workout, including strength and
+  walks, which never get a fuel plan. It adds the actual start, duration and distance, heart rate, calories, pace,
+  power and the device name; the card reads "verified · Garmin" and locks; the phone gets a notification. A multisport
+  recording completes a planned brick leg by leg; without one it lands as a parent workout plus legs.
+- **Duplicates.** A workout planned in the app and then arriving from a platform is merged when the sport matches
+  within a day and the distance within 10%; the platform takes it over and the fuel plan is kept. The same workout
+  from two planning platforms is never merged: two cards.
+- **Connect and disconnect.** Connecting imports at once over the window above. Disconnecting offers "Disconnect",
+  which hides the workouts with their plans intact and restores them on reconnecting the same account, or "Delete
+  synced data", which removes them for good.
+- **Telling them apart.** A planned synced workout looks like any other card; the platform is named only once it is
+  verified done. The detail screen shows a Garmin badge for Garmin data and no label for the rest. When a platform
+  needs a fresh sign-in, the Timeline shows "needs you to sign in again" with a Reconnect button, and its card under
+  Connected Apps reads "Reconnect". A failed background sync is silent; a failed "Sync Now" shows an error.
 
 ## What the data means
 
@@ -99,7 +139,12 @@ derived the duration from distance × usual pace (never overwrite a row whose so
   (card states incl. the lock), `macro_dashboard/application/dashboard_assembler.dart` (sort), `home_shell/.../home_shell_calendar_assembler.dart`
   (day dots, keyed by `displayTime`), `calendar/.../calendar_{month,week}_view_kyle.dart`, `fuel_timeline/.../timeline_brick_tile.dart`,
   `events/application/events_service.dart` (event-date move), `coach_mode/.../coach_activity_detail_controller.dart`.
-- Server side: `supabase/functions/_shared/garmin/activity_completion.ts` writes the Garmin actuals.
+- Sync (in `integrations/`): `application/integration_sync_coordinator.dart` (the four-hour rule, who pulls what),
+  `application/change_detection_service.dart` (what counts as a schedule change, provider-deleted flagging), per-platform
+  `*_sync_service.dart` + `*_transformer.dart`, `presentation/providers/connect_training_controller.dart` (connect,
+  disconnect, hide/restore, Garmin resend).
+- Server side: `supabase/functions/_shared/garmin/matcher.ts` + `matcher_executor.ts` (which planned workout a Garmin
+  activity completes), `activity_completion.ts` (what it writes), `garmin-push/index.ts` (the webhook).
 - Tests that pin the rules: `test/features/activities/data/activities_repository_local_reschedule_test.dart`,
   `test/features/activities/domain/activity_moved_to_test.dart`, `activity_detail_date_edit_seam_test.dart`.
 
@@ -117,5 +162,6 @@ create dialog (`coach_mode/.../create_activity_dialog.dart` is dead; the portal 
 - **ops open work:** eng-tasks `three-times-model`, `heal-pre-fix-event-activity-date-mismatches` · bugs
   `brick-pill-ignores-moved-workout`, `fueling-synced-past-workout-marks-skipped`, `brick-ungroup-regroup-strands-plan-and-segments`,
   `garmin-day-wide-matcher-overwrites-planned-workout`.
-- **Related map pages:** `nutrition_plan.md` · `macro_dashboard.md` · `calendar.md` · `events.md` · `integrations.md` ·
-  `daily_macros.md` · `fuel_timeline.md` · `coach_mode.md` (none written yet).
+- **Related map pages:** `integrations.md` (matching keys, per-platform quirks, connect flow) · `nutrition_plan.md` (form,
+  detail, fuel log) · `macro_dashboard.md` · `calendar.md` · `events.md` · `daily_macros.md` · `fuel_timeline.md` ·
+  `coach_mode.md` (none written yet).
