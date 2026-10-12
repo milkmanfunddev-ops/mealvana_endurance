@@ -22,7 +22,6 @@ import 'package:mealvana_endurance/shared/database/app_database.dart';
 import 'package:mealvana_endurance/shared/providers/user_id_provider.dart';
 import 'package:mealvana_endurance/shared/services/app_external_deps.dart';
 import 'package:mealvana_endurance/shared/services/device_info_service.dart';
-import 'package:mealvana_endurance/shared/services/prefs_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../helpers/fakes/fake_postgrest.dart';

@@ -44,7 +44,6 @@ import 'package:mealvana_endurance/features/integrations/presentation/providers/
 import 'package:mealvana_endurance/shared/database/app_database.dart';
 import 'package:mealvana_endurance/shared/providers/user_id_provider.dart';
 import 'package:mealvana_endurance/shared/services/preferences_service.dart';
-import 'package:mealvana_endurance/shared/services/prefs_provider.dart';
 import 'package:mealvana_endurance/shared/services/report/report.dart';
 
 import '../../helpers/fakes/fake_postgrest.dart';
