@@ -7,23 +7,29 @@ screens of its own**. Every button that acts on a workout lives in another folde
 
 ## What athletes can do here
 
-- **Add a workout.** Home (Timeline tab) → "+ Add Activity" → the New Activity form. Workouts also arrive on
-  their own from a connected training platform (Final Surge, TrainingPeaks, Runna, V.O2) or from Garmin. TriDot
-  and Strava are listed under Connected Apps as "coming soon" only.
+- **Add a workout.** Home (Timeline tab) → "+ Add Activity" → the "Create New Activity Plan" form → "Generate
+  Plan" → "Adjust Your Macros" → "Create Plan" → the plan screen → "Save Workout" (or "Save as Routine"). The workout
+  exists only after that last tap. Workouts also arrive on their own from a connected training platform (Final
+  Surge, TrainingPeaks, Runna, V.O2) or from Garmin. TriDot and Strava are listed under Connected Apps as "coming
+  soon" with a "Notify Me" button.
 - **Open a workout and its fuel plan.** Tap the workout card on the home timeline. A workout with a fuel plan, one
   already done, or an imported "other" workout opens the detail screen; any other opens the form pre-filled.
 - **Move it to another day or time.** Detail screen → date/time picker. Moving an event's date also moves the
   workout linked to it, unless the workout came from a platform or has already happened.
-- **Mark done / undo, skip / unskip.** Swipes on the workout card. Skip and unskip have an Undo; undo-done is the
-  reverse swipe. A card is locked (no swipes either way) once Garmin verified it or a platform reported it done.
+- **Mark done / undo, skip / unskip.** Swipe the workout card right to mark it done ("self-reported"); swipe right
+  again to undo. Swipe left to reveal a Skip button (Unskip on a skipped card); both show a snackbar with Undo.
+  A card is locked (no swipes either way) once Garmin verified it or a platform reported it done.
 - **Build or ungroup a brick.** The "Brick" pill appears when the day has two or more swim/bike/run workouts not
-  already in a brick and not skipped (hidden under the Meals filter); pick the legs and their order, with an Undo.
-  Ungroup from the brick row: the legs come back as separate workouts, the brick is kept as deleted.
+  already in a brick and not skipped (hidden under the Meals filter). Tap it, tap the legs in order ("Pick legs to
+  link"), swap them if needed, "Create Brick"; a snackbar offers Undo. The brick row's "⋯" menu has "Ungroup legs"
+  (after a confirmation: the legs come back as separate workouts, the brick and its fuel plan go) and "Delete brick".
 - **After the workout:** log what was eaten (fuel log), rate how it went and how the fueling felt, see Garmin's
   measured distance, duration and calories.
-- **See workouts on the calendar.** Calendar sheet from the home header. Filled dot = a workout done that day,
-  hollow dot = one planned, no dot if everything that day was skipped. The tint marks a day with a meal log.
-- **Delete.** Detail screen. A coach can create, edit or delete an athlete's workouts from the coach portal.
+- **See workouts on the calendar.** Tap the date in the home header for the month sheet. Filled dot = a workout
+  done that day, hollow ring = one planned, no dot if everything that day was skipped. A tinted day has a meal log.
+  Tap a day to open it; "Today" jumps back.
+- **Delete.** Detail screen → trash icon → "Delete Activity" confirmation (cannot be undone). A coach can create,
+  edit or delete an athlete's workouts from the coach portal.
 
 Where the buttons live: `macro_dashboard` (card, done/skip, brick pill, "+ Add Activity") · `nutrition_plan` (form,
 detail, move, delete, fuel log) · `home_shell` + `shared/widgets/kyle_design` (calendar sheet, dots) · `events`
@@ -33,8 +39,9 @@ detail, move, delete, fuel log) · `home_shell` + `shared/widgets/kyle_design` (
 
 - **When they refresh.** Opening the app checks each connected platform and pulls one that hasn't synced in four hours.
   Pull down on the Timeline to force a pull of all of them. "Sync Now" sits on each platform's card under Settings →
-  Connected Apps (long-press the card to disconnect). Garmin is never pulled: the watch upload reaches our server,
-  which writes the workout and sends a notification. Nothing syncs on a timer or in the background.
+  Connected Apps, with "Last synced … ago" beneath (long-press "Sync Now" to disconnect). Garmin is never pulled: the
+  watch upload reaches our server, which writes the workout and sends a notification. Nothing syncs on a timer or in
+  the background.
 - **How far they look.** Final Surge: 7 days back, 13 ahead. TrainingPeaks: today to 45 days ahead (races 90), nothing
   past. V.O2: 14 back, 45 ahead. Runna: whatever its calendar link holds, about two weeks. Garmin: a resend request
   covers the last 30 days.
@@ -70,7 +77,8 @@ detail, move, delete, fuel log) · `home_shell` + `shared/widgets/kyle_design` (
   which hides the workouts with their plans intact and restores them on reconnecting the same account, or "Delete
   synced data", which removes them for good.
 - **Telling them apart.** A planned synced workout looks like any other card; the platform is named only once it is
-  verified done. The detail screen shows a Garmin badge for Garmin data and no label for the rest. When a platform
+  verified done, and the card then shows the measured distance and time while the detail screen still shows the
+  planned ones. The detail screen shows a Garmin badge for Garmin data and no label for the rest. When a platform
   needs a fresh sign-in, the Timeline shows "needs you to sign in again" with a Reconnect button, and its card under
   Connected Apps reads "Reconnect". A failed background sync is silent; a failed "Sync Now" shows an error.
 
