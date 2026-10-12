@@ -1,7 +1,6 @@
 # Activities (workouts)
 
-domain: 1 Fuel a workout · folder: `lib/features/activities/` · 41 files, last change 2026-10-11 · PILOT PAGE
-2026-10-12, format under review (D10, `ops/docs/doc-homes.md`). Describes this checkout only.
+domain: 1 Fuel a workout · folder: `lib/features/activities/` (41 files)
 
 A workout is the thing an athlete fuels. This folder holds the model, storage, sync and brick logic; **it has no
 screens of its own**. Every button that acts on a workout lives in another folder (see section 1).
@@ -30,25 +29,24 @@ Where the buttons live: `macro_dashboard` (card, done/skip, brick pill, "+ Add A
 detail, move, delete, fuel log) · `home_shell` + `shared/widgets/kyle_design` (calendar sheet, dots) · `events`
 (event-date move) · `coach_mode` (portal).
 
-**How a moved workout behaves with a platform:** if the athlete moves a synced workout in the app, it stays on the
-athlete's day after a re-sync. If the coach then moves it on the platform, the athlete's day still wins and the
-coach's new date is only recorded (ruled "for now" 2026-10-11; a coach move to exactly the athlete's time
-re-converges and follows the platform again). Workouts synced before 1.29.1 have no recorded platform date and
-follow the platform once, after which the date is recorded.
+**A moved workout and its platform:** if the athlete moves a synced workout in the app, it stays on the athlete's
+day after a re-sync. If the coach then moves it on the platform, the athlete's day still wins and the coach's new
+date is only recorded; a coach move to exactly the athlete's time re-converges and follows the platform again. A
+workout with no recorded platform date yet follows the platform once, after which the date is recorded.
 
 ## What the data means
 
 Model `domain/activity.dart` · local table `lib/shared/database/tables/activities_table.dart` · Supabase `activities`
-(times are local time, no zone). Column meanings: `docs/schema/activities.md` ⚠️ not generated yet.
+(times are local time, no zone). Column meanings: `docs/schema/activities.md` (not generated yet).
 
-**The time fields** (the three-times ruling of 2026-10-11 is partly here; see Links):
+**The time fields:**
 
-| Field | Means | Today |
+| Field | Means | Written by |
 |---|---|---|
-| `provider_scheduled_at` | what the platform says | written by every sync, insert and provider update |
-| `planned_time` | when the athlete plans to do it | filled from scheduled on insert; moved by the detail-screen date edit, an event-date move and plan regenerate; follows a platform reschedule unless the athlete had moved it |
+| `provider_scheduled_at` | what the platform says | every sync, insert and provider update |
+| `planned_time` | when the athlete plans to do it | insert (from scheduled); the detail-screen date edit, an event-date move, plan regenerate; a platform reschedule unless the athlete had moved it |
 | `actual_time` | when it really happened | Garmin start, or mark-done (= planned, else scheduled, else "now"); cleared by undo and by skip |
-| `scheduled_date_time` | the original plan time; **legacy, double meaning** (Q-INT11) | still written by the date edit, by sync, and ⚠️ overwritten with the Garmin start on a Garmin completion |
+| `scheduled_date_time` | the original plan time; **legacy, double meaning** (Q-INT11) | the date edit, sync, and the Garmin start on a Garmin completion |
 
 "Moved by the athlete" = `planned_time` (falling back to `scheduled_date_time` for old rows) differs from the last
 recorded `provider_scheduled_at`, to the instant. `Activity.movedTo` is the one way to move a workout in code; it
@@ -82,7 +80,7 @@ derived the duration from distance × usual pace (never overwrite a row whose so
 
 ## What already exists to reuse
 
-- `data/activities_repository.dart` (3,224 lines): local-first repo with sync, mark done/undo, skip, platform merge
+- `data/activities_repository.dart`: local-first repo with sync, mark done/undo, skip, platform merge
   (`_mergeProviderUpdate` holds the athlete-wins rule), dedup, brick build/ungroup. Built on
   `lib/shared/data/syncable_repository.dart`; driven by `lib/shared/services/sync/sync_coordinator.dart`.
 - `data/activity_mapper.dart`: Drift ↔ Supabase JSON ↔ model; fills `planned_time` on insert; hides `nutrition_rating`
@@ -95,8 +93,7 @@ derived the duration from distance × usual pace (never overwrite a row whose so
   `activity_reminder.dart`, `activity_title_formatter.dart`, `usual_pace.dart`, `provider_completion_is_final.dart`
   (the refusal thrown by undo and skip), `brick_eligibility.dart`, `brick_metadata.dart`, `brick_exceptions.dart`,
   `brick_session_legs.dart` (the one place a brick splits into legs for pricing).
-- Brick providers: `brick_actions_controller`, `brick_selection_controller`, `brick_creation_available_provider`
-  (⚠️ filters by `scheduledDateTime` on a list already filtered by `displayTime`).
+- Brick providers: `brick_actions_controller`, `brick_selection_controller`, `brick_creation_available_provider`.
 - `presentation/navigation/open_activity_fuel.dart`: where a card tap goes, plus `buildGeneratePlanExtras`.
 - Outside the folder: `macro_dashboard/.../workout_card.dart` (the card in use), `macro_dashboard/domain/workout_state_resolver.dart`
   (card states incl. the lock), `macro_dashboard/application/dashboard_assembler.dart` (sort), `home_shell/.../home_shell_calendar_assembler.dart`
@@ -111,21 +108,14 @@ move a workout (use `movedTo`), another workout card or calendar grid (the live 
 `presentation/widgets/` are dead except `brick_ungroup_dialog` and `brick_validation_error_dialog`), another coach
 create dialog (`coach_mode/.../create_activity_dialog.dart` is dead; the portal pushes the New Activity form).
 
-⚠️ Stale comments that contradict the code (for the gardening pass): `activities_table.dart:27-33` (mark-done "= now",
-planned_time "never written by any gesture"), `events_service.dart:384` and `activities_service.dart:910` ("when set"),
-`brick_creation_available_provider.dart:9-10` ("spanning 2+ sports"), `macro_dashboard_screen.dart:193` ("adjacent").
-
 ## Links
 
-- **qa rulings:** `spec/daily-macros/platform-resolution.md` (two-time model, deleted-row rule) · `spec/domain/brick.md` ·
+- **qa:** `spec/daily-macros/platform-resolution.md` (two-time model, deleted-row rule) · `spec/domain/brick.md` ·
   `spec/integrations/{matching,field-map,lifecycle,final-surge,training-peaks,garmin}.md` ·
-  `spec/design/surfaces/create-activity-plan.md` · `spec/design/components/brick-leg-builder.md`.
-- **qa intake, ruled not ratified:** `2026-10-11-three-times-model.md` (edges 2–3 open) ·
-  `2026-10-10-local-reschedule-beats-provider-resync.md` · activity-editor rulings `2026-08-18-activity-editor-0{1,3,4,5,7}`.
-- **Fixed here (1.29.1):** `2026-10-10-plan-screen-date-edit-leaves-timeline-on-old-day` ·
-  `2026-10-10-provider-resync-overwrites-local-reschedule`.
-- **Open work (ops):** eng-task `2026-10-11-eng-task-three-times-model.md` (`effective_time`, the legacy mirror) ·
-  `2026-10-11-eng-task-heal-pre-fix-event-activity-date-mismatches.md` · bugs `2026-10-08-fueling-synced-past-workout-marks-skipped`,
-  `2026-10-01-brick-ungroup-regroup-strands-plan-and-segments`, `2026-08-24-garmin-day-wide-matcher-overwrites-planned-workout`.
+  `spec/design/surfaces/create-activity-plan.md` · `spec/design/components/brick-leg-builder.md` · intake
+  `three-times-model`, `local-reschedule-beats-provider-resync`, `activity-editor-0{1,3,4,5,7}`.
+- **ops open work:** eng-tasks `three-times-model`, `heal-pre-fix-event-activity-date-mismatches` · bugs
+  `brick-pill-ignores-moved-workout`, `fueling-synced-past-workout-marks-skipped`, `brick-ungroup-regroup-strands-plan-and-segments`,
+  `garmin-day-wide-matcher-overwrites-planned-workout`.
 - **Related map pages:** `nutrition_plan.md` · `macro_dashboard.md` · `calendar.md` · `events.md` · `integrations.md` ·
   `daily_macros.md` · `fuel_timeline.md` · `coach_mode.md` (none written yet).
