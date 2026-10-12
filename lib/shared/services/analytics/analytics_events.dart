@@ -346,11 +346,25 @@ extension AnalyticsEvents on AnalyticsTracker {
   // integration_sync_success, per provider.
 
   /// The Timeline showed the notice for [provider]. Once per provider per
-  /// launch, like the notice itself.
+  /// launch, like the notice itself. [reason] is the wire code the row was
+  /// flagged with (`reauth_required`, ...); [hoursSinceLastSuccess] is how
+  /// long ago the connection last synced. A notice for a connection that
+  /// worked an hour ago is a false alarm candidate.
   Future<void> trackReconnectNoticeShown({
     required String provider,
     required String deviceId,
-  }) => _trackReconnectNotice('reconnect_notice_shown', provider, deviceId);
+    String? reason,
+    double? hoursSinceLastSuccess,
+  }) => _trackReconnectNotice(
+    'reconnect_notice_shown',
+    provider,
+    deviceId,
+    extra: {
+      'reason': reason ?? 'unknown',
+      if (hoursSinceLastSuccess != null)
+        'hours_since_last_success': hoursSinceLastSuccess,
+    },
+  );
 
   /// The athlete tapped Reconnect on the notice.
   Future<void> trackReconnectNoticeTapped({
@@ -367,13 +381,15 @@ extension AnalyticsEvents on AnalyticsTracker {
   Future<void> _trackReconnectNotice(
     String event,
     String provider,
-    String deviceId,
-  ) {
+    String deviceId, {
+    Map<String, dynamic> extra = const {},
+  }) {
     return track(
       event,
       properties: {
         'provider': provider,
         'device_id': deviceId,
+        ...extra,
         'timestamp': DateTime.now().toIso8601String(),
       },
     );

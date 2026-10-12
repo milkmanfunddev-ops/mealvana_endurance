@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart' show setEquals;
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -102,12 +104,7 @@ class ReconnectNoticeController extends _$ReconnectNoticeController {
     }
     listenSelf((_, shown) {
       if (shown != null && _shownTracked.add(shown)) {
-        _track(
-          (analytics, deviceId) => analytics.trackReconnectNoticeShown(
-            provider: shown,
-            deviceId: deviceId,
-          ),
-        );
+        unawaited(_trackShown(userId, shown));
       }
     });
     if (userId == null) {
@@ -160,6 +157,47 @@ class ReconnectNoticeController extends _$ReconnectNoticeController {
     );
     _dismissed.add(shown);
     state = _pick();
+  }
+
+  /// `reconnect_notice_shown` with why the row was flagged and how long ago
+  /// the connection last worked, read from the row the notice came from.
+  Future<void> _trackShown(String? userId, String provider) async {
+    String? reason;
+    double? hoursSinceLastSuccess;
+    if (userId != null) {
+      try {
+        final row = await ref
+            .read(integrationsRepositoryProvider)
+            .getIntegration(userId, provider);
+        reason = row?.lastSyncError;
+        final lastSuccess = row?.lastSyncAt;
+        if (lastSuccess != null) {
+          hoursSinceLastSuccess =
+              DateTime.now().difference(lastSuccess).inMinutes / 60;
+        }
+      } catch (e, st) {
+        // The event still goes, without the two details.
+        if (ref.mounted) {
+          ref
+              .read(reportProvider)
+              .degraded(
+                e,
+                stackTrace: st,
+                area: 'integrations',
+                message: 'reconnect notice: row read for analytics failed',
+              );
+        }
+      }
+    }
+    if (!ref.mounted) return;
+    _track(
+      (analytics, deviceId) => analytics.trackReconnectNoticeShown(
+        provider: provider,
+        deviceId: deviceId,
+        reason: reason,
+        hoursSinceLastSuccess: hoursSinceLastSuccess,
+      ),
+    );
   }
 
   /// Analytics never breaks the notice: a failure is recorded and dropped.

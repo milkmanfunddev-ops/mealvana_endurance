@@ -239,6 +239,52 @@ void main() {
       },
     );
 
+    test(
+      'shown says why the row was flagged and how long ago it last worked',
+      () async {
+        await repository.upsertIntegration(
+          IntegrationModel(
+            userId: _userId,
+            provider: 'garmin',
+            accessToken: 'a',
+            refreshToken: 'r',
+            providerAthleteId: 'ath-garmin',
+            isActive: true,
+            lastSyncStatus: requiresReauthStatus,
+            lastSyncError: 'reauth_required',
+            lastSyncAt: DateTime.now().subtract(const Duration(hours: 3)),
+          ),
+        );
+        final c = await launch();
+        expect(await settled(c), 'garmin');
+
+        final shown = analytics.events.singleWhere(
+          (e) => e.name == 'reconnect_notice_shown',
+        );
+        expect(shown.properties?['reason'], 'reauth_required');
+        expect(shown.properties?['hours_since_last_success'], closeTo(3, 0.05));
+      },
+    );
+
+    test(
+      'a row that never synced sends no hours, and reason unknown',
+      () async {
+        await repository.upsertIntegration(
+          _row('vdot', status: requiresReauthStatus),
+        );
+        final c = await launch();
+        expect(await settled(c), 'vdot');
+        final shown = analytics.events.singleWhere(
+          (e) => e.name == 'reconnect_notice_shown',
+        );
+        expect(shown.properties?['reason'], 'unknown');
+        expect(
+          shown.properties?.containsKey('hours_since_last_success'),
+          isFalse,
+        );
+      },
+    );
+
     test('nothing is sent while no connection needs a reconnect', () async {
       await repository.upsertIntegration(_row('garmin', status: 'success'));
       final c = await launch();
