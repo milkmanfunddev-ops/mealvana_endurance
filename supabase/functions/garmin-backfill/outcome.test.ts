@@ -30,13 +30,29 @@ Deno.test(
   'dead token (refresh invalid_grant, then 401 Token is not active) asks for a reconnect, not a 502',
   () => {
     // 2026-10-02 19:51 / 21:09: body_composition 401, the rest throttled.
-    const failure = classifyBackfillFailure({
-      body_composition: 401,
-      user_metrics: 429,
-      activities: 429,
-    });
+    const failure = classifyBackfillFailure(
+      { body_composition: 401, user_metrics: 429, activities: 429 },
+      { connectionDead: true },
+    );
     assertEquals(failure?.status, 409);
     assertEquals(failure?.code, 'garmin_reauth_required');
+  },
+);
+
+Deno.test(
+  'a 401 without a dead connection (stale token after a passing refresh failure) is an outage, never a reconnect',
+  () => {
+    // 1.29.1 pre-ship audit: the refresh hit a Garmin 5xx, the stale token
+    // got 401. The athlete's connection is fine; asking them to reconnect
+    // would be a false alarm.
+    for (const opts of [{}, { connectionDead: false }]) {
+      const failure = classifyBackfillFailure(
+        { body_composition: 401, user_metrics: 429, activities: 429 },
+        opts,
+      );
+      assertEquals(failure?.status, 502);
+      assertEquals(failure?.code, 'garmin_unavailable');
+    }
   },
 );
 

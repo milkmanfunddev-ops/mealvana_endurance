@@ -11,6 +11,7 @@ import { describe, it } from "https://deno.land/std@0.168.0/testing/bdd.ts";
 import {
   deregisterGarminForUser,
   ensureFreshGarminToken,
+  freshGarminToken,
   GARMIN_DEREGISTRATION_URL,
   GARMIN_TOKEN_URL,
   isGarminTokenInactive,
@@ -207,6 +208,51 @@ describe("ensureFreshGarminToken", () => {
     );
     assertEquals(token, "stale");
     assertEquals(calls.length, 0);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// freshGarminToken: how the token was obtained (1.29.1 pre-ship audit). Only a
+// refused grant or a missing refresh token may lead to "reconnect"; a passing
+// failure must not.
+// ---------------------------------------------------------------------------
+
+describe("freshGarminToken", () => {
+  const expired = { access_token: "stale", refresh_token: "r1", token_expires_at: hourAgo() };
+  const cases: [string, () => Response | Promise<Response>, string][] = [
+    ["refused (400 invalid_grant)", () => new Response('{"error":"invalid_grant"}', { status: 400 }), "refused"],
+    ["refused (401)", () => new Response("", { status: 401 }), "refused"],
+    ["a Garmin 5xx", () => new Response("<html>", { status: 502 }), "failed"],
+    ["a rate limit", () => new Response("", { status: 429 }), "failed"],
+    ["a network error", () => Promise.reject(new TypeError("network")), "failed"],
+    ["an answer with no access_token", () => new Response("{}", { status: 200 }), "failed"],
+  ];
+  for (const [name, answer, outcome] of cases) {
+    it(`${name} is ${outcome}, with the stale token`, async () => {
+      const { supabase } = fakeSupabase();
+      const { fn } = fakeFetch(answer);
+      const got = await freshGarminToken(supabase, expired, "u1", { fetch: fn, ...creds });
+      assertEquals(got, { token: "stale", refresh: outcome });
+    });
+  }
+
+  it("says not_needed, refreshed and no_refresh_token", async () => {
+    const { supabase } = fakeSupabase();
+    const ok = fakeFetch(() =>
+      new Response(JSON.stringify({ access_token: "fresh", expires_in: 60 }), { status: 200 })
+    );
+    assertEquals(
+      (await freshGarminToken(supabase, { ...expired, token_expires_at: hourAhead() }, "u1", { fetch: ok.fn, ...creds })).refresh,
+      "not_needed",
+    );
+    assertEquals(
+      await freshGarminToken(supabase, expired, "u1", { fetch: ok.fn, ...creds }),
+      { token: "fresh", refresh: "refreshed" },
+    );
+    assertEquals(
+      (await freshGarminToken(supabase, { ...expired, refresh_token: null }, "u1", { fetch: ok.fn, ...creds })).refresh,
+      "no_refresh_token",
+    );
   });
 });
 

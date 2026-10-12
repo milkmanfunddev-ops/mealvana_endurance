@@ -48,14 +48,20 @@ export const RATE_LIMIT_RETRY_AFTER_SECONDS = 60;
  */
 export function classifyBackfillFailure(
   queued: Record<string, number>,
+  opts: { connectionDead?: boolean } = {},
 ): BackfillFailure | null {
   const statuses = Object.values(queued);
   const allFailed = statuses.length === 0 || statuses.every((s) => s >= 400);
   if (!allFailed) return null;
 
   // Garmin checks the token before anything else, so one 401 means the token
-  // is dead for every type (the other types' 429s are noise behind it).
-  if (statuses.includes(401)) {
+  // is dead for every type (the other types' 429s are noise behind it). But a
+  // 401 alone is not a dead CONNECTION (1.29.1 pre-ship audit, 2026-10-12):
+  // a refresh that failed for a passing reason leaves a stale token Garmin
+  // also refuses. Only [connectionDead] (Garmin said "Token is not active"
+  // and the refresh was not a passing failure) asks the athlete to
+  // reconnect; any other 401 is an outage, retried later.
+  if (statuses.includes(401) && opts.connectionDead) {
     return {
       status: 409,
       code: 'garmin_reauth_required',

@@ -40,7 +40,7 @@ import {
 } from './outcome.ts';
 import type { ProviderErrorSummary } from '../_shared/provider_error.ts';
 import {
-  ensureFreshGarminToken,
+  freshGarminToken,
   markGarminRequiresReauth,
 } from '../_shared/garmin/token.ts';
 
@@ -205,7 +205,7 @@ serve(withSentry('garmin-backfill', async (req: Request) => {
 
     // Refresh the Garmin OAuth token if needed so the backfill request isn't
     // rejected with "Token is not active".
-    const accessToken = await ensureFreshGarminToken(
+    const { token: accessToken, refresh } = await freshGarminToken(
       supabase,
       mapping,
       user.id,
@@ -284,9 +284,12 @@ serve(withSentry('garmin-backfill', async (req: Request) => {
 
     // A dead token, a Garmin throttle and a Garmin outage each get their own
     // answer (ticket 19); only the outage stays a 502. See outcome.ts.
-    const failure = classifyBackfillFailure(queued);
-    const needsReauth = tokenInactive ||
-      failure?.code === 'garmin_reauth_required';
+    // 1.29.1 pre-ship audit: a refresh that failed for a passing reason
+    // (Garmin 5xx, network) leaves a stale token whose refusal says nothing
+    // about the connection, so it never asks for a reconnect.
+    const connectionDead = tokenInactive && refresh !== 'failed';
+    const failure = classifyBackfillFailure(queued, { connectionDead });
+    const needsReauth = connectionDead;
     if (needsReauth) {
       // Ticket 138 (Finding 118-016): mark the row so Connected Apps shows
       // Reconnect (as ticket 64 does for TrainingPeaks and V.O2). The answer

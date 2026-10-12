@@ -75,6 +75,20 @@ function env(name: string): string {
 }
 
 /**
+ * How [freshGarminToken] got its token. Only `refused` (Garmin answered the
+ * refresh grant 400/401, i.e. invalid_grant) and `no_refresh_token` say the
+ * connection itself is dead; `failed` (5xx, network, a malformed answer) says
+ * nothing about it, so a refusal Garmin then gives the stale token must not
+ * be read as "reconnect" (1.29.1 pre-ship audit, 2026-10-12).
+ */
+export type GarminRefreshOutcome =
+  | 'not_needed'
+  | 'refreshed'
+  | 'refused'
+  | 'failed'
+  | 'no_refresh_token';
+
+/**
  * Returns a valid Garmin access token, refreshing it via the refresh_token
  * grant when the stored one is expired (or about to expire), and persisting
  * the refreshed token back to the integrations row.
@@ -88,16 +102,30 @@ export async function ensureFreshGarminToken(
   userId: string,
   opts: GarminTokenOptions = {},
 ): Promise<string> {
+  return (await freshGarminToken(supabase, row, userId, opts)).token;
+}
+
+/** [ensureFreshGarminToken], also saying how the token was obtained. */
+export async function freshGarminToken(
+  supabase: SupabaseLike,
+  row: GarminTokenRow,
+  userId: string,
+  opts: GarminTokenOptions = {},
+): Promise<{ token: string; refresh: GarminRefreshOutcome }> {
   const prefix = opts.logPrefix ?? '[garmin-token]';
   const doFetch = opts.fetch ?? fetch;
+  const stale = (refresh: GarminRefreshOutcome) => ({
+    token: row.access_token,
+    refresh,
+  });
   const expiresAtMs = row.token_expires_at ? Date.parse(row.token_expires_at) : 0;
   const stillValid = expiresAtMs > 0 &&
     expiresAtMs - TOKEN_REFRESH_SKEW_MS > Date.now();
-  if (stillValid) return row.access_token;
+  if (stillValid) return stale('not_needed');
 
   if (!row.refresh_token) {
     console.warn(`${prefix} Token expired with no refresh_token; using stale token`);
-    return row.access_token;
+    return stale('no_refresh_token');
   }
 
   try {
@@ -117,14 +145,14 @@ export async function ensureFreshGarminToken(
         `${prefix} Token refresh failed`,
         providerErrorSummary(resp.status, await resp.text()),
       );
-      return row.access_token;
+      return stale(resp.status === 400 || resp.status === 401 ? 'refused' : 'failed');
     }
 
     const json = await resp.json();
     const newAccessToken = json.access_token as string | undefined;
     if (!newAccessToken) {
       console.error(`${prefix} Token refresh missing access_token`);
-      return row.access_token;
+      return stale('failed');
     }
     const newRefreshToken = (json.refresh_token as string | undefined) ?? row.refresh_token;
     const expiresInSec = (json.expires_in as number | undefined) ?? 3600;
@@ -145,10 +173,10 @@ export async function ensureFreshGarminToken(
       console.error(`${prefix} Failed to persist refreshed token:`, dbErrorSummary(updateErr));
     }
 
-    return newAccessToken;
+    return { token: newAccessToken, refresh: 'refreshed' };
   } catch (err) {
     console.error(`${prefix} Token refresh error:`, dbErrorSummary(err));
-    return row.access_token;
+    return stale('failed');
   }
 }
 
