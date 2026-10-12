@@ -1,6 +1,6 @@
 // Ticket 72 (round develop-2026-10): `EventsRepository.uploadDirtyRecords`
-// sends one upsert per dirty row, so the server's 23505 on one row
-// (`events_user_date_name_unique`) no longer blocks every later event.
+// sends one upsert per dirty row, so the server refusing one row (here a
+// simulated 23505) no longer blocks every later event.
 //
 // The real repository on an in-memory Drift and a real SupabaseClient whose
 // HTTP goes to FakePostgrest. The dirty rows are shaped the way the form's

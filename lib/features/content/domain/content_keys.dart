@@ -387,10 +387,8 @@ class ContentKeys {
   static const String integrationsSyncErrorNotACalendar =
       'integrations.sync_error_not_a_calendar';
 
-  // Event form (develop-2026-10 tickets 72 and 81): a same-name same-day
-  // duplicate is refused; a location search with no match says so.
-  static const String eventFormDuplicateNameDay =
-      'event_form.duplicate_name_day';
+  // Event form (develop-2026-10 ticket 81): a location search with no match
+  // says so.
   static const String eventFormLocationNoMatch =
       'event_form.location_no_match';
 

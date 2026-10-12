@@ -425,7 +425,6 @@
     "how_body": "AI credits pay for meal descriptions, meal photo analysis and Formula Kit coach insights. Each request uses credits, and credits never expire."
   },
   "event_form": {
-    "duplicate_name_day": "You already have an event with this name on that day.",
     "location_no_match": "No matching places. Check the spelling, or keep what you typed."
   },
   "integrations": {

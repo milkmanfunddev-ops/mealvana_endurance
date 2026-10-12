@@ -1,4 +1,3 @@
-import 'package:supabase_flutter/supabase_flutter.dart' show PostgrestException;
 import 'dart:async';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
@@ -18,7 +17,6 @@ import '../../../calendar/presentation/widgets/sport_category_selector.dart';
 import '../../../calendar/presentation/widgets/event_subtype_dropdown.dart';
 import '../../../content/application/content_service.dart';
 import '../../../content/domain/content_keys.dart';
-import '../../domain/duplicate_event_name_on_day.dart';
 import '../../domain/event.dart';
 import '../../domain/public_event.dart';
 import '../../application/public_events_service.dart';
@@ -653,43 +651,25 @@ class _EventFormScreenState extends ConsumerState<EventFormScreen> {
         }
       }
     } catch (e, stackTrace) {
-      // Ticket 72: a same-name same-day event is refused by the controller
-      // (which writes the refusal down); the athlete renames or moves it.
-      final refusedAsDuplicate =
-          e is DuplicateEventNameOnDayException ||
-          // The coach-on-athlete path waits for the server, whose unique index
-          // answers 23505 when the athlete's rows were not on this device.
-          (e is PostgrestException && e.code == '23505');
-      if (!refusedAsDuplicate) {
-        ref
-            .read(reportProvider)
-            .fault(
-              e,
-              stackTrace: stackTrace,
-              area: 'events',
-              message: isEditMode
-                  ? 'Updating an event failed'
-                  : 'Creating an event failed',
-            );
-      }
+      ref
+          .read(reportProvider)
+          .fault(
+            e,
+            stackTrace: stackTrace,
+            area: 'events',
+            message: isEditMode
+                ? 'Updating an event failed'
+                : 'Creating an event failed',
+          );
       if (mounted) {
         setState(() {
           _isSaving = false;
         });
 
-        if (refusedAsDuplicate) {
-          MealvanaSnackbar.showWarning(
-            context,
-            ref
-                .read(contentServiceProvider)
-                .getValue(ContentKeys.eventFormDuplicateNameDay),
-          );
-        } else {
-          MealvanaSnackbar.showError(
-            context,
-            'Error ${isEditMode ? 'updating' : 'creating'} event: $e',
-          );
-        }
+        MealvanaSnackbar.showError(
+          context,
+          'Error ${isEditMode ? 'updating' : 'creating'} event: $e',
+        );
       }
     }
   }

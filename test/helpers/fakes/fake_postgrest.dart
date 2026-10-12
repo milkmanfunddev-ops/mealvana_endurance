@@ -24,7 +24,7 @@ class FakePostgrest {
   /// Per table, a unique index the server enforces: a write carrying any row
   /// the predicate matches is refused whole with PostgREST 409 / 23505, the
   /// way one conflicting row fails a batched upsert (develop-2026-10 ticket
-  /// 72, `events_user_date_name_unique`).
+  /// 72).
   final Map<String, bool Function(Map<String, dynamic> row)> uniqueViolations =
       {};
 

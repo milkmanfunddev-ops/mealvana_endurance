@@ -1,15 +1,12 @@
--- Ticket 65 (round develop-2026-10; Lee's ruling 2026-10-08): one event per
--- user, day and name. Enforces the key the provider-import dedupe
--- (EventsRepository.findExistingEvent) and auth_migration_service already
--- assume. Before this, nothing on the server enforced it.
+-- Ticket 65 (round develop-2026-10) proposed a unique index on events
+-- (user_id, event_date, event_name). WITHDRAWN 2026-10-12 (Xuan, 1.29.1
+-- pre-ship audit): no athlete ever hit the bug it guarded against (it came
+-- from one old dev test row), and applying it to prod first required
+-- scripts/events_duplicate_sweep.sql to DELETE athletes' events (6 prod rows
+-- on 2026-10-12, one of them a race 26 days out with a linked workout).
 --
--- RUN FIRST, IN ORDER, or this fails with 23505 on the existing duplicates:
---   1. scripts/events_rederive_event_date.sql  (event_date := start_time's date)
---   2. scripts/events_duplicate_sweep.sql      (keeps the oldest row per group)
--- Dev at the round's close; prod at the next prod bundle, same order.
---
--- Nulls are distinct in a unique index, so rows with a null event_date or
--- event_name never collide. Idempotent.
+-- Kept as a no-op so the version dev already recorded stays in the history;
+-- 20261012120000_drop_events_user_date_name_unique.sql removes the index
+-- where it was applied (dev). Prod never gets it.
 
-create unique index if not exists events_user_date_name_unique
-  on public.events (user_id, event_date, event_name);
+select 1;

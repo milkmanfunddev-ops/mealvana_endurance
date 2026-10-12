@@ -194,9 +194,8 @@ class EventsRepository with SyncableRepository {
         data: {'count': dirtyRecords.length},
       );
 
-      // One upsert per row (ticket 72): the server's unique index
-      // `events_user_date_name_unique` refuses a same-name same-day row with
-      // 23505, and in one batched request that row blocked every later event.
+      // One upsert per row (ticket 72): in one batched request, a single row
+      // the server refuses blocks every later event.
       final outcome = await _uploadDirtyRowsOneByOne(dirtyRecords);
 
       if (outcome.failedCount == 0) {
@@ -662,42 +661,6 @@ class EventsRepository with SyncableRepository {
       );
       return null; // fall back to the (name, date) match
     }
-  }
-
-  /// The owner's other local event with the same trimmed name on the same
-  /// calendar day, or null (develop-2026-10 ticket 72). The form guard's key:
-  /// the server's `events_user_date_name_unique (user_id, event_date,
-  /// event_name)` refuses that row with 23505. Names compare exactly after
-  /// trimming both sides (the index is case-sensitive). [excludeEventId] is
-  /// the event being edited, so saving it unchanged is not a collision.
-  ///
-  /// Unlike [findExistingEvent] this never swallows: a failed read must not
-  /// let a duplicate through, so the error reaches the caller.
-  Future<domain.Event?> findSameNameSameDayEvent({
-    required String userId,
-    required String eventName,
-    required DateTime eventDate,
-    String? excludeEventId,
-  }) async {
-    final name = eventName.trim();
-    if (name.isEmpty) return null;
-    final dateOnly = DateTime(eventDate.year, eventDate.month, eventDate.day);
-    final nextDay = DateTime(dateOnly.year, dateOnly.month, dateOnly.day + 1);
-
-    final rows =
-        await (_database.select(_database.eventsTable)..where(
-              (tbl) =>
-                  tbl.userId.lower().equals(userId.toLowerCase()) &
-                  tbl.eventDate.isBiggerOrEqualValue(dateOnly) &
-                  tbl.eventDate.isSmallerThanValue(nextDay),
-            ))
-            .get();
-
-    for (final row in rows) {
-      if (row.id == excludeEventId) continue;
-      if ((row.eventName ?? '').trim() == name) return _mapToEventDomain(row);
-    }
-    return null;
   }
 
   /// Save event to Drift database (offline-first pattern)

@@ -87,15 +87,6 @@ void main() {
       // fresh data means it never invalidates itself behind the assertion.
       final repository = _MockEventsRepository();
       when(repository.isStale).thenAnswer((_) async => false);
-      // Ticket 72's same-name same-day guard reads Drift first: no clash.
-      when(
-        () => repository.findSameNameSameDayEvent(
-          userId: any(named: 'userId'),
-          eventName: any(named: 'eventName'),
-          eventDate: any(named: 'eventDate'),
-          excludeEventId: any(named: 'excludeEventId'),
-        ),
-      ).thenAnswer((_) async => null);
       when(
         () => service.updateEvent(
           deviceId: any(named: 'deviceId'),

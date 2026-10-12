@@ -1,9 +1,8 @@
 -- One-off: re-derive events.event_date from start_time (ticket 65, round
 -- develop-2026-10). start_time is the source; event_date is its derived copy.
 --
--- Order at the close: THIS FILE, then scripts/events_duplicate_sweep.sql, then
--- migration 20261008166500_events_unique_user_date_name.sql. The sweep groups
--- on event_date, so it must see the re-derived dates.
+-- The unique index and duplicate sweep this once preceded were withdrawn
+-- 2026-10-12 (1.29.1 pre-ship audit). Diagnostic only; not run on prod.
 --
 -- start_time is naive local text ('YYYY-MM-DDTHH:MM:SS...', no offset on any
 -- dev or prod row, checked read-only 2026-10-08), so the date is the first ten
