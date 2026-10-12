@@ -205,19 +205,26 @@ class ReconnectNoticeController extends _$ReconnectNoticeController {
     Future<void> Function(AnalyticsTracker analytics, String deviceId) send,
   ) {
     final report = ref.read(reportProvider);
-    void degraded(Object e, StackTrace st) => report.degraded(
-      e,
-      stackTrace: st,
-      area: 'integrations',
-      message: 'reconnect notice: analytics track failed',
-    );
+    const message = 'reconnect notice: analytics track failed';
     try {
       send(
         ref.read(appExternalDepsProvider).analytics,
         ref.read(deviceInfoServiceProvider).deviceId,
-      ).catchError(degraded);
+      ).catchError(
+        (Object e, StackTrace st) => report.degraded(
+          e,
+          stackTrace: st,
+          area: 'integrations',
+          message: message,
+        ),
+      );
     } catch (e, st) {
-      degraded(e, st);
+      report.degraded(
+        e,
+        stackTrace: st,
+        area: 'integrations',
+        message: message,
+      );
     }
   }
 }
