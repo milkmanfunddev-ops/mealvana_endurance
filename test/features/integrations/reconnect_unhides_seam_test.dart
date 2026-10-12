@@ -17,6 +17,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
+import 'package:mocktail/mocktail.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:mealvana_endurance/features/activities/application/activity_deduplication_service.dart';
@@ -38,6 +39,7 @@ import 'package:mealvana_endurance/features/integrations/data/training_peaks_api
 import 'package:mealvana_endurance/features/integrations/domain/integration.dart';
 import 'package:mealvana_endurance/features/integrations/presentation/providers/connect_training_controller.dart';
 import 'package:mealvana_endurance/features/integrations/presentation/providers/integrations_providers.dart';
+import 'package:mealvana_endurance/shared/services/app_external_deps.dart';
 import 'package:mealvana_endurance/features/integrations/presentation/providers/tp_writeback_providers.dart';
 import 'package:mealvana_endurance/shared/database/app_database.dart';
 import 'package:mealvana_endurance/shared/providers/user_id_provider.dart';
@@ -431,6 +433,32 @@ void main() {
       degraded.single.message,
       'Disconnect hide upload failed; rows stay dirty for retry',
     );
+  });
+
+  test('(f) analytics: a connect over a requires_reauth row counts as a '
+      'reconnect; the next one does not', () async {
+    await integrations.updateSyncStatus(
+      _userId,
+      'training_peaks',
+      status: requiresReauthStatus,
+      error: 'reauth_required',
+    );
+    final analytics =
+        container.read(appExternalDepsProvider).analytics
+            as MockAnalyticsTracker;
+    clearInteractions(analytics);
+
+    expect(await notifier().connectTrainingPeaks(), isTrue);
+    expect(await notifier().connectTrainingPeaks(), isTrue);
+
+    final sent = verify(
+      () => analytics.track(
+        'integration_connect_success',
+        properties: captureAny(named: 'properties'),
+      ),
+    ).captured.cast<Map<String, dynamic>>();
+    expect([for (final p in sent) p['is_reconnect']], [true, false]);
+    expect(sent.first['provider'], 'training_peaks');
   });
 
   test('(e) Final Surge: a reconnect unhides its hidden rows', () async {

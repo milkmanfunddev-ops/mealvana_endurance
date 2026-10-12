@@ -319,10 +319,14 @@ extension AnalyticsEvents on AnalyticsTracker {
 
   /// Track successful integration connection
   /// Maps to: trainingpeaks_connect_success, final_surge_connect_success
+  ///
+  /// [isReconnect]: the row was `requires_reauth` before this connect, so it
+  /// counts as a connection brought back, not a new one.
   Future<void> trackIntegrationConnectSuccess({
     required String provider,
     required String deviceId,
     String? athleteName,
+    bool isReconnect = false,
   }) {
     return track(
       'integration_connect_success',
@@ -330,6 +334,46 @@ extension AnalyticsEvents on AnalyticsTracker {
         'provider': provider,
         'device_id': deviceId,
         if (athleteName != null) 'athlete_name': athleteName,
+        'is_reconnect': isReconnect,
+        'timestamp': DateTime.now().toIso8601String(),
+      },
+    );
+  }
+
+  // --- Reconnect notice (ships with the notice in 1.29.1) -----------------
+  // Funnel: reconnect_notice_shown -> reconnect_notice_tapped ->
+  // integration_connect_success {is_reconnect: true} ->
+  // integration_sync_success, per provider.
+
+  /// The Timeline showed the notice for [provider]. Once per provider per
+  /// launch, like the notice itself.
+  Future<void> trackReconnectNoticeShown({
+    required String provider,
+    required String deviceId,
+  }) => _trackReconnectNotice('reconnect_notice_shown', provider, deviceId);
+
+  /// The athlete tapped Reconnect on the notice.
+  Future<void> trackReconnectNoticeTapped({
+    required String provider,
+    required String deviceId,
+  }) => _trackReconnectNotice('reconnect_notice_tapped', provider, deviceId);
+
+  /// The athlete closed the notice with the X.
+  Future<void> trackReconnectNoticeDismissed({
+    required String provider,
+    required String deviceId,
+  }) => _trackReconnectNotice('reconnect_notice_dismissed', provider, deviceId);
+
+  Future<void> _trackReconnectNotice(
+    String event,
+    String provider,
+    String deviceId,
+  ) {
+    return track(
+      event,
+      properties: {
+        'provider': provider,
+        'device_id': deviceId,
         'timestamp': DateTime.now().toIso8601String(),
       },
     );

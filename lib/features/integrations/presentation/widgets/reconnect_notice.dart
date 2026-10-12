@@ -55,7 +55,9 @@ class ReconnectNotice extends ConsumerWidget {
             TextButton(
               key: const ValueKey('reconnect_notice.reconnect'),
               onPressed: () {
-                ref.read(reconnectNoticeControllerProvider.notifier).dismiss();
+                ref
+                    .read(reconnectNoticeControllerProvider.notifier)
+                    .dismiss(reconnect: true);
                 context.push('/settings/connected-apps');
               },
               child: Text(
@@ -66,8 +68,9 @@ class ReconnectNotice extends ConsumerWidget {
               key: const ValueKey('reconnect_notice.dismiss'),
               tooltip: MaterialLocalizations.of(context).closeButtonTooltip,
               icon: Icon(Icons.close, size: 18, color: textColor),
-              onPressed: () =>
-                  ref.read(reconnectNoticeControllerProvider.notifier).dismiss(),
+              onPressed: () => ref
+                  .read(reconnectNoticeControllerProvider.notifier)
+                  .dismiss(),
             ),
           ],
         ),

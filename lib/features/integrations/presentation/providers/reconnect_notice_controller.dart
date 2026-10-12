@@ -2,6 +2,10 @@ import 'package:flutter/foundation.dart' show setEquals;
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../../../shared/providers/user_id_provider.dart';
+import '../../../../shared/services/analytics/analytics_events.dart';
+import '../../../../shared/services/analytics/analytics_tracker.dart';
+import '../../../../shared/services/app_external_deps.dart';
+import '../../../../shared/services/device_info_service.dart';
 import '../../../../shared/services/report/report.dart';
 import '../../../../shared/services/sync/sync_coordinator.dart';
 import 'integrations_providers.dart';
@@ -48,7 +52,8 @@ Future<void> integrationRowsLaunchPull(Ref ref, String userId) async {
       e,
       stackTrace: st,
       area: 'integrations',
-      message: 'Integrations launch pull failed; reconnect notice reads '
+      message:
+          'Integrations launch pull failed; reconnect notice reads '
           'local rows',
     );
   }
@@ -66,6 +71,9 @@ Future<void> integrationRowsLaunchPull(Ref ref, String userId) async {
 /// only; the next provider needing a reconnect then shows. The dismissed set
 /// lives in memory, so the notice is back on the next launch while the row
 /// still says `requires_reauth`.
+///
+/// Analytics (1.29.1): `reconnect_notice_shown` once per provider per launch,
+/// then `reconnect_notice_tapped` or `reconnect_notice_dismissed`.
 @Riverpod(keepAlive: true)
 class ReconnectNoticeController extends _$ReconnectNoticeController {
   /// The order the notice names providers in, one at a time.
@@ -78,6 +86,7 @@ class ReconnectNoticeController extends _$ReconnectNoticeController {
   ];
 
   final Set<String> _dismissed = {};
+  final Set<String> _shownTracked = {};
   Set<String> _needing = const {};
   String? _userId;
   Object? _reportedWatchError;
@@ -88,8 +97,19 @@ class ReconnectNoticeController extends _$ReconnectNoticeController {
     // The notifier instance outlives a rebuild: a new user starts clean.
     if (userId != _userId) {
       _dismissed.clear();
+      _shownTracked.clear();
       _userId = userId;
     }
+    listenSelf((_, shown) {
+      if (shown != null && _shownTracked.add(shown)) {
+        _track(
+          (analytics, deviceId) => analytics.trackReconnectNoticeShown(
+            provider: shown,
+            deviceId: deviceId,
+          ),
+        );
+      }
+    });
     if (userId == null) {
       _needing = const {};
       return null;
@@ -105,7 +125,8 @@ class ReconnectNoticeController extends _$ReconnectNoticeController {
             needing.error!,
             stackTrace: needing.stackTrace,
             area: 'integrations',
-            message: 'reconnect notice: integrations watch failed; no notice shown',
+            message:
+                'reconnect notice: integrations watch failed; no notice shown',
           );
     }
     _needing = needing.value ?? const {};
@@ -121,13 +142,45 @@ class ReconnectNoticeController extends _$ReconnectNoticeController {
     return null;
   }
 
-  /// The athlete dismissed the line or tapped Reconnect: hidden for this
-  /// launch.
-  void dismiss() {
+  /// The athlete dismissed the line ([reconnect] false, the X) or tapped
+  /// Reconnect: hidden for this launch.
+  void dismiss({bool reconnect = false}) {
     final shown = state;
     if (shown == null) return;
+    _track(
+      (analytics, deviceId) => reconnect
+          ? analytics.trackReconnectNoticeTapped(
+              provider: shown,
+              deviceId: deviceId,
+            )
+          : analytics.trackReconnectNoticeDismissed(
+              provider: shown,
+              deviceId: deviceId,
+            ),
+    );
     _dismissed.add(shown);
     state = _pick();
+  }
+
+  /// Analytics never breaks the notice: a failure is recorded and dropped.
+  void _track(
+    Future<void> Function(AnalyticsTracker analytics, String deviceId) send,
+  ) {
+    final report = ref.read(reportProvider);
+    void degraded(Object e, StackTrace st) => report.degraded(
+      e,
+      stackTrace: st,
+      area: 'integrations',
+      message: 'reconnect notice: analytics track failed',
+    );
+    try {
+      send(
+        ref.read(appExternalDepsProvider).analytics,
+        ref.read(deviceInfoServiceProvider).deviceId,
+      ).catchError(degraded);
+    } catch (e, st) {
+      degraded(e, st);
+    }
   }
 }
 

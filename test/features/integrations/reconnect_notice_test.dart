@@ -20,35 +20,46 @@ import 'package:mealvana_endurance/features/integrations/presentation/providers/
 import 'package:mealvana_endurance/features/integrations/presentation/widgets/reconnect_notice.dart';
 import 'package:mealvana_endurance/shared/database/app_database.dart';
 import 'package:mealvana_endurance/shared/providers/user_id_provider.dart';
+import 'package:mealvana_endurance/shared/services/app_external_deps.dart';
+import 'package:mealvana_endurance/shared/services/device_info_service.dart';
 import 'package:mealvana_endurance/shared/services/prefs_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../helpers/fakes/fake_postgrest.dart';
+import '../../helpers/fakes/recording_analytics_tracker.dart';
 import '../../helpers/fakes/recording_report.dart';
 import '../../helpers/widget_test_harness.dart';
 import '../../helpers/test_content.dart';
 
 const _userId = '00000000-0000-0000-0000-000000000138';
+const _deviceId = 'device-138';
 
-IntegrationModel _row(
-  String provider, {
-  String? status,
-  bool active = true,
-}) => IntegrationModel(
-  userId: _userId,
-  provider: provider,
-  accessToken: 'access-$provider',
-  refreshToken: 'refresh-$provider',
-  providerAthleteId: 'ath-$provider',
-  isActive: active,
-  lastSyncStatus: status,
-);
+class _FakeDeviceInfo implements DeviceInfoService {
+  @override
+  String get deviceId => _deviceId;
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+IntegrationModel _row(String provider, {String? status, bool active = true}) =>
+    IntegrationModel(
+      userId: _userId,
+      provider: provider,
+      accessToken: 'access-$provider',
+      refreshToken: 'refresh-$provider',
+      providerAthleteId: 'ath-$provider',
+      isActive: active,
+      lastSyncStatus: status,
+    );
 
 void main() {
   late AppDatabase db;
   late IntegrationsRepository repository;
+  late RecordingAnalyticsTracker analytics;
 
   setUp(() async {
+    analytics = RecordingAnalyticsTracker();
     SharedPreferences.setMockInitialValues({});
     db = AppDatabase.memory();
     addTearDown(db.close);
@@ -62,6 +73,14 @@ void main() {
   });
 
   List<Override> overrides(SharedPreferences prefs) => [
+    appExternalDepsProvider.overrideWithValue(
+      AppExternalDeps(
+        analytics: analytics,
+        supabaseClient: fakeSupabaseClient(),
+        sharedPreferences: prefs,
+      ),
+    ),
+    deviceInfoServiceProvider.overrideWithValue(_FakeDeviceInfo()),
     sharedPreferencesProvider.overrideWithValue(prefs),
     integrationsRepositoryProvider.overrideWithValue(repository),
     userIdProvider.overrideWith((ref) async => _userId),
@@ -93,23 +112,25 @@ void main() {
       expect(await settled(c), 'training_peaks');
     });
 
-    test('a row moving into requires_reauth shows it, and success clears it',
-        () async {
-      await repository.upsertIntegration(_row('vdot', status: 'success'));
-      final c = await launch();
-      expect(await settled(c), isNull);
+    test(
+      'a row moving into requires_reauth shows it, and success clears it',
+      () async {
+        await repository.upsertIntegration(_row('vdot', status: 'success'));
+        final c = await launch();
+        expect(await settled(c), isNull);
 
-      await repository.updateSyncStatus(
-        _userId,
-        'vdot',
-        status: requiresReauthStatus,
-        error: 'reauth_required',
-      );
-      expect(await settled(c), 'vdot');
+        await repository.updateSyncStatus(
+          _userId,
+          'vdot',
+          status: requiresReauthStatus,
+          error: 'reauth_required',
+        );
+        expect(await settled(c), 'vdot');
 
-      await repository.updateSyncStatus(_userId, 'vdot', status: 'success');
-      expect(await settled(c), isNull);
-    });
+        await repository.updateSyncStatus(_userId, 'vdot', status: 'success');
+        expect(await settled(c), isNull);
+      },
+    );
 
     test('an ordinary error shows nothing', () async {
       await repository.upsertIntegration(_row('final_surge', status: 'error'));
@@ -151,19 +172,94 @@ void main() {
       expect(await settled(c), isNull);
     });
 
-    test('dismissed for this launch only: the next launch shows it again',
-        () async {
+    test(
+      'dismissed for this launch only: the next launch shows it again',
+      () async {
+        await repository.upsertIntegration(
+          _row('garmin', status: requiresReauthStatus),
+        );
+        final first = await launch();
+        expect(await settled(first), 'garmin');
+        first.read(reconnectNoticeControllerProvider.notifier).dismiss();
+        expect(first.read(reconnectNoticeControllerProvider), isNull);
+        first.dispose();
+
+        final second = await launch();
+        expect(await settled(second), 'garmin');
+      },
+    );
+  });
+
+  // 1.29.1 instrumentation: shown once per provider per launch, then tapped
+  // (Reconnect) or dismissed (X).
+  group('ReconnectNotice analytics', () {
+    List<(String, Object?)> noticeEvents() => [
+      for (final e in analytics.events)
+        if (e.name.startsWith('reconnect_notice_'))
+          (e.name, e.properties?['provider']),
+    ];
+
+    test(
+      'shown once per provider per launch, then tapped or dismissed',
+      () async {
+        await repository.upsertIntegration(
+          _row('garmin', status: requiresReauthStatus),
+        );
+        await repository.upsertIntegration(
+          _row('vdot', status: requiresReauthStatus),
+        );
+        final c = await launch();
+        expect(await settled(c), 'garmin');
+
+        // The same row written again does not count a second showing.
+        await repository.updateSyncStatus(
+          _userId,
+          'garmin',
+          status: requiresReauthStatus,
+        );
+        await settled(c);
+        expect(noticeEvents(), [('reconnect_notice_shown', 'garmin')]);
+
+        c
+            .read(reconnectNoticeControllerProvider.notifier)
+            .dismiss(reconnect: true);
+        await settled(c);
+        c.read(reconnectNoticeControllerProvider.notifier).dismiss();
+        await settled(c);
+
+        expect(noticeEvents(), [
+          ('reconnect_notice_shown', 'garmin'),
+          ('reconnect_notice_tapped', 'garmin'),
+          ('reconnect_notice_shown', 'vdot'),
+          ('reconnect_notice_dismissed', 'vdot'),
+        ]);
+        final shown = analytics.events.firstWhere(
+          (e) => e.name == 'reconnect_notice_shown',
+        );
+        expect(shown.properties?['device_id'], _deviceId);
+      },
+    );
+
+    test('nothing is sent while no connection needs a reconnect', () async {
+      await repository.upsertIntegration(_row('garmin', status: 'success'));
+      final c = await launch();
+      expect(await settled(c), isNull);
+      expect(noticeEvents(), isEmpty);
+    });
+
+    test('the next launch counts a fresh showing', () async {
       await repository.upsertIntegration(
-        _row('garmin', status: requiresReauthStatus),
+        _row('training_peaks', status: requiresReauthStatus),
       );
       final first = await launch();
-      expect(await settled(first), 'garmin');
-      first.read(reconnectNoticeControllerProvider.notifier).dismiss();
-      expect(first.read(reconnectNoticeControllerProvider), isNull);
+      expect(await settled(first), 'training_peaks');
       first.dispose();
-
       final second = await launch();
-      expect(await settled(second), 'garmin');
+      expect(await settled(second), 'training_peaks');
+      expect(noticeEvents(), [
+        ('reconnect_notice_shown', 'training_peaks'),
+        ('reconnect_notice_shown', 'training_peaks'),
+      ]);
     });
   });
 
@@ -174,7 +270,6 @@ void main() {
       final prefs = await SharedPreferences.getInstance();
       final container = ProviderContainer(
         overrides: [
-          mockAppExternalDeps(),
           contentServiceProvider.overrideWith(testContentService),
           ...overrides(prefs),
         ],
@@ -197,8 +292,9 @@ void main() {
       return container;
     }
 
-    testWidgets('renders nothing until a connection needs signing in again',
-        (tester) async {
+    testWidgets('renders nothing until a connection needs signing in again', (
+      tester,
+    ) async {
       await pump(tester);
       expect(
         find.byKey(const ValueKey('reconnect_notice.reconnect')),

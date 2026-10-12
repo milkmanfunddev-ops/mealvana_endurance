@@ -698,13 +698,16 @@ class ConnectTrainingController extends _$ConnectTrainingController {
 
     try {
       _trackIntegrationConnectStarted(providerId);
-      // The athlete the disconnected row belonged to, read before the OAuth
-      // upsert overwrites it (deactivateIntegration keeps the id).
-      final previousAthleteId = await _previousAthleteId(
+      // The row before the OAuth upsert overwrites it: the athlete the
+      // disconnected row belonged to (deactivateIntegration keeps the id),
+      // and whether it was waiting for a reconnect (analytics).
+      final previous = await _previousIntegration(
         integrationsRepo,
         userId,
         providerId,
       );
+      final previousAthleteId = previous?.providerAthleteId;
+      final isReconnect = previous?.needsReconnect ?? false;
       final integration = await authenticate();
 
       await _unhideProviderData(
@@ -736,6 +739,7 @@ class ConnectTrainingController extends _$ConnectTrainingController {
       _trackIntegrationConnectSuccess(
         providerId,
         athleteName: integration.providerAthleteName,
+        isReconnect: isReconnect,
       );
       return true;
     } catch (e, stackTrace) {
@@ -926,17 +930,13 @@ class ConnectTrainingController extends _$ConnectTrainingController {
   /// Ticket 63: the athlete id on [providerId]'s existing row (active or
   /// not), or null when there is no row. A failed read counts as unknown,
   /// which the reconnect treats like the same athlete.
-  Future<String?> _previousAthleteId(
+  Future<IntegrationModel?> _previousIntegration(
     IntegrationsRepository integrationsRepo,
     String userId,
     String providerId,
   ) async {
     try {
-      final existing = await integrationsRepo.getIntegration(
-        userId,
-        providerId,
-      );
-      return existing?.providerAthleteId;
+      return await integrationsRepo.getIntegration(userId, providerId);
     } catch (e, stackTrace) {
       _report.integrationFailure(
         providerId,
@@ -2527,13 +2527,18 @@ class ConnectTrainingController extends _$ConnectTrainingController {
     );
   }
 
-  void _trackIntegrationConnectSuccess(String provider, {String? athleteName}) {
+  void _trackIntegrationConnectSuccess(
+    String provider, {
+    String? athleteName,
+    bool isReconnect = false,
+  }) {
     _trackSafely(
       'integration_connect_success',
       (analytics) => analytics.trackIntegrationConnectSuccess(
         provider: provider,
         deviceId: _analyticsDeviceId,
         athleteName: athleteName,
+        isReconnect: isReconnect,
       ),
     );
   }
