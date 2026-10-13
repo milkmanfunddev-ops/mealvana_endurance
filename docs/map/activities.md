@@ -12,8 +12,10 @@ screens of its own**. Every button that acts on a workout lives in another folde
   exists only after that last tap. Workouts also arrive on their own from a connected training platform (Final
   Surge, TrainingPeaks, Runna, V.O2) or from Garmin. TriDot and Strava are listed under Connected Apps as "coming
   soon" with a "Notify Me" button.
-- **Open a workout and its fuel plan.** Tap the workout card on the home timeline. A workout with a fuel plan, one
-  already done, or an imported "other" workout opens the detail screen; any other opens the form pre-filled.
+- **Open a workout and its fuel plan.** Tap the workout card on the home timeline, or its orange "Pre · During ·
+  Recovery fuel ›" line. A workout with a fuel plan, one already done, or an imported "other" workout opens the
+  detail screen; any other opens the "Create New Activity Plan" form pre-filled, and the only way out with a change
+  kept is through Generate Plan → Create Plan → Save Workout.
 - **Move it to another day or time.** Detail screen → date/time picker. Moving an event's date also moves the
   workout linked to it, unless the workout came from a platform or has already happened.
 - **Mark done / undo, skip / unskip.** Swipe the workout card right to mark it done ("self-reported"); swipe right
