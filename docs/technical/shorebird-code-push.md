@@ -117,10 +117,14 @@ local keychain either.
 > pin `RELEASE_VERSION` in `codemagic.yaml` ON the backport branch (grep the
 > 1.26.0 patch branch for the precedent) rather than trusting a UI field.
 
-**Auth:** `SHOREBIRD_TOKEN` from an API key (console → Account → API Keys;
-the support@mealvana.io account owns the org). The current key lives in
-`secrets/shorebird.env` — `set -a; source secrets/shorebird.env; set +a`.
-No `shorebird login` needed.
+**Auth:** `SHOREBIRD_TOKEN` from an API key (console → Account → API Keys).
+`support@mealvana.io` owns the org that holds both apps: it is the **Mealvana** org
+(id 57126, console.shorebird.dev/orgs/57126/apps), not that account's empty default org.
+Any key minted while signed in as that account works for either app. The current key
+(`codemagic-team`, minted 2026-10-13) lives in `secrets/shorebird.env` —
+`set -a; source secrets/shorebird.env; set +a` — and is the same value as `SHOREBIRD_TOKEN`
+in Codemagic's `shorebird_credentials` groups. No `shorebird login` needed; the Google login
+the CLI stored on Lee's machine is a legacy token and stopped working on 2026-10-01.
 
 > **If `secrets/shorebird.env` is missing, mint a new key — do not go hunting.**
 > It went missing once already (2026-09-29): the file is machine-local, lives

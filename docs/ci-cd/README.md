@@ -11,6 +11,38 @@ Mealvana Endurance uses a **dual CI/CD strategy**:
 | **Codemagic** | Mobile app builds, integration tests, App Store/Play Store deployment | Push/PR to branches |
 | **GitHub Actions** | Test suites (self-hosted runner), changelog publishing, data-ops (catalog refresh, prod→dev sync) | Push/PR, scheduled |
 
+## Codemagic account (moved 2026-10-13)
+
+The `mealvana_endurance` app (id `6929d76c3da87a6f81ddfab2`) lives in the **Mealvana Endurance**
+Codemagic team (id `6acd0718b37aeb5b64859de4`), owned by `milkmanfund.dev@gmail.com`; Lee and
+Xuan are admins. It was transferred there from Lee's personal account on 2026-10-13 and is a
+one-way move. Teams get no free build minutes: every minute is billed, and the team owner must
+keep billing enabled (the trial ends 2026-10-26).
+
+What lives where after the move:
+
+- **Variable groups.** The six app-level groups (`mealvana_dev`, `mealvana_prod`,
+  `firebase_config`, `shorebird_credentials`, `google_play_credentials`,
+  `android_signing_credentials`) travelled with the app and are what builds resolve first.
+  The same six also exist as team-level "Global variables and secrets", uploaded from the local
+  master copies the same day. App-level beats team-level when names collide, so update the
+  app-level set (Application settings → Environment variables) when a value changes, or delete
+  one set so there is only one. Secure values cannot be read back from either.
+- **Integrations** (team settings): App Store Connect key `API Key for CI builds`
+  (key `565CMLNU3G`, the name `codemagic.yaml` references), GitHub connected as `lbm54`
+  (an org member of `milkmanfunddev-ops`; `RPPLee` is not and must not be used), Developer Portal
+  via the same key. **Slack is not connected**; the `slack:` publishing block in every workflow
+  has nothing to post to until someone connects the workspace under Team integrations.
+- **Code signing identities** (team settings): certificate `milkman_distribution`
+  (Apple Distribution, Milkman Inc, expires 2027-05-03; the `.p12` is `secrets/apple/`) and
+  the App Store profiles `codemagic_dev_appstore` / `codemagic_prod_appstore` fetched from Apple.
+  Android signs from the `CM_KEYSTORE_*` variables, not from an uploaded keystore.
+- **Shorebird.** `SHOREBIRD_TOKEN` is a Shorebird API key (legacy `login:ci` tokens stopped
+  working 2026-10-01). The org is **Mealvana** (id 57126) under `support@mealvana.io`; the
+  local copy is `secrets/shorebird.env`. See `docs/technical/shorebird-code-push.md`.
+- **API access.** Lee's Codemagic API token sees the team; the app id did not change, so the
+  endpoints in this folder still work.
+
 > **Backend deployment is NOT in CI.** The Supabase deploy workflows (`deploy-dev.yml`,
 > `deploy-prod.yml`, `schema-drift-check.yml`) were deleted in `b2f86b4f` (2026-05-22) and are
 > not coming back. Edge functions ship manually via `scripts/deploy_dev.sh` /
