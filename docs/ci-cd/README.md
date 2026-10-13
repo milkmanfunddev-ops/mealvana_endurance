@@ -29,8 +29,10 @@ What lives where after the move:
   app-level set (Application settings → Environment variables) when a value changes, or delete
   one set so there is only one. Secure values cannot be read back from either.
 - **Integrations** (team settings): App Store Connect key `API Key for CI builds`
-  (key `565CMLNU3G`, the name `codemagic.yaml` references), GitHub connected as `lbm54`
-  (an org member of `milkmanfunddev-ops`; `RPPLee` is not and must not be used), Developer Portal
+  (key `565CMLNU3G`, the name `codemagic.yaml` references), GitHub connected as **`milkmanfunddev`**,
+  the company's own GitHub user (created 2026-10-13 for milkmanfund.dev@gmail.com, an owner of
+  `milkmanfunddev-ops`), so builds do not depend on anyone's personal login. Whoever reconnects
+  must use an org member; a non-member login such as `RPPLee` links but cannot see the repo, Developer Portal
   via the same key. **Slack is not connected**; the `slack:` publishing block in every workflow
   has nothing to post to until someone connects the workspace under Team integrations.
 - **Code signing identities** (team settings): certificate `milkman_distribution`
