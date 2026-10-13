@@ -32,6 +32,18 @@ sentry {
     tracingInstrumentation {
         enabled.set(false)
     }
+    // Also off: the plugin's "runtime optimizations" are a second bytecode
+    // transform (SentrySdkOptimizationClassVisitorFactory) that is on by
+    // default and independent of tracingInstrumentation. It rewrites every
+    // jar on the release classpath, Flutter engine included, and that ASM
+    // pass ran the 8 GB Codemagic M2 out of Java heap on the 1.29.1 Android
+    // release (2026-10-12: ':app:expandProdReleaseArtProfileWildcards' ->
+    // AsmClassesTransform -> Java heap space). 1.29.0, built before this
+    // plugin was added, had no transform and no OOM. UUID stamping does not
+    // need it.
+    runtimeOptimizations {
+        enabled.set(false)
+    }
 }
 
 android {
