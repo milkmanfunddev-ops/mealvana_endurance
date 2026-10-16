@@ -86,19 +86,18 @@ Deno.test('a decline tap runs the next step with [declined: …]; the gate refus
   assertEquals(e.trail, ['gate: refused (empty turn: neither a message nor a tap)']);
 });
 
-Deno.test('a card scrolled off by a typed message is shown once this visit (E3): the step stays open, Route passes it over; a message that engages it keeps it', async () => {
-  const model = new FakeModel([{ intents: [{ label: 'chat' }], facts: [] }, { intents: [{ label: 'answers' }], facts: [] }]);
+Deno.test('a typed message never closes the card on screen (ruled 2026-10-16): the step stays active, nothing is shown once; only a dismiss is (E3)', async () => {
+  const model = new FakeModel([{ intents: [{ label: 'chat' }], facts: [] }, { intents: [{ label: 'declines', target: 'step' }], facts: [] }]);
   const a = fakeAdapters(snapshot(), model);
   await turn(a, OPENER);   // the plan card is on screen
-  const r = await turn(a, "how's your day going?");
-  assertEquals(r.state.shownThisVisit, ['plan']);
+  const r = await turn(a, "what should i make for dinner?");
+  assertEquals(r.state.shownThisVisit, []);
   assertEquals(r.state.declinedThisVisit, []);
-  assertEquals(r.plan?.steps[0].step.id, 'wearable');
-  assertEquals(r.reply.card?.kind, 'connect_wearable');
-  assert(r.trail.some((t) => t.includes('plan shown once this visit, still open, not a decline')));
-  const r2 = await turn(a, 'yes, connect my watch');   // answers while the wearable card is on screen: engaged, not scrolled off
+  assertEquals(r.plan?.steps[0].step.id, 'plan');
+  assert(r.trail.some((t) => t.includes('plan stays the active step')));
+  const r2 = await turn(a, "i don't use a training app");   // the spoken decline lands on the plan step, not the one after it
+  assertEquals(r2.state.declinedThisVisit, ['plan']);
   assertEquals(r2.plan?.steps[0].step.id, 'wearable');
-  assertEquals(r2.state.shownThisVisit, ['plan']);
 });
 
 Deno.test('pending survives a typed turn and is named in that reply (Q3c); a Not-now tap resumes it (Q3d)', async () => {

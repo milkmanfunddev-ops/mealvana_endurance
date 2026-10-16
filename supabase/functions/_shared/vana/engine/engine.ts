@@ -13,7 +13,7 @@ import { newCounters } from './counters.ts';
 import { gate } from './gate.ts';
 import { runPlan, type PlanRun } from './loop.ts';
 import { read } from './read.ts';
-import { engagesCard, pickFlow, route, type Flows } from './route.ts';
+import { pickFlow, route, type Flows } from './route.ts';
 import { saveTap } from './save.ts';
 import { loadScripted } from './scripted.ts';
 import type { ConversationState, FlowDeclaration, Intent, Plan, ReadResult, Snapshot, TurnInput, TurnResult } from './types.ts';
@@ -121,16 +121,10 @@ export async function runTurn(input: TurnInput, a: Adapters, flows: Flows = DEFA
   calls.push({ role: 'read', inputTokens: r.usage.inputTokens, outputTokens: r.usage.outputTokens, cachedTokens: r.usage.cachedTokens });
   for (const f of readResult.facts) { try { await a.memory.remember(s.userId, f, { source: 'read' }); } catch (e) { trail.push(`memory: could not remember "${f}" (${(e as Error).message})`); } }
 
-  // a card still on screen is scrolled off by a typed message: shown once this visit unless the message engages it (E3)
-  if (s.cardOnScreen) {
-    const on = s.cardOnScreen; s.cardOnScreen = null;
-    if (engagesCard(readResult.intents)) trail.push(`save: ${on.card} on screen; the message engages it, ${on.step} stays the active step`);
-    else if (flow.steps[on.step] && !s.shownThisVisit.includes(on.step)) {
-      s.shownThisVisit.push(on.step);
-      trail.push(`save: ${on.card} scrolled off by a typed message; ${on.step} shown once this visit, still open, not a decline`);
-      assembled = await assemble(s, flow, a);   // the cached block stands; the FLOW line and the active step move on
-    }
-  }
+  // a typed message never closes the card on screen: inline it stays tappable, so its step stays the active step and a
+  // spoken decline lands on it. Only a dismiss of the native layer marks a card shown once (E3, save.ts). Ruled by Xuan
+  // 2026-10-16 after smoke s05, where a dinner ask on the opener silently dropped the plan step for the visit.
+  if (s.cardOnScreen) trail.push(`save: ${s.cardOnScreen.card} still on screen after a typed message; ${s.cardOnScreen.step} stays the active step`);
 
   // 4 · Route. Intents left pending by an earlier card stay on the row and are named in this reply (Q3c).
   if (s.pending.length) { trail.push(`route: ${s.pending.length} pending intent(s) stay on the row, named in this reply`); counters.route_reroute++; }
