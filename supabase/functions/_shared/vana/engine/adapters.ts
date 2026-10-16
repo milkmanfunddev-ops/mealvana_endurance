@@ -3,7 +3,7 @@
  * the ops harness passes fakes, the `vana-chat` edge function passes Supabase-backed ones, tests pass the fakes in
  * fakes.ts. No Supabase client, no model SDK and no file read lives inside engine/ except behind one of these.
  */
-import type { ConversationState, ReadResult, Snapshot, ToolCall, ToolOutcome, ToolSpec } from './types.ts';
+import type { ConversationState, ReadResult, Snapshot, StepMemory, ToolCall, ToolOutcome, ToolSpec } from './types.ts';
 
 /** One read of the athlete's rows. Called by Assemble when the block is missing, dirty or from another day. */
 export interface DataReader { read(userId: string): Promise<Snapshot> }
@@ -18,7 +18,7 @@ export interface ToolRunner {
 export interface MemoryStore {
   remember(userId: string, fact: string, opts?: { kind?: 'preference' | 'constraint' | 'pattern' | 'setting'; key?: string; value?: unknown; source?: string }): Promise<void>;
   /** Flow facts are keyed settings, one row per key: how orientation survives a week's pause. */
-  setStep(userId: string, step: string, status: 'done' | 'declined'): Promise<void>;
+  setStep(userId: string, step: string, status: StepMemory): Promise<void>;
 }
 
 /** Prompts by stem (`shared`, `read`, `shape-choose`, `step-plan`, `scripted`, …). Files now; Langfuse plugs in here. */

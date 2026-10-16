@@ -15,7 +15,7 @@ export type FlowId = 'orientation' | 'meal_planning' | 'debrief' | 'none';
 /** The six exchange shapes (§2). Steps consolidate by shape, never by subject. */
 export type Shape = 'answer' | 'set_value' | 'draft_record' | 'choose' | 'hand_off' | 'scripted';
 
-/** Read's labels (v7/prompts/read.md). `chat` is the seventh, pending Xuan's confirmation (README). */
+/** Read's labels (v7/prompts/read.md). `chat` is the seventh (ruled 2026-10-15, E4). `declines` targets: step, all_connections, visit. */
 export type IntentLabel = 'answers' | 'declines' | 'asks' | 'leaves_flow' | 'feedback' | 'chat' | 'safety';
 export interface Intent { label: IntentLabel; target?: string }
 export interface ReadResult { intents: Intent[]; facts: string[] }
@@ -30,6 +30,8 @@ export interface Pin { id: string; name: string; phase: 'before' | 'during' | 'a
 export interface WeekDay { day: Weekday; minutes: number; sports: Sport[] }
 export interface HistoryPattern { weekday: Weekday; sport: Sport; typicalMinutes: number; confidence: 'clear' | 'weak' }
 
+export type StepMemory = 'done' | 'declined' | 'declined_for_good';
+
 /** One read of the athlete's rows, as the DataReader returns it. The engine never fetches on its own. */
 export interface Snapshot {
   today: string;                                        // YYYY-MM-DD, the athlete's local day
@@ -43,8 +45,9 @@ export interface Snapshot {
   memories: string[];                                   // the newest margin notes (MEMORIES line)
   /** Lee's Doll lines (buildAthleteContext → contextBlock), built by the caller. Empty in tests. */
   doll: string[];
-  /** Orientation memory from earlier visits: keyed settings (box 8). A declined step is never re-asked. */
-  steps: Partial<Record<string, 'done' | 'declined'>>;
+  /** Orientation memory from earlier visits: keyed settings (box 8). `declined` is offered again next visit; a second
+   *  decline makes it `declined_for_good`, never offered again (ruled 2026-10-15, Q7a). */
+  steps: Partial<Record<string, StepMemory>>;
 }
 
 // ---------------------------------------------------------------- the client's situation line (box 1)
@@ -72,6 +75,7 @@ export type ToolOutcome =
 export interface Tap {
   step: string;
   card: string;
+  /** dismiss: closed without Save or Not-now (swiped away). Shown once this visit, never a decline (E3). */
   action: 'save' | 'decline' | 'dismiss' | 'connect' | 'pin' | 'choice';
   /** save / connect / pin: what the app saved, in words code can put in a receipt. */
   saved?: { what: string; when?: string };
@@ -80,10 +84,11 @@ export interface Tap {
 
 // ---------------------------------------------------------------- the declaration (§2, §5)
 export type CheckRule =
-  | 'status_truthful' | 'actions_backed' | 'no_computed_number' | 'write_without_yes' | 'after_safety'   // the five hard rules
-  | 'pin_covers' | 'pattern_from_data' | 'race_question_narrow' | 'name_from_data' | 'one_question' | 'same_words_twice' | 'lead_in_names_step' | 'no_app_claims';
+  | 'status_truthful' | 'actions_backed' | 'no_computed_number' | 'write_without_yes' | 'after_safety' | 'one_question' | 'pattern_from_data'   // the seven hard rules
+  | 'pin_covers' | 'race_question_narrow' | 'name_from_data' | 'same_words_twice' | 'lead_in_names_step' | 'no_app_claims';
 
-export const HARD_RULES: readonly CheckRule[] = ['status_truthful', 'actions_backed', 'no_computed_number', 'write_without_yes', 'after_safety'];
+/** Universal: every reply, every flow (ruled 2026-10-15, Q4a: v4's five, plus one question per reply and no history pattern without a tool result). */
+export const HARD_RULES: readonly CheckRule[] = ['status_truthful', 'actions_backed', 'no_computed_number', 'write_without_yes', 'after_safety', 'one_question', 'pattern_from_data'];
 
 export interface StepDeclaration {
   id: string;
@@ -99,7 +104,7 @@ export interface StepDeclaration {
   checks: CheckRule[];
   reply: 'model' | 'scripted';
   /** scripted steps: the key in scripted.md. */
-  scripted?: 'off_flow' | 'feedback' | 'wrap';
+  scripted?: 'off_flow' | 'check_in' | 'feedback' | 'wrap';
   /** The code reader. 'done' means the data shows it; declined / skipped is state, not data. */
   status: (d: Snapshot) => 'open' | 'done';
   /** One short clause Route appends to scripted lines: "Want to keep going with {step}?" Xuan edits. */
@@ -109,6 +114,8 @@ export interface StepDeclaration {
   onDecline?: { alsoDecline?: string[] };
   /** Fired by Save, once, when the status flips to done. */
   milestone?: Milestone;
+  /** false: not one of the client's 0/N setup widget tiles (the week planner; ruled 2026-10-15, E1). */
+  widget?: boolean;
 }
 
 export interface FlowDeclaration {
@@ -147,11 +154,22 @@ export interface ConversationState {
   flow: FlowId | null;
   step: string | null;
   declinedThisVisit: string[];
-  /** Set by declines(all_connections) or feedback(flow): no steer, no card, for the rest of the visit. */
+  /** Declined this visit AND in an earlier one: never offered again (Q7a). Written to memory as declined_for_good. */
+  declinedForGood: string[];
+  /** Cards closed without Save or Not-now this visit, by step: shown once, the step stays open, not re-offered (E3). */
+  shownThisVisit: string[];
+  /** Set by declines(all_connections), declines(visit) or feedback(flow): no steer, no card, for the rest of the visit. */
   offersEnded: boolean;
+  /** Off-flow asks this visit; the second fires the scripted check-in, once (Q1a: the count fires the question, never the stop). */
+  offFlowAsks: number;
+  checkInAsked: boolean;
+  /** Kept when the athlete types instead of tapping, named once per reply via [then: …], dropped only on a decline (Q3c). */
   pending: Intent[];
   pendingWords: string | null;
+  /** The last safety label. Eating-disorder signs or distress also set flowEnded; a medical hit clears on the next turn (Q6). */
   safetyHit: string | null;
+  /** Hard rule 5: the flow ended for this conversation; only the sensitive agent speaks from here. */
+  flowEnded: boolean;
   history: Line[];
   block: Block | null;
   blockDirty: boolean;

@@ -3,11 +3,11 @@
  *
  * Order: plan → wearable → week → formula → long_run → race → wrap. `week` is the "learn the long workout" half of the
  * long-workout step (the week planner), split out so the formula picker — which binds sport and minutes — always runs
- * after the file knows a long workout and before its form. §5 lists the planner under plan's on_decline and the
- * step-long-run.md section covers both forms; one step id per card keeps Route's "a card other than the step's own"
- * check structural. Declining the planner declines the long workout (the harness rule).
+ * after the file knows a long workout and before its form (ruled 2026-10-15, E1: skipped silently when the file knows
+ * one, out of the 0/5 widget, declining it declines long_run). One step id per card keeps Route's "a card other than
+ * the step's own" check structural.
  *
- * `steer` lines are drafts for Xuan to edit (handoff). max_passes: 4.
+ * `steer` lines as ruled 2026-10-15 (E8; scripted.md carries the same text). max_passes: 4.
  */
 import type { FlowDeclaration, Snapshot, StepDeclaration } from '../types.ts';
 import { ANSWER } from './shared.ts';
@@ -35,29 +35,29 @@ const steps: Record<string, StepDeclaration> = {
   plan: {
     id: 'plan', shape: 'hand_off', section: 'step-plan',
     tools: [{ name: 'showConnectCard', kind: 'card' }, react], cards: ['connect_plan'], bound: { showConnectCard: () => ({ kind: 'plan' }) },
-    forcedFirstTool: 'showConnectCard', checks: ['name_from_data', 'one_question', 'same_words_twice', 'lead_in_names_step', 'no_app_claims'], reply: 'model',
+    forcedFirstTool: 'showConnectCard', checks: ['name_from_data', 'same_words_twice', 'lead_in_names_step', 'no_app_claims'], reply: 'model',
     status: (d) => (d.connections.plan ? 'done' : 'open'), stores: ['plan_platform'],
     steer: 'Want to keep going with your training plan?',
   },
   wearable: {
     id: 'wearable', shape: 'hand_off', section: 'step-wearable',
     tools: [{ name: 'showConnectCard', kind: 'card' }, react], cards: ['connect_wearable'], bound: { showConnectCard: () => ({ kind: 'wearable' }) },
-    forcedFirstTool: 'showConnectCard', checks: ['name_from_data', 'one_question', 'same_words_twice', 'lead_in_names_step', 'no_app_claims'], reply: 'model',
+    forcedFirstTool: 'showConnectCard', checks: ['name_from_data', 'same_words_twice', 'lead_in_names_step', 'no_app_claims'], reply: 'model',
     status: (d) => (d.connections.wearable ? 'done' : 'open'), stores: ['wearable'],
-    steer: 'Want to keep going with your Garmin?',
+    steer: 'Want to keep going with your watch?',
   },
   week: {
     id: 'week', shape: 'draft_record', section: 'step-long-run',
     tools: [{ name: 'longRunPattern', kind: 'read' }, { name: 'showWeekPlanner', kind: 'card' }, react], cards: ['week_planner'],
-    checks: ['pattern_from_data', 'name_from_data', 'one_question', 'same_words_twice', 'lead_in_names_step', 'no_app_claims'], reply: 'model',
-    status: (d) => (knowsWorkout(d) ? 'done' : 'open'), onDecline: { alsoDecline: ['long_run'] },
+    checks: ['name_from_data', 'same_words_twice', 'lead_in_names_step', 'no_app_claims'], reply: 'model',
+    status: (d) => (knowsWorkout(d) ? 'done' : 'open'), onDecline: { alsoDecline: ['long_run'] }, widget: false,
     steer: 'Want to keep going with your training week?',
   },
   formula: {
     id: 'formula', shape: 'choose', section: 'step-formula',
     tools: [{ name: 'recommendFormulas', kind: 'card' }, { name: 'formulaCoverage', kind: 'read' }, react], cards: ['formulas'],
     bound: { recommendFormulas: (d) => { const t = longTarget(d); return t ? { phase: 'during', sport: t.sport === 'ride' ? 'ride' : 'run', minutes: t.minutes } : null; } },
-    forcedFirstTool: 'recommendFormulas', checks: ['pin_covers', 'name_from_data', 'one_question', 'same_words_twice', 'lead_in_names_step', 'no_app_claims'], reply: 'model',
+    forcedFirstTool: 'recommendFormulas', checks: ['pin_covers', 'name_from_data', 'same_words_twice', 'lead_in_names_step', 'no_app_claims'], reply: 'model',
     status: (d) => (d.pins.length ? 'done' : 'open'), milestone: 'formula_pinned',
     steer: 'Want to keep going with a formula for your long workout?',
   },
@@ -65,15 +65,15 @@ const steps: Record<string, StepDeclaration> = {
     id: 'long_run', shape: 'draft_record', section: 'step-long-run',
     tools: [{ name: 'getWorkouts', kind: 'read' }, { name: 'showWorkoutCard', kind: 'card' }, react], cards: ['workout_card'],
     bound: { showWorkoutCard: workoutFormArgs },
-    checks: ['pattern_from_data', 'pin_covers', 'name_from_data', 'one_question', 'same_words_twice', 'lead_in_names_step', 'no_app_claims'], reply: 'model',
+    checks: ['pin_covers', 'name_from_data', 'same_words_twice', 'lead_in_names_step', 'no_app_claims'], reply: 'model',
     status: (d) => { const nl = nextLong(d); if (!nl || !nl.fueled) return 'open'; const pin = pinFor(d, nl); return pin && nl.fueledWithPin !== pin.id ? 'open' : 'done'; },
     milestone: 'long_workout_fueled',
-    steer: 'Want to keep going with fueling your long workout?',
+    steer: 'Want to keep going with fueling your next long workout?',
   },
   race: {
     id: 'race', shape: 'draft_record', section: 'step-race',
     tools: [{ name: 'showRaceCard', kind: 'card' }, react], cards: ['race_card'],
-    forcedFirstTool: 'showRaceCard', checks: ['race_question_narrow', 'name_from_data', 'one_question', 'same_words_twice', 'lead_in_names_step', 'no_app_claims'], reply: 'model',
+    forcedFirstTool: 'showRaceCard', checks: ['race_question_narrow', 'name_from_data', 'same_words_twice', 'lead_in_names_step', 'no_app_claims'], reply: 'model',
     status: (d) => (d.race ? 'done' : 'open'), stores: ['race_date', 'race_distance'], milestone: 'race_added',
     steer: 'Want to keep going with your race?',
   },

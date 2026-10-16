@@ -18,12 +18,18 @@ export interface FlowState {
   /** The first open step in order, or null when every step is done or declined (the wrap, for orientation). */
   step: StepDeclaration | null;
   statuses: Record<string, StepStatus>;
+  /** The rows the statuses were read from (Route needs the earlier visits' declines to make a second one permanent). */
+  snapshot: Snapshot;
   declinedThisVisit: string[];
+  declinedForGood: string[];
+  /** Shown once this visit (closed without a tap): open, but not the step until the athlete asks for it. */
+  shownThisVisit: string[];
   done: string[];
   pending: ConversationState['pending'];
   firstMeeting: boolean;
   opener: boolean;
   safetyHit: string | null;
+  flowEnded: boolean;
   /** Every non-scripted step is done or declined: the flow has reached its wrap. */
   complete: boolean;
 }
@@ -32,8 +38,12 @@ export interface Assembled { snapshot: Snapshot; flowState: FlowState; block: st
 
 export const cachedSnapshot = (b: Block | null): Snapshot | null => (b && 'snapshot' in b ? (b as Block & { snapshot: Snapshot }).snapshot : null);
 
+/** The steps the client's 0/N setup widget counts: the real steps minus those declared `widget: false` (the week planner, E1). */
+export const widgetSteps = (flow: FlowDeclaration): string[] => flow.order.filter((id) => flow.steps[id].reply !== 'scripted' && flow.steps[id].widget !== false);
+
 export function statusOf(_flow: FlowDeclaration, step: StepDeclaration, d: Snapshot, s: ConversationState): StepStatus {
-  if (s.declinedThisVisit.includes(step.id)) return 'declined';
+  // this visit's no, or a second no across visits (never offered again), or one recorded for good in an earlier visit
+  if (s.declinedThisVisit.includes(step.id) || s.declinedForGood.includes(step.id) || d.steps[step.id] === 'declined_for_good') return 'declined';
   if (step.id === 'wrap') return s.celebrated.includes('setup_done') ? 'done' : 'open';
   return step.status(d) === 'done' ? 'done' : 'open';
 }
@@ -43,19 +53,21 @@ export function flowStateFor(flow: FlowDeclaration, d: Snapshot, s: Conversation
   for (const id of flow.order) statuses[id] = statusOf(flow, flow.steps[id], d, s);
   const real = flow.order.filter((id) => flow.steps[id].reply !== 'scripted');
   const complete = real.every((id) => statuses[id] !== 'open');
-  const nextId = flow.order.find((id) => statuses[id] === 'open' && (flow.steps[id].reply !== 'scripted' || complete));
+  // a card shown once this visit is not re-offered: its step stays open but is passed over (E3)
+  const nextId = flow.order.find((id) => statuses[id] === 'open' && !s.shownThisVisit.includes(id) && (flow.steps[id].reply !== 'scripted' || complete));
   const spoken = s.history.some((l) => l.role === 'vana');
   return {
-    flow, step: nextId ? flow.steps[nextId] : null, statuses, declinedThisVisit: [...s.declinedThisVisit],
-    done: flow.order.filter((id) => statuses[id] === 'done'), pending: [...s.pending],
-    firstMeeting: !d.profile.metVana && !spoken, opener: !spoken, safetyHit: s.safetyHit, complete,
+    flow, step: nextId ? flow.steps[nextId] : null, statuses, snapshot: d, declinedThisVisit: [...s.declinedThisVisit], declinedForGood: [...s.declinedForGood],
+    shownThisVisit: [...s.shownThisVisit], done: flow.order.filter((id) => statuses[id] === 'done'), pending: [...s.pending],
+    firstMeeting: !d.profile.metVana && !spoken, opener: !spoken, safetyHit: s.safetyHit, flowEnded: s.flowEnded, complete,
   };
 }
 
 /** The FLOW line, rebuilt every turn (it is the one tier that changes with the conversation). */
 export function flowLine(fs: FlowState, d: Snapshot): string {
-  const declinedBefore = Object.entries(d.steps).filter(([, v]) => v === 'declined').map(([k]) => k);
-  return `- FLOW: ${fs.flow.id} · step: ${fs.step?.id ?? 'none'} · done: ${fs.done.join(', ') || 'none'} · declined this visit: ${fs.declinedThisVisit.join(', ') || 'none'}${declinedBefore.length ? ` · declined before: ${declinedBefore.join(', ')}` : ''} · pending: ${fs.pending.map((i) => i.label + (i.target ? `(${i.target})` : '')).join(', ') || 'none'} · first meeting: ${fs.firstMeeting ? 'yes' : 'no'} · opener: ${fs.opener ? 'yes' : 'no'} · safety hit: ${fs.safetyHit ?? 'none'}`;
+  const forGood = [...new Set([...Object.entries(d.steps).filter(([, v]) => v === 'declined_for_good').map(([k]) => k), ...fs.declinedForGood])];
+  const declinedBefore = Object.entries(d.steps).filter(([k, v]) => v === 'declined' && !forGood.includes(k)).map(([k]) => k);
+  return `- FLOW: ${fs.flow.id} · step: ${fs.step?.id ?? 'none'} · done: ${fs.done.join(', ') || 'none'} · declined this visit: ${fs.declinedThisVisit.join(', ') || 'none'}${declinedBefore.length ? ` · declined before: ${declinedBefore.join(', ')}` : ''}${forGood.length ? ` · declined for good: ${forGood.join(', ')}` : ''}${fs.shownThisVisit.length ? ` · shown once: ${fs.shownThisVisit.join(', ')}` : ''} · pending: ${fs.pending.map((i) => i.label + (i.target ? `(${i.target})` : '')).join(', ') || 'none'} · first meeting: ${fs.firstMeeting ? 'yes' : 'no'} · opener: ${fs.opener ? 'yes' : 'no'} · safety hit: ${fs.safetyHit ?? 'none'}${fs.flowEnded ? ' (flow ended)' : ''}`;
 }
 
 /** The cached tier: TODAY, NEXT 7 DAYS, the Doll, the flow's lines. Byte-identical until something real changes. */

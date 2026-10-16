@@ -10,7 +10,11 @@ import type { Intent, IntentLabel, Line, ReadResult } from './types.ts';
 import type { Usage } from './adapters.ts';
 
 export const LABELS: readonly IntentLabel[] = ['answers', 'declines', 'asks', 'leaves_flow', 'feedback', 'chat', 'safety'];
-export const SAFETY_TARGETS = ['eating_disorder', 'medical', 'injury', 'vague_symptom', 'soft_restriction'] as const;
+/** `visit`: the athlete would rather finish setup another time (the yes to the scripted check-in; read.md, ruled 2026-10-15). */
+export const DECLINE_TARGETS = ['step', 'all_connections', 'visit'] as const;
+export const SAFETY_TARGETS = ['eating_disorder', 'distress', 'medical', 'injury', 'vague_symptom', 'soft_restriction'] as const;
+/** The safety targets that end the flow for the conversation (Q6). A medical, injury or symptom hit hands the next turn back. */
+export const FLOW_ENDING_SAFETY: ReadonlySet<string> = new Set(['eating_disorder', 'distress']);
 
 /** Coerce whatever the model returned into a ReadResult; anything unlabelled is dropped, an empty result reads as chat. */
 export function coerceRead(raw: unknown): ReadResult {

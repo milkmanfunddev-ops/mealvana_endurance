@@ -1,5 +1,5 @@
 /**
- * Vana engine — runTurn (proposal v7 §3 "one turn, drawn"; ratified 2026-10-15).
+ * Vana engine — runTurn (proposal v7 §3 "one turn, drawn"; ratified 2026-10-15; rulings of the same day applied).
  *
  *   Gate → Assemble → Read → Route → Step loop (Check after each step) → Save → Memory
  *
@@ -13,7 +13,7 @@ import { newCounters } from './counters.ts';
 import { gate } from './gate.ts';
 import { runPlan, type PlanRun } from './loop.ts';
 import { read } from './read.ts';
-import { pickFlow, route, type Flows } from './route.ts';
+import { engagesCard, pickFlow, route, type Flows } from './route.ts';
 import { saveTap } from './save.ts';
 import { loadScripted } from './scripted.ts';
 import type { ConversationState, FlowDeclaration, Intent, Plan, ReadResult, Snapshot, TurnInput, TurnResult } from './types.ts';
@@ -26,7 +26,10 @@ export const OPENER = '[opened]';
 export const DEFAULT_FLOWS: Flows = { orientation: ORIENTATION, none: NONE };
 
 export function freshState(conversationId: string, userId: string): ConversationState {
-  return { conversationId, userId, flow: null, step: null, declinedThisVisit: [], offersEnded: false, pending: [], pendingWords: null, safetyHit: null, history: [], block: null, blockDirty: false, celebrated: [], cardOnScreen: null, turn: 0, demand: [] };
+  return {
+    conversationId, userId, flow: null, step: null, declinedThisVisit: [], declinedForGood: [], shownThisVisit: [], offersEnded: false, offFlowAsks: 0, checkInAsked: false,
+    pending: [], pendingWords: null, safetyHit: null, flowEnded: false, history: [], block: null, blockDirty: false, celebrated: [], cardOnScreen: null, turn: 0, demand: [],
+  };
 }
 
 export interface RunOptions { foreignNames?: string[] }
@@ -55,6 +58,12 @@ export async function runTurn(input: TurnInput, a: Adapters, flows: Flows = DEFA
   const lines = await loadScripted(a.prompts);
   const reassemble = async () => { const r = await assemble(s, flow, a); return r; };
   const loopCtx = () => ({ a, s, flow, assembled, reassemble, lines, counters, message: '', foreignNames: opts.foreignNames, trail, calls });
+  const rememberDeclines = async () => {
+    for (const id of s.declinedThisVisit) {
+      const status = s.declinedForGood.includes(id) ? 'declined_for_good' : 'declined';
+      try { await a.memory.setStep(s.userId, id, status); } catch (e) { trail.push(`memory: setStep(${id}, ${status}) failed (${(e as Error).message})`); }
+    }
+  };
 
   let readResult: ReadResult | null = null;
   let plan: Plan | null = null;
@@ -71,11 +80,12 @@ export async function runTurn(input: TurnInput, a: Adapters, flows: Flows = DEFA
     assembled = await assemble(s, flow, a); trail.push(...assembled.trail);
     const receiptLines = saved.receipts.map((r) => r.line);
     if (s.pending.length) {
-      // a tap that clears a card with intents pending resumes the plan (no Read)
+      // a tap that clears a card with intents pending resumes the plan (no Read): Save and Not-now alike (Q3d)
       const pend: Intent[] = s.pending; const words = s.pendingWords ?? ''; s.pending = []; s.pendingWords = null;
       plan = route(pend, assembled.flowState, s, words, flows);
-      trail.push(`route: resumed ${pend.length} pending intent(s) after the tap`);
-      if (saved.receipts.length && plan.steps[0]) plan.steps[0].notes.unshift(...saved.receipts.map((r) => `[receipt: ${r.line}]`));
+      trail.push(`route: resumed ${pend.length} pending intent(s) after the ${tap.action} tap`);
+      const notes = [...saved.receipts.map((r) => `[receipt: ${r.line}]`), ...(saved.declined.length ? [`[declined: ${saved.declined.join(', ')}]`] : [])];
+      if (notes.length && plan.steps[0]) plan.steps[0].notes.unshift(...notes);
       run = await runPlan(plan, { ...loopCtx(), assembled, message: words });
     } else if (saved.completedStep || saved.declined.length || tap.action === 'choice') {
       // a Save that completes a step (or a decline) continues to the next step's agent
@@ -111,14 +121,23 @@ export async function runTurn(input: TurnInput, a: Adapters, flows: Flows = DEFA
   calls.push({ role: 'read', inputTokens: r.usage.inputTokens, outputTokens: r.usage.outputTokens, cachedTokens: r.usage.cachedTokens });
   for (const f of readResult.facts) { try { await a.memory.remember(s.userId, f, { source: 'read' }); } catch (e) { trail.push(`memory: could not remember "${f}" (${(e as Error).message})`); } }
 
-  // 4 · Route, with any intents left pending from last turn ahead of this message's
-  const carried = s.pending; s.pending = [];
-  const intents = [...carried, ...readResult.intents];
-  if (carried.length) { trail.push(`route: ${carried.length} pending intent(s) from last turn join this one`); counters.route_reroute++; }
+  // a card still on screen is scrolled off by a typed message: shown once this visit unless the message engages it (E3)
+  if (s.cardOnScreen) {
+    const on = s.cardOnScreen; s.cardOnScreen = null;
+    if (engagesCard(readResult.intents)) trail.push(`save: ${on.card} on screen; the message engages it, ${on.step} stays the active step`);
+    else if (flow.steps[on.step] && !s.shownThisVisit.includes(on.step)) {
+      s.shownThisVisit.push(on.step);
+      trail.push(`save: ${on.card} scrolled off by a typed message; ${on.step} shown once this visit, still open, not a decline`);
+      assembled = await assemble(s, flow, a);   // the cached block stands; the FLOW line and the active step move on
+    }
+  }
+
+  // 4 · Route. Intents left pending by an earlier card stay on the row and are named in this reply (Q3c).
+  if (s.pending.length) { trail.push(`route: ${s.pending.length} pending intent(s) stay on the row, named in this reply`); counters.route_reroute++; }
   const flowBefore = s.flow;
-  plan = route(intents, assembled.flowState, s, message, flows);
+  plan = route(readResult.intents, assembled.flowState, s, message, flows);
   if (plan.flowChanged && s.flow && s.flow !== flowBefore && flows[s.flow]) { flow = flows[s.flow]!; assembled = await assemble(s, flow, a); trail.push(`assemble: flow changed to ${flow.id}`, ...assembled.trail); }
-  for (const id of s.declinedThisVisit) { try { await a.memory.setStep(s.userId, id, 'declined'); } catch (e) { trail.push(`memory: setStep(${id}) failed (${(e as Error).message})`); } }
+  await rememberDeclines();
   counters.intents_pending += plan.pending.length;
 
   // 5 · the loop

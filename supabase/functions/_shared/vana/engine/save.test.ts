@@ -1,6 +1,6 @@
 /** Box 7: a tap becomes a receipt, confetti fires once per milestone, a decline is recorded, the block goes dirty. */
-import { assertEquals, assert } from 'https://deno.land/std@0.168.0/testing/asserts.ts';
-import { flowStateFor } from './assemble.ts';
+import { assertEquals, assert, assertStringIncludes } from 'https://deno.land/std@0.168.0/testing/asserts.ts';
+import { flowLine, flowStateFor } from './assemble.ts';
 import { freshState } from './engine.ts';
 import { ORIENTATION } from './flows/orientation.ts';
 import { saveTap, milestonesFor, celebrate } from './save.ts';
@@ -46,8 +46,8 @@ Deno.test('a race save adds where it lives; a workout save fires long_workout_fu
   assertEquals(milestonesFor(ORIENTATION, before, flowStateFor(ORIENTATION, data.d, s), s), []);
 });
 
-Deno.test('a decline tap records the step (and what it drags along); a dismiss records nothing', async () => {
-  const data = new FakeData(snapshot());
+Deno.test('a decline tap records the step (and what it drags along); a second decline across visits is for good; a dismiss is shown once, never a decline', async () => {
+  const data = new FakeData(snapshot({ steps: { race: 'declined' } }));   // the race was declined on an earlier visit
   const s = freshState('c1', 'u1'); s.flow = 'orientation';
   const memory = new FakeMemory(data);
   const before = flowStateFor(ORIENTATION, data.d, s);
@@ -55,6 +55,16 @@ Deno.test('a decline tap records the step (and what it drags along); a dismiss r
   assertEquals(r.declined, ['week', 'long_run']);
   assertEquals(memory.steps, { week: 'declined', long_run: 'declined' });
   assertEquals(s.blockDirty, false);
+  const r2 = await saveTap({ step: 'race', card: 'race_card', action: 'decline' }, ORIENTATION, before, s, () => data.read(), DEFAULT_LINES, memory);
+  assertEquals(r2.declined, ['race']);
+  assertEquals(s.declinedForGood, ['race']);
+  assertEquals(memory.steps.race, 'declined_for_good');
+  assert(r2.trail[0].includes('for good'));
   const d2 = await saveTap({ step: 'plan', card: 'connect_plan', action: 'dismiss' }, ORIENTATION, before, s, () => data.read(), DEFAULT_LINES, memory);
   assertEquals(d2.declined, []); assertEquals(d2.receipts, []);
+  assertEquals(s.shownThisVisit, ['plan']);
+  const fs = flowStateFor(ORIENTATION, data.d, s);
+  assertEquals(fs.statuses.plan, 'open');     // still open, not declined
+  assertEquals(fs.step?.id, 'wearable');      // but not offered again this visit
+  assertStringIncludes(flowLine(fs, data.d), 'shown once: plan');
 });

@@ -1,6 +1,6 @@
 /**
  * Scripted lines (box 4 / box 7): the words code writes, code writes. Templates live in v7/prompts/scripted.md; this
- * module loads that file through the PromptSource (Langfuse later) and falls back to the same text when a key is
+ * module loads that file through the PromptSource (Langfuse later; check_in and safe load from it too) and falls back to the same text when a key is
  * missing, so a harness without the file still speaks. Names in {braces} are filled by code.
  */
 import type { PromptSource } from './adapters.ts';
@@ -13,7 +13,9 @@ export interface ScriptedLines {
   receipt_race: string;      // appended to a race receipt
   sensitive_medical: string;
   sensitive_ed_close: string;
-  /** Check fell through twice: the one line the athlete sees instead (not in scripted.md; drafted here, Xuan edits). */
+  /** The second off-flow ask in a visit: replaces the steer, once, exactly one question (ruled 2026-10-15, Q1a). */
+  check_in: string;
+  /** Check fell through twice: the one line the athlete sees instead (ruled 2026-10-15, E6). */
   safe: string;
 }
 
@@ -25,7 +27,8 @@ export const DEFAULT_LINES: ScriptedLines = {
   receipt_race: 'It lives on your Events page.',
   sensitive_medical: 'Would you like us to help you find a sports dietitian?',
   sensitive_ed_close: 'We can pick setup up another time.',
-  safe: "Let me put that another way once I've checked your file. The card below is still yours to tap.",
+  check_in: "That's coming soon. I can't help with it yet. Setup takes a few more minutes and it sets you up right for your next long workout. Would you rather finish it another time?",
+  safe: "I tangled that one. Tell me what you'd like to do next and I'll pick it up from there.",
 };
 
 /** First quoted string after a `key (` heading in scripted.md, else null. Tolerant: the file is prose for Xuan to read. */
@@ -51,7 +54,8 @@ export async function loadScripted(prompts: PromptSource): Promise<ScriptedLines
     receipt_race: raceLine,
     sensitive_medical: sens,
     sensitive_ed_close: edClose,
-    safe: DEFAULT_LINES.safe,
+    check_in: pick('check_in', DEFAULT_LINES.check_in),
+    safe: pick('safe', DEFAULT_LINES.safe),
   };
 }
 

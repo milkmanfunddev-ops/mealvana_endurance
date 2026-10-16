@@ -4,7 +4,7 @@
  * test scripts. No network, no Supabase, no SDK.
  */
 import type { Adapters, ChatMessage, Clock, DataReader, MemoryStore, Model, PromptSource, RowStore, ToolRunner, Usage } from './adapters.ts';
-import type { ConversationState, ReadResult, Snapshot, ToolCall, ToolOutcome, ToolSpec } from './types.ts';
+import type { ConversationState, ReadResult, Snapshot, StepMemory, ToolCall, ToolOutcome, ToolSpec } from './types.ts';
 import { memoryPrompts } from './prompts.ts';
 import { bracketOf, fmtDate, weekdayOf } from './dates.ts';
 
@@ -28,10 +28,11 @@ export class FakeData implements DataReader {
 
 export class FakeMemory implements MemoryStore {
   facts: string[] = [];
-  steps: Record<string, 'done' | 'declined'> = {};
+  steps: Record<string, StepMemory> = {};
   constructor(private data?: FakeData) {}
   remember(_u: string, fact: string): Promise<void> { this.facts.push(fact); if (this.data && !this.data.d.memories.includes(fact)) this.data.d.memories.push(fact); return Promise.resolve(); }
-  setStep(_u: string, step: string, status: 'done' | 'declined'): Promise<void> { this.steps[step] = status; return Promise.resolve(); }
+  /** Writes through to the fake Snapshot too, so a "next visit" in a test reads what the last one left (the real store is the user_memories row). */
+  setStep(_u: string, step: string, status: StepMemory): Promise<void> { this.steps[step] = status; if (this.data) this.data.d.steps[step] = status; return Promise.resolve(); }
 }
 
 export class FakeRows implements RowStore {

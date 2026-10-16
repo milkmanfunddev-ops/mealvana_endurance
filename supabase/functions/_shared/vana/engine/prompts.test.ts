@@ -18,9 +18,11 @@ Deno.test({ name: 'every stem the engine loads exists in ops/experiments/setup-c
   assertStringIncludes(r, 'The step Vana is on: plan');
 } });
 
-Deno.test({ name: 'scripted.md yields the off-flow, wrap, receipt and sensitive lines', ignore: !have, fn: async () => {
+Deno.test({ name: 'scripted.md yields the off-flow, check-in, safe, wrap, receipt and sensitive lines', ignore: !have, fn: async () => {
   const lines = await loadScripted(filePromptSource(dir!));
   assertEquals(lines.off_flow, "That's coming soon. I can't help with it yet.");
+  assertEquals(lines.check_in, "That's coming soon. I can't help with it yet. Setup takes a few more minutes and it sets you up right for your next long workout. Would you rather finish it another time?");
+  assertEquals(lines.safe, "I tangled that one. Tell me what you'd like to do next and I'll pick it up from there.");
   assertEquals(lines.wrap, "That's your setup. There's more to explore in your formula library; tap through whenever.");
   assertEquals(lines.receipt, '{what}, {when}.');
   assertEquals(lines.receipt_race, 'It lives on your Events page.');

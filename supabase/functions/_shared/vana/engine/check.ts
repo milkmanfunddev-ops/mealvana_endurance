@@ -1,8 +1,9 @@
 /**
  * Box 6 · Check (code): reads the words before the athlete does (proposal v7 §4.6; README "checks carried from v26").
  *
- * The five hard rules run on every reply: no invented status, no claimed action without a tool, no computed number,
- * no write without a yes, nothing after a safety hit. The step's declared checks run on top. The regexes are the
+ * The seven hard rules run on every reply, scripted lines included: no invented status, no claimed action without a
+ * tool, no computed number, no write without a yes, nothing after a safety hit (the flow ended), one question per reply,
+ * no history pattern without a tool result (Q4a, 2026-10-15). The step's declared checks run on top. The regexes are the
  * v26 guard's (ops/experiments/setup-chat/check.ts), kept so the harness's scorer and this net never disagree.
  * fail → the loop sends [GUARD] once → still failing → the fixed safe line.
  */
@@ -71,7 +72,7 @@ export function checkReply(text: string, captions: string[], ctx: CheckContext):
   const nl = nextLong(d);
   const st = { plan: d.connections.plan, wearable: d.connections.wearable, race: d.race?.name ?? null, formulaPinned: d.pins.length > 0, longRunFueled: !!nl?.fueled, pinCovers: !d.pins.length || !nl ? null : !!pinFor(d, nl) };
 
-  // hard rule 5: nothing after a safety hit — no card, no steer back to a step
+  // hard rule 5: nothing after a safety hit that ended the flow (eating-disorder signs, distress) — no card, no steer back to a step
   if (ctx.safetyHit && ctx.step.id !== 'sensitive' && (ctx.cards.length || /\b(keep going|next step|set ?up|your (plan|garmin|formula|race))\b/i.test(all))) bad('after_safety', 'a step, card or steer after a safety hit; the flow ended for this conversation');
   // hard rule 4: the loop already refused the write; reported here so the counter sees it
   for (const w of ctx.writeRefused) bad('write_without_yes', `${w} was called without the athlete's yes; refused`);
@@ -104,10 +105,13 @@ export function checkReply(text: string, captions: string[], ctx: CheckContext):
   const unknown = [...new Set(said.filter((x) => !known.includes(x)))];
   if (unknown.length) bad('no_computed_number', `names ${unknown.map((x) => x + 'day').join(', ')}, which nothing in the file, a tool result or the athlete gave`);
 
+  // hard rule 6: one question per reply
+  { const q = questionCount(text); if (q > 1) bad('one_question', `asks ${q} questions; one at most per reply`); }
+  // hard rule 7: a history pattern needs a tool result (or the athlete's own words)
+  if (PATTERN.test(all) && !ctx.toolsCalled.includes('longRunPattern') && !historyPattern(d) && !ctx.athleteWords.some((w) => /\b(mon|tues|wednes|thurs|fri|satur|sun)day/i.test(w))) bad('pattern_from_data', 'states a pattern with no history read');
+
   if (ctx.scripted) return out;
   // declared, model steps only
-  if (declared.has('one_question')) { const q = questionCount(text); if (q > 1) bad('one_question', `asks ${q} questions; one at most per reply`); }
-  if (declared.has('pattern_from_data') && PATTERN.test(all) && !ctx.toolsCalled.includes('longRunPattern') && !historyPattern(d) && !ctx.athleteWords.some((w) => /\b(mon|tues|wednes|thurs|fri|satur|sun)day/i.test(w))) bad('pattern_from_data', 'states a pattern with no history read');
   if (declared.has('no_app_claims')) { const ac = all.match(APP_CLAIM); if (ac) bad('no_app_claims', `describes what the app does on its own ("${ac[0]}")`); }
   if (declared.has('race_question_narrow') && BROAD_RACE_Q.test(all)) bad('race_question_narrow', 'asks the broad "racing or just building fitness?" question; the race card carries the chip');
   if (declared.has('lead_in_names_step')) for (const c of ctx.cards) { const re = SUBJECT[c.kind]; if (re && text.trim() && !re.test(text)) bad('lead_in_names_step', `shows the ${c.kind.replace('_', ' ')} card but the words never say what it is for`); }

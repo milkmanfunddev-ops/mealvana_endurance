@@ -96,6 +96,7 @@ async function runScripted(ps: PlanStep, notes: string[], ctx: LoopContext): Pro
   const steer = (notes.find((n) => n.startsWith('[steer: ')) ?? '').replace(/^\[steer:\s*/, '').replace(/\]$/, '').trim() || null;
   const run: StepRun = { stepId: ps.step.id, text: '', cards: [], receipts: [], reactions: [], toolsCalled: [], violations: [], passes: 0, safeLine: false };
   if (ps.step.scripted === 'off_flow') run.text = offFlowLine(ctx.lines, steer);
+  if (ps.step.scripted === 'check_in') run.text = ctx.lines.check_in;   // the second off-flow ask: one question, no steer (Q1a)
   if (ps.step.scripted === 'feedback') {
     const r = await ctx.a.tools.run({ name: 'saveFeedback', input: { message: ctx.message, about: ps.intents[0]?.target ?? 'app' } }, toolCtx(ctx, ps.step.id));
     run.toolsCalled.push('saveFeedback');
@@ -122,7 +123,7 @@ function checkCtx(ctx: LoopContext, ps: PlanStep, run: StepRun, writeRefused: st
     snapshot: ctx.assembled.snapshot, step: ps.step, toolsCalled: run.toolsCalled, receipts: run.receipts, cards: run.cards,
     earlier: ctx.s.history.filter((l) => l.role === 'vana').map((l) => l.text),
     athleteWords: [...ctx.s.history.filter((l) => l.role === 'athlete').map((l) => l.text), ctx.message],
-    foreignNames: ctx.foreignNames, safetyHit: !!ctx.s.safetyHit, writeRefused,
+    foreignNames: ctx.foreignNames, safetyHit: ctx.s.flowEnded, writeRefused,   // hard rule 5 binds the ED/distress case (Q6)
   };
 }
 

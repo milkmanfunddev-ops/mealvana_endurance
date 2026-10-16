@@ -4,7 +4,8 @@ import { checkReply, type CheckContext } from './check.ts';
 import { ORIENTATION } from './flows/orientation.ts';
 import { SENSITIVE } from './flows/shared.ts';
 import { snapshot } from './fakes.ts';
-import type { StepDeclaration } from './types.ts';
+import { HARD_RULES, type StepDeclaration } from './types.ts';
+import { DEFAULT_LINES } from './scripted.ts';
 
 const ctx = (over: Partial<CheckContext> = {}, step: StepDeclaration = ORIENTATION.steps.plan): CheckContext => ({
   snapshot: snapshot(), step, toolsCalled: [], receipts: [], cards: [], earlier: [], athleteWords: [], safetyHit: false, writeRefused: [], ...over,
@@ -58,6 +59,16 @@ Deno.test('declared checks fire only on their step: the broad race question, a p
 });
 
 Deno.test('a scripted line gets only the hard rules', () => {
-  const v = checkReply("That's coming soon. I can't help with it yet. Want to keep going with your plan? Or your watch?", [], { ...ctx(), scripted: true });
+  const v = checkReply("That's coming soon. I can't help with it yet. Want to keep going with your watch?", [], { ...ctx(), scripted: true });
   assertEquals(v, []);
+  assertEquals(checkReply(DEFAULT_LINES.check_in, [], { ...ctx(), scripted: true }), []);
+  assertEquals(checkReply(DEFAULT_LINES.safe, [], { ...ctx(), scripted: true }), []);
+});
+
+Deno.test('hard rules 6 and 7 are universal (Q4a): two questions or an unbacked pattern are caught on any step, scripted lines included', () => {
+  assertEquals(HARD_RULES.length, 7);
+  assert(rules('Do you use a plan app? Which one is it?', ctx({}, SENSITIVE)).includes('one_question'));
+  assert(rules('Looks like Saturdays are your long run day.', ctx({}, ORIENTATION.steps.plan)).includes('pattern_from_data'));
+  const two = checkReply("That's coming soon. Want to keep going with your plan? Or your watch?", [], { ...ctx(), scripted: true });
+  assertEquals(two.map((v) => v.rule), ['one_question']);
 });

@@ -85,3 +85,46 @@ Deno.test('a decline tap runs the next step with [declined: …]; the gate refus
   const e = await runTurn({ conversationId: 'c1', userId: 'u1' }, a);
   assertEquals(e.trail, ['gate: refused (empty turn: neither a message nor a tap)']);
 });
+
+Deno.test('a card scrolled off by a typed message is shown once this visit (E3): the step stays open, Route passes it over; a message that engages it keeps it', async () => {
+  const model = new FakeModel([{ intents: [{ label: 'chat' }], facts: [] }, { intents: [{ label: 'answers' }], facts: [] }]);
+  const a = fakeAdapters(snapshot(), model);
+  await turn(a, OPENER);   // the plan card is on screen
+  const r = await turn(a, "how's your day going?");
+  assertEquals(r.state.shownThisVisit, ['plan']);
+  assertEquals(r.state.declinedThisVisit, []);
+  assertEquals(r.plan?.steps[0].step.id, 'wearable');
+  assertEquals(r.reply.card?.kind, 'connect_wearable');
+  assert(r.trail.some((t) => t.includes('plan shown once this visit, still open, not a decline')));
+  const r2 = await turn(a, 'yes, connect my watch');   // answers while the wearable card is on screen: engaged, not scrolled off
+  assertEquals(r2.plan?.steps[0].step.id, 'wearable');
+  assertEquals(r2.state.shownThisVisit, ['plan']);
+});
+
+Deno.test('pending survives a typed turn and is named in that reply (Q3c); a Not-now tap resumes it (Q3d)', async () => {
+  const model = new FakeModel(
+    [{ intents: [{ label: 'asks', target: 'race' }, { label: 'asks', target: 'memory' }], facts: [] }, { intents: [{ label: 'chat' }], facts: [] }],
+    [
+      { text: 'Your race form; then your cilantro note.', toolCalls: [{ name: 'showRaceCard', input: { name: 'River City Half' } }] },
+      (i: GenInput) => ({ text: `All good here. (${lastUser(i)})` }),
+      (i: GenInput) => ({ text: `Noting it now. (${lastUser(i)})`, toolCalls: [{ name: 'rememberFact', input: { fact: 'Hates cilantro' } }] }),
+      { text: 'Done, cilantro is off the list.' },
+    ],
+  );
+  const a = fakeAdapters(snapshot({ profile: { firstName: 'Sam', gutTraining: 'moderate', metVana: true } }), model);
+  const lobby = { conversationId: 'c1', userId: 'u1', situation: { route: '/main', opened: 'plan_button' as const } };
+  const first = await runTurn({ ...lobby, message: 'add my River City Half, and remember I hate cilantro' }, a);
+  assertEquals(first.state.pending, [{ label: 'asks', target: 'memory' }]);
+  const typed = await runTurn({ ...lobby, message: 'how are you today?' }, a);
+  assertEquals(typed.state.pending, [{ label: 'asks', target: 'memory' }]);   // kept, not merged into this turn
+  assertStringIncludes(typed.reply.text, '[then: asks memory]');              // named once in this reply
+  assertEquals(typed.counters.route_reroute, 1);
+  assert(typed.trail.some((t) => t.includes('stay on the row, named in this reply')));
+  const notNow = await runTurn({ ...lobby, tap: { step: 'draft_record', card: 'race_card', action: 'decline' } }, a);
+  assertEquals(notNow.read, null);
+  assertEquals(notNow.plan?.steps.map((p) => p.step.id), ['set_value']);
+  assertEquals(notNow.state.pending, []);
+  assertStringIncludes(notNow.reply.text, 'Done, cilantro is off the list.');
+  assertEquals(a.data.d.memories, ['Hates cilantro']);
+  assert(notNow.trail.some((t) => t.includes('resumed 1 pending intent(s) after the decline tap')));
+});

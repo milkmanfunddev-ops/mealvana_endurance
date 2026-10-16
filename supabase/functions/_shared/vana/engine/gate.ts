@@ -31,13 +31,13 @@ const isLong = (w: Workout) => w.minutes >= LONG_MINUTES;
 const sportRank: Record<Sport, number> = { run: 0, ride: 1, swim: 2, strength: 3 };
 
 /**
- * The next long workout: the first 90+ minute session ahead, else the one the athlete saved in this app (an 80-minute
- * Sunday run saved from the planner still counts as "the" long workout — v10 s15).
- * TODO(Xuan): the run-vs-ride tie-break. Two long sessions on the same day (a brick weekend, a tri plan) — which one is
- * the orientation's long workout? Picked: run first, then ride, then swim. Flip `sportRank` when ruled.
+ * The next long workout: the soonest 90+ minute session from TOMORROW on, never today (ruled 2026-10-15, E2), else the
+ * soonest one the athlete saved in this app (an 80-minute Sunday run saved from the planner still counts as "the" long
+ * workout — v10 s15). Two long sessions on the same day (a brick weekend, a tri plan): run, then ride, then swim; the
+ * sport breaks a tie only within a day, never across days.
  */
 export function nextLong(d: Snapshot): Workout | null {
-  const up = [...d.workouts].filter((w) => w.date >= d.today).sort((a, b) => a.date.localeCompare(b.date) || sportRank[a.type] - sportRank[b.type]);
+  const up = d.workouts.filter((w) => w.date > d.today).sort((a, b) => a.date.localeCompare(b.date) || sportRank[a.type] - sportRank[b.type]);
   return up.find(isLong) ?? up.find((w) => w.source === 'calendar') ?? null;
 }
 
@@ -50,7 +50,7 @@ export function historyPattern(d: Snapshot): HistoryPattern | null {
   for (const w of longs) byDay.set(weekdayOf(w.date), (byDay.get(weekdayOf(w.date)) ?? 0) + 1);
   const [weekday, count] = [...byDay.entries()].sort((a, b) => b[1] - a[1])[0];
   const mins = longs.map((w) => w.minutes).sort((a, b) => a - b);
-  // the sport of the most common long day, run before ride on a tie (same TODO as nextLong)
+  // the sport of the most common long day, run before ride on a tie (the E2 order)
   const sports = longs.filter((w) => weekdayOf(w.date) === weekday).map((w) => w.type).sort((a, b) => sportRank[a] - sportRank[b]);
   return { weekday: weekday as HistoryPattern['weekday'], sport: sports[0] ?? 'run', typicalMinutes: mins[Math.floor(mins.length / 2)], confidence: count >= 3 && count / longs.length >= 0.75 ? 'clear' : 'weak' };
 }
@@ -61,7 +61,7 @@ export function longTarget(d: Snapshot): { sport: Sport; minutes: number; from: 
   if (nl) return { sport: nl.type, minutes: nl.minutes, from: 'workout' };
   if (d.week?.length) {
     const big = d.week.reduce((a, b) => (b.minutes > a.minutes ? b : a));
-    const sport = [...big.sports].sort((a, b) => sportRank[a] - sportRank[b])[0] ?? 'run';   // same tie-break TODO
+    const sport = [...big.sports].sort((a, b) => sportRank[a] - sportRank[b])[0] ?? 'run';   // the E2 order
     return { sport, minutes: big.minutes, from: 'week' };
   }
   const p = historyPattern(d);

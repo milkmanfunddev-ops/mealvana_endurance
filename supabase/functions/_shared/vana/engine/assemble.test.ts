@@ -1,6 +1,6 @@
 /** Box 2: the block is built from a fake row, cached, and invalidated by a write, a new day or a flow change. */
 import { assertEquals, assertStringIncludes, assert } from 'https://deno.land/std@0.168.0/testing/asserts.ts';
-import { assemble, flowLine, flowStateFor } from './assemble.ts';
+import { assemble, flowLine, flowStateFor, widgetSteps } from './assemble.ts';
 import { ORIENTATION } from './flows/orientation.ts';
 import { NONE } from './flows/none.ts';
 import { freshState } from './engine.ts';
@@ -65,4 +65,20 @@ Deno.test('every step done or declined → the wrap is the step; the recap shown
   assertEquals(fs.step?.id, 'wrap');
   s.celebrated.push('setup_done');
   assertEquals(flowStateFor(ORIENTATION, d, s).step, null);
+});
+
+Deno.test('declined for good is never offered (Q7a); a card shown once is passed over but stays open (E3); the widget counts five, not the week (E1)', () => {
+  const s = state();
+  const d = snapshot({ steps: { plan: 'declined_for_good', wearable: 'declined' } });
+  let fs = flowStateFor(ORIENTATION, d, s);
+  assertEquals(fs.statuses.plan, 'declined');
+  assertEquals(fs.statuses.wearable, 'open');   // one earlier no: offered again
+  assertEquals(fs.step?.id, 'wearable');
+  assertStringIncludes(flowLine(fs, d), 'declined this visit: none · declined before: wearable · declined for good: plan');
+  s.shownThisVisit = ['wearable'];
+  fs = flowStateFor(ORIENTATION, d, s);
+  assertEquals(fs.statuses.wearable, 'open');
+  assertEquals(fs.step?.id, 'week');
+  assertStringIncludes(flowLine(fs, d), 'shown once: wearable');
+  assertEquals(widgetSteps(ORIENTATION), ['plan', 'wearable', 'formula', 'long_run', 'race']);
 });

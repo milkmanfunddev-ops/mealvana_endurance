@@ -9,7 +9,7 @@ import type { FlowDeclaration, StepDeclaration } from '../types.ts';
 import { ANSWER } from './shared.ts';
 
 const react = { name: 'react', kind: 'react' as const };
-const every: StepDeclaration['checks'] = ['name_from_data', 'one_question', 'same_words_twice', 'no_app_claims'];
+const every: StepDeclaration['checks'] = ['name_from_data', 'same_words_twice', 'no_app_claims'];
 
 const steps: Record<string, StepDeclaration> = {
   set_value: { id: 'set_value', shape: 'set_value', section: null, tools: [{ name: 'rememberFact', kind: 'write' }, { name: 'setSetting', kind: 'write' }, { name: 'forgetFact', kind: 'write' }, react], cards: ['value_draft'], checks: every, reply: 'model', status: () => 'open', steer: '' },

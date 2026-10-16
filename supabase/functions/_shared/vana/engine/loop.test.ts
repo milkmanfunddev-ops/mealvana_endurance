@@ -2,7 +2,7 @@
 import { assertEquals, assert, assertStringIncludes } from 'https://deno.land/std@0.168.0/testing/asserts.ts';
 import { assemble } from './assemble.ts';
 import { newCounters } from './counters.ts';
-import { freshState } from './engine.ts';
+import { DEFAULT_FLOWS, freshState } from './engine.ts';
 import { NONE } from './flows/none.ts';
 import { ORIENTATION } from './flows/orientation.ts';
 import { runPlan, historyMessages, type LoopContext } from './loop.ts';
@@ -110,7 +110,7 @@ Deno.test('Check: [GUARD] once and the rewrite is kept; twice and the safe line 
 
 Deno.test('scripted steps: off_flow with the steer, feedback runs saveFeedback, the wrap draws the recap', async () => {
   const ctx = await ctxFor(ORIENTATION);
-  const { OFF_FLOW, FEEDBACK } = await import('./flows/shared.ts');
+  const { OFF_FLOW, FEEDBACK, CHECK_IN } = await import('./flows/shared.ts');
   const r = await runPlan({ steps: [{ flow: 'orientation', step: OFF_FLOW, intents: [], notes: ['[steer: Want to keep going with your training plan?]'], writeAllowed: false }], pending: [], why: [], flowChanged: false }, ctx);
   assertEquals(r.text, "That's coming soon. I can't help with it yet. Want to keep going with your training plan?");
   assertEquals(ctx.counters.model_calls, 0);
@@ -120,6 +120,22 @@ Deno.test('scripted steps: off_flow with the steer, feedback runs saveFeedback, 
   assertEquals(ctx.a.tools.calls.at(-1)?.name, 'saveFeedback');
   const w = await runPlan({ steps: [{ flow: 'orientation', step: ORIENTATION.steps.wrap, intents: [], notes: ['[steer: ]'], writeAllowed: false }], pending: [], why: [], flowChanged: false }, ctx);
   assertEquals(w.card?.kind, 'recap'); assertEquals(w.confetti, ['setup_done']); assertEquals(w.text, DEFAULT_LINES.wrap);
+  const c = await runPlan({ steps: [{ flow: 'orientation', step: CHECK_IN, intents: [], notes: ['[steer: ]'], writeAllowed: false }], pending: [], why: [], flowChanged: false }, ctx);
+  assertEquals(c.text, DEFAULT_LINES.check_in); assertEquals(c.steps[0].violations, []);
+});
+
+Deno.test('hard rule 4 has no exceptions: a named race is a prefilled draft card, never a direct write; no draft_record step carries a write tool', async () => {
+  const model = new FakeModel([], [
+    { text: 'Adding River City Half now.', toolCalls: [{ name: 'addRace', input: { name: 'River City Half', date: '2026-12-12' } }] },
+    { text: 'Here is your race form, River City Half prefilled.', toolCalls: [{ name: 'showRaceCard', input: { name: 'River City Half' } }] },
+  ]);
+  const ctx = await ctxFor(ORIENTATION, model);
+  ctx.message = 'add my River City Half on Dec 12';
+  const r = await runPlan({ steps: [{ flow: 'orientation', step: ORIENTATION.steps.race, intents: [{ label: 'answers' }], notes: [], writeAllowed: true }], pending: [], why: [], flowChanged: false }, ctx);
+  assertEquals(ctx.a.tools.calls.map((c) => c.name), ['showRaceCard']);
+  assert(model.generated[1].messages.some((m) => m.role === 'tool' && m.content === 'addRace: not a tool of this step'));
+  assertEquals(r.card?.kind, 'race_card'); assertEquals(r.receipts, []);
+  for (const flow of Object.values(DEFAULT_FLOWS)) for (const step of Object.values(flow!.steps)) if (step.shape === 'draft_record') assertEquals(step.tools.filter((t) => t.kind === 'write'), [], `${flow!.id}.${step.id}`);
 });
 
 Deno.test('history: the last ten shown lines, past cards as notes, opening on a user turn', () => {

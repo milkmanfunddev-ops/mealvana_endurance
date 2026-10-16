@@ -3,7 +3,8 @@
  *
  * Tool results become a draft card (the athlete confirms inside it) or a receipt (server-authored from scripted.md).
  * Taps arrive with what the app saved; this module writes the receipt line, fires each milestone's confetti once,
- * records a decline, marks the block dirty so Assemble rebuilds it, and tells the engine whether the tap completed a
+ * records a decline (for good when an earlier visit declined it too), marks a dismissed card shown once, marks the block
+ * dirty so Assemble rebuilds it, and tells the engine whether the tap completed a
  * step (→ the next step's agent runs with [receipt: …]) or cleared a card with intents pending (→ Route resumes).
  */
 import type { MemoryStore } from './adapters.ts';
@@ -51,12 +52,18 @@ export async function saveTap(tap: Tap, flow: FlowDeclaration, before: FlowState
   if (!step) { trail.push(`save: tap on unknown step ${tap.step}; nothing recorded`); return out; }
 
   if (tap.action === 'decline') {
-    out.declined = applyDecline(s, flow, step.id);
-    for (const id of out.declined) await memory.setStep(s.userId, id, 'declined');
-    trail.push(`save: ${step.id} declined by tap${out.declined.length > 1 ? ` (also ${out.declined.slice(1).join(', ')})` : ''}`);
+    out.declined = applyDecline(s, flow, step.id, before.snapshot.steps);
+    for (const id of out.declined) await memory.setStep(s.userId, id, s.declinedForGood.includes(id) ? 'declined_for_good' : 'declined');
+    const forGood = out.declined.filter((id) => s.declinedForGood.includes(id));
+    trail.push(`save: ${step.id} declined by tap${out.declined.length > 1 ? ` (also ${out.declined.slice(1).join(', ')})` : ''}${forGood.length ? `; for good, declined in an earlier visit too: ${forGood.join(', ')}` : ''}`);
     return out;
   }
-  if (tap.action === 'dismiss') { trail.push(`save: ${step.id} card closed without saving; offered once, moving on`); return out; }
+  if (tap.action === 'dismiss') {
+    // E3: shown once this visit; the step stays open and undeclined, Route passes it over until the athlete asks for it
+    if (!s.shownThisVisit.includes(step.id)) s.shownThisVisit.push(step.id);
+    trail.push(`save: ${step.id} card closed without a tap; shown once this visit, the step stays open, not a decline`);
+    return out;
+  }
 
   // save / connect / pin / choice: the app wrote; re-read and author the receipt
   s.blockDirty = true;
