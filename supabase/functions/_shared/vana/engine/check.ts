@@ -49,6 +49,18 @@ const SUBJECT: Record<string, RegExp> = {
   race_card: /\b(race|event|marathon|half|70\.3|ironman|triathlon|training for)\b/i, week_planner: /\b(week|days?|schedule|routine|hours|train)\b/i,
 };
 
+/**
+ * A card drawn in words (smoke 2026-10-15: Haiku wrote a markdown table of invented platforms or formulas, or copied the
+ * history's "(card: …)" note, before calling the real card tool). The app draws cards; the words never do. Table rows,
+ * separator rules and card notes are stripped before the check, no model call spent; the counter records it.
+ */
+const DRAWN_CARD_LINE = /^\s*(\|.*\|\s*$|\|?\s*:?-{2,}:?\s*(\|\s*:?-{2,}:?\s*)*\|?\s*$|[(\[]cards?:[^)\]]*[)\]]\s*$)/;
+export function stripDrawnCards(text: string): { text: string; stripped: string[] } {
+  const stripped: string[] = [];
+  const kept = text.split('\n').filter((l) => { if (DRAWN_CARD_LINE.test(l)) { stripped.push(l.trim()); return false; } return true; });
+  return { text: kept.join('\n').replace(/\n{3,}/g, '\n\n').trim(), stripped };
+}
+
 export const sentences = (t: string): string[] => t.split(/(?<=[.?!])\s+|\n+/).filter(Boolean);
 export const questionCount = (t: string): number => sentences(t).filter((s) => /\?$/.test(s.trim()) || (Q_OPENING.test(s.trim()) && /\.$/.test(s.trim()))).length;
 

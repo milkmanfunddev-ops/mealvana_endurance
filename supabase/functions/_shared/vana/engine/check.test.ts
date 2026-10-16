@@ -1,6 +1,6 @@
 /** Box 6: each of the five hard rules is caught, and the declared checks fire only where declared. */
 import { assertEquals, assert } from 'https://deno.land/std@0.168.0/testing/asserts.ts';
-import { checkReply, type CheckContext } from './check.ts';
+import { checkReply, stripDrawnCards, type CheckContext } from './check.ts';
 import { ORIENTATION } from './flows/orientation.ts';
 import { SENSITIVE } from './flows/shared.ts';
 import { snapshot } from './fakes.ts';
@@ -71,4 +71,12 @@ Deno.test('hard rules 6 and 7 are universal (Q4a): two questions or an unbacked 
   assert(rules('Looks like Saturdays are your long run day.', ctx({}, ORIENTATION.steps.plan)).includes('pattern_from_data'));
   const two = checkReply("That's coming soon. Want to keep going with your plan? Or your watch?", [], { ...ctx(), scripted: true });
   assertEquals(two.map((v) => v.rule), ['one_question']);
+});
+
+Deno.test('a card drawn in words is stripped: table rows, separator rules, "(card: …)" notes; the lead-in stays', () => {
+  const t = 'Where do you train?\n\n| Your training platform |\n|---|\n| Strava |\n| Garmin Coach |\n\n(card: formula_picker)\n[card: connect plan]';
+  const s = stripDrawnCards(t);
+  assertEquals(s.text, 'Where do you train?');
+  assertEquals(s.stripped.length, 6);
+  assertEquals(stripDrawnCards('Final Surge connected - nice. Which watch?'), { text: 'Final Surge connected - nice. Which watch?', stripped: [] });
 });

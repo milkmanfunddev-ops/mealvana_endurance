@@ -203,6 +203,8 @@ export interface Counters {
   check_catches: Partial<Record<CheckRule, number>>;
   check_retry_fixed: number;
   check_safe_line: number;
+  /** Lines of a card drawn in words (markdown table, "(card: …)" note) removed before the check. */
+  drawn_card_stripped: number;
   route_reroute: number;
   intents_pending: number;
   bound_arg_disagreement: number;

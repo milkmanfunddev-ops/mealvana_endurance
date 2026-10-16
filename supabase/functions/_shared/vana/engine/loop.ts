@@ -11,7 +11,7 @@
 import type { Adapters, ChatMessage, Usage } from './adapters.ts';
 import type { Assembled } from './assemble.ts';
 import type { Card, ConversationState, Counters, FlowDeclaration, Line, Milestone, ModelCallLog, Plan, PlanStep, Receipt, ToolSpec } from './types.ts';
-import { checkReply, guardMessage, parseGuardReply, type Violation } from './check.ts';
+import { checkReply, guardMessage, parseGuardReply, stripDrawnCards, type Violation } from './check.ts';
 import { bindArguments, TURN_TOKEN_CEILING } from './gate.ts';
 import { caught } from './counters.ts';
 import { celebrate, fromTool } from './save.ts';
@@ -194,6 +194,7 @@ async function runStepAgent(ps: PlanStep, notes: string[], ctx: LoopContext): Pr
   }
   if (run.passes >= max && !landed) ctx.counters.pass_cap_hit++;
   run.text = words.join('\n').replace(/<thinking>[\s\S]*?(<\/thinking>|$)/gi, '').replace(/^\s*\[GUARD\]\s*/i, '').trim();
+  { const s = stripDrawnCards(run.text); if (s.stripped.length) { run.text = s.text; ctx.counters.drawn_card_stripped += s.stripped.length; ctx.trail.push(`check: ${ps.step.id} drew a card in words; ${s.stripped.length} line(s) stripped ("${s.stripped[0].slice(0, 60)}")`); } }
 
   // 6 · Check, [GUARD] once, then the safe line
   const captions = run.cards.map((c) => c.caption ?? '').filter(Boolean);
